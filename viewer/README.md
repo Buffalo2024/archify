@@ -110,9 +110,10 @@ are part of the interface, not normalized by the extraction.
 | Auto-theme probes | Detached after computed-style sampling, including finally on failure |
 | Download URL/anchor | Anchor appended/clicked/removed synchronously; URL revoked after 1000ms |
 | Raster/card SVG URL | Lives until Image load/draw or error; revoked before toBlob completion, with existing catch cleanup |
-| Recording background URL | Survives background loading and recording; released on image error, recorder-constructor failure or recorder cleanup |
-| Recording tracks/rAF | Constructor failure stops created tracks; recorder error/stop uses existing guarded cleanup to stop tracks and cancel the frame callback |
-| Recording/toast timers | Preserve existing bounded callbacks and state checks; extraction adds no cancellation protocol or shared busy flag |
+| 录制背景 URL | 从背景加载持续到录制结束，由下文说明的统一终态在成功或失败后释放 |
+| 录制 tracks/rAF | 统一终态停止已创建的 tracks 并取消动画帧回调，晚到事件不重复清理 |
+| 录制定时器 | 统一终态取消录制时长和最终 flush 定时器，防止失败后再次操作编码器 |
+| Toast 定时器 | 保留既有有界回调和状态检查，不增加共享 busy 状态或取消协议 |
 
 recordWebm retains duration/fps options, defaults, minimums, MIME selection,
 geometry-driven scene and encoder flush timing. This table describes existing
