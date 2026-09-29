@@ -832,5 +832,13 @@ rasterization, clipboard and recording remain owned by Export. Its existing
 callers use the same paths and return fields. Tests exercise final browser exports;
 isolated clone tests supplement them for restoration and idempotence.
 
+## WebM 录制失败与资源生命周期
+
+`Archify.motion.recordWebm()` 的每次调用独立拥有背景 URL、捕获流、编码器、动画帧和停止定时器。背景加载、画布或流创建、编码器启动、绘制、编码事件以及停止失败时，返回的 Promise 拒绝，资源在同一次终态清理中释放；晚到的事件不会恢复成功状态。正常停止后只有非空 WebM 才能成功返回，`requestData()` 失败仍允许通过 `stop()` 完成最佳努力的最终片段收集。
+
+菜单沿用原有错误提示、失败回执与 WebM 禁用规则；接口调用之间互不清理对方资源。SVG 序列化发生在录制 Promise 之前，其同步异常契约保持不变。修复后的行为仅存在于重新生成的 HTML 中。
+
+回归入口：在 `archify/` 下设置 `ARCHIFY_CHROME` 后运行 `node --test test/export-browser.test.mjs`。该套件覆盖真实编码、故障边界、晚到事件、同页重试及并行调用；`node test/webm-artifact.smoke.mjs` 另行验证视频解码与实际帧变化。
+
 For required browser, output and package evidence, follow
 [Contributing](../CONTRIBUTING.md#local-setup-and-verification).
