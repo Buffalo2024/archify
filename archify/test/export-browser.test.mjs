@@ -459,16 +459,45 @@ test('Export preserves menu, clipboard, semantic cards and recording lifecycles'
     assert.ok((await record('webm-flush')).urls.every(u=>u.revoked));
     await run('restoreWebmFault()');
     const parallel=await run(`(async()=>{
-      const NativeRecorder=MediaRecorder;let sequence=0;
+      // 保留真实图片解码，确定性地让第二次调用先完成背景加载。
+      const NativeImage=Image,ready=[];let imageSequence=0;
+      window.Image=function(...args){
+        const image=new NativeImage(...args),index=imageSequence++;let onload;
+        Object.defineProperty(image,'onload',{get:()=>onload,set:value=>{onload=value;}});
+        image.addEventListener('load',()=>{
+          ready[index]=()=>onload&&onload.call(image);
+          if(ready[0]&&ready[1]){ready[1]();ready[0]();}
+        },{once:true});
+        return image;
+      };
+      // 用调用指定的帧率标识真实流，不能把编码器构造顺序当成调用顺序。
+      const capture=HTMLCanvasElement.prototype.captureStream,streamRates=new WeakMap();
+      HTMLCanvasElement.prototype.captureStream=function(fps){
+        const stream=capture.call(this,fps);streamRates.set(stream,fps);return stream;
+      };
+      const NativeRecorder=MediaRecorder,recorders=[],started=[];let overlappingStates;
       window.MediaRecorder=class extends NativeRecorder {
-        constructor(...args){super(...args);this.fail=sequence++===0;}
-        start(...args){const result=super.start(...args);if(this.fail)setTimeout(()=>this.dispatchEvent(new ErrorEvent('error',{error:new Error('first recording failed')})),20);return result;}
+        constructor(stream,...args){super(stream,...args);this.rate=streamRates.get(stream);recorders.push(this);}
+        start(...args){
+          const result=super.start(...args);started.push(this.rate);
+          if(recorders.length===2&&recorders.every(recorder=>recorder.state==='recording')){
+            overlappingStates=recorders.map(recorder=>recorder.state);
+            queueMicrotask(()=>recorders.find(recorder=>recorder.rate===10).dispatchEvent(
+              new ErrorEvent('error',{error:new Error('first recording failed')})));
+          }
+          return result;
+        }
       };
       const observe=promise=>promise.then(blob=>({status:'resolved',bytes:blob.size}),error=>({status:'rejected',message:error.message}));
-      return await Promise.all([observe(Archify.motion.recordWebm({duration:250,fps:10})),observe(Archify.motion.recordWebm({duration:500,fps:10}))]);
+      try{
+        const outcomes=await Promise.all([observe(Archify.motion.recordWebm({duration:250,fps:10})),observe(Archify.motion.recordWebm({duration:500,fps:20}))]);
+        return {outcomes,started,overlappingStates};
+      }finally{window.Image=NativeImage;window.MediaRecorder=NativeRecorder;HTMLCanvasElement.prototype.captureStream=capture;}
     })()`);
-    assert.equal(parallel[0].status,'rejected');assert.equal(parallel[0].message,'first recording failed');
-    assert.equal(parallel[1].status,'resolved');assert.ok(parallel[1].bytes>0);
+    assert.deepEqual(parallel.started,[20,10],'第二次调用必须先启动编码器');
+    assert.deepEqual(parallel.overlappingStates,['recording','recording'],'注入错误时两次录制必须都在进行');
+    assert.equal(parallel.outcomes[0].status,'rejected');assert.equal(parallel.outcomes[0].message,'first recording failed');
+    assert.equal(parallel.outcomes[1].status,'resolved');assert.ok(parallel.outcomes[1].bytes>0);
     const state=await record('webm-parallel');
     assert.ok(state.tracks.every(s=>s==='ended'));assert.ok(state.urls.every(u=>u.revoked));
     assert.deepEqual(await run('[...exportUrls.values()].map(u=>u.revocations)'),[1,1,1]);
