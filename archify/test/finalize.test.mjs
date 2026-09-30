@@ -1123,11 +1123,17 @@ test('runFinalize reads the capture limit from the supplied env, not process.env
   // (which inherit the supplied env) pass. The overflow probe below pins
   // the lower end of that window: if the echo ever drops under 5 MiB the
   // test fails loudly instead of passing without exercising the regression.
+  // Restore, rather than clear, the variables this test overrides so a
+  // preconfigured environment cannot be damaged for later tests.
+  const previousCheckMaxBuffer = process.env.ARCHIFY_CHECK_MAX_BUFFER;
+  const previousChrome = process.env.ARCHIFY_CHROME;
   process.env.ARCHIFY_CHECK_MAX_BUFFER = String(5 * 1024 * 1024);
   process.env.ARCHIFY_CHROME = missingChrome;
   t.after(() => {
-    delete process.env.ARCHIFY_CHECK_MAX_BUFFER;
-    delete process.env.ARCHIFY_CHROME;
+    if (previousCheckMaxBuffer === undefined) delete process.env.ARCHIFY_CHECK_MAX_BUFFER;
+    else process.env.ARCHIFY_CHECK_MAX_BUFFER = previousCheckMaxBuffer;
+    if (previousChrome === undefined) delete process.env.ARCHIFY_CHROME;
+    else process.env.ARCHIFY_CHROME = previousChrome;
   });
 
   const finalized = await runFinalize({

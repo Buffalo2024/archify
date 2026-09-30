@@ -916,6 +916,66 @@ test('cli: deliver reports an output-limit failure distinctly and preserves the 
   );
 });
 
+test('cli: deliver records the output-limit failure before it releases the delivery', () => {
+  const input = path.join(skillRoot, 'examples/web-app.architecture.json');
+  const out = path.join(tmp, 'output-limit-order.html');
+  const trustedPriorArtifact = '<!doctype html><title>trusted prior artifact</title>\n';
+  fs.writeFileSync(out, trustedPriorArtifact);
+
+  // The failure receipt must be recorded before the delivery releases its
+  // staging. Both steps are observable from the CLI process: the receipt is
+  // published as the `.delivery.json` sidecar (linked into place), and the
+  // staging directory is retired through an `.archify-staging-remove-` quarantine.
+  const orderLog = path.join(tmp, 'output-limit-order.log');
+  const probe = path.join(tmp, 'output-limit-order-probe.mjs');
+  fs.writeFileSync(
+    probe,
+    `import fs from 'node:fs';
+const log = process.env.ARCHIFY_ORDER_LOG;
+// Instrumentation must never change CLI behavior, so a log write failure is ignored.
+const note = (event) => { try { if (log) fs.appendFileSync(log, event + '\\n'); } catch {} };
+const publishesReceipt = (to) => typeof to === 'string' && to.endsWith('.delivery.json');
+const linkSync = fs.linkSync;
+fs.linkSync = function (from, to) {
+  if (publishesReceipt(to)) note('record-failure');
+  return linkSync.apply(this, arguments);
+};
+const renameSync = fs.renameSync;
+fs.renameSync = function (from, to) {
+  if (publishesReceipt(to)) note('record-failure');
+  if (typeof to === 'string' && to.includes('.archify-staging-remove-')) {
+    const retired = String(from).split(/[\\\\/]/).pop();
+    note('release-staging:' + retired);
+  }
+  return renameSync.apply(this, arguments);
+};
+`,
+  );
+  fs.writeFileSync(orderLog, '');
+  const nodeOptions = `${process.env.NODE_OPTIONS ? `${process.env.NODE_OPTIONS} ` : ''}--import=${pathToFileURL(probe).href}`;
+
+  const result = run(['deliver', 'architecture', input, out, '--json'], {
+    env: { ...process.env, ARCHIFY_CHECK_MAX_BUFFER: '1024', ARCHIFY_ORDER_LOG: orderLog, NODE_OPTIONS: nodeOptions },
+  });
+
+  assert.equal(result.status, 1);
+  const failure = JSON.parse(result.stdout);
+  assert.equal(failure.diagnostics[0].code, 'artifact/check-output-limit');
+  assert.equal(fs.readFileSync(out, 'utf8'), trustedPriorArtifact);
+  const order = fs.readFileSync(orderLog, 'utf8').trim().split('\n').filter(Boolean);
+  const recorded = order.indexOf('record-failure');
+  // The delivery staging basename is its mkdtemp name; matching that shape keeps
+  // sibling stagings and `.archify-delivery-lock.json` from colliding with it.
+  const deliveryStaging = /^release-staging:\.archify-delivery-[A-Za-z0-9]{6}$/;
+  const released = order.findIndex((event) => deliveryStaging.test(event));
+  assert.notEqual(recorded, -1, `the failure receipt was not recorded (${order.join(' -> ') || 'no events'})`);
+  assert.notEqual(released, -1, `the delivery staging directory was not released (${order.join(' -> ') || 'no events'})`);
+  assert.ok(
+    recorded < released,
+    `the failure receipt must be recorded before the delivery staging is released (${order.join(' -> ')})`,
+  );
+});
+
 test('cli: validate reports an output-limit failure with the same diagnostic', () => {
   const input = path.join(skillRoot, 'examples/web-app.architecture.json');
   const result = run(['validate', 'architecture', input, '--json'], {

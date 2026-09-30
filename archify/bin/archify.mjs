@@ -4817,7 +4817,7 @@ async function commandDeliver(args) {
       if (check.stderr) process.stderr.write(check.stderr);
       const outputLimit = checkerOutputLimitDiagnostics(check, checkMaxBuffer);
       if (outputLimit) {
-        reportDeliveryFailure({
+        await reportDeliveryFailure({
           json,
           stage: 'check',
           type,
