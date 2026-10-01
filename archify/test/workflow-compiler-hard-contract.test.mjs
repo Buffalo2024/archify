@@ -1701,6 +1701,7 @@ test('readable-v2 reports unknown edge endpoints with a precise semantic diagnos
     endpoint: 'target',
     unknownNodeId: 'ghost',
     availableNodeIds: ['a', 'b'],
+    fixVerification: 'candidate compiles once every reference to the unknown id is repointed consistently',
   });
 });
 
