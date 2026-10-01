@@ -400,7 +400,7 @@ function validateLifecycle() {
     }
     const estLabelW = textUnits(state.label) * 6.2;
     if (estLabelW > state.width + 6) {
-      problems.push(`Label "${state.label}" (~${Math.round(estLabelW)}px) is wider than state "${state.id}" (${state.width}px) — shorten the label or increase state.width.`);
+      problems.push(`Label "${state.label}" (~${Math.round(estLabelW)}px) is wider than component "${state.id}" (${state.width}px) — shorten the label or increase state.width.`);
     }
     const brandRailProblem = brandTopRailProblem(state, state.width, 8, 'State');
     if (brandRailProblem) problems.push(brandRailProblem);

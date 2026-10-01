@@ -204,7 +204,7 @@ function validateSequence() {
   for (const participant of participants.values()) {
     const estLabelW = textUnits(participant.label) * 6.8;
     if (estLabelW > layout.participantW + 6) {
-      problems.push(`Label "${participant.label}" (~${Math.round(estLabelW)}px) is wider than the ${layout.participantW}px participant box — shorten it.`);
+      problems.push(`Label "${participant.label}" (~${Math.round(estLabelW)}px) is wider than component "${participant.id}" (${layout.participantW}px) — shorten the label or widen the participant box.`);
     }
     const brandRailProblem = brandTopRailProblem(participant, layout.participantW, 8, 'Participant');
     if (brandRailProblem) problems.push(brandRailProblem);

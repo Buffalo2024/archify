@@ -142,7 +142,7 @@ function validateDataflow() {
     }
     const estLabelW = textUnits(node.label) * 6.2;
     if (estLabelW > node.width + 6) {
-      problems.push(`Label "${node.label}" (~${Math.round(estLabelW)}px) is wider than node "${node.id}" (${node.width}px) — shorten the label or increase node.width.`);
+      problems.push(`Label "${node.label}" (~${Math.round(estLabelW)}px) is wider than component "${node.id}" (${node.width}px) — shorten the label or increase node.width.`);
     }
     const brandRailProblem = brandTopRailProblem(node, node.width, 8);
     if (brandRailProblem) problems.push(brandRailProblem);
