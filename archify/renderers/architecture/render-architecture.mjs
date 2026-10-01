@@ -638,6 +638,7 @@ function validateArchitecture() {
         supportedFixes: knownComponentIds.map((id) => `set /connections/${connIndex}/${field} to verified node id "${id}"`),
       });
       problems.push(message);
+      problems.push(`Connection "${conn.label || conn[field]}" endpoint "${conn[field]}" does not name a declared component.`);
     }
     if (components.has(conn.from) && components.has(conn.to)) {
       const routed = pathFor(conn);
