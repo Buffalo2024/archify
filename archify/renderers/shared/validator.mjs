@@ -1,5 +1,6 @@
 import * as validators from './generated-validators.mjs';
 import { throwDiagnosticError } from './diagnostics.mjs';
+import { textUnits } from './utils.mjs';
 
 // "/nodes/3/label" reads much better as "/nodes/3 (id: "router") /label" for the
 // LLM fixing the JSON; resolve the nearest enclosing element's id or label.
@@ -80,6 +81,43 @@ export function validateSchema(diagramType, data) {
     });
     throwDiagnosticError(
       `${diagramType} schema validation failed:\n${formatErrors(validate.errors, data)}`,
+      diagnostics,
+    );
+  }
+  validateHeaderFitsViewport(diagramType, data);
+}
+
+// Widest visual-check viewport (archify/bin/visual-check.mjs). The per-unit
+// multipliers deliberately underestimate the rendered h1 (1.5rem) and
+// .subtitle (0.875rem) widths, so a predicted overflow is certain: the real
+// header only ever renders wider than the estimate.
+const WIDEST_VIEWPORT_PX = 2048;
+const TITLE_PX_PER_UNIT = 10;
+const SUBTITLE_PX_PER_UNIT = 6;
+
+export function validateHeaderFitsViewport(diagramType, data) {
+  const diagnostics = [];
+  for (const [field, pxPerUnit] of [['title', TITLE_PX_PER_UNIT], ['subtitle', SUBTITLE_PX_PER_UNIT]]) {
+    const text = data?.meta?.[field];
+    if (typeof text !== 'string' || !text.length) continue;
+    const estimatedWidth = Math.round(textUnits(text) * pxPerUnit);
+    if (estimatedWidth <= WIDEST_VIEWPORT_PX) continue;
+    diagnostics.push({
+      code: 'viewer/viewport-overflow',
+      severity: 'error',
+      message: `meta.${field} (~${estimatedWidth}px estimated) exceeds the widest ${WIDEST_VIEWPORT_PX}px viewport — it will overflow before render.`,
+      subject: { diagramType, path: `/meta/${field}` },
+      evidence: {
+        estimatedTextWidthPx: estimatedWidth,
+        widestViewportPx: WIDEST_VIEWPORT_PX,
+        prediction: 'lower-bound text-width estimate; the rendered header is wider',
+      },
+      supportedFixes: [`shorten meta.${field} until its rendered width fits within ${WIDEST_VIEWPORT_PX}px`],
+    });
+  }
+  if (diagnostics.length) {
+    throwDiagnosticError(
+      `${diagramType} header overflows the widest viewport:\n${diagnostics.map((d) => `  ${d.message}`).join('\n')}`,
       diagnostics,
     );
   }
