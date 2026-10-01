@@ -1519,6 +1519,16 @@ const edgeIndexByEdge = new Map(asArray(workflow.edges).map((edge, index) => [ed
     }).ok);
   }
 
+  function repointReferences(document, unknownId, nodeId) {
+    for (const entry of asArray(document.edges)) {
+      if (entry.from === unknownId) entry.from = nodeId;
+      if (entry.to === unknownId) entry.to = nodeId;
+    }
+    if (Array.isArray(document.mainPath)) {
+      document.mainPath = document.mainPath.map((id) => (id === unknownId ? nodeId : id));
+    }
+  }
+
 const { enforceLegacyColumnCapacity } = createLegacyCapacityRepair({
   workflow,
   nodes,
@@ -2758,9 +2768,32 @@ function validateWorkflow() {
   }));
 
   if (Array.isArray(workflow.mainPath)) {
-    for (const id of workflow.mainPath) {
+    for (let stepIndex = 0; stepIndex < workflow.mainPath.length; stepIndex += 1) {
+      const id = workflow.mainPath[stepIndex];
       if (!nodes.has(id)) {
-        problems.push(`mainPath references unknown node "${id}".`);
+        const message = `mainPath references unknown node "${id}".`;
+        problems.push(message);
+        const candidates = [...nodes.keys()].sort(stableCompare);
+        workflowDiagnostics.push({
+          code: 'workflow/unknown-endpoint',
+          severity: 'error',
+          message,
+          subject: {
+            diagramType: 'workflow',
+            mainPath: id,
+            path: `/mainPath/${stepIndex}`,
+          },
+          evidence: {
+            unknownNodeId: id,
+            availableNodeIds: candidates,
+            fixVerification: 'candidate compiles once every reference to the unknown id is repointed consistently',
+          },
+          supportedFixes: candidates.flatMap((nodeId) => (
+            acceptsFix((document) => repointReferences(document, id, nodeId))
+              ? [`set /mainPath/${stepIndex} to verified node id "${nodeId}"`]
+              : []
+          )),
+        });
       }
     }
     for (let i = 0; i < workflow.mainPath.length - 1; i += 1) {
@@ -2912,11 +2945,8 @@ function validateReadableInputsBeforeRouting() {
     for (const [field, endpoint] of [['from', 'source'], ['to', 'target']]) {
       if (nodes.has(edge[field])) continue;
       const message = `Workflow edge "${workflowEdgeName(edge)}" references unknown ${endpoint} "${edge[field]}".`;
-      const canonicalEdgeIndex = workflow.edges.indexOf(edge);
       const supportedFixes = availableNodeIds.flatMap((nodeId) => (
-        acceptsFix((document) => {
-          document.edges[canonicalEdgeIndex][field] = nodeId;
-        })
+        acceptsFix((document) => repointReferences(document, edge[field], nodeId))
           ? [`set /edges/${edgeIndex}/${field} to verified node id "${nodeId}"`]
           : []
       ));
@@ -2935,6 +2965,7 @@ function validateReadableInputsBeforeRouting() {
           endpoint,
           unknownNodeId: edge[field],
           availableNodeIds,
+          fixVerification: 'candidate compiles once every reference to the unknown id is repointed consistently',
         },
         supportedFixes,
       });
