@@ -1529,6 +1529,23 @@ const edgeIndexByEdge = new Map(asArray(workflow.edges).map((edge, index) => [ed
     }
   }
 
+  // repointReferences verifies repointing every reference together; suggestions
+  // must list that same complete edit set so applying them verbatim is what was
+  // verified. Indexes follow the emitter conventions: edges use the
+  // sourceIndexes space, mainPath the canonical workflow's.
+  function unknownIdReferenceFixes(unknownId, nodeId) {
+    const fixes = [];
+    asArray(qualityResolvedWorkflow.edges).forEach((entry, index) => {
+      for (const field of ['from', 'to']) {
+        if (entry[field] === unknownId) fixes.push(`set /edges/${index}/${field} to verified node id "${nodeId}"`);
+      }
+    });
+    asArray(workflow.mainPath).forEach((id, index) => {
+      if (id === unknownId) fixes.push(`set /mainPath/${index} to verified node id "${nodeId}"`);
+    });
+    return fixes;
+  }
+
 const { enforceLegacyColumnCapacity } = createLegacyCapacityRepair({
   workflow,
   nodes,
@@ -2786,11 +2803,11 @@ function validateWorkflow() {
           evidence: {
             unknownNodeId: id,
             availableNodeIds: candidates,
-            fixVerification: 'candidate compiles once every reference to the unknown id is repointed consistently',
+            fixVerification: 'each candidate was verified by applying every listed repoint together and recompiling',
           },
           supportedFixes: candidates.flatMap((nodeId) => (
             acceptsFix((document) => repointReferences(document, id, nodeId))
-              ? [`set /mainPath/${stepIndex} to verified node id "${nodeId}"`]
+              ? unknownIdReferenceFixes(id, nodeId)
               : []
           )),
         });
@@ -2947,7 +2964,7 @@ function validateReadableInputsBeforeRouting() {
       const message = `Workflow edge "${workflowEdgeName(edge)}" references unknown ${endpoint} "${edge[field]}".`;
       const supportedFixes = availableNodeIds.flatMap((nodeId) => (
         acceptsFix((document) => repointReferences(document, edge[field], nodeId))
-          ? [`set /edges/${edgeIndex}/${field} to verified node id "${nodeId}"`]
+          ? unknownIdReferenceFixes(edge[field], nodeId)
           : []
       ));
       fail({
@@ -2965,7 +2982,7 @@ function validateReadableInputsBeforeRouting() {
           endpoint,
           unknownNodeId: edge[field],
           availableNodeIds,
-          fixVerification: 'candidate compiles once every reference to the unknown id is repointed consistently',
+          fixVerification: 'each candidate was verified by applying every listed repoint together and recompiling',
         },
         supportedFixes,
       });
