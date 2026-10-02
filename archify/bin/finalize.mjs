@@ -381,7 +381,7 @@ function consolidateDiagnostics(diagnostics) {
       overflow.push(diagnostic);
       continue;
     }
-    const key = `${diagnostic?.code}${diagnostic?.message}`;
+    const key = `${diagnostic?.code}${diagnostic?.message}${JSON.stringify(diagnostic?.subject ?? null)}`;
     if (seen.has(key)) continue;
     seen.add(key);
     result.push(diagnostic);
@@ -391,14 +391,15 @@ function consolidateDiagnostics(diagnostics) {
     result.splice(overflowIndex, 0, {
       ...first,
       message: `The rendered artifact overflows ${overflow.length} viewport/theme combinations.`,
+      subject: { diagramType: first.subject?.diagramType },
+      supportedFixes: [...new Set(overflow.flatMap((entry) => entry.supportedFixes || []))],
       evidence: {
         overflows: overflow.map((entry) => ({
-          viewport: entry.subject?.viewport,
-          scrollWidth: entry.evidence?.scrollWidth,
-          scrollHeight: entry.evidence?.scrollHeight,
-          overflowX: entry.evidence?.overflowX,
-          overflowY: entry.evidence?.overflowY,
-          overflowDisposition: entry.evidence?.overflowDisposition,
+          // Predicted validate-stage overflow carries estimatedTextWidthPx;
+          // the browser-check measurement carries scroll* geometry instead.
+          detection: entry.evidence?.estimatedTextWidthPx != null ? 'validate-prediction' : 'browser-measurement',
+          subject: entry.subject,
+          evidence: entry.evidence,
         })),
       },
     });
