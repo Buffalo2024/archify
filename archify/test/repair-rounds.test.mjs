@@ -109,14 +109,14 @@ test('diagnostics the rules cannot map are counted as unactionable and stall the
   assert.equal(receipt.totals.unactionable > 0, true);
 });
 
-test('a header overflow is predicted early, at the validate gate', { skip: !chromeAvailable }, () => {
+test('a header overflow is detected at the browser-check gate, where measurement is authoritative', { skip: !chromeAvailable }, () => {
   const file = miniManifest('arch-title-overflow', 'architecture', [{ class: 'title-overflow' }]);
   const result = run(['run', '--manifest', file, '--command', 'finalize', '--repair', 'oracle']);
   assert.equal(result.status, 0, result.stderr || result.stdout);
   const receipt = JSON.parse(result.stdout.split('\n')[0]);
   assert.equal(receipt.passed, true);
-  assert.equal(receipt.defects[0].firstSeenGate, 'validate');
-  assert.equal(receipt.defects[0].late, false);
+  assert.equal(receipt.defects[0].firstSeenGate, 'browser-check');
+  assert.equal(receipt.defects[0].late, true);
 });
 
 test('report aggregates disclosure, late discovery, and token cost across receipts', () => {
