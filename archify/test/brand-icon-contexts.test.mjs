@@ -14,8 +14,10 @@ const cli = path.join(skillRoot, 'bin/archify.mjs');
 const icon = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgYPj/HwADAgH/5ncLrgAAAABJRU5ErkJggg==', 'base64');
 const inactiveIcon = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/iZk9HQAAAABJRU5ErkJggg==', 'base64');
 const digest = createHash('sha256').update(icon).digest('hex');
+const inactiveDigest = createHash('sha256').update(inactiveIcon).digest('hex');
 const activeLink = '<link rel="icon" href="/active.png">';
 const inactiveLink = '<link rel="icon" href="/inactive.png">';
+const noscriptLink = '<noscript><link rel="apple-touch-icon" href="/inactive.png" sizes="512x512" /></noscript>';
 
 function run(args) {
   return new Promise((resolve, reject) => {
@@ -34,12 +36,12 @@ function run(args) {
   });
 }
 
-async function fixture(t, markup, { byteChunks = false } = {}) {
+async function fixture(t, markup, { byteChunks = false, contentType = 'text/html; charset=utf-8' } = {}) {
   const data = { markup, requests: [] };
   const server = http.createServer(async (request, response) => {
     data.requests.push(request.url);
     if (request.url === '/studio') {
-      response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+      response.writeHead(200, { 'content-type': contentType });
       const html = `<head>${data.markup}</head>`;
       if (byteChunks) {
         for (const byte of Buffer.from(html)) {
@@ -74,13 +76,13 @@ async function fixture(t, markup, { byteChunks = false } = {}) {
   return data;
 }
 
-async function capture(data, paths = ['/active.png']) {
+async function capture(data, paths = ['/active.png'], expectedDigest = digest) {
   const result = await run(['brands', 'capture', data.url, '--json']);
   assert.equal(result.status, 0, result.stderr || result.stdout);
   const receipt = JSON.parse(result.stdout);
   assert.deepEqual(data.requests, ['/studio', ...paths]);
   assert.equal(receipt.ok, true);
-  assert.deepEqual(receipt.brand, { url: data.url, sha256: digest });
+  assert.deepEqual(receipt.brand, { url: data.url, sha256: expectedDigest });
   assert.equal(receipt.evidence.status, 'captured');
   return receipt.brand;
 }
@@ -95,12 +97,27 @@ for (const [name, prefix] of [
   ['nested template', `<template><template>${inactiveLink}</template>${inactiveLink}</template>`],
   ['template with literal closing tags', `<template><script>const end = '</template></head>';</script>${inactiveLink}</template>`],
   ['raw closing-tag prefix', `<script>"</scripture>${inactiveLink}";</script>`],
+  ['noscript closing-tag prefix', `<noscript></noscripture>${inactiveLink}</noscript>`],
   ['self-closing script flag', `<script/>"${inactiveLink}";</script>`],
   ['lookalike tag name', '<link-preview rel="icon" href="/inactive.png"></link-preview>'],
   ['lookalike rel attribute', '<link data-rel="icon" href="/inactive.png">'],
 ]) {
   test(`capture ignores icon declarations in ${name}`, async (t) => {
     await capture(await fixture(t, prefix + activeLink));
+  });
+}
+
+for (const contentType of ['text/html', 'Text/Html; charset=utf-8']) {
+  test(`capture ignores a higher-ranked noscript icon for ${contentType}`, async (t) => {
+    const markup = noscriptLink + '<link rel="icon" href="/active.png" />';
+    await capture(await fixture(t, markup, { contentType }));
+  });
+}
+
+for (const contentType of ['application/xhtml+xml', 'Application/XHTML+XML; charset=utf-8; profile="text/html"']) {
+  test(`capture preserves noscript icon discovery for ${contentType}`, async (t) => {
+    const markup = noscriptLink + '<link rel="icon" href="/active.png" />';
+    await capture(await fixture(t, markup, { contentType }), ['/inactive.png'], inactiveDigest);
   });
 }
 
@@ -133,6 +150,7 @@ test('active declarations retain the five-candidate limit and favicon fallback',
 for (const [name, markup] of [
   ['unclosed comment', `<!-- ${inactiveLink}`],
   ['unclosed script', `<script>const example = '${inactiveLink}';`],
+  ['unclosed noscript', `<noscript>${inactiveLink}`],
   ['unclosed template', `<template>${inactiveLink}`],
 ]) {
   test(`capture uses the favicon fallback for an ${name}`, async (t) => {
@@ -143,6 +161,7 @@ for (const [name, markup] of [
 for (const [name, prefix] of [
   ['comment', `<!-- ${inactiveLink} </head> -->`],
   ['script', `<ScRiPt data-note=">">'${inactiveLink}'</sCrIpT \n>`],
+  ['noscript', `<NoScRiPt>${inactiveLink}</head></nOsCrIpT>`],
   ['template', `<template>${inactiveLink}</template>`],
 ]) {
   test(`link attributes and ${name} context survive one-byte response chunks`, { timeout: 20000 }, async (t) => {
@@ -171,7 +190,7 @@ for (const [type, example, collection] of [
     const output = path.join(temporary, 'diagram.html');
     fs.writeFileSync(input, JSON.stringify(diagram));
     let original;
-    for (const prefix of ['', `<!-- ${inactiveLink} --><script>const sample = '${inactiveLink}';</script>`]) {
+    for (const prefix of ['', `<!-- ${inactiveLink} --><script>const sample = '${inactiveLink}';</script>${noscriptLink}`]) {
       data.markup = prefix + activeLink;
       for (const command of ['validate', 'render']) {
         data.requests.length = 0;

@@ -280,7 +280,7 @@ async function readLimited(response, maximum) {
 // bytes once so many tiny chunks cannot cause repeated concatenation/rescanning.
 // Collect link tags in the same pass: markup in comments, raw text, attributes
 // or templates must not become an icon candidate or an early head ending.
-async function readHtmlHeadLinks(response, maximum) {
+async function readHtmlHeadLinks(response, maximum, htmlScriptingEnabled) {
   const chunks = response.body && typeof response.body[Symbol.asyncIterator] === 'function'
     ? response.body : [await readLimited(response, maximum)];
   const buffer = Buffer.alloc(maximum);
@@ -344,7 +344,8 @@ async function readHtmlHeadLinks(response, maximum) {
         if (/^<template(?=[\t\n\f\r />])/i.test(tag)) templateDepth += 1;
         else if (/^<\/template(?=[\t\n\f\r />])/i.test(tag)) templateDepth = Math.max(0, templateDepth - 1);
         else if (!templateDepth && /^<link(?=[\t\n\f\r />])/i.test(tag)) links.push(tag);
-        const raw = /^<(script|style|title|textarea|xmp|iframe|noembed|noframes)(?=[\t\n\f\r />])/i.exec(tag);
+        const raw = /^<(script|style|title|textarea|xmp|iframe|noembed|noframes)(?=[\t\n\f\r />])/i.exec(tag)
+          || (htmlScriptingEnabled && /^<(noscript)(?=[\t\n\f\r />])/i.exec(tag));
         if (raw) rawClosing = `</${raw[1].toLowerCase()}`;
         tagStart = -1;
       }
@@ -505,7 +506,9 @@ async function captureRemoteBrand(value, deadline = Date.now() + captureTimeoutM
       page.response.body?.destroy?.();
       return fallback('linked page is not HTML');
     }
-    const links = await readHtmlHeadLinks(page.response, MAX_HTML_BYTES);
+    // Match scripting-enabled HTML parsing for noscript without executing scripts.
+    const htmlScriptingEnabled = pageType.split(';')[0].trim() === 'text/html';
+    const links = await readHtmlHeadLinks(page.response, MAX_HTML_BYTES, htmlScriptingEnabled);
     const iconErrors = [];
     for (const candidate of iconCandidates(links, page.finalUrl)) {
       try {
