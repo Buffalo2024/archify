@@ -9,7 +9,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const skillRoot = path.resolve(__dirname, '..');
 
-const TYPES = new Set(['architecture', 'workflow', 'sequence', 'dataflow', 'lifecycle', 'erd', 'tree']);
+const TYPES = new Set(['architecture', 'workflow', 'sequence', 'dataflow', 'lifecycle', 'erd', 'tree', 'class']);
 const DELIVERY_SIDECAR_SUFFIXES = Object.freeze([
   '.delivery.json',
   '.delivery-pending.json',
@@ -2209,7 +2209,7 @@ function usage() {
   archify demo [output-directory]
 
 Types:
-  architecture, workflow, sequence, dataflow, lifecycle, erd, tree
+  architecture, workflow, sequence, dataflow, lifecycle, erd, tree, class
 `;
 }
 
@@ -5907,6 +5907,7 @@ async function commandDoctor(args) {
     lifecycle: 'agent-run.lifecycle.json',
     erd: 'orders.erd.json',
     tree: 'payment-platform.tree.json',
+    class: 'payments.class.json',
   };
 
   for (const type of TYPES) {

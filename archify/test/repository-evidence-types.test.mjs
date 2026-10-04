@@ -23,6 +23,7 @@ const TYPES = [
   { type: 'lifecycle', collection: 'states', example: 'agent-run.lifecycle.json', first: 'queued' },
   { type: 'erd', collection: 'entities', example: 'orders.erd.json', first: 'customer' },
   { type: 'tree', collection: 'nodes', example: 'payment-platform.tree.json', first: 'platform' },
+  { type: 'class', collection: 'types', example: 'payments.class.json', first: 'order_service' },
 ];
 
 function git(repo, ...args) {

@@ -131,6 +131,7 @@ const EVIDENCE_NODE_COLLECTIONS = {
   lifecycle: 'states',
   erd: 'entities',
   tree: 'nodes',
+  class: 'types',
 };
 
 function evidenceNodes(diagramType, diagram) {

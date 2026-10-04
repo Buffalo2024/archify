@@ -19,6 +19,8 @@ const TARGETS = [
   ['erd', 'subscription-billing.erd.json', 'subscription-billing-rendered.html'],
   ['tree', 'payment-platform.tree.json', 'tree-payment-platform-rendered.html'],
   ['tree', 'archify-repository.tree.json', 'tree-archify-repository-rendered.html'],
+  ['class', 'payments.class.json', 'class-payments-rendered.html'],
+  ['class', 'payment-processors.class.json', 'class-payment-processors-rendered.html'],
 ];
 
 for (const [mode, input, output] of TARGETS) {

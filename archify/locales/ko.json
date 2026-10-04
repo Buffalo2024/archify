@@ -451,5 +451,17 @@
   "node.context.tree.leaf": "리프",
   "tree.toggle.collapse": "{label} 접기 (하위 {count}개)",
   "tree.toggle.expand": "{label} 펼치기 ({count}개 숨김)",
-  "tree.expandAll": "모두 펼치기"
+  "tree.expandAll": "모두 펼치기",
+  "diagram.description.class": "Archify로 생성한 클래스 및 인터페이스 다이어그램입니다.",
+  "node.context.class.class": "클래스",
+  "node.context.class.abstract": "추상 클래스",
+  "node.context.class.interface": "인터페이스",
+  "node.context.class.enum": "열거형",
+  "node.context.class.record": "레코드",
+  "legend.class.dependency": "의존",
+  "legend.class.association": "연관",
+  "legend.class.inheritance": "상속",
+  "legend.class.realization": "구현",
+  "legend.class.composition": "합성",
+  "legend.class.aggregation": "집합"
 }

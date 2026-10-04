@@ -14,10 +14,11 @@ against one of the schemas in this folder before any layout work happens.
 | `architecture.schema.json` | `diagram_type: "architecture"` | `components`, `boundaries`, `connections` |
 | `erd.schema.json` | `diagram_type: "erd"` | `entities`, `relationships` |
 | `tree.schema.json` | `diagram_type: "tree"` | `nodes` (each with one `parent`) |
+| `class.schema.json` | `diagram_type: "class"` | `types`, `relationships` |
 | `common.schema.json` | shared `$defs` only (no top-level document) | — |
 
 Every diagram schema requires `schema_version`, `diagram_type`, `meta` (with
-`title` and a durable portable `output`), and its structural arrays — except `segments`, `activations`, ERD
+`title` and a durable portable `output`), and its structural arrays — except `segments`, `activations`, ERD and class
 `relationships`, and `cards`, which are optional — and sets `additionalProperties: false` at every
 level, so unknown fields are rejected rather than silently ignored.
 
@@ -97,6 +98,7 @@ Supported keys are renderer-owned:
 | Dataflow | `emphasis`, `security`, `dashed`, `database`, `default` |
 | Lifecycle | `start`, `active`, `waiting`, `decision`, `success`, `failure`, `neutral`, `external` |
 | ERD | `pk`, `fk`, `uk`, `one`, `many`, `optional` |
+| Class | `dependency`, `association`, `inheritance`, `realization`, `composition`, `aggregation` |
 
 Labels are presentation only: they do not rename the stable kind, change
 nodes/relationships, or create Semantic Lens edge facts. Sequence message and

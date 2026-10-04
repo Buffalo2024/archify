@@ -451,5 +451,17 @@
   "node.context.tree.leaf": "Hoja",
   "tree.toggle.collapse": "Contraer {label} ({count} debajo)",
   "tree.toggle.expand": "Expandir {label} ({count} ocultos)",
-  "tree.expandAll": "Expandir todo"
+  "tree.expandAll": "Expandir todo",
+  "diagram.description.class": "Un diagrama de clases e interfaces generado por Archify.",
+  "node.context.class.class": "Clase",
+  "node.context.class.abstract": "Clase abstracta",
+  "node.context.class.interface": "Interfaz",
+  "node.context.class.enum": "Enumeración",
+  "node.context.class.record": "Registro",
+  "legend.class.dependency": "Depende de",
+  "legend.class.association": "Asociación",
+  "legend.class.inheritance": "Hereda",
+  "legend.class.realization": "Implementa",
+  "legend.class.composition": "Composición",
+  "legend.class.aggregation": "Agregación"
 }

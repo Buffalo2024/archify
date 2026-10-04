@@ -49,6 +49,7 @@ test('non-architecture sources reach real Viewer beacons, Focus and Finder', {
     }],
     ['erd', 'entities', 'orders.erd.json', true, 'light'],
     ['tree', 'nodes', 'payment-platform.tree.json', false, 'dark'],
+    ['class', 'types', 'payments.class.json', false, 'dark'],
   ];
   for (const [type, collection, example, local, theme, extra = {}, nodeId] of cases) {
     const url = local ? 'http://git.internal/Team/repo' : 'https://github.com/example/evidence-repo';
