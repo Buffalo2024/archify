@@ -48,8 +48,15 @@ and time reads from the bar. One linear scale maps the trace from its earliest
 start to its latest end onto `layout.width` (default 760 px); ticks use 1/2/2.5/5
 steps. Overlapping bars on different rows are concurrent work.
 
-Each bar carries its exact duration: inside the bar when it fits, otherwise
-beside it on whichever side has room, so short operations stay labelled. The
+A span with children is drawn as a tinted, outlined bracket over its time; a
+span that does the work itself is a solid bar, so the paint separates inclusive
+summaries from leaf work. Colour states the `service`: each service gets its own
+palette family in order of first appearance (a span without one inherits its
+parent's; unowned spans are neutral), with a dot in the name column and a legend
+entry when more than one service appears. Red is reserved for `status: "error"`.
+
+Each bar carries its exact duration just after its end; the canvas reserves
+room past the axis for the widest label, so short operations stay labelled. The
 header states the wall-clock total and range. The Semantic Passport shows the
 exact start–end, duration, and share as "N% of T wall-clock"; parent durations
 are inclusive and are never added to their children. No critical path or

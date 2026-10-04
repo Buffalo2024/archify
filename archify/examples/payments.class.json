@@ -32,7 +32,7 @@
       "kind": "interface",
       "sublabel": "Payment contract every channel fulfils",
       "row": 0,
-      "col": 1,
+      "col": 1.5,
       "methods": [
         { "name": "pay", "parameters": "amount: Money", "returns": "Result", "visibility": "public", "abstract": true }
       ]

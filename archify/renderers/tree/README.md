@@ -45,14 +45,21 @@ inferred.
 
 Each generation shares one band: a row for `layout.direction: "down"` (the
 default) and a column for `"right"`. Along the other axis every subtree owns a
-contiguous span, so unequal branch widths and depths never overlap. Going down,
-a parent is centred over its first and last child; going right, it lines up with
-its first child and nodes are left-aligned in their column, so the root stays at
-the top-left of a tall canvas, the way a file explorer reads.
+contiguous span, so unequal branch widths and depths never overlap. A parent is
+centred over its first and last child (exactly over a middle child that sits
+within a few pixels of that midpoint, so the stem never jogs); going right,
+nodes are left-aligned in their column.
+
+Going down, a run of three or more consecutive leaf siblings is stacked as an
+indented list under its parent, sharing one width and reached along a spine,
+instead of fanning out across the row. This keeps a real hierarchy such as a
+repository readable at one screen's scale; shorter runs and every branch keep
+the row layout. Leaves are quiet cards; the root and branches carry the tone.
 
 Nodes size to their label between `layout.nodeW` (140) and `layout.nodeMaxW`
 (220 down, 200 right). Labels and sublabels wrap between words (CJK at any
-character); a single word may widen a node to 1.5 × `nodeMaxW` before it is
+character), at the narrowest width that keeps the same number of lines, so a
+long label becomes a balanced box; a single word may widen a node to 1.5 × `nodeMaxW` before it is
 split, so nothing is truncated. `gapX`/`gapY` set the sibling and generation
 gaps.
 
@@ -84,6 +91,6 @@ the clone and leaves the live view unchanged.
 
 ## Tested size
 
-`examples/archify-repository.tree.json` (30 nodes, depth 4, unbalanced) renders
-in about 0.2s and passes the showcase gates at a 7.6px projected text minimum;
+`examples/archify-repository.tree.json` (31 nodes, depth 4, unbalanced, four
+stacked lists) renders in about 0.2s and passes the showcase gates;
 a toggle updates the DOM in under a few milliseconds.

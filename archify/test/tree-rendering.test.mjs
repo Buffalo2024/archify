@@ -54,9 +54,10 @@ for (const [name, diagram] of [['small', small], ['large', large]]) {
       assert.ok(down ? node.y >= parent.y + parent.height : node.x >= parent.x + parent.width, `${node.id} is not beyond ${parent.id}`);
     }
     // One generation shares one band edge: a row centre going down, a column
-    // start going right.
+    // start going right. A stacked leaf list hangs below its parent instead.
     const bands = new Map();
     for (const node of report.nodes) {
+      if (node.stacked) continue;
       const key = down ? Math.round(node.y + node.height / 2) : node.x;
       (bands.get(node.depth) || bands.set(node.depth, new Set()).get(node.depth)).add(key);
     }
@@ -66,8 +67,11 @@ for (const [name, diagram] of [['small', small], ['large', large]]) {
       const [start, end] = [edge.points[0], edge.points.at(-1)];
       const parent = byId.get(edge.from);
       const child = byId.get(edge.to);
-      assert.deepEqual(start, down ? [parent.x + parent.width / 2, parent.y + parent.height] : [parent.x + parent.width, parent.y + parent.height / 2]);
-      assert.deepEqual(end, down ? [child.x + child.width / 2, child.y] : [child.x, child.y + child.height / 2]);
+      if (down) {
+        assert.equal(start[1], parent.y + parent.height);
+        assert.ok(start[0] > parent.x && start[0] < parent.x + parent.width, `${edge.from} link leaves its own bottom edge`);
+      } else assert.deepEqual(start, [parent.x + parent.width, parent.y + parent.height / 2]);
+      assert.deepEqual(end, down && !child.stacked ? [child.x + child.width / 2, child.y] : [child.x, child.y + child.height / 2]);
     }
   });
 }
@@ -81,6 +85,20 @@ test('tree: an unbalanced tree places a parent over its own children only', () =
     const expected = (center(children[0]) + center(children.at(-1))) / 2;
     assert.ok(Math.abs(center(byId.get(parent)) - expected) <= 1, parent);
   }
+});
+
+test('tree: three or more sibling leaves going down become one stacked list', () => {
+  const report = layoutOf(large);
+  const children = (id) => report.nodes.filter((node) => node.parent === id);
+  const scripts = children('scripts');
+  assert.ok(scripts.length >= 3 && scripts.every((node) => node.stacked));
+  // One column, one width, in authored order.
+  assert.equal(new Set(scripts.map((node) => node.x)).size, 1);
+  assert.equal(new Set(scripts.map((node) => node.width)).size, 1);
+  for (let index = 1; index < scripts.length; index += 1) assert.ok(scripts[index].y >= scripts[index - 1].y + scripts[index - 1].height);
+  // Two leaves and every branch stay in the row layout.
+  assert.ok(layoutOf(small).nodes.every((node) => !node.stacked));
+  assert.ok(!report.nodes.find((node) => node.id === 'r_shared').stacked);
 });
 
 test('tree: every descendant and link carries its ancestors, and toggles count what they hide', () => {

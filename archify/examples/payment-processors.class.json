@@ -47,7 +47,7 @@
       "kind": "interface",
       "sublabel": "Authorize, capture, and refund contract",
       "row": 0,
-      "col": 2,
+      "col": 2.5,
       "methods": [
         { "name": "authorize", "parameters": "request: AuthorizationRequest", "returns": "AuthorizationResult", "visibility": "public", "abstract": true },
         { "name": "capture", "parameters": "authorization: AuthorizationId, amount: Money", "returns": "CaptureResult", "visibility": "public", "abstract": true },

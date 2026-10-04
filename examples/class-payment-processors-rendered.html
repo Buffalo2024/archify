@@ -4995,7 +4995,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     <!-- Main Diagram -->
     <div class="diagram-container" data-detail-level="read"
          data-preset-badge-editorial-plate="ARCHIFY / PLATE 04">
-      <svg viewBox="0 0 1640 741" role="img" lang="en" aria-labelledby="archify-diagram-title archify-diagram-description" data-preset="classic" data-quality-profile="showcase" data-class-ui="" data-reader-fit="intrinsic-height" data-reader-min-text="7.5">
+      <svg viewBox="0 0 1640 778" role="img" lang="en" aria-labelledby="archify-diagram-title archify-diagram-description" data-preset="classic" data-quality-profile="showcase" data-class-ui="" data-reader-fit="intrinsic-height" data-reader-min-text="7.5">
         <title id="archify-diagram-title">Payment processor hierarchy</title>
         <desc id="archify-diagram-description">Illustrative module: one processor contract, a retrying base class, and five provider implementations.</desc>
         <!-- Definitions -->
@@ -5059,299 +5059,300 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <rect width="100%" height="100%" fill="url(#grid)" />
 
         <!-- Relationships (before types for correct z-order) -->
-        <path data-edge-from="checkout_orchestrator" data-edge-to="processor_registry" data-edge-label="selects via" data-edge-key="0" data-edge-id="orchestrator_registry" data-class-relationship="association" data-composition-points="332,124;460,124" d="M 332 124 L 460 124" class="a-default cl-relationship" stroke-width="1.5" marker-end="url(#cl-open)"/>
-        <path data-edge-from="processor_registry" data-edge-to="payment_processor" data-edge-label="holds" data-edge-key="1" data-edge-id="registry_processors" data-class-relationship="aggregation" data-composition-points="760,124;888,124" d="M 760 124 L 888 124" class="a-default cl-relationship" stroke-width="1.5" marker-start="url(#cl-diamond-hollow)"/>
-        <path data-edge-from="checkout_orchestrator" data-edge-to="order" data-edge-label="updates" data-edge-key="2" data-edge-id="orchestrator_order" data-class-relationship="dependency" data-composition-points="182,208;182,292" d="M 182 208 L 182 292" class="a-default cl-relationship cl-dashed" stroke-width="1.5" marker-end="url(#cl-open)"/>
-        <path data-edge-from="order" data-edge-to="line_item" data-edge-label="owns lines" data-edge-key="3" data-edge-id="order_lines" data-class-relationship="composition" data-composition-points="182,479;182,567.5" d="M 182 479 L 182 567.5" class="a-default cl-relationship" stroke-width="1.5" marker-start="url(#cl-diamond-filled)"/>
-        <path data-edge-from="order" data-edge-to="payment_status" data-edge-key="4" data-edge-id="order_status" data-class-relationship="association" data-composition-points="332,385.5;519,385.5" d="M 332 385.5 L 519 385.5" class="a-default cl-relationship" stroke-width="1.5" marker-end="url(#cl-open)"/>
-        <path data-edge-from="retrying_processor" data-edge-to="payment_processor" data-edge-key="5" data-edge-id="retrying_implements" data-class-relationship="realization" data-class-bus="payment_processor" data-composition-points="1038,296.5;1038,208" d="M 1038 208 L 1038 296.5" class="a-default cl-relationship cl-dashed" stroke-width="1.5" marker-start="url(#cl-triangle-start)"/>
-        <path data-edge-from="bank_transfer" data-edge-to="payment_processor" data-edge-key="6" data-edge-id="bank_implements" data-class-relationship="realization" data-class-bus="payment_processor" data-composition-points="1466,325.5;1466,252;1038,252;1038,208" d="M 1038 208 L 1038 244 Q 1038 252 1046 252 L 1458 252 Q 1466 252 1466 260 L 1466 325.5" class="a-default cl-relationship cl-dashed" stroke-width="1.5" marker-start="url(#cl-triangle-start)"/>
-        <path data-edge-from="stripe_card" data-edge-to="retrying_processor" data-edge-key="7" data-edge-id="stripe_extends" data-class-relationship="inheritance" data-class-bus="retrying_processor" data-composition-points="610,582;610,519;1038,519;1038,474.5" d="M 1038 474.5 L 1038 511 Q 1038 519 1030 519 L 618 519 Q 610 519 610 527 L 610 582" class="a-default cl-relationship" stroke-width="1.5" marker-start="url(#cl-triangle-start)"/>
-        <path data-edge-from="adyen_card" data-edge-to="retrying_processor" data-edge-key="8" data-edge-id="adyen_extends" data-class-relationship="inheritance" data-class-bus="retrying_processor" data-composition-points="1038,582;1038,474.5" d="M 1038 474.5 L 1038 582" class="a-default cl-relationship" stroke-width="1.5" marker-start="url(#cl-triangle-start)"/>
-        <path data-edge-from="paypal_wallet" data-edge-to="retrying_processor" data-edge-key="9" data-edge-id="paypal_extends" data-class-relationship="inheritance" data-class-bus="retrying_processor" data-composition-points="1466,563;1466,519;1038,519;1038,474.5" d="M 1038 474.5 L 1038 511 Q 1038 519 1046 519 L 1458 519 Q 1466 519 1466 527 L 1466 563" class="a-default cl-relationship" stroke-width="1.5" marker-start="url(#cl-triangle-start)"/>
+        <path data-edge-from="checkout_orchestrator" data-edge-to="processor_registry" data-edge-label="selects via" data-edge-key="0" data-edge-id="orchestrator_registry" data-class-relationship="association" data-composition-points="332,137;460,137" d="M 332 137 L 460 137" class="a-default cl-relationship" stroke-width="1.5" marker-end="url(#cl-open)"/>
+        <path data-edge-from="processor_registry" data-edge-to="payment_processor" data-edge-label="holds" data-edge-key="1" data-edge-id="registry_processors" data-class-relationship="aggregation" data-composition-points="760,137;1102,137" d="M 760 137 L 1102 137" class="a-default cl-relationship" stroke-width="1.5" marker-start="url(#cl-diamond-hollow)"/>
+        <path data-edge-from="checkout_orchestrator" data-edge-to="order" data-edge-label="updates" data-edge-key="2" data-edge-id="orchestrator_order" data-class-relationship="dependency" data-composition-points="182,224;182,318" d="M 182 224 L 182 318" class="a-default cl-relationship cl-dashed" stroke-width="1.5" marker-end="url(#cl-open)"/>
+        <path data-edge-from="order" data-edge-to="line_item" data-edge-label="owns lines" data-edge-key="3" data-edge-id="order_lines" data-class-relationship="composition" data-composition-points="182,512;182,601" d="M 182 512 L 182 601" class="a-default cl-relationship" stroke-width="1.5" marker-start="url(#cl-diamond-filled)"/>
+        <path data-edge-from="order" data-edge-to="payment_status" data-edge-key="4" data-edge-id="order_status" data-class-relationship="association" data-composition-points="332,415;517,415" d="M 332 415 L 517 415" class="a-default cl-relationship" stroke-width="1.5" marker-end="url(#cl-open)"/>
+        <path data-edge-from="retrying_processor" data-edge-to="payment_processor" data-edge-key="5" data-edge-id="retrying_implements" data-class-relationship="realization" data-class-bus="payment_processor" data-composition-points="1038,323;1038,279;1252,279;1252,234" d="M 1252 234 L 1252 271 Q 1252 279 1244 279 L 1046 279 Q 1038 279 1038 287 L 1038 323" class="a-default cl-relationship cl-dashed" stroke-width="1.5" marker-start="url(#cl-triangle-start)"/>
+        <path data-edge-from="bank_transfer" data-edge-to="payment_processor" data-edge-key="6" data-edge-id="bank_implements" data-class-relationship="realization" data-class-bus="payment_processor" data-composition-points="1466,353;1466,279;1252,279;1252,234" d="M 1252 234 L 1252 271 Q 1252 279 1260 279 L 1458 279 Q 1466 279 1466 287 L 1466 353" class="a-default cl-relationship cl-dashed" stroke-width="1.5" marker-start="url(#cl-triangle-start)"/>
+        <path data-edge-from="stripe_card" data-edge-to="retrying_processor" data-edge-key="7" data-edge-id="stripe_extends" data-class-relationship="inheritance" data-class-bus="retrying_processor" data-composition-points="610,616;610,552;1038,552;1038,507" d="M 1038 507 L 1038 544 Q 1038 552 1030 552 L 618 552 Q 610 552 610 560 L 610 616" class="a-default cl-relationship" stroke-width="1.5" marker-start="url(#cl-triangle-start)"/>
+        <path data-edge-from="adyen_card" data-edge-to="retrying_processor" data-edge-key="8" data-edge-id="adyen_extends" data-class-relationship="inheritance" data-class-bus="retrying_processor" data-composition-points="1038,616;1038,507" d="M 1038 507 L 1038 616" class="a-default cl-relationship" stroke-width="1.5" marker-start="url(#cl-triangle-start)"/>
+        <path data-edge-from="paypal_wallet" data-edge-to="retrying_processor" data-edge-key="9" data-edge-id="paypal_extends" data-class-relationship="inheritance" data-class-bus="retrying_processor" data-composition-points="1466,596;1466,552;1038,552;1038,507" d="M 1038 507 L 1038 544 Q 1038 552 1046 552 L 1458 552 Q 1466 552 1466 560 L 1466 596" class="a-default cl-relationship" stroke-width="1.5" marker-start="url(#cl-triangle-start)"/>
 
         <!-- Types -->
         <g id="node-checkout_orchestrator" data-node-id="checkout_orchestrator" data-node-label="CheckoutOrchestrator" tabindex="0" role="button" aria-label="Focus CheckoutOrchestrator, Runs one checkout from order to receipt, Class" aria-pressed="false" data-node-kind="class" data-node-sublabel="Runs one checkout from order to receipt" data-node-context="Class" data-class-kind="class">
           <title>CheckoutOrchestrator · Runs one checkout from order to receipt · Class</title>
-          <rect x="32" y="40" width="300" height="168" rx="6" class="c-mask"/>
-          <rect x="32" y="40" width="300" height="168" rx="6" class="c-backend cl-type" stroke-width="1.5"/>
-          <path class="cl-header c-backend" stroke="none" d="M 38 40 H 326 Q 332 40 332 46 V 74 H 32 V 46 Q 32 40 38 40 Z"/>
+          <rect x="32" y="50" width="300" height="174" rx="6" class="c-mask"/>
+          <rect x="32" y="50" width="300" height="174" rx="6" class="c-backend cl-type" stroke-width="1.5"/>
+          <path class="cl-header c-backend" stroke="none" d="M 38 50 H 326 Q 332 50 332 56 V 84 H 32 V 56 Q 32 50 38 50 Z"/>
           <g aria-hidden="true" class="cl-badge">
-            <circle cx="52" cy="57" r="8" class="c-backend" stroke-width="1.25"/>
-            <text x="52" y="60.5" class="t-backend" font-size="10" font-weight="700" text-anchor="middle">C</text>
+            <circle cx="52" cy="67" r="8" class="c-backend" stroke-width="1.25"/>
+            <text x="52" y="70.5" class="t-backend" font-size="10" font-weight="700" text-anchor="middle">C</text>
           </g>
           
-          <text data-node-label="" x="182" y="62" class="t-primary" font-size="13" font-weight="700" text-anchor="middle">CheckoutOrchestrator</text>
+          <text data-node-label="" x="182" y="72" class="t-primary" font-size="13.5" font-weight="700" text-anchor="middle">CheckoutOrchestrator</text>
           <g data-detail="context" data-class-compartment="attributes">
-            <line x1="32" y1="74" x2="332" y2="74" class="cl-rule" stroke-width="1"/>
-            <text data-detail="context" data-class-member="attributes" x="44" y="93" class="t-primary cl-member" font-size="10.5">- registry: ProcessorRegistry</text>
-            <text data-detail="context" data-class-member="attributes" x="44" y="112" class="t-primary cl-member" font-size="10.5">- clock: Clock</text>
+            <line x1="32" y1="84" x2="332" y2="84" class="cl-rule" stroke-width="1"/>
+            <text data-detail="context" data-class-member="attributes" x="44" y="104" class="t-primary cl-member" font-size="11"><tspan class="t-muted">-</tspan> registry<tspan class="t-muted">: ProcessorRegistry</tspan></text>
+            <text data-detail="context" data-class-member="attributes" x="44" y="124" class="t-primary cl-member" font-size="11"><tspan class="t-muted">-</tspan> clock<tspan class="t-muted">: Clock</tspan></text>
           </g>
           <g data-detail="context" data-class-compartment="methods">
-            <line x1="32" y1="122" x2="332" y2="122" class="cl-rule" stroke-width="1"/>
-            <text data-detail="context" data-class-member="methods" x="44" y="141" class="t-primary cl-member" font-size="10.5">+ checkout(order: Order,</text>
-            <text data-detail="context" data-class-member="methods" data-class-continuation="" x="56.6" y="160" class="t-primary cl-member" font-size="10.5">key: IdempotencyKey): CheckoutResult</text>
-            <text data-detail="context" data-class-member="methods" x="44" y="179" class="t-primary cl-member" font-size="10.5">+ cancelPendingAuthorization(</text>
-            <text data-detail="context" data-class-member="methods" data-class-continuation="" x="56.6" y="198" class="t-primary cl-member" font-size="10.5">orderId: OrderId): void</text>
+            <line x1="32" y1="134" x2="332" y2="134" class="cl-rule" stroke-width="1"/>
+            <text data-detail="context" data-class-member="methods" x="44" y="154" class="t-primary cl-member" font-size="11"><tspan class="t-muted">+</tspan> checkout(order<tspan class="t-muted">: Order</tspan>,</text>
+            <text data-detail="context" data-class-member="methods" data-class-continuation="" x="57.2" y="174" class="t-primary cl-member" font-size="11">key<tspan class="t-muted">: IdempotencyKey</tspan>)<tspan class="t-muted">: CheckoutResult</tspan></text>
+            <text data-detail="context" data-class-member="methods" x="44" y="194" class="t-primary cl-member" font-size="11"><tspan class="t-muted">+</tspan> cancelPendingAuthorization(</text>
+            <text data-detail="context" data-class-member="methods" data-class-continuation="" x="57.2" y="214" class="t-primary cl-member" font-size="11">orderId<tspan class="t-muted">: OrderId</tspan>)<tspan class="t-muted">: void</tspan></text>
           </g>
         </g>
 
         <g id="node-processor_registry" data-node-id="processor_registry" data-node-label="ProcessorRegistry" tabindex="0" role="button" aria-label="Focus ProcessorRegistry, Selects a processor for a payment method, Class" aria-pressed="false" data-node-kind="class" data-node-sublabel="Selects a processor for a payment method" data-node-context="Class" data-class-kind="class">
           <title>ProcessorRegistry · Selects a processor for a payment method · Class</title>
-          <rect x="460" y="59" width="300" height="130" rx="6" class="c-mask"/>
-          <rect x="460" y="59" width="300" height="130" rx="6" class="c-backend cl-type" stroke-width="1.5"/>
-          <path class="cl-header c-backend" stroke="none" d="M 466 59 H 754 Q 760 59 760 65 V 93 H 460 V 65 Q 460 59 466 59 Z"/>
+          <rect x="460" y="70" width="300" height="134" rx="6" class="c-mask"/>
+          <rect x="460" y="70" width="300" height="134" rx="6" class="c-backend cl-type" stroke-width="1.5"/>
+          <path class="cl-header c-backend" stroke="none" d="M 466 70 H 754 Q 760 70 760 76 V 104 H 460 V 76 Q 460 70 466 70 Z"/>
           <g aria-hidden="true" class="cl-badge">
-            <circle cx="480" cy="76" r="8" class="c-backend" stroke-width="1.25"/>
-            <text x="480" y="79.5" class="t-backend" font-size="10" font-weight="700" text-anchor="middle">C</text>
+            <circle cx="480" cy="87" r="8" class="c-backend" stroke-width="1.25"/>
+            <text x="480" y="90.5" class="t-backend" font-size="10" font-weight="700" text-anchor="middle">C</text>
           </g>
           
-          <text data-node-label="" x="610" y="81" class="t-primary" font-size="13" font-weight="700" text-anchor="middle">ProcessorRegistry</text>
+          <text data-node-label="" x="610" y="92" class="t-primary" font-size="13.5" font-weight="700" text-anchor="middle">ProcessorRegistry</text>
           <g data-detail="context" data-class-compartment="attributes">
-            <line x1="460" y1="93" x2="760" y2="93" class="cl-rule" stroke-width="1"/>
-            <text data-detail="context" data-class-member="attributes" x="472" y="112" class="t-primary cl-member" font-size="10.5">- processors: Map&lt;MethodType,</text>
-            <text data-detail="context" data-class-member="attributes" data-class-continuation="" x="484.6" y="131" class="t-primary cl-member" font-size="10.5">PaymentProcessor&gt;</text>
+            <line x1="460" y1="104" x2="760" y2="104" class="cl-rule" stroke-width="1"/>
+            <text data-detail="context" data-class-member="attributes" x="472" y="124" class="t-primary cl-member" font-size="11"><tspan class="t-muted">-</tspan> processors<tspan class="t-muted">: Map&lt;MethodType</tspan>,</text>
+            <text data-detail="context" data-class-member="attributes" data-class-continuation="" x="485.2" y="144" class="t-primary cl-member" font-size="11">PaymentProcessor&gt;</text>
           </g>
           <g data-detail="context" data-class-compartment="methods">
-            <line x1="460" y1="141" x2="760" y2="141" class="cl-rule" stroke-width="1"/>
-            <text data-detail="context" data-class-member="methods" x="472" y="160" class="t-primary cl-member" font-size="10.5">+ processorFor(method: PaymentMethod</text>
-            <text data-detail="context" data-class-member="methods" data-class-continuation="" x="484.6" y="179" class="t-primary cl-member" font-size="10.5">): PaymentProcessor</text>
+            <line x1="460" y1="154" x2="760" y2="154" class="cl-rule" stroke-width="1"/>
+            <text data-detail="context" data-class-member="methods" x="472" y="174" class="t-primary cl-member" font-size="11"><tspan class="t-muted">+</tspan> processorFor(method<tspan class="t-muted">: PaymentMethod</tspan></text>
+            <text data-detail="context" data-class-member="methods" data-class-continuation="" x="485.2" y="194" class="t-primary cl-member" font-size="11">)<tspan class="t-muted">: PaymentProcessor</tspan></text>
           </g>
         </g>
 
         <g id="node-payment_processor" data-node-id="payment_processor" data-node-label="PaymentProcessor" tabindex="0" role="button" aria-label="Focus PaymentProcessor, Authorize, capture, and refund contract, Interface" aria-pressed="false" data-node-kind="interface" data-node-sublabel="Authorize, capture, and refund contract" data-node-context="Interface" data-class-kind="interface">
           <title>PaymentProcessor · Authorize, capture, and refund contract · Interface</title>
-          <rect x="888" y="40" width="300" height="168" rx="6" class="c-mask"/>
-          <rect x="888" y="40" width="300" height="168" rx="6" class="c-frontend cl-type" stroke-width="1.5"/>
-          <path class="cl-header c-frontend" stroke="none" d="M 894 40 H 1182 Q 1188 40 1188 46 V 84 H 888 V 46 Q 888 40 894 40 Z"/>
+          <rect x="1102" y="40" width="300" height="194" rx="6" class="c-mask"/>
+          <rect x="1102" y="40" width="300" height="194" rx="6" class="c-frontend cl-type" stroke-width="1.5"/>
+          <path class="cl-header c-frontend" stroke="none" d="M 1108 40 H 1396 Q 1402 40 1402 46 V 84 H 1102 V 46 Q 1102 40 1108 40 Z"/>
           <g aria-hidden="true" class="cl-badge">
-            <circle cx="908" cy="62" r="8" class="c-frontend" stroke-width="1.25"/>
-            <text x="908" y="65.5" class="t-frontend" font-size="10" font-weight="700" text-anchor="middle">I</text>
+            <circle cx="1122" cy="62" r="8" class="c-frontend" stroke-width="1.25"/>
+            <text x="1122" y="65.5" class="t-frontend" font-size="10" font-weight="700" text-anchor="middle">I</text>
           </g>
-          <text x="1038" y="56" class="t-muted" font-size="9.5" text-anchor="middle">«interface»</text>
-          <text data-node-label="" x="1038" y="74" class="t-primary" font-size="13" font-weight="700" text-anchor="middle">PaymentProcessor</text>
+          <text x="1252" y="56" class="t-muted" font-size="9.5" text-anchor="middle">«interface»</text>
+          <text data-node-label="" x="1252" y="74" class="t-primary" font-size="13.5" font-weight="700" text-anchor="middle">PaymentProcessor</text>
           <g data-detail="context" data-class-compartment="methods">
-            <line x1="888" y1="84" x2="1188" y2="84" class="cl-rule" stroke-width="1"/>
-            <text data-detail="context" data-class-member="methods" x="900" y="103" class="t-primary cl-member" font-size="10.5" style="font-style: italic">+ authorize(request: AuthorizationRequest</text>
-            <text data-detail="context" data-class-member="methods" data-class-continuation="" x="912.6" y="122" class="t-primary cl-member" font-size="10.5" style="font-style: italic">): AuthorizationResult</text>
-            <text data-detail="context" data-class-member="methods" x="900" y="141" class="t-primary cl-member" font-size="10.5" style="font-style: italic">+ capture(authorization: AuthorizationId,</text>
-            <text data-detail="context" data-class-member="methods" data-class-continuation="" x="912.6" y="160" class="t-primary cl-member" font-size="10.5" style="font-style: italic">amount: Money): CaptureResult</text>
-            <text data-detail="context" data-class-member="methods" x="900" y="179" class="t-primary cl-member" font-size="10.5" style="font-style: italic">+ refund(capture: CaptureId, amount: Money</text>
-            <text data-detail="context" data-class-member="methods" data-class-continuation="" x="912.6" y="198" class="t-primary cl-member" font-size="10.5" style="font-style: italic">): RefundResult</text>
+            <line x1="1102" y1="84" x2="1402" y2="84" class="cl-rule" stroke-width="1"/>
+            <text data-detail="context" data-class-member="methods" x="1114" y="104" class="t-primary cl-member" font-size="11" style="font-style: italic"><tspan class="t-muted">+</tspan> authorize(request<tspan class="t-muted">: AuthorizationRequest</tspan></text>
+            <text data-detail="context" data-class-member="methods" data-class-continuation="" x="1127.2" y="124" class="t-primary cl-member" font-size="11" style="font-style: italic">)<tspan class="t-muted">: AuthorizationResult</tspan></text>
+            <text data-detail="context" data-class-member="methods" x="1114" y="144" class="t-primary cl-member" font-size="11" style="font-style: italic"><tspan class="t-muted">+</tspan> capture(</text>
+            <text data-detail="context" data-class-member="methods" data-class-continuation="" x="1127.2" y="164" class="t-primary cl-member" font-size="11" style="font-style: italic">authorization<tspan class="t-muted">: AuthorizationId</tspan>,</text>
+            <text data-detail="context" data-class-member="methods" data-class-continuation="" x="1127.2" y="184" class="t-primary cl-member" font-size="11" style="font-style: italic">amount<tspan class="t-muted">: Money</tspan>)<tspan class="t-muted">: CaptureResult</tspan></text>
+            <text data-detail="context" data-class-member="methods" x="1114" y="204" class="t-primary cl-member" font-size="11" style="font-style: italic"><tspan class="t-muted">+</tspan> refund(capture<tspan class="t-muted">: CaptureId</tspan>,</text>
+            <text data-detail="context" data-class-member="methods" data-class-continuation="" x="1127.2" y="224" class="t-primary cl-member" font-size="11" style="font-style: italic">amount<tspan class="t-muted">: Money</tspan>)<tspan class="t-muted">: RefundResult</tspan></text>
           </g>
         </g>
 
         <g id="node-order" data-node-id="order" data-node-label="Order" tabindex="0" role="button" aria-label="Focus Order, Aggregate root for one purchase, Class" aria-pressed="false" data-node-kind="class" data-node-sublabel="Aggregate root for one purchase" data-node-context="Class" data-class-kind="class">
           <title>Order · Aggregate root for one purchase · Class</title>
-          <rect x="32" y="292" width="300" height="187" rx="6" class="c-mask"/>
-          <rect x="32" y="292" width="300" height="187" rx="6" class="c-backend cl-type" stroke-width="1.5"/>
-          <path class="cl-header c-backend" stroke="none" d="M 38 292 H 326 Q 332 292 332 298 V 326 H 32 V 298 Q 32 292 38 292 Z"/>
+          <rect x="32" y="318" width="300" height="194" rx="6" class="c-mask"/>
+          <rect x="32" y="318" width="300" height="194" rx="6" class="c-backend cl-type" stroke-width="1.5"/>
+          <path class="cl-header c-backend" stroke="none" d="M 38 318 H 326 Q 332 318 332 324 V 352 H 32 V 324 Q 32 318 38 318 Z"/>
           <g aria-hidden="true" class="cl-badge">
-            <circle cx="52" cy="309" r="8" class="c-backend" stroke-width="1.25"/>
-            <text x="52" y="312.5" class="t-backend" font-size="10" font-weight="700" text-anchor="middle">C</text>
+            <circle cx="52" cy="335" r="8" class="c-backend" stroke-width="1.25"/>
+            <text x="52" y="338.5" class="t-backend" font-size="10" font-weight="700" text-anchor="middle">C</text>
           </g>
           
-          <text data-node-label="" x="182" y="314" class="t-primary" font-size="13" font-weight="700" text-anchor="middle">Order</text>
+          <text data-node-label="" x="182" y="340" class="t-primary" font-size="13.5" font-weight="700" text-anchor="middle">Order</text>
           <g data-detail="context" data-class-compartment="attributes">
-            <line x1="32" y1="326" x2="332" y2="326" class="cl-rule" stroke-width="1"/>
-            <text data-detail="context" data-class-member="attributes" x="44" y="345" class="t-primary cl-member" font-size="10.5">+ id: OrderId</text>
-            <text data-detail="context" data-class-member="attributes" x="44" y="364" class="t-primary cl-member" font-size="10.5">+ total: Money</text>
-            <text data-detail="context" data-class-member="attributes" x="44" y="383" class="t-primary cl-member" font-size="10.5">+ status: PaymentStatus</text>
+            <line x1="32" y1="352" x2="332" y2="352" class="cl-rule" stroke-width="1"/>
+            <text data-detail="context" data-class-member="attributes" x="44" y="372" class="t-primary cl-member" font-size="11"><tspan class="t-muted">+</tspan> id<tspan class="t-muted">: OrderId</tspan></text>
+            <text data-detail="context" data-class-member="attributes" x="44" y="392" class="t-primary cl-member" font-size="11"><tspan class="t-muted">+</tspan> total<tspan class="t-muted">: Money</tspan></text>
+            <text data-detail="context" data-class-member="attributes" x="44" y="412" class="t-primary cl-member" font-size="11"><tspan class="t-muted">+</tspan> status<tspan class="t-muted">: PaymentStatus</tspan></text>
           </g>
           <g data-detail="context" data-class-compartment="methods">
-            <line x1="32" y1="393" x2="332" y2="393" class="cl-rule" stroke-width="1"/>
-            <text data-detail="context" data-class-member="methods" x="44" y="412" class="t-primary cl-member" font-size="10.5">+ addLine(sku: Sku, quantity: int</text>
-            <text data-detail="context" data-class-member="methods" data-class-continuation="" x="56.6" y="431" class="t-primary cl-member" font-size="10.5">): LineItem</text>
-            <text data-detail="context" data-class-member="methods" x="44" y="450" class="t-primary cl-member" font-size="10.5">+ markAuthorized(</text>
-            <text data-detail="context" data-class-member="methods" data-class-continuation="" x="56.6" y="469" class="t-primary cl-member" font-size="10.5">authorization: AuthorizationId): void</text>
+            <line x1="32" y1="422" x2="332" y2="422" class="cl-rule" stroke-width="1"/>
+            <text data-detail="context" data-class-member="methods" x="44" y="442" class="t-primary cl-member" font-size="11"><tspan class="t-muted">+</tspan> addLine(sku<tspan class="t-muted">: Sku</tspan>, quantity<tspan class="t-muted">: int</tspan></text>
+            <text data-detail="context" data-class-member="methods" data-class-continuation="" x="57.2" y="462" class="t-primary cl-member" font-size="11">)<tspan class="t-muted">: LineItem</tspan></text>
+            <text data-detail="context" data-class-member="methods" x="44" y="482" class="t-primary cl-member" font-size="11"><tspan class="t-muted">+</tspan> markAuthorized(</text>
+            <text data-detail="context" data-class-member="methods" data-class-continuation="" x="57.2" y="502" class="t-primary cl-member" font-size="11">authorization<tspan class="t-muted">: AuthorizationId</tspan>)<tspan class="t-muted">: void</tspan></text>
           </g>
         </g>
 
         <g id="node-payment_status" data-node-id="payment_status" data-node-label="PaymentStatus" tabindex="0" role="button" aria-label="Focus PaymentStatus, Lifecycle of the order&#39;s payment, Enumeration" aria-pressed="false" data-node-kind="enum" data-node-sublabel="Lifecycle of the order&#39;s payment" data-node-context="Enumeration" data-class-kind="enum">
           <title>PaymentStatus · Lifecycle of the order&#39;s payment · Enumeration</title>
-          <rect x="519" y="311" width="182" height="149" rx="6" class="c-mask"/>
-          <rect x="519" y="311" width="182" height="149" rx="6" class="c-messagebus cl-type" stroke-width="1.5"/>
-          <path class="cl-header c-messagebus" stroke="none" d="M 525 311 H 695 Q 701 311 701 317 V 355 H 519 V 317 Q 519 311 525 311 Z"/>
+          <rect x="517" y="338" width="186" height="154" rx="6" class="c-mask"/>
+          <rect x="517" y="338" width="186" height="154" rx="6" class="c-messagebus cl-type" stroke-width="1.5"/>
+          <path class="cl-header c-messagebus" stroke="none" d="M 523 338 H 697 Q 703 338 703 344 V 382 H 517 V 344 Q 517 338 523 338 Z"/>
           <g aria-hidden="true" class="cl-badge">
-            <circle cx="539" cy="333" r="8" class="c-messagebus" stroke-width="1.25"/>
-            <text x="539" y="336.5" class="t-messagebus" font-size="10" font-weight="700" text-anchor="middle">E</text>
+            <circle cx="537" cy="360" r="8" class="c-messagebus" stroke-width="1.25"/>
+            <text x="537" y="363.5" class="t-messagebus" font-size="10" font-weight="700" text-anchor="middle">E</text>
           </g>
-          <text x="610" y="327" class="t-muted" font-size="9.5" text-anchor="middle">«enumeration»</text>
-          <text data-node-label="" x="610" y="345" class="t-primary" font-size="13" font-weight="700" text-anchor="middle">PaymentStatus</text>
+          <text x="610" y="354" class="t-muted" font-size="9.5" text-anchor="middle">«enumeration»</text>
+          <text data-node-label="" x="610" y="372" class="t-primary" font-size="13.5" font-weight="700" text-anchor="middle">PaymentStatus</text>
           <g data-detail="context" data-class-compartment="attributes">
-            <line x1="519" y1="355" x2="701" y2="355" class="cl-rule" stroke-width="1"/>
-            <text data-detail="context" data-class-member="attributes" x="531" y="374" class="t-primary cl-member" font-size="10.5">PENDING</text>
-            <text data-detail="context" data-class-member="attributes" x="531" y="393" class="t-primary cl-member" font-size="10.5">AUTHORIZED</text>
-            <text data-detail="context" data-class-member="attributes" x="531" y="412" class="t-primary cl-member" font-size="10.5">CAPTURED</text>
-            <text data-detail="context" data-class-member="attributes" x="531" y="431" class="t-primary cl-member" font-size="10.5">REFUNDED</text>
-            <text data-detail="context" data-class-member="attributes" x="531" y="450" class="t-primary cl-member" font-size="10.5">FAILED</text>
+            <line x1="517" y1="382" x2="703" y2="382" class="cl-rule" stroke-width="1"/>
+            <text data-detail="context" data-class-member="attributes" x="529" y="402" class="t-primary cl-member" font-size="11">PENDING</text>
+            <text data-detail="context" data-class-member="attributes" x="529" y="422" class="t-primary cl-member" font-size="11">AUTHORIZED</text>
+            <text data-detail="context" data-class-member="attributes" x="529" y="442" class="t-primary cl-member" font-size="11">CAPTURED</text>
+            <text data-detail="context" data-class-member="attributes" x="529" y="462" class="t-primary cl-member" font-size="11">REFUNDED</text>
+            <text data-detail="context" data-class-member="attributes" x="529" y="482" class="t-primary cl-member" font-size="11">FAILED</text>
           </g>
         </g>
 
         <g id="node-retrying_processor" data-node-id="retrying_processor" data-node-label="RetryingProcessorBase" tabindex="0" role="button" aria-label="Focus RetryingProcessorBase, Shared retry, timeout, and idempotency handling, Abstract class" aria-pressed="false" data-node-kind="abstract" data-node-sublabel="Shared retry, timeout, and idempotency handling" data-node-context="Abstract class" data-class-kind="abstract">
           <title>RetryingProcessorBase · Shared retry, timeout, and idempotency handling · Abstract class</title>
-          <rect x="888" y="296.5" width="300" height="178" rx="6" class="c-mask"/>
-          <rect x="888" y="296.5" width="300" height="178" rx="6" class="c-backend cl-type" stroke-width="1.5"/>
-          <path class="cl-header c-backend" stroke="none" d="M 894 296.5 H 1182 Q 1188 296.5 1188 302.5 V 340.5 H 888 V 302.5 Q 888 296.5 894 296.5 Z"/>
+          <rect x="888" y="323" width="300" height="184" rx="6" class="c-mask"/>
+          <rect x="888" y="323" width="300" height="184" rx="6" class="c-backend cl-type" stroke-width="1.5"/>
+          <path class="cl-header c-backend" stroke="none" d="M 894 323 H 1182 Q 1188 323 1188 329 V 367 H 888 V 329 Q 888 323 894 323 Z"/>
           <g aria-hidden="true" class="cl-badge">
-            <circle cx="908" cy="318.5" r="8" class="c-backend" stroke-width="1.25"/>
-            <text x="908" y="322" class="t-backend" font-size="10" font-weight="700" text-anchor="middle">A</text>
+            <circle cx="908" cy="345" r="8" class="c-backend" stroke-width="1.25"/>
+            <text x="908" y="348.5" class="t-backend" font-size="10" font-weight="700" text-anchor="middle">A</text>
           </g>
-          <text x="1038" y="312.5" class="t-muted" font-size="9.5" text-anchor="middle">«abstract»</text>
-          <text data-node-label="" x="1038" y="330.5" class="t-primary" font-size="13" font-weight="700" text-anchor="middle" font-style="italic">RetryingProcessorBase</text>
+          <text x="1038" y="339" class="t-muted" font-size="9.5" text-anchor="middle">«abstract»</text>
+          <text data-node-label="" x="1038" y="357" class="t-primary" font-size="13.5" font-weight="700" text-anchor="middle" font-style="italic">RetryingProcessorBase</text>
           <g data-detail="context" data-class-compartment="attributes">
-            <line x1="888" y1="340.5" x2="1188" y2="340.5" class="cl-rule" stroke-width="1"/>
-            <text data-detail="context" data-class-member="attributes" x="900" y="359.5" class="t-primary cl-member" font-size="10.5" style="text-decoration: underline">+ DEFAULT_TIMEOUT: Duration</text>
-            <text data-detail="context" data-class-member="attributes" x="900" y="378.5" class="t-primary cl-member" font-size="10.5"># retryPolicy: RetryPolicy</text>
+            <line x1="888" y1="367" x2="1188" y2="367" class="cl-rule" stroke-width="1"/>
+            <text data-detail="context" data-class-member="attributes" x="900" y="387" class="t-primary cl-member" font-size="11" style="text-decoration: underline"><tspan class="t-muted">+</tspan> DEFAULT_TIMEOUT<tspan class="t-muted">: Duration</tspan></text>
+            <text data-detail="context" data-class-member="attributes" x="900" y="407" class="t-primary cl-member" font-size="11"><tspan class="t-muted">#</tspan> retryPolicy<tspan class="t-muted">: RetryPolicy</tspan></text>
           </g>
           <g data-detail="context" data-class-compartment="methods">
-            <line x1="888" y1="388.5" x2="1188" y2="388.5" class="cl-rule" stroke-width="1"/>
-            <text data-detail="context" data-class-member="methods" x="900" y="407.5" class="t-primary cl-member" font-size="10.5">+ authorize(request: AuthorizationRequest</text>
-            <text data-detail="context" data-class-member="methods" data-class-continuation="" x="912.6" y="426.5" class="t-primary cl-member" font-size="10.5">): AuthorizationResult</text>
-            <text data-detail="context" data-class-member="methods" x="900" y="445.5" class="t-primary cl-member" font-size="10.5" style="font-style: italic"># sendToProvider(request: ProviderRequest</text>
-            <text data-detail="context" data-class-member="methods" data-class-continuation="" x="912.6" y="464.5" class="t-primary cl-member" font-size="10.5" style="font-style: italic">): ProviderResponse</text>
+            <line x1="888" y1="417" x2="1188" y2="417" class="cl-rule" stroke-width="1"/>
+            <text data-detail="context" data-class-member="methods" x="900" y="437" class="t-primary cl-member" font-size="11"><tspan class="t-muted">+</tspan> authorize(request<tspan class="t-muted">: AuthorizationRequest</tspan></text>
+            <text data-detail="context" data-class-member="methods" data-class-continuation="" x="913.2" y="457" class="t-primary cl-member" font-size="11">)<tspan class="t-muted">: AuthorizationResult</tspan></text>
+            <text data-detail="context" data-class-member="methods" x="900" y="477" class="t-primary cl-member" font-size="11" style="font-style: italic"><tspan class="t-muted">#</tspan> sendToProvider(request<tspan class="t-muted">: ProviderRequest</tspan></text>
+            <text data-detail="context" data-class-member="methods" data-class-continuation="" x="913.2" y="497" class="t-primary cl-member" font-size="11" style="font-style: italic">)<tspan class="t-muted">: ProviderResponse</tspan></text>
           </g>
         </g>
 
         <g id="node-bank_transfer" data-node-id="bank_transfer" data-node-label="BankTransferProcessor" tabindex="0" role="button" aria-label="Focus BankTransferProcessor, Asynchronous transfer without provider retries, Class" aria-pressed="false" data-node-kind="class" data-node-sublabel="Asynchronous transfer without provider retries" data-node-context="Class" data-class-kind="class">
           <title>BankTransferProcessor · Asynchronous transfer without provider retries · Class</title>
-          <rect x="1316" y="325.5" width="300" height="120" rx="6" class="c-mask"/>
-          <rect x="1316" y="325.5" width="300" height="120" rx="6" class="c-backend cl-type" stroke-width="1.5"/>
-          <path class="cl-header c-backend" stroke="none" d="M 1322 325.5 H 1610 Q 1616 325.5 1616 331.5 V 359.5 H 1316 V 331.5 Q 1316 325.5 1322 325.5 Z"/>
+          <rect x="1316" y="353" width="300" height="124" rx="6" class="c-mask"/>
+          <rect x="1316" y="353" width="300" height="124" rx="6" class="c-backend cl-type" stroke-width="1.5"/>
+          <path class="cl-header c-backend" stroke="none" d="M 1322 353 H 1610 Q 1616 353 1616 359 V 387 H 1316 V 359 Q 1316 353 1322 353 Z"/>
           <g aria-hidden="true" class="cl-badge">
-            <circle cx="1336" cy="342.5" r="8" class="c-backend" stroke-width="1.25"/>
-            <text x="1336" y="346" class="t-backend" font-size="10" font-weight="700" text-anchor="middle">C</text>
+            <circle cx="1336" cy="370" r="8" class="c-backend" stroke-width="1.25"/>
+            <text x="1336" y="373.5" class="t-backend" font-size="10" font-weight="700" text-anchor="middle">C</text>
           </g>
           
-          <text data-node-label="" x="1466" y="347.5" class="t-primary" font-size="13" font-weight="700" text-anchor="middle">BankTransferProcessor</text>
+          <text data-node-label="" x="1466" y="375" class="t-primary" font-size="13.5" font-weight="700" text-anchor="middle">BankTransferProcessor</text>
           <g data-detail="context" data-class-compartment="methods">
-            <line x1="1316" y1="359.5" x2="1616" y2="359.5" class="cl-rule" stroke-width="1"/>
-            <text data-detail="context" data-class-member="methods" x="1328" y="378.5" class="t-primary cl-member" font-size="10.5">+ authorize(request: AuthorizationRequest</text>
-            <text data-detail="context" data-class-member="methods" data-class-continuation="" x="1340.6" y="397.5" class="t-primary cl-member" font-size="10.5">): AuthorizationResult</text>
-            <text data-detail="context" data-class-member="methods" x="1328" y="416.5" class="t-primary cl-member" font-size="10.5">- awaitSettlement(transfer: TransferId</text>
-            <text data-detail="context" data-class-member="methods" data-class-continuation="" x="1340.6" y="435.5" class="t-primary cl-member" font-size="10.5">): SettlementResult</text>
+            <line x1="1316" y1="387" x2="1616" y2="387" class="cl-rule" stroke-width="1"/>
+            <text data-detail="context" data-class-member="methods" x="1328" y="407" class="t-primary cl-member" font-size="11"><tspan class="t-muted">+</tspan> authorize(request<tspan class="t-muted">: AuthorizationRequest</tspan></text>
+            <text data-detail="context" data-class-member="methods" data-class-continuation="" x="1341.2" y="427" class="t-primary cl-member" font-size="11">)<tspan class="t-muted">: AuthorizationResult</tspan></text>
+            <text data-detail="context" data-class-member="methods" x="1328" y="447" class="t-primary cl-member" font-size="11"><tspan class="t-muted">-</tspan> awaitSettlement(transfer<tspan class="t-muted">: TransferId</tspan></text>
+            <text data-detail="context" data-class-member="methods" data-class-continuation="" x="1341.2" y="467" class="t-primary cl-member" font-size="11">)<tspan class="t-muted">: SettlementResult</tspan></text>
           </g>
         </g>
 
         <g id="node-line_item" data-node-id="line_item" data-node-label="LineItem" tabindex="0" role="button" aria-label="Focus LineItem, Immutable priced order line, Record" aria-pressed="false" data-node-kind="record" data-node-sublabel="Immutable priced order line" data-node-context="Record" data-class-kind="record">
           <title>LineItem · Immutable priced order line · Record</title>
-          <rect x="92" y="567.5" width="180" height="111" rx="6" class="c-mask"/>
-          <rect x="92" y="567.5" width="180" height="111" rx="6" class="c-database cl-type" stroke-width="1.5"/>
-          <path class="cl-header c-database" stroke="none" d="M 98 567.5 H 266 Q 272 567.5 272 573.5 V 611.5 H 92 V 573.5 Q 92 567.5 98 567.5 Z"/>
+          <rect x="92" y="601" width="180" height="114" rx="6" class="c-mask"/>
+          <rect x="92" y="601" width="180" height="114" rx="6" class="c-database cl-type" stroke-width="1.5"/>
+          <path class="cl-header c-database" stroke="none" d="M 98 601 H 266 Q 272 601 272 607 V 645 H 92 V 607 Q 92 601 98 601 Z"/>
           <g aria-hidden="true" class="cl-badge">
-            <circle cx="112" cy="589.5" r="8" class="c-database" stroke-width="1.25"/>
-            <text x="112" y="593" class="t-database" font-size="10" font-weight="700" text-anchor="middle">R</text>
+            <circle cx="112" cy="623" r="8" class="c-database" stroke-width="1.25"/>
+            <text x="112" y="626.5" class="t-database" font-size="10" font-weight="700" text-anchor="middle">R</text>
           </g>
-          <text x="182" y="583.5" class="t-muted" font-size="9.5" text-anchor="middle">«record»</text>
-          <text data-node-label="" x="182" y="601.5" class="t-primary" font-size="13" font-weight="700" text-anchor="middle">LineItem</text>
+          <text x="182" y="617" class="t-muted" font-size="9.5" text-anchor="middle">«record»</text>
+          <text data-node-label="" x="182" y="635" class="t-primary" font-size="13.5" font-weight="700" text-anchor="middle">LineItem</text>
           <g data-detail="context" data-class-compartment="attributes">
-            <line x1="92" y1="611.5" x2="272" y2="611.5" class="cl-rule" stroke-width="1"/>
-            <text data-detail="context" data-class-member="attributes" x="104" y="630.5" class="t-primary cl-member" font-size="10.5">+ sku: Sku</text>
-            <text data-detail="context" data-class-member="attributes" x="104" y="649.5" class="t-primary cl-member" font-size="10.5">+ quantity: int</text>
-            <text data-detail="context" data-class-member="attributes" x="104" y="668.5" class="t-primary cl-member" font-size="10.5">+ unitPrice: Money</text>
+            <line x1="92" y1="645" x2="272" y2="645" class="cl-rule" stroke-width="1"/>
+            <text data-detail="context" data-class-member="attributes" x="104" y="665" class="t-primary cl-member" font-size="11"><tspan class="t-muted">+</tspan> sku<tspan class="t-muted">: Sku</tspan></text>
+            <text data-detail="context" data-class-member="attributes" x="104" y="685" class="t-primary cl-member" font-size="11"><tspan class="t-muted">+</tspan> quantity<tspan class="t-muted">: int</tspan></text>
+            <text data-detail="context" data-class-member="attributes" x="104" y="705" class="t-primary cl-member" font-size="11"><tspan class="t-muted">+</tspan> unitPrice<tspan class="t-muted">: Money</tspan></text>
           </g>
         </g>
 
         <g id="node-stripe_card" data-node-id="stripe_card" data-node-label="StripeCardProcessor" tabindex="0" role="button" aria-label="Focus StripeCardProcessor, Card payments through Stripe, Class" aria-pressed="false" data-node-kind="class" data-node-sublabel="Card payments through Stripe" data-node-context="Class" data-class-kind="class">
           <title>StripeCardProcessor · Card payments through Stripe · Class</title>
-          <rect x="460" y="582" width="300" height="82" rx="6" class="c-mask"/>
-          <rect x="460" y="582" width="300" height="82" rx="6" class="c-backend cl-type" stroke-width="1.5"/>
-          <path class="cl-header c-backend" stroke="none" d="M 466 582 H 754 Q 760 582 760 588 V 616 H 460 V 588 Q 460 582 466 582 Z"/>
+          <rect x="460" y="616" width="300" height="84" rx="6" class="c-mask"/>
+          <rect x="460" y="616" width="300" height="84" rx="6" class="c-backend cl-type" stroke-width="1.5"/>
+          <path class="cl-header c-backend" stroke="none" d="M 466 616 H 754 Q 760 616 760 622 V 650 H 460 V 622 Q 460 616 466 616 Z"/>
           <g aria-hidden="true" class="cl-badge">
-            <circle cx="480" cy="599" r="8" class="c-backend" stroke-width="1.25"/>
-            <text x="480" y="602.5" class="t-backend" font-size="10" font-weight="700" text-anchor="middle">C</text>
+            <circle cx="480" cy="633" r="8" class="c-backend" stroke-width="1.25"/>
+            <text x="480" y="636.5" class="t-backend" font-size="10" font-weight="700" text-anchor="middle">C</text>
           </g>
           
-          <text data-node-label="" x="610" y="604" class="t-primary" font-size="13" font-weight="700" text-anchor="middle">StripeCardProcessor</text>
+          <text data-node-label="" x="610" y="638" class="t-primary" font-size="13.5" font-weight="700" text-anchor="middle">StripeCardProcessor</text>
           <g data-detail="context" data-class-compartment="methods">
-            <line x1="460" y1="616" x2="760" y2="616" class="cl-rule" stroke-width="1"/>
-            <text data-detail="context" data-class-member="methods" x="472" y="635" class="t-primary cl-member" font-size="10.5"># sendToProvider(request: ProviderRequest</text>
-            <text data-detail="context" data-class-member="methods" data-class-continuation="" x="484.6" y="654" class="t-primary cl-member" font-size="10.5">): ProviderResponse</text>
+            <line x1="460" y1="650" x2="760" y2="650" class="cl-rule" stroke-width="1"/>
+            <text data-detail="context" data-class-member="methods" x="472" y="670" class="t-primary cl-member" font-size="11"><tspan class="t-muted">#</tspan> sendToProvider(request<tspan class="t-muted">: ProviderRequest</tspan></text>
+            <text data-detail="context" data-class-member="methods" data-class-continuation="" x="485.2" y="690" class="t-primary cl-member" font-size="11">)<tspan class="t-muted">: ProviderResponse</tspan></text>
           </g>
         </g>
 
         <g id="node-adyen_card" data-node-id="adyen_card" data-node-label="AdyenCardProcessor" tabindex="0" role="button" aria-label="Focus AdyenCardProcessor, Card payments through Adyen, Class" aria-pressed="false" data-node-kind="class" data-node-sublabel="Card payments through Adyen" data-node-context="Class" data-class-kind="class">
           <title>AdyenCardProcessor · Card payments through Adyen · Class</title>
-          <rect x="888" y="582" width="300" height="82" rx="6" class="c-mask"/>
-          <rect x="888" y="582" width="300" height="82" rx="6" class="c-backend cl-type" stroke-width="1.5"/>
-          <path class="cl-header c-backend" stroke="none" d="M 894 582 H 1182 Q 1188 582 1188 588 V 616 H 888 V 588 Q 888 582 894 582 Z"/>
+          <rect x="888" y="616" width="300" height="84" rx="6" class="c-mask"/>
+          <rect x="888" y="616" width="300" height="84" rx="6" class="c-backend cl-type" stroke-width="1.5"/>
+          <path class="cl-header c-backend" stroke="none" d="M 894 616 H 1182 Q 1188 616 1188 622 V 650 H 888 V 622 Q 888 616 894 616 Z"/>
           <g aria-hidden="true" class="cl-badge">
-            <circle cx="908" cy="599" r="8" class="c-backend" stroke-width="1.25"/>
-            <text x="908" y="602.5" class="t-backend" font-size="10" font-weight="700" text-anchor="middle">C</text>
+            <circle cx="908" cy="633" r="8" class="c-backend" stroke-width="1.25"/>
+            <text x="908" y="636.5" class="t-backend" font-size="10" font-weight="700" text-anchor="middle">C</text>
           </g>
           
-          <text data-node-label="" x="1038" y="604" class="t-primary" font-size="13" font-weight="700" text-anchor="middle">AdyenCardProcessor</text>
+          <text data-node-label="" x="1038" y="638" class="t-primary" font-size="13.5" font-weight="700" text-anchor="middle">AdyenCardProcessor</text>
           <g data-detail="context" data-class-compartment="methods">
-            <line x1="888" y1="616" x2="1188" y2="616" class="cl-rule" stroke-width="1"/>
-            <text data-detail="context" data-class-member="methods" x="900" y="635" class="t-primary cl-member" font-size="10.5"># sendToProvider(request: ProviderRequest</text>
-            <text data-detail="context" data-class-member="methods" data-class-continuation="" x="912.6" y="654" class="t-primary cl-member" font-size="10.5">): ProviderResponse</text>
+            <line x1="888" y1="650" x2="1188" y2="650" class="cl-rule" stroke-width="1"/>
+            <text data-detail="context" data-class-member="methods" x="900" y="670" class="t-primary cl-member" font-size="11"><tspan class="t-muted">#</tspan> sendToProvider(request<tspan class="t-muted">: ProviderRequest</tspan></text>
+            <text data-detail="context" data-class-member="methods" data-class-continuation="" x="913.2" y="690" class="t-primary cl-member" font-size="11">)<tspan class="t-muted">: ProviderResponse</tspan></text>
           </g>
         </g>
 
         <g id="node-paypal_wallet" data-node-id="paypal_wallet" data-node-label="PayPalWalletProcessor" tabindex="0" role="button" aria-label="Focus PayPalWalletProcessor, Wallet payments through PayPal, Class" aria-pressed="false" data-node-kind="class" data-node-sublabel="Wallet payments through PayPal" data-node-context="Class" data-class-kind="class">
           <title>PayPalWalletProcessor · Wallet payments through PayPal · Class</title>
-          <rect x="1316" y="563" width="300" height="120" rx="6" class="c-mask"/>
-          <rect x="1316" y="563" width="300" height="120" rx="6" class="c-backend cl-type" stroke-width="1.5"/>
-          <path class="cl-header c-backend" stroke="none" d="M 1322 563 H 1610 Q 1616 563 1616 569 V 597 H 1316 V 569 Q 1316 563 1322 563 Z"/>
+          <rect x="1316" y="596" width="300" height="124" rx="6" class="c-mask"/>
+          <rect x="1316" y="596" width="300" height="124" rx="6" class="c-backend cl-type" stroke-width="1.5"/>
+          <path class="cl-header c-backend" stroke="none" d="M 1322 596 H 1610 Q 1616 596 1616 602 V 630 H 1316 V 602 Q 1316 596 1322 596 Z"/>
           <g aria-hidden="true" class="cl-badge">
-            <circle cx="1336" cy="580" r="8" class="c-backend" stroke-width="1.25"/>
-            <text x="1336" y="583.5" class="t-backend" font-size="10" font-weight="700" text-anchor="middle">C</text>
+            <circle cx="1336" cy="613" r="8" class="c-backend" stroke-width="1.25"/>
+            <text x="1336" y="616.5" class="t-backend" font-size="10" font-weight="700" text-anchor="middle">C</text>
           </g>
           
-          <text data-node-label="" x="1466" y="585" class="t-primary" font-size="13" font-weight="700" text-anchor="middle">PayPalWalletProcessor</text>
+          <text data-node-label="" x="1466" y="618" class="t-primary" font-size="13.5" font-weight="700" text-anchor="middle">PayPalWalletProcessor</text>
           <g data-detail="context" data-class-compartment="methods">
-            <line x1="1316" y1="597" x2="1616" y2="597" class="cl-rule" stroke-width="1"/>
-            <text data-detail="context" data-class-member="methods" x="1328" y="616" class="t-primary cl-member" font-size="10.5"># sendToProvider(request: ProviderRequest</text>
-            <text data-detail="context" data-class-member="methods" data-class-continuation="" x="1340.6" y="635" class="t-primary cl-member" font-size="10.5">): ProviderResponse</text>
-            <text data-detail="context" data-class-member="methods" x="1328" y="654" class="t-primary cl-member" font-size="10.5">- exchangeBillingAgreementToken(</text>
-            <text data-detail="context" data-class-member="methods" data-class-continuation="" x="1340.6" y="673" class="t-primary cl-member" font-size="10.5">token: String): AgreementId</text>
+            <line x1="1316" y1="630" x2="1616" y2="630" class="cl-rule" stroke-width="1"/>
+            <text data-detail="context" data-class-member="methods" x="1328" y="650" class="t-primary cl-member" font-size="11"><tspan class="t-muted">#</tspan> sendToProvider(request<tspan class="t-muted">: ProviderRequest</tspan></text>
+            <text data-detail="context" data-class-member="methods" data-class-continuation="" x="1341.2" y="670" class="t-primary cl-member" font-size="11">)<tspan class="t-muted">: ProviderResponse</tspan></text>
+            <text data-detail="context" data-class-member="methods" x="1328" y="690" class="t-primary cl-member" font-size="11"><tspan class="t-muted">-</tspan> exchangeBillingAgreementToken(</text>
+            <text data-detail="context" data-class-member="methods" data-class-continuation="" x="1341.2" y="710" class="t-primary cl-member" font-size="11">token<tspan class="t-muted">: String</tspan>)<tspan class="t-muted">: AgreementId</tspan></text>
           </g>
         </g>
 
         <!-- Relationship labels -->
         <g data-detail="context" data-edge-from="checkout_orchestrator" data-edge-to="processor_registry" data-edge-label="selects via" data-edge-key="0" data-edge-id="orchestrator_registry" data-class-relationship="association">
-          <rect x="358.605" y="108" width="74.79" height="14" rx="3" class="c-mask"/>
-          <text x="396" y="118" class="t-muted" font-size="9.5" text-anchor="middle">selects via</text>
+          <rect x="358.605" y="121" width="74.79" height="14" rx="3" class="c-mask"/>
+          <text x="396" y="131" class="t-muted" font-size="9.5" text-anchor="middle">selects via</text>
         </g>
         <g data-detail="context" data-edge-from="processor_registry" data-edge-to="payment_processor" data-edge-label="holds" data-edge-key="1" data-edge-id="registry_processors" data-class-relationship="aggregation">
-          <rect x="804.275" y="108" width="39.45" height="14" rx="3" class="c-mask"/>
-          <text x="824" y="118" class="t-muted" font-size="9.5" text-anchor="middle">holds</text>
+          <rect x="911.275" y="121" width="39.45" height="14" rx="3" class="c-mask"/>
+          <text x="931" y="131" class="t-muted" font-size="9.5" text-anchor="middle">holds</text>
         </g>
         <g data-detail="context" data-edge-from="checkout_orchestrator" data-edge-to="order" data-edge-label="updates" data-edge-key="2" data-edge-id="orchestrator_order" data-class-relationship="dependency">
-          <rect x="188" y="244" width="51.23" height="14" rx="3" class="c-mask"/>
-          <text x="213.615" y="254" class="t-muted" font-size="9.5" text-anchor="middle">updates</text>
+          <rect x="188" y="265" width="51.23" height="14" rx="3" class="c-mask"/>
+          <text x="213.615" y="275" class="t-muted" font-size="9.5" text-anchor="middle">updates</text>
         </g>
         <g data-detail="context" data-edge-from="order" data-edge-to="line_item" data-edge-label="owns lines" data-edge-key="3" data-edge-id="order_lines" data-class-relationship="composition">
-          <rect x="188" y="517.25" width="68.9" height="14" rx="3" class="c-mask"/>
-          <text x="222.45" y="527.25" class="t-muted" font-size="9.5" text-anchor="middle">owns lines</text>
+          <rect x="188" y="550.5" width="68.9" height="14" rx="3" class="c-mask"/>
+          <text x="222.45" y="560.5" class="t-muted" font-size="9.5" text-anchor="middle">owns lines</text>
         </g>
 
         <!-- Legend -->
         <g data-legend="">
-          <text x="24" y="705" class="t-primary" font-size="12" font-weight="650">Legend</text>
-          <g data-legend-semantic-kind="dependency" data-legend-x="24" data-legend-baseline="725" data-legend-width="104">
-            <rect class="cl-legend-hit" tabindex="0" role="img" aria-label="Depends on" x="18" y="710" width="116" height="22" rx="11"/><path d="M 26 721 L 56 721" class="a-default cl-relationship cl-dashed" stroke-width="1.5" marker-end="url(#cl-open)"/>
-            <text x="66" y="725" class="t-muted" font-size="12" font-weight="500">Depends on</text>
+          <text x="24" y="742" class="t-primary" font-size="12" font-weight="650">Legend</text>
+          <g data-legend-semantic-kind="dependency" data-legend-x="24" data-legend-baseline="762" data-legend-width="104">
+            <rect class="cl-legend-hit" tabindex="0" role="img" aria-label="Depends on" x="18" y="747" width="116" height="22" rx="11"/><path d="M 26 758 L 56 758" class="a-default cl-relationship cl-dashed" stroke-width="1.5" marker-end="url(#cl-open)"/>
+            <text x="66" y="762" class="t-muted" font-size="12" font-weight="500">Depends on</text>
           </g>
-          <g data-legend-semantic-kind="association" data-legend-x="150" data-legend-baseline="725" data-legend-width="111">
-            <rect class="cl-legend-hit" tabindex="0" role="img" aria-label="Association" x="144" y="710" width="123" height="22" rx="11"/><path d="M 152 721 L 182 721" class="a-default cl-relationship" stroke-width="1.5" marker-end="url(#cl-open)"/>
-            <text x="192" y="725" class="t-muted" font-size="12" font-weight="500">Association</text>
+          <g data-legend-semantic-kind="association" data-legend-x="150" data-legend-baseline="762" data-legend-width="111">
+            <rect class="cl-legend-hit" tabindex="0" role="img" aria-label="Association" x="144" y="747" width="123" height="22" rx="11"/><path d="M 152 758 L 182 758" class="a-default cl-relationship" stroke-width="1.5" marker-end="url(#cl-open)"/>
+            <text x="192" y="762" class="t-muted" font-size="12" font-weight="500">Association</text>
           </g>
-          <g data-legend-semantic-kind="inheritance" data-legend-x="283" data-legend-baseline="725" data-legend-width="92">
-            <rect class="cl-legend-hit" tabindex="0" role="img" aria-label="Inherits" x="277" y="710" width="104" height="22" rx="11"/><path d="M 285 721 L 315 721" class="a-default cl-relationship" stroke-width="1.5" marker-end="url(#cl-triangle)"/>
-            <text x="325" y="725" class="t-muted" font-size="12" font-weight="500">Inherits</text>
+          <g data-legend-semantic-kind="inheritance" data-legend-x="283" data-legend-baseline="762" data-legend-width="92">
+            <rect class="cl-legend-hit" tabindex="0" role="img" aria-label="Inherits" x="277" y="747" width="104" height="22" rx="11"/><path d="M 285 758 L 315 758" class="a-default cl-relationship" stroke-width="1.5" marker-end="url(#cl-triangle)"/>
+            <text x="325" y="762" class="t-muted" font-size="12" font-weight="500">Inherits</text>
           </g>
-          <g data-legend-semantic-kind="realization" data-legend-x="397" data-legend-baseline="725" data-legend-width="104">
-            <rect class="cl-legend-hit" tabindex="0" role="img" aria-label="Implements" x="391" y="710" width="116" height="22" rx="11"/><path d="M 399 721 L 429 721" class="a-default cl-relationship cl-dashed" stroke-width="1.5" marker-end="url(#cl-triangle)"/>
-            <text x="439" y="725" class="t-muted" font-size="12" font-weight="500">Implements</text>
+          <g data-legend-semantic-kind="realization" data-legend-x="397" data-legend-baseline="762" data-legend-width="104">
+            <rect class="cl-legend-hit" tabindex="0" role="img" aria-label="Implements" x="391" y="747" width="116" height="22" rx="11"/><path d="M 399 758 L 429 758" class="a-default cl-relationship cl-dashed" stroke-width="1.5" marker-end="url(#cl-triangle)"/>
+            <text x="439" y="762" class="t-muted" font-size="12" font-weight="500">Implements</text>
           </g>
-          <g data-legend-semantic-kind="composition" data-legend-x="523" data-legend-baseline="725" data-legend-width="111">
-            <rect class="cl-legend-hit" tabindex="0" role="img" aria-label="Composition" x="517" y="710" width="123" height="22" rx="11"/><path d="M 525 721 L 555 721" class="a-default cl-relationship" stroke-width="1.5" marker-start="url(#cl-diamond-filled)"/>
-            <text x="565" y="725" class="t-muted" font-size="12" font-weight="500">Composition</text>
+          <g data-legend-semantic-kind="composition" data-legend-x="523" data-legend-baseline="762" data-legend-width="111">
+            <rect class="cl-legend-hit" tabindex="0" role="img" aria-label="Composition" x="517" y="747" width="123" height="22" rx="11"/><path d="M 525 758 L 555 758" class="a-default cl-relationship" stroke-width="1.5" marker-start="url(#cl-diamond-filled)"/>
+            <text x="565" y="762" class="t-muted" font-size="12" font-weight="500">Composition</text>
           </g>
-          <g data-legend-semantic-kind="aggregation" data-legend-x="656" data-legend-baseline="725" data-legend-width="111">
-            <rect class="cl-legend-hit" tabindex="0" role="img" aria-label="Aggregation" x="650" y="710" width="123" height="22" rx="11"/><path d="M 658 721 L 688 721" class="a-default cl-relationship" stroke-width="1.5" marker-start="url(#cl-diamond-hollow)"/>
-            <text x="698" y="725" class="t-muted" font-size="12" font-weight="500">Aggregation</text>
+          <g data-legend-semantic-kind="aggregation" data-legend-x="656" data-legend-baseline="762" data-legend-width="111">
+            <rect class="cl-legend-hit" tabindex="0" role="img" aria-label="Aggregation" x="650" y="747" width="123" height="22" rx="11"/><path d="M 658 758 L 688 758" class="a-default cl-relationship" stroke-width="1.5" marker-start="url(#cl-diamond-hollow)"/>
+            <text x="698" y="762" class="t-muted" font-size="12" font-weight="500">Aggregation</text>
           </g>
         </g>
       </svg>

@@ -3,18 +3,18 @@
   "diagram_type": "tree",
   "meta": {
     "title": "Archify repository layout",
-    "subtitle": "Observed directory and module structure of this repository (selected files). The Viewer branch starts collapsed.",
+    "subtitle": "Observed directory structure of this repository (selected files). Runs of three or more files are listed; the viewer/ branch starts collapsed.",
     "output": "archify-repository-tree.html",
     "quality_profile": "showcase"
   },
   "layout": {
-    "direction": "right"
+    "direction": "down"
   },
   "nodes": [
     {
       "id": "repo",
       "label": "archify repository",
-      "sublabel": "Skill package, viewer, and site sources"
+      "sublabel": "Skill, viewer, and site"
     },
     {
       "id": "skill",
@@ -26,7 +26,7 @@
       "id": "viewer",
       "label": "viewer/",
       "parent": "repo",
-      "sublabel": "Viewer sources inlined into the template",
+      "sublabel": "Inlined into the template",
       "collapsed": true
     },
     {
@@ -39,13 +39,13 @@
       "id": "scripts",
       "label": "scripts/",
       "parent": "repo",
-      "sublabel": "Build and freshness tooling"
+      "sublabel": "Build and freshness tools"
     },
     {
       "id": "renderers",
       "label": "renderers/",
       "parent": "skill",
-      "sublabel": "One renderer per diagram type"
+      "sublabel": "One per diagram type"
     },
     {
       "id": "schemas",
@@ -63,19 +63,19 @@
       "id": "references",
       "label": "references/",
       "parent": "skill",
-      "sublabel": "Authoring and delivery contracts"
+      "sublabel": "Authoring contracts"
     },
     {
       "id": "r_arch",
       "label": "architecture/",
       "parent": "renderers",
-      "sublabel": "Components, boundaries, orthogonal router"
+      "sublabel": "Boundaries and router"
     },
     {
       "id": "r_workflow",
       "label": "workflow/",
       "parent": "renderers",
-      "sublabel": "Workflow compiler and renderer"
+      "sublabel": "Workflow compiler"
     },
     {
       "id": "r_sequence",
@@ -96,49 +96,55 @@
       "id": "r_erd",
       "label": "erd/",
       "parent": "renderers",
-      "sublabel": "Banded grid and crow's foot markers"
+      "sublabel": "Crow's foot markers"
     },
     {
       "id": "r_tree",
       "label": "tree/",
       "parent": "renderers",
-      "sublabel": "This hierarchy renderer"
+      "sublabel": "This renderer"
     },
     {
       "id": "r_shared",
       "label": "shared/",
       "parent": "renderers",
-      "sublabel": "Helpers every renderer imports"
+      "sublabel": "Shared helpers"
     },
     {
       "id": "s_cli",
       "label": "cli.mjs",
       "parent": "r_shared",
-      "sublabel": "Load, validate, and write one diagram"
+      "sublabel": "Load, validate, write"
     },
     {
       "id": "s_geometry",
       "label": "geometry.mjs",
       "parent": "r_shared",
-      "sublabel": "Clean Flow and composition gates"
+      "sublabel": "Composition gates"
     },
     {
       "id": "s_i18n",
       "label": "i18n.mjs",
       "parent": "r_shared",
-      "sublabel": "Bundled locale catalogs"
+      "sublabel": "Locale catalogs"
     },
     {
       "id": "s_validators",
       "label": "generated-validators.mjs",
       "parent": "r_shared",
-      "sublabel": "Standalone schema validators"
+      "sublabel": "Schema validators"
     },
     {
       "id": "b_archify",
       "label": "archify.mjs",
       "parent": "bin",
-      "sublabel": "validate, deliver, finalize, doctor"
+      "sublabel": "CLI: validate, finalize"
+    },
+    {
+      "id": "b_finalize",
+      "label": "finalize.mjs",
+      "parent": "bin",
+      "sublabel": "Render, check, deliver"
     },
     {
       "id": "b_preview",
@@ -150,19 +156,19 @@
       "id": "v_focus",
       "label": "focus.js",
       "parent": "viewer",
-      "sublabel": "Semantic passport and reach"
+      "sublabel": "Semantic passport"
     },
     {
       "id": "v_export",
       "label": "export.js",
       "parent": "viewer",
-      "sublabel": "SVG, PNG, JPEG, WebP, WebM export"
+      "sublabel": "SVG, PNG, WebM export"
     },
     {
       "id": "v_tree",
       "label": "tree-branches.js",
       "parent": "viewer",
-      "sublabel": "Expand and collapse for trees"
+      "sublabel": "Expand and collapse"
     },
     {
       "id": "v_camera",
@@ -174,13 +180,13 @@
       "id": "sc_viewer",
       "label": "generate-viewer.mjs",
       "parent": "scripts",
-      "sublabel": "Inlines viewer/ into the template"
+      "sublabel": "Inlines viewer/"
     },
     {
       "id": "sc_zip",
       "label": "build-zip.sh",
       "parent": "scripts",
-      "sublabel": "Deterministic Skill archive"
+      "sublabel": "Deterministic archive"
     },
     {
       "id": "sc_gallery",

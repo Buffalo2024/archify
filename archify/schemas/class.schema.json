@@ -173,9 +173,11 @@
             "maximum": 12
           },
           "col": {
-            "type": "integer",
+            "type": "number",
+            "multipleOf": 0.5,
             "minimum": 0,
-            "maximum": 12
+            "maximum": 12,
+            "description": "Grid column. A half step (e.g. 1.5) centres the type between two columns, such as a supertype over two subtypes."
           },
           "pos": {
             "$ref": "common.schema.json#/$defs/point"

@@ -68,7 +68,9 @@ Semantic checks: a realization runs from a non-interface to an interface
 `layout.mode: "grid"` (the default) places types by `row`/`col` on the banded
 grid shared with the ERD renderer: each column takes its widest type and each
 row its tallest. Types are centred in their row band so a relationship between
-two types of one row is a straight line. `layout.gapX`/`gapY` (default 128/84)
+two types of one row is a straight line. A half-step `col` (e.g. `1.5`) centres
+a type between two columns without sizing either, which is how a supertype sits
+symmetrically over two subtypes; it occupies both neighbouring cells. `layout.gapX`/`gapY` (default 128/84)
 leave room for markers and labels; `layout.typeW` (180) is the minimum and
 `layout.typeMaxW` (300) the maximum automatic width.
 

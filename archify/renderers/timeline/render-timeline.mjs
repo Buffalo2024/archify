@@ -33,25 +33,29 @@ const DAY = 24 * HOUR;
 
 const layout = {
   margin: 28,
-  top: 46,
-  axisH: 58,
-  // The lane column fits its longest label (12px bold), so a lane name never
+  top: 52,
+  axisH: 60,
+  // The lane column fits its longest label (13px bold), so a lane name never
   // runs into the axis.
   laneLabelW: asArray(tl.lanes).length
-    ? Math.ceil(Math.max(80, ...tl.lanes.map((lane) => textUnits(lane.label) * 12 * nodeTextFit.widthFactor * 1.06 + 20)))
+    ? Math.ceil(Math.max(88, ...tl.lanes.map((lane) => textUnits(lane.label) * 13 * nodeTextFit.widthFactor * 1.06 + 24)))
     : 0,
   axisWidth: tl.layout?.width ?? 960,
-  edgePad: 64,
-  breakW: 56,
+  edgePad: 72,
+  breakW: 60,
   laneGap: 10,
-  lanePadTop: 22,
-  rowGap: 10,
-  cardMaxW: 190,
-  cardPadX: 9,
-  titleFont: 11.5,
-  titleLine: 14,
-  timeFont: 10,
-  minTickPx: 76,
+  lanePad: 14,
+  // Room between the lane's time line and the nearest card on either side,
+  // which the stem crosses.
+  stemGap: 16,
+  rowGap: 8,
+  cardMaxW: 200,
+  cardPadX: 10,
+  cardAccent: 12,
+  titleFont: 12.5,
+  titleLine: 15,
+  timeFont: 10.5,
+  minTickPx: 84,
 };
 
 // ---- Input checks --------------------------------------------------------------
@@ -145,6 +149,21 @@ function durationLabel(ms) {
   return parts.join(' ') || '0 s';
 }
 
+// The visible break label is approximate (it carries ≈), so it rounds to the
+// two most significant adjacent units: "15 h", never "15 h 3 s".
+function approximateDuration(ms) {
+  const units = [['d', DAY], ['h', HOUR], ['min', MINUTE], ['s', 1000]];
+  const index = units.findIndex(([, size]) => ms >= size);
+  if (index === -1) return '0 s';
+  const [major, majorSize] = units[index];
+  if (index === units.length - 1) return `${Math.round(ms / majorSize)} ${major}`;
+  const [minor, minorSize] = units[index + 1];
+  let whole = Math.floor(ms / majorSize);
+  let rest = Math.round((ms - whole * majorSize) / minorSize);
+  if (rest * minorSize >= majorSize) { whole += 1; rest = 0; }
+  return rest ? `${whole} ${major} ${rest} ${minor}` : `${whole} ${major}`;
+}
+
 // ---- Axis segments and disclosed breaks ----------------------------------------
 // A quiet period much longer than the timeline's ordinary rhythm would squeeze
 // every other event into a sliver. With `layout.breaks: "auto"` (the default)
@@ -179,8 +198,8 @@ const axisX0 = layout.margin + layout.laneLabelW;
 // one constant, so distances there are exact.
 const SEGMENT_FLOOR = 28;
 for (const gap of breaks) {
-  gap.label = `≈ ${durationLabel(gap.length)}`;
-  gap.width = Math.max(layout.breakW, Math.ceil(textUnits(gap.label) * 9.5 * ADVANCE + 16));
+  gap.label = `≈ ${approximateDuration(gap.length)}`;
+  gap.width = Math.max(layout.breakW, Math.ceil(textUnits(gap.label) * 10.5 * ADVANCE + 18));
 }
 const drawable = layout.axisWidth - layout.edgePad * 2
   - breaks.reduce((sum, gap) => sum + gap.width, 0) - SEGMENT_FLOOR * segments.length;
@@ -255,41 +274,60 @@ function wrapTitle(text, maxWidth) {
 
 const cards = events.map((event) => {
   const time = clockLabel(event.t);
+  const padLeft = layout.cardAccent + 2;
   const natural = Math.max(textUnits(event.title) * layout.titleFont * ADVANCE * 1.05, textUnits(time) * layout.timeFont * ADVANCE);
-  const width = Math.ceil(Math.min(layout.cardMaxW, natural + layout.cardPadX * 2));
-  const lines = wrapTitle(event.title, width - layout.cardPadX * 2);
-  const height = 8 + 12 + lines.length * layout.titleLine + 6;
+  const width = Math.ceil(Math.min(layout.cardMaxW, natural + padLeft + layout.cardPadX));
+  const lines = wrapTitle(event.title, width - padLeft - layout.cardPadX);
+  const height = 9 + 12 + lines.length * layout.titleLine + 7;
   const x = xOf(event.t);
   // The card is centred on its instant but never leaves the axis area.
   const left = Math.min(Math.max(x - width / 2, axisX0 + 4), axisX1 - width - 4);
-  return { ...event, time, width, height, lines, x, left };
+  return { ...event, time, width, height, lines, x, left, padLeft };
 });
 
-// Within a lane, cards pack into rows: a card takes the first row where it
-// does not touch the previous card, so simultaneous and close events stack
-// instead of overprinting. The dot stays on the lane's time line.
+// Within a lane, cards sit on either side of the lane's time line and pack
+// into rows outward from it: a card takes whichever side lets it sit closest
+// to the line without touching an earlier card, so simultaneous and close
+// events stack instead of overprinting, and a burst spreads both ways rather
+// than growing one tall column. Ties go below the line. The dot always stays
+// on the line, at the event's exact instant.
 const laneLayout = [];
 {
   let y = layout.top + layout.axisH;
   for (const lane of lanes) {
     const members = cards.filter((card) => laneOf(card) === lane.id);
-    const rowEnds = [];
-    const rowHeights = [];
+    const sides = { above: { ends: [], heights: [] }, below: { ends: [], heights: [] } };
+    const fit = (side, card) => {
+      const index = sides[side].ends.findIndex((end) => card.left >= end + 10);
+      return index === -1 ? sides[side].ends.length : index;
+    };
     for (const card of members) {
-      let row = rowEnds.findIndex((end) => card.left >= end + 8);
-      if (row === -1) row = rowEnds.length;
-      rowEnds[row] = card.left + card.width;
-      rowHeights[row] = Math.max(rowHeights[row] || 0, card.height);
-      card.row = row;
+      const above = fit('above', card);
+      const below = fit('below', card);
+      card.side = above < below ? 'above' : 'below';
+      card.row = card.side === 'above' ? above : below;
+      const side = sides[card.side];
+      side.ends[card.row] = card.left + card.width;
+      side.heights[card.row] = Math.max(side.heights[card.row] || 0, card.height);
     }
-    const lineY = y + layout.lanePadTop;
-    const rowTop = [];
-    rowHeights.reduce((top, height, row) => { rowTop[row] = top; return top + height + layout.rowGap; }, lineY + 14);
+    const extent = (side) => side.heights.reduce((sum, height) => sum + height + layout.rowGap, 0) - (side.heights.length ? layout.rowGap : 0);
+    const aboveExtent = extent(sides.above);
+    const lineY = y + layout.lanePad + (aboveExtent ? aboveExtent + layout.stemGap : 10);
+    const offsets = (side) => {
+      const out = [];
+      side.heights.reduce((offset, height, row) => { out[row] = offset; return offset + height + layout.rowGap; }, layout.stemGap);
+      return out;
+    };
+    const aboveOffset = offsets(sides.above);
+    const belowOffset = offsets(sides.below);
     for (const card of members) {
       card.lineY = lineY;
-      card.top = rowTop[card.row];
+      // Above the line a row is bottom-aligned to its edge nearest the line,
+      // below it top-aligned, so every stem in a row has the same length.
+      card.top = card.side === 'above' ? lineY - aboveOffset[card.row] - card.height : lineY + belowOffset[card.row];
     }
-    const height = Math.max(64, (rowTop.length ? rowTop.at(-1) + rowHeights.at(-1) : lineY + 20) - y + 12);
+    const bottom = sides.below.heights.length ? lineY + belowOffset.at(-1) + sides.below.heights.at(-1) : lineY + 10;
+    const height = Math.max(56, bottom - y + layout.lanePad);
     laneLayout.push({ ...lane, y, height, lineY });
     y += height + layout.laneGap;
   }
@@ -305,12 +343,12 @@ const legendEntries = resolveLegend(undefined,
 
 const contentBottom = laneLayout.at(-1).y + laneLayout.at(-1).height;
 const width = Math.ceil(axisX1 + layout.margin);
-const footprint = legendFootprint(legendEntries, { width: width - layout.margin * 2 });
+const footprint = legendFootprint(legendEntries, { width: width - layout.margin * 2, fontSize: 11 });
 const height = Math.ceil(contentBottom + layout.margin + (legendEntries.length ? 34 + footprint.extraHeight : 0));
 const viewBox = [width, height];
 
 function legendLayout() {
-  return { x: layout.margin, baselineY: height - 16, width: width - layout.margin * 2, fontSize: 10, minTitleY: contentBottom + 8, diagramType: 'timeline' };
+  return { x: layout.margin, baselineY: height - 16, width: width - layout.margin * 2, fontSize: 11, minTitleY: contentBottom + 8, diagramType: 'timeline' };
 }
 
 // ---- Rendering ------------------------------------------------------------------
@@ -318,30 +356,39 @@ function renderAxis() {
   const top = layout.top;
   const bottom = contentBottom;
   const lineY = top + layout.axisH - 10;
-  // Tick labels never overprint each other or a break's duration label.
+  // Tick labels never overprint each other or a break's duration label. On a
+  // multi-day axis a tick names its date only when the date changes from the
+  // previous label, so the axis reads "09-29 15:00 · 18:00 · 21:00".
   const taken = [];
-  const shown = ticks.filter((tick) => {
-    const half = textUnits(clockLabel(tick.t, { seconds: tickSeconds })) * 10 * ADVANCE / 2 + 4;
+  let lastDate = null;
+  const shown = ticks.flatMap((tick) => {
+    const w = wall(tick.t);
+    const date = `${w.mo}-${w.d}`;
+    const label = clockLabel(tick.t, { seconds: tickSeconds, date: multiDay && date !== lastDate });
+    const half = textUnits(label) * 10.5 * ADVANCE / 2 + 5;
     const box = [tick.x - half, tick.x + half];
-    if (taken.some(([a, b]) => box[0] < b && a < box[1])) return false;
+    if (taken.some(([a, b]) => box[0] < b && a < box[1])) return [];
     taken.push(box);
-    return true;
+    lastDate = date;
+    return [{ ...tick, label }];
   });
   const grid = shown.map((tick) => `          <line x1="${tick.x}" y1="${lineY}" x2="${tick.x}" y2="${bottom}" class="tl-grid" stroke-width="1"/>
-          <text x="${tick.x}" y="${lineY - 8}" class="t-muted tl-tick" font-size="10" text-anchor="middle">${esc(clockLabel(tick.t, { seconds: tickSeconds }))}</text>`).join('\n');
+          <line x1="${tick.x}" y1="${lineY - 4}" x2="${tick.x}" y2="${lineY}" class="tl-axis" stroke-width="1"/>
+          <text x="${tick.x}" y="${lineY - 10}" class="t-muted tl-tick" font-size="10.5" text-anchor="middle">${esc(tick.label)}</text>`).join('\n');
   const segmentLines = segments.map((segment, index) => {
     const from = index ? breaks[index - 1].x1 : axisX0 + 8;
     const to = index < breaks.length ? breaks[index].x0 : axisX1 - 8;
-    return `          <line x1="${from}" y1="${lineY}" x2="${to}" y2="${lineY}" class="tl-axis" stroke-width="1.5"/>`;
+    return `          <line x1="${from}" y1="${lineY}" x2="${to}" y2="${lineY}" class="tl-axis" stroke-width="1"/>`;
   }).join('\n');
   const breakMarks = breaks.map((gap) => {
     const mid = (gap.x0 + gap.x1) / 2;
-    const zig = (x) => `M ${x - 3} ${lineY - 7} L ${x + 3} ${lineY - 2} L ${x - 3} ${lineY + 2} L ${x + 3} ${lineY + 7}`;
+    const zig = (x) => `M ${x - 2.5} ${lineY - 6} L ${x + 2.5} ${lineY + 6}`;
     const omitted = i18nText(locale, 'timeline.break', { duration: durationLabel(gap.length) });
     return `          <g data-timeline-break="" data-break-ms="${gap.length}" aria-label="${esc(omitted)}" role="img">
             <rect x="${gap.x0 + 6}" y="${lineY}" width="${gap.width - 12}" height="${bottom - lineY}" fill="url(#tl-break-hatch)" class="tl-break-band"/>
-            <path d="${zig(gap.x0 + 8)} ${zig(gap.x1 - 8)}" class="tl-break-zig" stroke-width="1.4" fill="none"/>
-            <text x="${mid}" y="${lineY - 24}" class="t-primary" font-size="9.5" font-weight="700" text-anchor="middle">${esc(gap.label)}</text>
+            <path d="${zig(gap.x0 + 6)} ${zig(gap.x0 + 10)} ${zig(gap.x1 - 10)} ${zig(gap.x1 - 6)}" class="tl-break-zig" stroke-width="1.3" stroke-linecap="round" fill="none"/>
+            <rect x="${mid - gap.width / 2 + 4}" y="${lineY - 41}" width="${gap.width - 8}" height="17" rx="8.5" class="tl-break-chip"/>
+            <text x="${mid}" y="${lineY - 29}" class="t-muted" font-size="10" font-weight="700" text-anchor="middle">${esc(gap.label)}</text>
           </g>`;
   }).join('\n');
   return `${grid}\n${segmentLines}\n${breakMarks}`;
@@ -349,24 +396,25 @@ function renderAxis() {
 
 function renderHeader() {
   const evidence = i18nText(locale, `timeline.evidence.${tl.meta.evidence}`);
-  const evidenceW = Math.ceil(textUnits(evidence) * 10 * ADVANCE + 22);
+  const evidenceW = Math.ceil(textUnits(evidence) * 10.5 * ADVANCE + 24);
   const date = multiDay ? '' : ` · ${wall(first).y}-${wall(first).mo}-${wall(first).d}`;
   const zone = `${timezone === 'UTC' ? 'UTC' : `${timezone} (${offsetLabel(first)})`}${date}`;
   const disclosure = breaks.length ? ` · ${i18nText(locale, 'timeline.compressed', { count: breaks.length })}` : '';
   const caption = `${i18nText(locale, 'timeline.axis')}: ${zone}${disclosure}`;
   const tone = tl.meta.evidence === 'observed' ? 'backend' : 'messagebus';
   return `        <g data-timeline-evidence="${esc(tl.meta.evidence)}">
-          <rect x="${layout.margin}" y="12" width="${evidenceW}" height="20" rx="10" class="c-${tone}" stroke-width="1.2"/>
-          <text x="${layout.margin + evidenceW / 2}" y="26" class="t-${tone}" font-size="10" font-weight="700" text-anchor="middle">${esc(evidence)}</text>
+          <rect x="${layout.margin}" y="14" width="${evidenceW}" height="22" rx="11" class="c-${tone}" stroke-width="1"/>
+          <circle cx="${layout.margin + 11}" cy="25" r="3" class="t-${tone}"/>
+          <text x="${layout.margin + evidenceW / 2 + 5}" y="29" class="t-${tone}" font-size="10.5" font-weight="700" text-anchor="middle">${esc(evidence)}</text>
         </g>
-        <text data-timeline-axis-caption="" x="${layout.margin + evidenceW + 12}" y="26" class="t-muted" font-size="10.5">${esc(caption)}</text>`;
+        <text data-timeline-axis-caption="" x="${layout.margin + evidenceW + 14}" y="29.5" class="t-muted" font-size="11.5">${esc(caption)}</text>`;
 }
 
 function renderLanes() {
   return laneLayout.map((lane, index) => `        <g data-timeline-lane="${esc(lane.id)}">
-          <rect x="${axisX0}" y="${lane.y}" width="${layout.axisWidth}" height="${lane.height}" rx="8" class="tl-lane${index % 2 ? ' tl-lane-alt' : ''}"/>
-          <line x1="${axisX0 + 8}" y1="${lane.lineY}" x2="${axisX1 - 8}" y2="${lane.lineY}" class="tl-lane-line" stroke-width="1"/>
-          ${lane.label ? `<text x="${layout.margin}" y="${lane.lineY + 4}" class="t-primary" font-size="12" font-weight="700">${esc(lane.label)}</text>` : ''}
+          <rect x="${layout.margin - 8}" y="${lane.y}" width="${axisX1 - layout.margin + 8}" height="${lane.height}" rx="10" class="tl-lane${index % 2 ? ' tl-lane-alt' : ''}"/>
+          <line x1="${axisX0 + 8}" y1="${lane.lineY}" x2="${axisX1 - 8}" y2="${lane.lineY}" class="tl-lane-line" stroke-width="1.5" stroke-linecap="round"/>
+          ${lane.label ? `<text x="${layout.margin}" y="${lane.lineY + 4.5}" class="t-primary" font-size="13" font-weight="700">${esc(lane.label)}</text>` : ''}
         </g>`).join('\n');
 }
 
@@ -376,24 +424,30 @@ function renderEvent(card, order) {
   // The Node index groups by the context before " › ", so the lane leads.
   const context = [lane?.label, `${clockLabel(card.t, { seconds: true, date: true })} ${offsetLabel(card.t)}`].filter(Boolean).join(' \u203a ');
   const passport = { kind: tone, sublabel: card.detail, context };
-  let y = card.top + 8 + 10;
-  const time = `<text x="${card.left + layout.cardPadX}" y="${y}" class="t-muted tl-time" font-size="${layout.timeFont}" font-weight="600">${esc(card.time)}</text>`;
+  const textX = card.left + card.padLeft;
+  let y = card.top + 9 + 10;
+  const time = `<text x="${textX}" y="${y}" class="t-muted tl-time" font-size="${layout.timeFont}" font-weight="600">${esc(card.time)}</text>`;
+  y += 2;
   const title = card.lines.map((line) => {
     y += layout.titleLine;
-    return `<tspan x="${card.left + layout.cardPadX}" y="${y}">${esc(line)}</tspan>`;
+    return `<tspan x="${textX}" y="${y}">${esc(line)}</tspan>`;
   }).join('');
+  // A tone accent down the card's leading edge carries the event kind, so the
+  // card body stays a quiet surface for the text.
+  const accent = `<line x1="${card.left + 6}" y1="${card.top + 7}" x2="${card.left + 6}" y2="${card.top + card.height - 7}" class="tl-accent tl-accent-${tone}" stroke-width="3" stroke-linecap="round"/>`;
   return `        <g ${focusNodeAttrs(card.id, card.title, passport, locale)} data-timeline-at="${esc(card.at)}" data-timeline-ms="${card.t}" data-timeline-x="${card.x}">
           ${focusNodeTitle(card.title, passport)}
-          <rect x="${card.left}" y="${card.top}" width="${card.width}" height="${card.height}" rx="6" class="c-mask"/>
-          <rect x="${card.left}" y="${card.top}" width="${card.width}" height="${card.height}" rx="6" class="c-${tone}"${animateAttr(tl.meta, 'node', order)} stroke-width="1.3"/>
+          <rect x="${card.left}" y="${card.top}" width="${card.width}" height="${card.height}" rx="7" class="c-mask"/>
+          <rect x="${card.left}" y="${card.top}" width="${card.width}" height="${card.height}" rx="7" class="c-${tone} tl-card"${animateAttr(tl.meta, 'node', order)} stroke-width="1"/>
+          ${accent}
           ${time}
           <text data-node-label="" class="t-primary" font-size="${layout.titleFont}" font-weight="650">${title}</text>
-          <circle cx="${card.x}" cy="${card.lineY}" r="5.5" class="c-${tone} tl-dot" stroke-width="2"/>
+          <circle cx="${card.x}" cy="${card.lineY}" r="5" class="t-${tone} tl-dot" stroke-width="2.5"/>
         </g>`;
 }
 
 function legendSwatch(entry) {
-  return `<circle cx="${entry.x + 6}" cy="${entry.baseline - 4}" r="5" class="c-${KIND_TONE[entry.kind]}" stroke-width="2"/>`;
+  return `<circle cx="${entry.x + 6}" cy="${entry.baseline - 4}" r="4.5" class="t-${KIND_TONE[entry.kind]} tl-dot" stroke-width="2"/>`;
 }
 
 function renderSvg() {
@@ -402,15 +456,19 @@ ${svgAccessibleText(tl.meta, 'timeline')}
 ${renderDefinitions(breaks.length ? `
           <pattern id="tl-break-hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" class="tl-hatch" stroke-width="1"/></pattern>` : '')}
         <style>
-          svg[data-timeline-ui] .tl-grid { stroke: var(--lane-stroke); stroke-dasharray: 3 5; opacity: .8; }
-          svg[data-timeline-ui] .tl-axis { stroke: var(--text-muted); }
-          svg[data-timeline-ui] .tl-lane { fill: var(--lane-fill); stroke: none; opacity: .55; }
-          svg[data-timeline-ui] .tl-lane-alt { opacity: .3; }
+          svg[data-timeline-ui] .tl-grid { stroke: var(--lane-stroke); stroke-dasharray: 2 4; opacity: .7; }
+          svg[data-timeline-ui] .tl-axis { stroke: var(--text-dim); }
+          svg[data-timeline-ui] .tl-lane { fill: var(--lane-fill); stroke: none; opacity: .75; }
+          svg[data-timeline-ui] .tl-lane-alt { opacity: 0; }
           svg[data-timeline-ui] .tl-lane-line { stroke: var(--lane-stroke); }
-          svg[data-timeline-ui] .tl-stem { stroke: var(--text-muted); opacity: .7; }
-          svg[data-timeline-ui] .tl-break-band { opacity: .9; }
+          svg[data-timeline-ui] .tl-stem { stroke: var(--text-dim); }
+          svg[data-timeline-ui] .tl-card { fill-opacity: .55; stroke-opacity: .5; }
+          svg[data-timeline-ui] .tl-dot { stroke: var(--mask); }
+          svg[data-timeline-ui] .tl-break-band { opacity: .55; }
+          svg[data-timeline-ui] .tl-break-chip { fill: var(--mask); stroke: var(--lane-stroke); stroke-width: 1; }
           svg[data-timeline-ui] .tl-hatch { stroke: var(--lane-stroke); }
-          svg[data-timeline-ui] .tl-break-zig { stroke: var(--text-muted); }
+          svg[data-timeline-ui] .tl-break-zig { stroke: var(--text-dim); }
+${Object.values(KIND_TONE).map((tone) => `          svg[data-timeline-ui] .tl-accent-${tone} { stroke: var(--${tone}-stroke); }`).join('\n')}
           svg[data-timeline-ui] .tl-tick, svg[data-timeline-ui] .tl-time { font-variant-numeric: tabular-nums; }
         </style>
 
@@ -427,7 +485,7 @@ ${renderAxis()}
 
         <!-- Stems sit behind every card, so a stacked card is never crossed by
              another event's connector -->
-${cards.map((card) => `        <line data-detail="context" data-timeline-stem="${esc(card.id)}" x1="${card.x}" y1="${card.lineY}" x2="${card.x}" y2="${card.top}" class="tl-stem" stroke-width="1"/>`).join('\n')}
+${cards.map((card) => `        <line data-detail="context" data-timeline-stem="${esc(card.id)}" x1="${card.x}" y1="${card.lineY}" x2="${card.x}" y2="${card.side === 'above' ? card.top + card.height : card.top}" class="tl-stem" stroke-width="1"/>`).join('\n')}
 
         <!-- Events in time order -->
 ${cards.map(renderEvent).join('\n')}

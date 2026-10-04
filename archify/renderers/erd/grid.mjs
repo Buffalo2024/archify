@@ -45,13 +45,16 @@ export function entityHeight(entity, grid) {
 // Every raw column index owns the widest box placed in it and every raw row
 // index owns the tallest, so boxes in one band share a baseline without anyone
 // measuring by hand. Indices with no box still contribute their gap, which is
-// how an author asks for a routing channel between two bands.
+// how an author asks for a routing channel between two bands. A box on a half
+// column (a class grid's `col: 1.5`) is centred between two columns: it sizes
+// its row but neither column.
+const gridColumn = (col) => Number.isInteger(col * 2) && col >= 0;
 export function bandedLayout(entities, grid) {
   const widths = new Map();
   const heights = new Map();
   for (const entity of entities) {
-    if (!Number.isInteger(entity.row) || !Number.isInteger(entity.col)) continue;
-    widths.set(entity.col, Math.max(widths.get(entity.col) || 0, resolvedEntityWidth(entity, grid)));
+    if (!Number.isInteger(entity.row) || !gridColumn(entity.col)) continue;
+    if (Number.isInteger(entity.col)) widths.set(entity.col, Math.max(widths.get(entity.col) || 0, resolvedEntityWidth(entity, grid)));
     heights.set(entity.row, Math.max(heights.get(entity.row) || 0, entity.height));
   }
 
@@ -76,13 +79,19 @@ export function bandedLayout(entities, grid) {
 export function resolveEntityPos(entity, grid, bands) {
   if (Array.isArray(entity.pos) && entity.pos.length === 2) return entity.pos;
   if (!grid || !bands) return [NaN, NaN];
-  if (!Number.isInteger(entity.row) || !Number.isInteger(entity.col)) return [NaN, NaN];
-  const columnX = bands.columnX.get(entity.col);
+  if (!Number.isInteger(entity.row) || !gridColumn(entity.col)) return [NaN, NaN];
+  const width = resolvedEntityWidth(entity, grid);
   const rowY = bands.rowY.get(entity.row);
+  if (!Number.isInteger(entity.col)) {
+    const centre = (col) => bands.columnX.get(col) + (bands.widths.get(col) || 0) / 2;
+    const [left, right] = [Math.floor(entity.col), Math.ceil(entity.col)];
+    if (![bands.columnX.get(left), bands.columnX.get(right), rowY].every(Number.isFinite)) return [NaN, NaN];
+    return [(centre(left) + centre(right)) / 2 - width / 2, rowY];
+  }
+  const columnX = bands.columnX.get(entity.col);
   if (!Number.isFinite(columnX) || !Number.isFinite(rowY)) return [NaN, NaN];
   // Centre each box in its column so the gaps on both sides stay equal; the
   // router reads those gaps as corridors.
-  const width = resolvedEntityWidth(entity, grid);
   const columnWidth = bands.widths.get(entity.col) || width;
   return [columnX + (columnWidth - width) / 2, rowY];
 }

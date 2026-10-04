@@ -34,16 +34,16 @@ const ADVANCE = nodeTextFit.widthFactor;
 
 const layout = {
   margin: 28,
-  top: 46,
-  axisH: 34,
-  rowH: 28,
+  top: 52,
+  axisH: 36,
+  rowH: 25,
   barH: 14,
-  indent: 16,
-  nameFont: 11.5,
-  durationFont: 10,
+  indent: 18,
+  nameFont: 12.5,
+  durationFont: 11,
   axisWidth: wf.layout?.width ?? 760,
-  columnGap: 20,
-  minTickPx: 72,
+  columnGap: 28,
+  minTickPx: 80,
 };
 
 // ---- Timing checks -------------------------------------------------------------
@@ -136,8 +136,23 @@ function percent(value) {
   return `${share >= 10 ? Math.round(share) : Math.round(share * 10) / 10}%`;
 }
 
+// ---- Tones ---------------------------------------------------------------------
+// Colour states who did the work: each service gets its own palette family in
+// order of first appearance, and a span without one inherits its parent's.
+// A span no service owns stays neutral. Red is never a service colour: it is
+// reserved for status "error", so a failure is never mistaken for a team.
+const SERVICE_TONES = ['frontend', 'backend', 'database', 'cloud', 'messagebus'];
+const services = [...new Set(rows.map((row) => row.service).filter(Boolean))];
+const serviceOf = new Map();
+for (const row of rows) serviceOf.set(row.id, row.service ?? (row.parent !== undefined ? serviceOf.get(row.parent) : undefined));
+const serviceTone = (service) => (service === undefined ? 'external' : SERVICE_TONES[services.indexOf(service) % SERVICE_TONES.length]);
+const STATUS_TONE = { error: 'security', cancelled: 'external' };
+const toneOf = (row) => STATUS_TONE[row.status] ?? serviceTone(serviceOf.get(row.id));
+
 // ---- Geometry ------------------------------------------------------------------
-const nameWidth = (row) => row.depth * layout.indent + 14 + textUnits(row.name) * layout.nameFont * ADVANCE * 1.04;
+// Name column: tree indent, then a service dot, then the name.
+const NAME_DOT = 14;
+const nameWidth = (row) => row.depth * layout.indent + NAME_DOT + textUnits(row.name) * layout.nameFont * ADVANCE * 1.04;
 const labelW = Math.ceil(Math.max(140, ...rows.map(nameWidth)));
 const axisX0 = layout.margin + labelW + layout.columnGap;
 const axisX1 = axisX0 + layout.axisWidth;
@@ -158,105 +173,129 @@ const tickStep = (() => {
 const ticks = [];
 for (let t = Math.ceil(t0 / tickStep) * tickStep; t <= t1 + 1e-9; t += tickStep) ticks.push({ t, x: xOf(t) });
 
+const LABEL_GAP = 7;
+const parentIds = new Set(rows.map((row) => row.parent).filter((id) => id !== undefined));
 const placed = rows.map((row, index) => {
   const y = rowsTop + index * layout.rowH;
   const x0 = xOf(row.start);
   const x1 = xOf(row.end);
-  const width = Math.max(1.5, x1 - x0);
+  const width = Math.max(2, x1 - x0);
   const label = row.open ? i18nText(locale, 'waterfall.incomplete', { duration: formatDuration(row.duration) }) : formatDuration(row.duration);
-  const labelWidth = textUnits(label) * layout.durationFont * ADVANCE + 6;
-  // A duration that fits stays inside its bar; otherwise it sits beside the
-  // bar on whichever side has room, so a short operation is never unlabeled.
-  const placement = labelWidth + 10 <= width ? 'inside' : x1 + 6 + labelWidth <= axisX1 + 60 ? 'after' : 'before';
-  return { ...row, y, x0, x1, width, label, labelWidth, placement };
+  const labelWidth = textUnits(label) * layout.durationFont * ADVANCE + 4;
+  // Every duration reads at the same place, just after its bar; the canvas
+  // reserves room past the axis for the widest one, so a short operation and
+  // a bar that ends at the wall-clock edge are labelled the same way.
+  return { ...row, y, x0, x1, width, label, labelWidth, placement: 'after', tone: toneOf(row), parentBar: parentIds.has(row.id) };
 });
 
 // ---- Legend & canvas -----------------------------------------------------------
-const STATUS_TONE = { ok: 'backend', error: 'security', cancelled: 'external', incomplete: 'messagebus' };
+// The legend names the services (when more than one does work) and any status
+// that changes a bar's paint; a single-service trace with only ok spans needs
+// no key.
 const presentStatuses = new Set(placed.map((row) => row.status));
-const legendEntries = presentStatuses.size > 1 || !presentStatuses.has('ok')
-  ? resolveLegend(undefined, Object.keys(STATUS_TONE).map((kind) => ({ kind, label: i18nText(locale, `legend.waterfall.${kind}`), interactive: false })), presentStatuses)
-  : [];
+const legendEntries = [
+  ...(services.length > 1 ? services.map((service) => ({ kind: `service:${service}`, label: service, tone: serviceTone(service), interactive: false })) : []),
+  ...resolveLegend(undefined, ['error', 'cancelled', 'incomplete'].map((kind) => ({ kind, label: i18nText(locale, `legend.waterfall.${kind}`), tone: STATUS_TONE[kind] ?? 'external', interactive: false })), presentStatuses),
+];
 const contentBottom = rowsTop + placed.length * layout.rowH + 8;
-const width = Math.ceil(axisX1 + 60 + layout.margin);
-const footprint = legendFootprint(legendEntries, { width: width - layout.margin * 2 });
+const labelRoom = Math.ceil(Math.max(...placed.map((row) => row.x1 + LABEL_GAP + row.labelWidth)) - axisX1);
+const width = Math.ceil(axisX1 + Math.max(24, labelRoom) + layout.margin);
+const footprint = legendFootprint(legendEntries, { width: width - layout.margin * 2, fontSize: 11 });
 const height = Math.ceil(contentBottom + layout.margin + (legendEntries.length ? 34 + footprint.extraHeight : 0));
 const viewBox = [width, height];
 
 // ---- Rendering -----------------------------------------------------------------
 function renderHeader() {
   const evidence = i18nText(locale, `waterfall.evidence.${wf.meta.evidence}`);
-  const evidenceW = Math.ceil(textUnits(evidence) * 10 * ADVANCE + 22);
+  const evidenceW = Math.ceil(textUnits(evidence) * 10.5 * ADVANCE + 24);
   const tone = wf.meta.evidence === 'measured' ? 'backend' : 'messagebus';
-  const total = `${i18nText(locale, 'waterfall.wall', { duration: formatDuration(wall) })} (${number(t0)} → ${number(t1)} ${unitLabel})`;
+  const wallText = i18nText(locale, 'waterfall.wall', { duration: formatDuration(wall) });
+  const range = `${number(t0)} → ${number(t1)} ${unitLabel}`;
+  const wallX = layout.margin + evidenceW + 14;
   return `        <g data-waterfall-evidence="${esc(wf.meta.evidence)}">
-          <rect x="${layout.margin}" y="12" width="${evidenceW}" height="20" rx="10" class="c-${tone}" stroke-width="1.2"/>
-          <text x="${layout.margin + evidenceW / 2}" y="26" class="t-${tone}" font-size="10" font-weight="700" text-anchor="middle">${esc(evidence)}</text>
+          <rect x="${layout.margin}" y="14" width="${evidenceW}" height="22" rx="11" class="c-${tone}" stroke-width="1"/>
+          <circle cx="${layout.margin + 11}" cy="25" r="3" class="t-${tone}"/>
+          <text x="${layout.margin + evidenceW / 2 + 5}" y="29" class="t-${tone}" font-size="10.5" font-weight="700" text-anchor="middle">${esc(evidence)}</text>
         </g>
-        <text data-waterfall-total="${wall}" x="${layout.margin + evidenceW + 12}" y="26" class="t-primary" font-size="11" font-weight="650">${esc(total)}</text>`;
+        <text data-waterfall-total="${wall}" x="${wallX}" y="29.5" class="t-primary wf-num" font-size="13" font-weight="700">${esc(wallText)}<tspan class="t-muted" font-weight="500" dx="10">${esc(range)}</tspan></text>`;
 }
 
 function renderAxis() {
-  const lineY = rowsTop - 8;
+  const lineY = rowsTop - 6;
   return [
-    `        <text x="${layout.margin}" y="${lineY - 8}" class="t-muted" font-size="10" font-weight="650">${esc(i18nText(locale, 'waterfall.operation'))}</text>`,
-    `        <line x1="${axisX0}" y1="${lineY}" x2="${axisX1}" y2="${lineY}" class="wf-axis" stroke-width="1.2"/>`,
-    ...ticks.map((tick) => `        <line x1="${tick.x}" y1="${lineY}" x2="${tick.x}" y2="${contentBottom}" class="wf-grid" stroke-width="1"/>
-        <text x="${tick.x}" y="${lineY - 8}" class="t-muted wf-num" font-size="10" text-anchor="middle">${esc(number(tick.t))} ${esc(unitLabel)}</text>`),
+    `        <text x="${layout.margin}" y="${lineY - 10}" class="t-muted wf-caps" font-size="10" font-weight="700">${esc(i18nText(locale, 'waterfall.operation'))}</text>`,
+    `        <line x1="${axisX0}" y1="${lineY}" x2="${axisX1}" y2="${lineY}" class="wf-axis" stroke-width="1"/>`,
+    ...ticks.map((tick, index) => `        <line x1="${tick.x}" y1="${lineY}" x2="${tick.x}" y2="${contentBottom}" class="wf-grid${index ? '' : ' wf-grid-origin'}" stroke-width="1"/>
+        <line x1="${tick.x}" y1="${lineY - 4}" x2="${tick.x}" y2="${lineY}" class="wf-axis" stroke-width="1"/>
+        <text x="${tick.x}" y="${lineY - 10}" class="t-muted wf-num" font-size="10.5" text-anchor="middle">${esc(number(tick.t))} ${esc(unitLabel)}</text>`),
   ].join('\n');
 }
 
 // Tree guides in the name column state the parent/child structure; the bars
 // themselves only ever state time.
+const dotX = (row) => layout.margin + row.depth * layout.indent + 4;
+
 function renderGuides() {
   const rowIndex = new Map(placed.map((row, index) => [row.id, index]));
   return placed.filter((row) => row.parent !== undefined).map((row) => {
-    const parentY = placed[rowIndex.get(row.parent)].y + layout.rowH / 2 + 7;
+    const parent = placed[rowIndex.get(row.parent)];
+    const parentY = parent.y + layout.rowH / 2 + 6;
     const y = row.y + layout.rowH / 2;
-    const x = layout.margin + (row.depth - 1) * layout.indent + 5;
-    return `        <path ${focusEdgeAttrs(row.parent, row.id, undefined, row.index)} d="M ${x} ${parentY} V ${y} H ${x + layout.indent - 6}" class="wf-guide" stroke-width="1" fill="none"/>`;
+    const x = dotX(parent);
+    return `        <path ${focusEdgeAttrs(row.parent, row.id, undefined, row.index)} d="M ${x} ${parentY} V ${y - 4} Q ${x} ${y} ${x + 4} ${y} H ${dotX(row) - 7}" class="wf-guide" stroke-width="1" fill="none"/>`;
   }).join('\n');
 }
 
+// A span with children is drawn as a tinted, outlined bracket over its time;
+// a span that does the work itself is a solid bar. Parent and child are never
+// added together, and the paint says which bars are inclusive summaries.
 function renderRow(row, order) {
-  const tone = STATUS_TONE[row.status];
   const parent = row.parent !== undefined ? placed.find((candidate) => candidate.id === row.parent) : null;
   const timing = `${number(row.start)}–${row.open ? '…' : number(row.end)} ${unitLabel} · ${row.label} · ${i18nText(locale, 'waterfall.share', { percent: percent(row.duration), total: formatDuration(wall) })}`;
-  const passport = { kind: tone, sublabel: [timing, row.detail].filter(Boolean).join(' — '), context: [row.service, parent?.name].filter(Boolean).join(' \u203a ') || undefined };
-  const nameX = layout.margin + row.depth * layout.indent + (row.depth ? 12 : 0);
+  const service = serviceOf.get(row.id);
+  const passport = { kind: row.tone, sublabel: [timing, row.detail].filter(Boolean).join(' — '), context: [service, parent?.name].filter(Boolean).join(' \u203a ') || undefined };
   const midY = row.y + layout.rowH / 2;
   const barY = midY - layout.barH / 2;
-  const labelX = row.placement === 'inside' ? row.x0 + row.width / 2 : row.placement === 'after' ? row.x1 + 6 : row.x0 - 6;
-  const anchor = row.placement === 'inside' ? 'middle' : row.placement === 'after' ? 'start' : 'end';
-  const openTail = row.open ? `<path d="M ${row.x1 - 10} ${barY} L ${row.x1} ${midY} L ${row.x1 - 10} ${barY + layout.barH}" class="wf-open-edge" stroke-width="1.6" fill="none"/>` : '';
-  return `        <g ${focusNodeAttrs(row.id, row.name, passport, locale)} data-waterfall-start="${row.start}" data-waterfall-end="${row.open ? '' : row.end}" data-waterfall-duration="${row.duration}" data-waterfall-depth="${row.depth}" data-waterfall-status="${row.status}">
+  const nameX = dotX(row) + 10;
+  const paint = row.open ? 'wf-open' : row.parentBar ? 'wf-span' : 'wf-solid';
+  const openTail = row.open ? `<path d="M ${row.x1 - 8} ${barY + 2} L ${row.x1 - 2} ${midY} L ${row.x1 - 8} ${barY + layout.barH - 2}" class="wf-open-edge t-${row.tone}" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>` : '';
+  return `        <g ${focusNodeAttrs(row.id, row.name, passport, locale)} data-waterfall-start="${row.start}" data-waterfall-end="${row.open ? '' : row.end}" data-waterfall-duration="${row.duration}" data-waterfall-depth="${row.depth}" data-waterfall-status="${row.status}"${service ? ` data-waterfall-service="${esc(service)}"` : ''}>
           ${focusNodeTitle(row.name, passport)}
-          <rect x="${layout.margin - 6}" y="${row.y + 1}" width="${axisX1 + 60 - layout.margin + 6}" height="${layout.rowH - 2}" rx="5" class="wf-row${order % 2 ? ' wf-row-alt' : ''}"/>
-          <text data-node-label="" x="${nameX}" y="${midY + 4}" class="t-primary" font-size="${layout.nameFont}" font-weight="${row.depth ? 550 : 700}">${esc(row.name)}</text>
-          <rect x="${row.x0}" y="${barY}" width="${row.width}" height="${layout.barH}" rx="3" class="c-${tone}${row.open ? ' wf-open' : ''}${row.parent === undefined ? ' wf-root' : ''}"${animateAttr(wf.meta, 'node', order)} stroke-width="1.3"/>
+          <rect x="${layout.margin - 8}" y="${row.y + 1}" width="${width - layout.margin * 2 + 16}" height="${layout.rowH - 2}" rx="6" class="c-mask wf-row${order % 2 ? ' wf-row-alt' : ''}"/>
+          <rect x="${row.x0}" y="${barY}" width="${row.width}" height="${layout.barH}" rx="${Math.min(4, row.width / 2)}" class="c-${row.tone} ${paint}"${animateAttr(wf.meta, 'node', order)} stroke-width="1.2"/>
           ${openTail}
-          <text x="${labelX}" y="${midY + 3.5}" class="t-primary wf-num" font-size="${layout.durationFont}" font-weight="650" text-anchor="${anchor}">${esc(row.label)}</text>
+          <circle cx="${dotX(row)}" cy="${midY}" r="${row.depth ? 3.5 : 4.5}" class="t-${row.tone} wf-dot"/>
+          <text data-node-label="" x="${nameX}" y="${midY + 4.3}" class="t-primary" font-size="${layout.nameFont}" font-weight="${row.depth ? (row.parentBar ? 650 : 500) : 750}">${esc(row.name)}</text>
+          <text x="${row.x1 + LABEL_GAP}" y="${midY + 3.8}" class="${row.parentBar ? 't-primary' : 't-muted'} wf-num" font-size="${layout.durationFont}" font-weight="${row.parentBar ? 700 : 600}">${esc(row.label)}</text>
         </g>`;
 }
 
 function legendSwatch(entry) {
-  return `<rect x="${entry.x}" y="${entry.baseline - 10}" width="14" height="10" rx="2" class="c-${STATUS_TONE[entry.kind]}${entry.kind === 'incomplete' ? ' wf-open' : ''}" stroke-width="1.2"/>`;
+  const paint = entry.kind === 'incomplete' ? 'wf-open' : 'wf-solid';
+  return `<rect x="${entry.x}" y="${entry.baseline - 10}" width="14" height="10" rx="2.5" class="c-${entry.tone} ${paint}" stroke-width="1.2"/>`;
 }
+
+const SOLID_TONES = ['frontend', 'backend', 'database', 'cloud', 'messagebus', 'security', 'external'];
 
 function renderSvg() {
   return `      <svg viewBox="0 0 ${viewBox[0]} ${viewBox[1]}" ${svgRootAttrs(wf.meta)} data-waterfall-ui="" data-waterfall-unit="${esc(unit)}" data-reader-fit="intrinsic-height" data-reader-min-text="7.5">
 ${svgAccessibleText(wf.meta, 'waterfall')}
 ${renderDefinitions()}
         <style>
-          svg[data-waterfall-ui] .wf-axis { stroke: var(--text-muted); }
-          svg[data-waterfall-ui] .wf-grid { stroke: var(--lane-stroke); stroke-dasharray: 3 5; opacity: .8; }
+          svg[data-waterfall-ui] .wf-axis { stroke: var(--text-dim); }
+          svg[data-waterfall-ui] .wf-grid { stroke: var(--lane-stroke); stroke-dasharray: 2 4; opacity: .7; }
+          svg[data-waterfall-ui] .wf-grid-origin { stroke-dasharray: none; opacity: .9; }
           svg[data-waterfall-ui] .wf-row { fill: transparent; }
-          svg[data-waterfall-ui] .wf-row-alt { fill: var(--lane-fill); opacity: .45; }
+          svg[data-waterfall-ui] .wf-row-alt { fill: var(--lane-fill); fill-opacity: 1; opacity: .7; }
           svg[data-waterfall-ui] .wf-guide { stroke: var(--lane-stroke); }
-          svg[data-waterfall-ui] .wf-root { fill-opacity: .35; }
-          svg[data-waterfall-ui] .wf-open { stroke-dasharray: 2 3; fill-opacity: .55; }
-          svg[data-waterfall-ui] .wf-open-edge { stroke: var(--messagebus-stroke); }
+          svg[data-waterfall-ui] .wf-span { fill-opacity: .9; }
+          svg[data-waterfall-ui] .wf-open { stroke-dasharray: 3 2.5; fill-opacity: .6; }
+          svg[data-waterfall-ui] .wf-open-edge { fill: none !important; }
           svg[data-waterfall-ui] .wf-num { font-variant-numeric: tabular-nums; }
+          svg[data-waterfall-ui] .wf-caps { letter-spacing: .06em; }
+          svg[data-waterfall-ui] .wf-solid { stroke: none; }
+${SOLID_TONES.map((tone) => `          svg[data-waterfall-ui] .wf-solid.c-${tone} { fill: var(--${tone}-stroke); }
+          svg[data-waterfall-ui] .wf-open-edge.t-${tone} { stroke: var(--${tone}-stroke); }`).join('\n')}
         </style>
 
         <!-- Background Grid -->
@@ -274,7 +313,7 @@ ${renderGuides()}
 ${placed.map(renderRow).join('\n')}
 
         <!-- Legend -->
-${legendEntries.length ? renderResolvedLegend({ entries: legendEntries, locale, layout: { x: layout.margin, baselineY: height - 16, width: width - layout.margin * 2, fontSize: 10, minTitleY: contentBottom + 8, diagramType: 'waterfall' }, renderSwatch: legendSwatch }) : ''}
+${legendEntries.length ? renderResolvedLegend({ entries: legendEntries, locale, layout: { x: layout.margin, baselineY: height - 16, width: width - layout.margin * 2, fontSize: 11, minTitleY: contentBottom + 8, diagramType: 'waterfall' }, renderSwatch: legendSwatch }) : ''}
       </svg>`;
 }
 

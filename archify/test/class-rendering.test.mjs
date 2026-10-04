@@ -95,6 +95,9 @@ test('class: implementations of one supertype share a hierarchy bus and a single
     assert.equal(path['marker-start'], 'url(#cl-triangle-start)');
   }
   assert.match(svg, /<marker id="cl-triangle-start"[^>]*orient="auto-start-reverse"/);
+  // `col: 1.5` centres the supertype over its two subtypes, so the bus is symmetric.
+  const centre = (box) => box.x + box.width / 2;
+  assert.ok(Math.abs(centre(gateway) - (centre(boxes.get('card_gateway')) + centre(boxes.get('wallet_gateway'))) / 2) < 0.5);
 });
 
 test('class: long members wrap inside the box instead of being truncated', () => {
@@ -103,14 +106,16 @@ test('class: long members wrap inside the box instead of being truncated', () =>
   const boxes = typeBoxes(svg);
   const processor = boxes.get('payment_processor');
   const block = svg.slice(svg.indexOf('data-node-id="payment_processor"'), svg.indexOf('data-node-id="order"'));
-  const lines = [...block.matchAll(/<text data-detail="context" data-class-member="methods"[^>]* x="([\d.]+)"[^>]*>([^<]+)<\/text>/g)];
+  // Annotations are tspans inside the line; the line's text is what is read.
+  const lines = [...block.matchAll(/<text data-detail="context" data-class-member="methods"[^>]* x="([\d.]+)"[^>]*>(.*?)<\/text>/g)]
+    .map((line) => Object.assign([...line], { 2: line[2].replace(/<[^>]+>/g, '') }));
   assert.ok(lines.some((line) => /data-class-continuation/.test(line[0])), 'expected a wrapped continuation line');
   const joined = lines.map((line) => line[2]).join('').replace(/&gt;/g, '>').replace(/&lt;/g, '<');
   for (const method of large.types.find((type) => type.id === 'payment_processor').methods) {
     assert.ok(joined.replace(/\s+/g, '').includes(`${method.name}(${method.parameters}):${method.returns}`.replace(/\s+/g, '')), method.name);
   }
   for (const line of lines) {
-    const right = Number(line[1]) + textUnits(line[2]) * 10.5 * 0.6;
+    const right = Number(line[1]) + textUnits(line[2]) * 11 * 0.6;
     assert.ok(right <= processor.x + processor.width - 11, `"${line[2]}" overruns its box`);
   }
 });

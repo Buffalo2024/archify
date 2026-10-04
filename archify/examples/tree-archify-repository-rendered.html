@@ -4987,7 +4987,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <div class="pulse-dot"></div>
         <h1>Archify repository layout</h1>
       </div>
-      <p class="subtitle">Observed directory and module structure of this repository (selected files). The Viewer branch starts collapsed.</p>
+      <p class="subtitle">Observed directory structure of this repository (selected files). Runs of three or more files are listed; the viewer/ branch starts collapsed.</p>
     </div>
 
 
@@ -4995,9 +4995,9 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     <!-- Main Diagram -->
     <div class="diagram-container" data-detail-level="read"
          data-preset-badge-editorial-plate="ARCHIFY / PLATE 04">
-      <svg viewBox="0 0 1290 1819" role="img" lang="en" aria-labelledby="archify-diagram-title archify-diagram-description" data-preset="classic" data-quality-profile="showcase" data-tree-ui="" data-tree-direction="right" data-reader-fit="intrinsic-height" data-reader-min-text="7.5">
+      <svg viewBox="0 0 1791 927" role="img" lang="en" aria-labelledby="archify-diagram-title archify-diagram-description" data-preset="classic" data-quality-profile="showcase" data-tree-ui="" data-tree-direction="down" data-reader-fit="intrinsic-height" data-reader-min-text="7.5">
         <title id="archify-diagram-title">Archify repository layout</title>
-        <desc id="archify-diagram-description">Observed directory and module structure of this repository (selected files). The Viewer branch starts collapsed.</desc>
+        <desc id="archify-diagram-description">Observed directory structure of this repository (selected files). Runs of three or more files are listed; the viewer/ branch starts collapsed.</desc>
         <!-- Definitions -->
         <defs>
           <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
@@ -5017,7 +5017,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           </pattern>
         </defs>
         <style>
-          svg[data-tree-ui] .tree-edge { stroke-linejoin: round; }
+          svg[data-tree-ui] .tree-edge { stroke-linejoin: round; stroke-linecap: round; }
+          svg[data-tree-ui] .tree-leaf { fill: var(--mask); stroke: var(--lane-stroke); }
           svg[data-tree-ui] [data-tree-stack] { display: none; fill: var(--mask); }
           svg[data-tree-ui] [data-tree-collapsed] [data-tree-stack] { display: inline; }
           svg[data-tree-ui] [data-tree-hidden] { display: none; }
@@ -5040,327 +5041,336 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <rect width="100%" height="100%" fill="url(#grid)" />
 
         <!-- Containment links -->
-        <path data-edge-from="renderers" data-edge-to="r_arch" data-edge-key="0" data-tree-ancestors="renderers skill repo" data-composition-points="728,98;776,98" d="M 728 98 L 776 98" class="a-default tree-edge" stroke-width="1.5"/>
-        <path data-edge-from="renderers" data-edge-to="r_workflow" data-edge-key="1" data-tree-ancestors="renderers skill repo" data-composition-points="728,98;752,98;752,184;776,184" d="M 728 98 L 746 98 Q 752 98 752 104 L 752 178 Q 752 184 758 184 L 776 184" class="a-default tree-edge" stroke-width="1.5"/>
-        <path data-edge-from="renderers" data-edge-to="r_sequence" data-edge-key="2" data-tree-ancestors="renderers skill repo" data-composition-points="728,98;752,98;752,255;776,255" d="M 728 98 L 746 98 Q 752 98 752 104 L 752 249 Q 752 255 758 255 L 776 255" class="a-default tree-edge" stroke-width="1.5"/>
-        <path data-edge-from="renderers" data-edge-to="r_dataflow" data-edge-key="3" data-tree-ancestors="renderers skill repo" data-composition-points="728,98;752,98;752,311;776,311" d="M 728 98 L 746 98 Q 752 98 752 104 L 752 305 Q 752 311 758 311 L 776 311" class="a-default tree-edge" stroke-width="1.5"/>
-        <path data-edge-from="renderers" data-edge-to="r_lifecycle" data-edge-key="4" data-tree-ancestors="renderers skill repo" data-composition-points="728,98;752,98;752,367;776,367" d="M 728 98 L 746 98 Q 752 98 752 104 L 752 361 Q 752 367 758 367 L 776 367" class="a-default tree-edge" stroke-width="1.5"/>
-        <path data-edge-from="renderers" data-edge-to="r_erd" data-edge-key="5" data-tree-ancestors="renderers skill repo" data-composition-points="728,98;752,98;752,438;776,438" d="M 728 98 L 746 98 Q 752 98 752 104 L 752 432 Q 752 438 758 438 L 776 438" class="a-default tree-edge" stroke-width="1.5"/>
-        <path data-edge-from="renderers" data-edge-to="r_tree" data-edge-key="6" data-tree-ancestors="renderers skill repo" data-composition-points="728,98;752,98;752,517.5;776,517.5" d="M 728 98 L 746 98 Q 752 98 752 104 L 752 511.5 Q 752 517.5 758 517.5 L 776 517.5" class="a-default tree-edge" stroke-width="1.5"/>
-        <path data-edge-from="r_shared" data-edge-to="s_cli" data-edge-key="7" data-tree-ancestors="r_shared renderers skill repo" data-composition-points="976,597;1024,597" d="M 976 597 L 1024 597" class="a-default tree-edge" stroke-width="1.5"/>
-        <path data-edge-from="r_shared" data-edge-to="s_geometry" data-edge-key="8" data-tree-ancestors="r_shared renderers skill repo" data-composition-points="976,597;1000,597;1000,683;1024,683" d="M 976 597 L 994 597 Q 1000 597 1000 603 L 1000 677 Q 1000 683 1006 683 L 1024 683" class="a-default tree-edge" stroke-width="1.5"/>
-        <path data-edge-from="r_shared" data-edge-to="s_i18n" data-edge-key="9" data-tree-ancestors="r_shared renderers skill repo" data-composition-points="976,597;1000,597;1000,762.5;1024,762.5" d="M 976 597 L 994 597 Q 1000 597 1000 603 L 1000 756.5 Q 1000 762.5 1006 762.5 L 1024 762.5" class="a-default tree-edge" stroke-width="1.5"/>
-        <path data-edge-from="r_shared" data-edge-to="s_validators" data-edge-key="10" data-tree-ancestors="r_shared renderers skill repo" data-composition-points="976,597;1000,597;1000,835.5;1024,835.5" d="M 976 597 L 994 597 Q 1000 597 1000 603 L 1000 829.5 Q 1000 835.5 1006 835.5 L 1024 835.5" class="a-default tree-edge" stroke-width="1.5"/>
-        <path data-edge-from="renderers" data-edge-to="r_shared" data-edge-key="11" data-tree-ancestors="renderers skill repo" data-composition-points="728,98;752,98;752,597;776,597" d="M 728 98 L 746 98 Q 752 98 752 104 L 752 591 Q 752 597 758 597 L 776 597" class="a-default tree-edge" stroke-width="1.5"/>
-        <path data-edge-from="skill" data-edge-to="renderers" data-edge-key="12" data-tree-ancestors="skill repo" data-composition-points="480,98.5;504,98.5;504,98;528,98" d="M 480 98.5 L 504 98.5 L 504 98 L 528 98" class="a-default tree-edge" stroke-width="1.5"/>
-        <path data-edge-from="skill" data-edge-to="schemas" data-edge-key="13" data-tree-ancestors="skill repo" data-composition-points="480,98.5;504,98.5;504,908.5;528,908.5" d="M 480 98.5 L 498 98.5 Q 504 98.5 504 104.5 L 504 902.5 Q 504 908.5 510 908.5 L 528 908.5" class="a-default tree-edge" stroke-width="1.5"/>
-        <path data-edge-from="bin" data-edge-to="b_archify" data-edge-key="14" data-tree-ancestors="bin skill repo" data-composition-points="728,988.5;752,988.5;752,988;776,988" d="M 728 988.5 L 752 988.5 L 752 988 L 776 988" class="a-default tree-edge" stroke-width="1.5"/>
-        <path data-edge-from="bin" data-edge-to="b_preview" data-edge-key="15" data-tree-ancestors="bin skill repo" data-composition-points="728,988.5;752,988.5;752,1067.5;776,1067.5" d="M 728 988.5 L 746 988.5 Q 752 988.5 752 994.5 L 752 1061.5 Q 752 1067.5 758 1067.5 L 776 1067.5" class="a-default tree-edge" stroke-width="1.5"/>
-        <path data-edge-from="skill" data-edge-to="bin" data-edge-key="16" data-tree-ancestors="skill repo" data-composition-points="480,98.5;504,98.5;504,988.5;528,988.5" d="M 480 98.5 L 498 98.5 Q 504 98.5 504 104.5 L 504 982.5 Q 504 988.5 510 988.5 L 528 988.5" class="a-default tree-edge" stroke-width="1.5"/>
-        <path data-edge-from="skill" data-edge-to="references" data-edge-key="17" data-tree-ancestors="skill repo" data-composition-points="480,98.5;504,98.5;504,1147;528,1147" d="M 480 98.5 L 498 98.5 Q 504 98.5 504 104.5 L 504 1141 Q 504 1147 510 1147 L 528 1147" class="a-default tree-edge" stroke-width="1.5"/>
-        <path data-edge-from="repo" data-edge-to="skill" data-edge-key="18" data-tree-ancestors="repo" data-composition-points="232,99;256,99;256,98.5;280,98.5" d="M 232 99 L 256 99 L 256 98.5 L 280 98.5" class="a-default tree-edge" stroke-width="1.5"/>
-        <path data-edge-from="viewer" data-edge-to="v_focus" data-edge-key="19" data-tree-ancestors="viewer repo" data-composition-points="480,1227;504,1227;504,1226.5;528,1226.5" d="M 480 1227 L 504 1227 L 504 1226.5 L 528 1226.5" class="a-default tree-edge" stroke-width="1.5"/>
-        <path data-edge-from="viewer" data-edge-to="v_export" data-edge-key="20" data-tree-ancestors="viewer repo" data-composition-points="480,1227;504,1227;504,1306;528,1306" d="M 480 1227 L 498 1227 Q 504 1227 504 1233 L 504 1300 Q 504 1306 510 1306 L 528 1306" class="a-default tree-edge" stroke-width="1.5"/>
-        <path data-edge-from="viewer" data-edge-to="v_tree" data-edge-key="21" data-tree-ancestors="viewer repo" data-composition-points="480,1227;504,1227;504,1392;528,1392" d="M 480 1227 L 498 1227 Q 504 1227 504 1233 L 504 1386 Q 504 1392 510 1392 L 528 1392" class="a-default tree-edge" stroke-width="1.5"/>
-        <path data-edge-from="viewer" data-edge-to="v_camera" data-edge-key="22" data-tree-ancestors="viewer repo" data-composition-points="480,1227;504,1227;504,1471.5;528,1471.5" d="M 480 1227 L 498 1227 Q 504 1227 504 1233 L 504 1465.5 Q 504 1471.5 510 1471.5 L 528 1471.5" class="a-default tree-edge" stroke-width="1.5"/>
-        <path data-edge-from="repo" data-edge-to="viewer" data-edge-key="23" data-tree-ancestors="repo" data-composition-points="232,99;256,99;256,1227;280,1227" d="M 232 99 L 250 99 Q 256 99 256 105 L 256 1221 Q 256 1227 262 1227 L 280 1227" class="a-default tree-edge" stroke-width="1.5"/>
-        <path data-edge-from="repo" data-edge-to="site" data-edge-key="24" data-tree-ancestors="repo" data-composition-points="232,99;256,99;256,1544.5;280,1544.5" d="M 232 99 L 250 99 Q 256 99 256 105 L 256 1538.5 Q 256 1544.5 262 1544.5 L 280 1544.5" class="a-default tree-edge" stroke-width="1.5"/>
-        <path data-edge-from="scripts" data-edge-to="sc_viewer" data-edge-key="25" data-tree-ancestors="scripts repo" data-composition-points="480,1624.5;504,1624.5;504,1624;528,1624" d="M 480 1624.5 L 504 1624.5 L 504 1624 L 528 1624" class="a-default tree-edge" stroke-width="1.5"/>
-        <path data-edge-from="scripts" data-edge-to="sc_zip" data-edge-key="26" data-tree-ancestors="scripts repo" data-composition-points="480,1624.5;504,1624.5;504,1703.5;528,1703.5" d="M 480 1624.5 L 498 1624.5 Q 504 1624.5 504 1630.5 L 504 1697.5 Q 504 1703.5 510 1703.5 L 528 1703.5" class="a-default tree-edge" stroke-width="1.5"/>
-        <path data-edge-from="scripts" data-edge-to="sc_gallery" data-edge-key="27" data-tree-ancestors="scripts repo" data-composition-points="480,1624.5;504,1624.5;504,1768;528,1768" d="M 480 1624.5 L 498 1624.5 Q 504 1624.5 504 1630.5 L 504 1762 Q 504 1768 510 1768 L 528 1768" class="a-default tree-edge" stroke-width="1.5"/>
-        <path data-edge-from="repo" data-edge-to="scripts" data-edge-key="28" data-tree-ancestors="repo" data-composition-points="232,99;256,99;256,1624.5;280,1624.5" d="M 232 99 L 250 99 Q 256 99 256 105 L 256 1618.5 Q 256 1624.5 262 1624.5 L 280 1624.5" class="a-default tree-edge" stroke-width="1.5"/>
+        <path data-edge-from="repo" data-edge-to="skill" data-edge-key="0" data-tree-ancestors="repo" data-composition-points="1131,123;1131,151;618.5,151;618.5,179" d="M 1131 123 L 1131 143 Q 1131 151 1123 151 L 626.5 151 Q 618.5 151 618.5 159 L 618.5 179" class="a-default tree-edge" stroke-width="1.5"/>
+        <path data-edge-from="repo" data-edge-to="viewer" data-edge-key="1" data-tree-ancestors="repo" data-composition-points="1131,123;1131,151;1243.5,151;1243.5,179" d="M 1131 123 L 1131 143 Q 1131 151 1139 151 L 1235.5 151 Q 1243.5 151 1243.5 159 L 1243.5 179" class="a-default tree-edge" stroke-width="1.5"/>
+        <path data-edge-from="repo" data-edge-to="site" data-edge-key="2" data-tree-ancestors="repo" data-composition-points="1131,123;1131,151;1443,151;1443,179" d="M 1131 123 L 1131 143 Q 1131 151 1139 151 L 1435 151 Q 1443 151 1443 159 L 1443 179" class="a-default tree-edge" stroke-width="1.5"/>
+        <path data-edge-from="repo" data-edge-to="scripts" data-edge-key="3" data-tree-ancestors="repo" data-composition-points="1131,123;1131,151;1642.5,151;1642.5,179" d="M 1131 123 L 1131 143 Q 1131 151 1139 151 L 1634.5 151 Q 1642.5 151 1642.5 159 L 1642.5 179" class="a-default tree-edge" stroke-width="1.5"/>
+        <path data-edge-from="skill" data-edge-to="renderers" data-edge-key="4" data-tree-ancestors="skill repo" data-composition-points="618.5,238;618.5,266;185,266;185,294" d="M 618.5 238 L 618.5 258 Q 618.5 266 610.5 266 L 193 266 Q 185 266 185 274 L 185 294" class="a-default tree-edge" stroke-width="1.5"/>
+        <path data-edge-from="skill" data-edge-to="schemas" data-edge-key="5" data-tree-ancestors="skill repo" data-composition-points="618.5,238;618.5,266;618,266;618,294" d="M 618.5 238 L 618.5 266 L 618 266 L 618 294" class="a-default tree-edge" stroke-width="1.5"/>
+        <path data-edge-from="skill" data-edge-to="bin" data-edge-key="6" data-tree-ancestors="skill repo" data-composition-points="618.5,238;618.5,266;796,266;796,294" d="M 618.5 238 L 618.5 258 Q 618.5 266 626.5 266 L 788 266 Q 796 266 796 274 L 796 294" class="a-default tree-edge" stroke-width="1.5"/>
+        <path data-edge-from="skill" data-edge-to="references" data-edge-key="7" data-tree-ancestors="skill repo" data-composition-points="618.5,238;618.5,266;1040,266;1040,294" d="M 618.5 238 L 618.5 258 Q 618.5 266 626.5 266 L 1032 266 Q 1040 266 1040 274 L 1040 294" class="a-default tree-edge" stroke-width="1.5"/>
+        <path data-edge-from="renderers" data-edge-to="r_arch" data-edge-key="8" data-tree-ancestors="renderers skill repo" data-composition-points="185,353;185,381;44,381;44,438.5;58,438.5" d="M 185 353 L 185 373 Q 185 381 177 381 L 52 381 Q 44 381 44 389 L 44 431.5 Q 44 438.5 51 438.5 L 58 438.5" class="a-default tree-edge" stroke-width="1.5"/>
+        <path data-edge-from="renderers" data-edge-to="r_workflow" data-edge-key="9" data-tree-ancestors="renderers skill repo" data-composition-points="185,353;185,381;44,381;44,507.5;58,507.5" d="M 185 353 L 185 373 Q 185 381 177 381 L 52 381 Q 44 381 44 389 L 44 500.5 Q 44 507.5 51 507.5 L 58 507.5" class="a-default tree-edge" stroke-width="1.5"/>
+        <path data-edge-from="renderers" data-edge-to="r_sequence" data-edge-key="10" data-tree-ancestors="renderers skill repo" data-composition-points="185,353;185,381;44,381;44,576.5;58,576.5" d="M 185 353 L 185 373 Q 185 381 177 381 L 52 381 Q 44 381 44 389 L 44 569.5 Q 44 576.5 51 576.5 L 58 576.5" class="a-default tree-edge" stroke-width="1.5"/>
+        <path data-edge-from="renderers" data-edge-to="r_dataflow" data-edge-key="11" data-tree-ancestors="renderers skill repo" data-composition-points="185,353;185,381;44,381;44,645.5;58,645.5" d="M 185 353 L 185 373 Q 185 381 177 381 L 52 381 Q 44 381 44 389 L 44 638.5 Q 44 645.5 51 645.5 L 58 645.5" class="a-default tree-edge" stroke-width="1.5"/>
+        <path data-edge-from="renderers" data-edge-to="r_lifecycle" data-edge-key="12" data-tree-ancestors="renderers skill repo" data-composition-points="185,353;185,381;44,381;44,714.5;58,714.5" d="M 185 353 L 185 373 Q 185 381 177 381 L 52 381 Q 44 381 44 389 L 44 707.5 Q 44 714.5 51 714.5 L 58 714.5" class="a-default tree-edge" stroke-width="1.5"/>
+        <path data-edge-from="renderers" data-edge-to="r_erd" data-edge-key="13" data-tree-ancestors="renderers skill repo" data-composition-points="185,353;185,381;44,381;44,783.5;58,783.5" d="M 185 353 L 185 373 Q 185 381 177 381 L 52 381 Q 44 381 44 389 L 44 776.5 Q 44 783.5 51 783.5 L 58 783.5" class="a-default tree-edge" stroke-width="1.5"/>
+        <path data-edge-from="renderers" data-edge-to="r_tree" data-edge-key="14" data-tree-ancestors="renderers skill repo" data-composition-points="185,353;185,381;44,381;44,852.5;58,852.5" d="M 185 353 L 185 373 Q 185 381 177 381 L 52 381 Q 44 381 44 389 L 44 845.5 Q 44 852.5 51 852.5 L 58 852.5" class="a-default tree-edge" stroke-width="1.5"/>
+        <path data-edge-from="renderers" data-edge-to="r_shared" data-edge-key="15" data-tree-ancestors="renderers skill repo" data-composition-points="185,353;185,381;325,381;325,409" d="M 185 353 L 185 373 Q 185 381 193 381 L 317 381 Q 325 381 325 389 L 325 409" class="a-default tree-edge" stroke-width="1.5"/>
+        <path data-edge-from="r_shared" data-edge-to="s_cli" data-edge-key="16" data-tree-ancestors="r_shared renderers skill repo" data-composition-points="267,468;267,553.5;281,553.5" d="M 267 468 L 267 546.5 Q 267 553.5 274 553.5 L 281 553.5" class="a-default tree-edge" stroke-width="1.5"/>
+        <path data-edge-from="r_shared" data-edge-to="s_geometry" data-edge-key="17" data-tree-ancestors="r_shared renderers skill repo" data-composition-points="267,468;267,622.5;281,622.5" d="M 267 468 L 267 615.5 Q 267 622.5 274 622.5 L 281 622.5" class="a-default tree-edge" stroke-width="1.5"/>
+        <path data-edge-from="r_shared" data-edge-to="s_i18n" data-edge-key="18" data-tree-ancestors="r_shared renderers skill repo" data-composition-points="267,468;267,691.5;281,691.5" d="M 267 468 L 267 684.5 Q 267 691.5 274 691.5 L 281 691.5" class="a-default tree-edge" stroke-width="1.5"/>
+        <path data-edge-from="r_shared" data-edge-to="s_validators" data-edge-key="19" data-tree-ancestors="r_shared renderers skill repo" data-composition-points="267,468;267,760.5;281,760.5" d="M 267 468 L 267 753.5 Q 267 760.5 274 760.5 L 281 760.5" class="a-default tree-edge" stroke-width="1.5"/>
+        <path data-edge-from="bin" data-edge-to="b_archify" data-edge-key="20" data-tree-ancestors="bin skill repo" data-composition-points="738,353;738,438.5;752,438.5" d="M 738 353 L 738 431.5 Q 738 438.5 745 438.5 L 752 438.5" class="a-default tree-edge" stroke-width="1.5"/>
+        <path data-edge-from="bin" data-edge-to="b_finalize" data-edge-key="21" data-tree-ancestors="bin skill repo" data-composition-points="738,353;738,507.5;752,507.5" d="M 738 353 L 738 500.5 Q 738 507.5 745 507.5 L 752 507.5" class="a-default tree-edge" stroke-width="1.5"/>
+        <path data-edge-from="bin" data-edge-to="b_preview" data-edge-key="22" data-tree-ancestors="bin skill repo" data-composition-points="738,353;738,576.5;752,576.5" d="M 738 353 L 738 569.5 Q 738 576.5 745 576.5 L 752 576.5" class="a-default tree-edge" stroke-width="1.5"/>
+        <path data-edge-from="viewer" data-edge-to="v_focus" data-edge-key="23" data-tree-ancestors="viewer repo" data-composition-points="1158,238;1158,323.5;1172,323.5" d="M 1158 238 L 1158 316.5 Q 1158 323.5 1165 323.5 L 1172 323.5" class="a-default tree-edge" stroke-width="1.5"/>
+        <path data-edge-from="viewer" data-edge-to="v_export" data-edge-key="24" data-tree-ancestors="viewer repo" data-composition-points="1158,238;1158,392.5;1172,392.5" d="M 1158 238 L 1158 385.5 Q 1158 392.5 1165 392.5 L 1172 392.5" class="a-default tree-edge" stroke-width="1.5"/>
+        <path data-edge-from="viewer" data-edge-to="v_tree" data-edge-key="25" data-tree-ancestors="viewer repo" data-composition-points="1158,238;1158,461.5;1172,461.5" d="M 1158 238 L 1158 454.5 Q 1158 461.5 1165 461.5 L 1172 461.5" class="a-default tree-edge" stroke-width="1.5"/>
+        <path data-edge-from="viewer" data-edge-to="v_camera" data-edge-key="26" data-tree-ancestors="viewer repo" data-composition-points="1158,238;1158,530.5;1172,530.5" d="M 1158 238 L 1158 523.5 Q 1158 530.5 1165 530.5 L 1172 530.5" class="a-default tree-edge" stroke-width="1.5"/>
+        <path data-edge-from="scripts" data-edge-to="sc_viewer" data-edge-key="27" data-tree-ancestors="scripts repo" data-composition-points="1557,238;1557,323.5;1571,323.5" d="M 1557 238 L 1557 316.5 Q 1557 323.5 1564 323.5 L 1571 323.5" class="a-default tree-edge" stroke-width="1.5"/>
+        <path data-edge-from="scripts" data-edge-to="sc_zip" data-edge-key="28" data-tree-ancestors="scripts repo" data-composition-points="1557,238;1557,392.5;1571,392.5" d="M 1557 238 L 1557 385.5 Q 1557 392.5 1564 392.5 L 1571 392.5" class="a-default tree-edge" stroke-width="1.5"/>
+        <path data-edge-from="scripts" data-edge-to="sc_gallery" data-edge-key="29" data-tree-ancestors="scripts repo" data-composition-points="1557,238;1557,461.5;1571,461.5" d="M 1557 238 L 1557 454.5 Q 1557 461.5 1564 461.5 L 1571 461.5" class="a-default tree-edge" stroke-width="1.5"/>
 
         <!-- Nodes -->
-        <g id="node-r_arch" data-node-id="r_arch" data-node-label="architecture/" tabindex="0" role="button" aria-label="Focus architecture/, Components, boundaries, orthogonal router, Leaf" aria-pressed="false" data-node-kind="external" data-node-sublabel="Components, boundaries, orthogonal router" data-node-context="Leaf" data-tree-depth="3" data-tree-ancestors="renderers skill repo">
-          <title>architecture/ · Components, boundaries, orthogonal router · Leaf</title>
-          
-          <rect x="776" y="64" width="200" height="68" rx="7" class="c-mask"/>
-          <rect x="776" y="64" width="200" height="68" rx="7" class="c-external" stroke-width="1.5"/>
-          <text data-node-label="" x="876" class="t-primary" font-size="12.5" font-weight="650" text-anchor="middle"><tspan x="876" y="87">architecture/</tspan></text>
-          <text data-detail="context" x="876" class="t-muted" font-size="10.5" text-anchor="middle"><tspan x="876" y="105">Components, boundaries,</tspan><tspan x="876" y="118">orthogonal router</tspan></text>
+        <g id="node-repo" data-node-id="repo" data-node-label="archify repository" tabindex="0" role="button" aria-label="Focus archify repository, Skill, viewer, and site, Root" aria-pressed="false" data-node-kind="frontend" data-node-sublabel="Skill, viewer, and site" data-node-context="Root" data-tree-depth="0">
+          <title>archify repository · Skill, viewer, and site · Root</title>
+          <rect data-tree-stack="" x="1038" y="69" width="196" height="59" rx="8" class="c-frontend" stroke-width="1.2"/>
+          <rect x="1033" y="64" width="196" height="59" rx="8" class="c-mask"/>
+          <rect x="1033" y="64" width="196" height="59" rx="8" class="c-frontend" stroke-width="1.8"/>
+          <text data-node-label="" x="1131" class="t-primary" font-size="14.5" font-weight="750" text-anchor="middle"><tspan x="1131" y="88.5">archify repository</tspan></text>
+          <text data-detail="context" x="1131" class="t-muted" font-size="11" text-anchor="middle"><tspan x="1131" y="107.5">Skill, viewer, and site</tspan></text>
         </g>
-        <g id="node-r_workflow" data-node-id="r_workflow" data-node-label="workflow/" tabindex="0" role="button" aria-label="Focus workflow/, Workflow compiler and renderer, Leaf" aria-pressed="false" data-node-kind="external" data-node-sublabel="Workflow compiler and renderer" data-node-context="Leaf" data-tree-depth="3" data-tree-ancestors="renderers skill repo">
-          <title>workflow/ · Workflow compiler and renderer · Leaf</title>
+        <g id="node-skill" data-node-id="skill" data-node-label="archify/" tabindex="0" role="button" aria-label="Focus archify/, Installable Skill package, Branch" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Installable Skill package" data-node-context="Branch" data-tree-depth="1" data-tree-ancestors="repo">
+          <title>archify/ · Installable Skill package · Branch</title>
+          <rect data-tree-stack="" x="526" y="184" width="195" height="59" rx="8" class="c-backend" stroke-width="1.2"/>
+          <rect x="521" y="179" width="195" height="59" rx="8" class="c-mask"/>
+          <rect x="521" y="179" width="195" height="59" rx="8" class="c-backend" stroke-width="1.3"/>
+          <text data-node-label="" x="618.5" class="t-primary" font-size="13" font-weight="700" text-anchor="middle"><tspan x="618.5" y="203.5">archify/</tspan></text>
+          <text data-detail="context" x="618.5" class="t-muted" font-size="11" text-anchor="middle"><tspan x="618.5" y="222.5">Installable Skill package</tspan></text>
+        </g>
+        <g id="node-viewer" data-node-id="viewer" data-node-label="viewer/" tabindex="0" role="button" aria-label="Focus viewer/, Inlined into the template, Branch" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Inlined into the template" data-node-context="Branch" data-tree-depth="1" data-tree-ancestors="repo">
+          <title>viewer/ · Inlined into the template · Branch</title>
+          <rect data-tree-stack="" x="1151" y="184" width="195" height="59" rx="8" class="c-backend" stroke-width="1.2"/>
+          <rect x="1146" y="179" width="195" height="59" rx="8" class="c-mask"/>
+          <rect x="1146" y="179" width="195" height="59" rx="8" class="c-backend" stroke-width="1.3"/>
+          <text data-node-label="" x="1243.5" class="t-primary" font-size="13" font-weight="700" text-anchor="middle"><tspan x="1243.5" y="203.5">viewer/</tspan></text>
+          <text data-detail="context" x="1243.5" class="t-muted" font-size="11" text-anchor="middle"><tspan x="1243.5" y="222.5">Inlined into the template</tspan></text>
+        </g>
+        <g id="node-site" data-node-id="site" data-node-label="website/" tabindex="0" role="button" aria-label="Focus website/, Astro project site, Leaf" aria-pressed="false" data-node-kind="external" data-node-sublabel="Astro project site" data-node-context="Leaf" data-tree-depth="1" data-tree-ancestors="repo">
+          <title>website/ · Astro project site · Leaf</title>
           
-          <rect x="776" y="150" width="200" height="68" rx="7" class="c-mask"/>
-          <rect x="776" y="150" width="200" height="68" rx="7" class="c-external" stroke-width="1.5"/>
-          <text data-node-label="" x="876" class="t-primary" font-size="12.5" font-weight="650" text-anchor="middle"><tspan x="876" y="173">workflow/</tspan></text>
-          <text data-detail="context" x="876" class="t-muted" font-size="10.5" text-anchor="middle"><tspan x="876" y="191">Workflow compiler and</tspan><tspan x="876" y="204">renderer</tspan></text>
+          <rect x="1369" y="179" width="148" height="59" rx="8" class="c-mask"/>
+          <rect x="1369" y="179" width="148" height="59" rx="8" class="c-external tree-leaf" stroke-width="1.3"/>
+          <text data-node-label="" x="1443" class="t-primary" font-size="13" font-weight="600" text-anchor="middle"><tspan x="1443" y="203.5">website/</tspan></text>
+          <text data-detail="context" x="1443" class="t-muted" font-size="11" text-anchor="middle"><tspan x="1443" y="222.5">Astro project site</tspan></text>
+        </g>
+        <g id="node-scripts" data-node-id="scripts" data-node-label="scripts/" tabindex="0" role="button" aria-label="Focus scripts/, Build and freshness tools, Branch" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Build and freshness tools" data-node-context="Branch" data-tree-depth="1" data-tree-ancestors="repo">
+          <title>scripts/ · Build and freshness tools · Branch</title>
+          <rect data-tree-stack="" x="1550" y="184" width="195" height="59" rx="8" class="c-backend" stroke-width="1.2"/>
+          <rect x="1545" y="179" width="195" height="59" rx="8" class="c-mask"/>
+          <rect x="1545" y="179" width="195" height="59" rx="8" class="c-backend" stroke-width="1.3"/>
+          <text data-node-label="" x="1642.5" class="t-primary" font-size="13" font-weight="700" text-anchor="middle"><tspan x="1642.5" y="203.5">scripts/</tspan></text>
+          <text data-detail="context" x="1642.5" class="t-muted" font-size="11" text-anchor="middle"><tspan x="1642.5" y="222.5">Build and freshness tools</tspan></text>
+        </g>
+        <g id="node-renderers" data-node-id="renderers" data-node-label="renderers/" tabindex="0" role="button" aria-label="Focus renderers/, One per diagram type, Branch" aria-pressed="false" data-node-kind="backend" data-node-sublabel="One per diagram type" data-node-context="Branch" data-tree-depth="2" data-tree-ancestors="skill repo">
+          <title>renderers/ · One per diagram type · Branch</title>
+          <rect data-tree-stack="" x="110" y="299" width="160" height="59" rx="8" class="c-backend" stroke-width="1.2"/>
+          <rect x="105" y="294" width="160" height="59" rx="8" class="c-mask"/>
+          <rect x="105" y="294" width="160" height="59" rx="8" class="c-backend" stroke-width="1.3"/>
+          <text data-node-label="" x="185" class="t-primary" font-size="13" font-weight="700" text-anchor="middle"><tspan x="185" y="318.5">renderers/</tspan></text>
+          <text data-detail="context" x="185" class="t-muted" font-size="11" text-anchor="middle"><tspan x="185" y="337.5">One per diagram type</tspan></text>
+        </g>
+        <g id="node-schemas" data-node-id="schemas" data-node-label="schemas/" tabindex="0" role="button" aria-label="Focus schemas/, Typed JSON contracts, Leaf" aria-pressed="false" data-node-kind="external" data-node-sublabel="Typed JSON contracts" data-node-context="Leaf" data-tree-depth="2" data-tree-ancestors="skill repo">
+          <title>schemas/ · Typed JSON contracts · Leaf</title>
+          
+          <rect x="538" y="294" width="160" height="59" rx="8" class="c-mask"/>
+          <rect x="538" y="294" width="160" height="59" rx="8" class="c-external tree-leaf" stroke-width="1.3"/>
+          <text data-node-label="" x="618" class="t-primary" font-size="13" font-weight="600" text-anchor="middle"><tspan x="618" y="318.5">schemas/</tspan></text>
+          <text data-detail="context" x="618" class="t-muted" font-size="11" text-anchor="middle"><tspan x="618" y="337.5">Typed JSON contracts</tspan></text>
+        </g>
+        <g id="node-bin" data-node-id="bin" data-node-label="bin/" tabindex="0" role="button" aria-label="Focus bin/, CLI entry points, Branch" aria-pressed="false" data-node-kind="backend" data-node-sublabel="CLI entry points" data-node-context="Branch" data-tree-depth="2" data-tree-ancestors="skill repo">
+          <title>bin/ · CLI entry points · Branch</title>
+          <rect data-tree-stack="" x="731" y="299" width="140" height="59" rx="8" class="c-backend" stroke-width="1.2"/>
+          <rect x="726" y="294" width="140" height="59" rx="8" class="c-mask"/>
+          <rect x="726" y="294" width="140" height="59" rx="8" class="c-backend" stroke-width="1.3"/>
+          <text data-node-label="" x="796" class="t-primary" font-size="13" font-weight="700" text-anchor="middle"><tspan x="796" y="318.5">bin/</tspan></text>
+          <text data-detail="context" x="796" class="t-muted" font-size="11" text-anchor="middle"><tspan x="796" y="337.5">CLI entry points</tspan></text>
+        </g>
+        <g id="node-references" data-node-id="references" data-node-label="references/" tabindex="0" role="button" aria-label="Focus references/, Authoring contracts, Leaf" aria-pressed="false" data-node-kind="external" data-node-sublabel="Authoring contracts" data-node-context="Leaf" data-tree-depth="2" data-tree-ancestors="skill repo">
+          <title>references/ · Authoring contracts · Leaf</title>
+          
+          <rect x="962" y="294" width="156" height="59" rx="8" class="c-mask"/>
+          <rect x="962" y="294" width="156" height="59" rx="8" class="c-external tree-leaf" stroke-width="1.3"/>
+          <text data-node-label="" x="1040" class="t-primary" font-size="13" font-weight="600" text-anchor="middle"><tspan x="1040" y="318.5">references/</tspan></text>
+          <text data-detail="context" x="1040" class="t-muted" font-size="11" text-anchor="middle"><tspan x="1040" y="337.5">Authoring contracts</tspan></text>
+        </g>
+        <g id="node-r_arch" data-node-id="r_arch" data-node-label="architecture/" tabindex="0" role="button" aria-label="Focus architecture/, Boundaries and router, Leaf" aria-pressed="false" data-node-kind="external" data-node-sublabel="Boundaries and router" data-node-context="Leaf" data-tree-depth="3" data-tree-ancestors="renderers skill repo">
+          <title>architecture/ · Boundaries and router · Leaf</title>
+          
+          <rect x="58" y="409" width="169" height="59" rx="8" class="c-mask"/>
+          <rect x="58" y="409" width="169" height="59" rx="8" class="c-external tree-leaf" stroke-width="1.3"/>
+          <text data-node-label="" x="72" class="t-primary" font-size="13" font-weight="600" text-anchor="start"><tspan x="72" y="433.5">architecture/</tspan></text>
+          <text data-detail="context" x="72" class="t-muted" font-size="11" text-anchor="start"><tspan x="72" y="452.5">Boundaries and router</tspan></text>
+        </g>
+        <g id="node-r_workflow" data-node-id="r_workflow" data-node-label="workflow/" tabindex="0" role="button" aria-label="Focus workflow/, Workflow compiler, Leaf" aria-pressed="false" data-node-kind="external" data-node-sublabel="Workflow compiler" data-node-context="Leaf" data-tree-depth="3" data-tree-ancestors="renderers skill repo">
+          <title>workflow/ · Workflow compiler · Leaf</title>
+          
+          <rect x="58" y="478" width="169" height="59" rx="8" class="c-mask"/>
+          <rect x="58" y="478" width="169" height="59" rx="8" class="c-external tree-leaf" stroke-width="1.3"/>
+          <text data-node-label="" x="72" class="t-primary" font-size="13" font-weight="600" text-anchor="start"><tspan x="72" y="502.5">workflow/</tspan></text>
+          <text data-detail="context" x="72" class="t-muted" font-size="11" text-anchor="start"><tspan x="72" y="521.5">Workflow compiler</tspan></text>
         </g>
         <g id="node-r_sequence" data-node-id="r_sequence" data-node-label="sequence/" tabindex="0" role="button" aria-label="Focus sequence/, Leaf" aria-pressed="false" data-node-kind="external" data-node-context="Leaf" data-tree-depth="3" data-tree-ancestors="renderers skill repo">
           <title>sequence/ · Leaf</title>
           
-          <rect x="776" y="236" width="200" height="38" rx="7" class="c-mask"/>
-          <rect x="776" y="236" width="200" height="38" rx="7" class="c-external" stroke-width="1.5"/>
-          <text data-node-label="" x="876" class="t-primary" font-size="12.5" font-weight="650" text-anchor="middle"><tspan x="876" y="259">sequence/</tspan></text>
+          <rect x="58" y="547" width="169" height="59" rx="8" class="c-mask"/>
+          <rect x="58" y="547" width="169" height="59" rx="8" class="c-external tree-leaf" stroke-width="1.3"/>
+          <text data-node-label="" x="72" class="t-primary" font-size="13" font-weight="600" text-anchor="start"><tspan x="72" y="580.5">sequence/</tspan></text>
           
         </g>
         <g id="node-r_dataflow" data-node-id="r_dataflow" data-node-label="dataflow/" tabindex="0" role="button" aria-label="Focus dataflow/, Leaf" aria-pressed="false" data-node-kind="external" data-node-context="Leaf" data-tree-depth="3" data-tree-ancestors="renderers skill repo">
           <title>dataflow/ · Leaf</title>
           
-          <rect x="776" y="292" width="200" height="38" rx="7" class="c-mask"/>
-          <rect x="776" y="292" width="200" height="38" rx="7" class="c-external" stroke-width="1.5"/>
-          <text data-node-label="" x="876" class="t-primary" font-size="12.5" font-weight="650" text-anchor="middle"><tspan x="876" y="315">dataflow/</tspan></text>
+          <rect x="58" y="616" width="169" height="59" rx="8" class="c-mask"/>
+          <rect x="58" y="616" width="169" height="59" rx="8" class="c-external tree-leaf" stroke-width="1.3"/>
+          <text data-node-label="" x="72" class="t-primary" font-size="13" font-weight="600" text-anchor="start"><tspan x="72" y="649.5">dataflow/</tspan></text>
           
         </g>
         <g id="node-r_lifecycle" data-node-id="r_lifecycle" data-node-label="lifecycle/" tabindex="0" role="button" aria-label="Focus lifecycle/, Leaf" aria-pressed="false" data-node-kind="external" data-node-context="Leaf" data-tree-depth="3" data-tree-ancestors="renderers skill repo">
           <title>lifecycle/ · Leaf</title>
           
-          <rect x="776" y="348" width="200" height="38" rx="7" class="c-mask"/>
-          <rect x="776" y="348" width="200" height="38" rx="7" class="c-external" stroke-width="1.5"/>
-          <text data-node-label="" x="876" class="t-primary" font-size="12.5" font-weight="650" text-anchor="middle"><tspan x="876" y="371">lifecycle/</tspan></text>
+          <rect x="58" y="685" width="169" height="59" rx="8" class="c-mask"/>
+          <rect x="58" y="685" width="169" height="59" rx="8" class="c-external tree-leaf" stroke-width="1.3"/>
+          <text data-node-label="" x="72" class="t-primary" font-size="13" font-weight="600" text-anchor="start"><tspan x="72" y="718.5">lifecycle/</tspan></text>
           
         </g>
-        <g id="node-r_erd" data-node-id="r_erd" data-node-label="erd/" tabindex="0" role="button" aria-label="Focus erd/, Banded grid and crow&#39;s foot markers, Leaf" aria-pressed="false" data-node-kind="external" data-node-sublabel="Banded grid and crow&#39;s foot markers" data-node-context="Leaf" data-tree-depth="3" data-tree-ancestors="renderers skill repo">
-          <title>erd/ · Banded grid and crow&#39;s foot markers · Leaf</title>
+        <g id="node-r_erd" data-node-id="r_erd" data-node-label="erd/" tabindex="0" role="button" aria-label="Focus erd/, Crow&#39;s foot markers, Leaf" aria-pressed="false" data-node-kind="external" data-node-sublabel="Crow&#39;s foot markers" data-node-context="Leaf" data-tree-depth="3" data-tree-ancestors="renderers skill repo">
+          <title>erd/ · Crow&#39;s foot markers · Leaf</title>
           
-          <rect x="776" y="404" width="200" height="68" rx="7" class="c-mask"/>
-          <rect x="776" y="404" width="200" height="68" rx="7" class="c-external" stroke-width="1.5"/>
-          <text data-node-label="" x="876" class="t-primary" font-size="12.5" font-weight="650" text-anchor="middle"><tspan x="876" y="427">erd/</tspan></text>
-          <text data-detail="context" x="876" class="t-muted" font-size="10.5" text-anchor="middle"><tspan x="876" y="445">Banded grid and crow&#39;s foot</tspan><tspan x="876" y="458">markers</tspan></text>
+          <rect x="58" y="754" width="169" height="59" rx="8" class="c-mask"/>
+          <rect x="58" y="754" width="169" height="59" rx="8" class="c-external tree-leaf" stroke-width="1.3"/>
+          <text data-node-label="" x="72" class="t-primary" font-size="13" font-weight="600" text-anchor="start"><tspan x="72" y="778.5">erd/</tspan></text>
+          <text data-detail="context" x="72" class="t-muted" font-size="11" text-anchor="start"><tspan x="72" y="797.5">Crow&#39;s foot markers</tspan></text>
         </g>
-        <g id="node-r_tree" data-node-id="r_tree" data-node-label="tree/" tabindex="0" role="button" aria-label="Focus tree/, This hierarchy renderer, Leaf" aria-pressed="false" data-node-kind="external" data-node-sublabel="This hierarchy renderer" data-node-context="Leaf" data-tree-depth="3" data-tree-ancestors="renderers skill repo">
-          <title>tree/ · This hierarchy renderer · Leaf</title>
+        <g id="node-r_tree" data-node-id="r_tree" data-node-label="tree/" tabindex="0" role="button" aria-label="Focus tree/, This renderer, Leaf" aria-pressed="false" data-node-kind="external" data-node-sublabel="This renderer" data-node-context="Leaf" data-tree-depth="3" data-tree-ancestors="renderers skill repo">
+          <title>tree/ · This renderer · Leaf</title>
           
-          <rect x="776" y="490" width="200" height="55" rx="7" class="c-mask"/>
-          <rect x="776" y="490" width="200" height="55" rx="7" class="c-external" stroke-width="1.5"/>
-          <text data-node-label="" x="876" class="t-primary" font-size="12.5" font-weight="650" text-anchor="middle"><tspan x="876" y="513">tree/</tspan></text>
-          <text data-detail="context" x="876" class="t-muted" font-size="10.5" text-anchor="middle"><tspan x="876" y="531">This hierarchy renderer</tspan></text>
+          <rect x="58" y="823" width="169" height="59" rx="8" class="c-mask"/>
+          <rect x="58" y="823" width="169" height="59" rx="8" class="c-external tree-leaf" stroke-width="1.3"/>
+          <text data-node-label="" x="72" class="t-primary" font-size="13" font-weight="600" text-anchor="start"><tspan x="72" y="847.5">tree/</tspan></text>
+          <text data-detail="context" x="72" class="t-muted" font-size="11" text-anchor="start"><tspan x="72" y="866.5">This renderer</tspan></text>
         </g>
-        <g id="node-s_cli" data-node-id="s_cli" data-node-label="cli.mjs" tabindex="0" role="button" aria-label="Focus cli.mjs, Load, validate, and write one diagram, Leaf" aria-pressed="false" data-node-kind="external" data-node-sublabel="Load, validate, and write one diagram" data-node-context="Leaf" data-tree-depth="4" data-tree-ancestors="r_shared renderers skill repo">
-          <title>cli.mjs · Load, validate, and write one diagram · Leaf</title>
+        <g id="node-r_shared" data-node-id="r_shared" data-node-label="shared/" tabindex="0" role="button" aria-label="Focus shared/, Shared helpers, Branch" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Shared helpers" data-node-context="Branch" data-tree-depth="3" data-tree-ancestors="renderers skill repo">
+          <title>shared/ · Shared helpers · Branch</title>
+          <rect data-tree-stack="" x="260" y="414" width="140" height="59" rx="8" class="c-backend" stroke-width="1.2"/>
+          <rect x="255" y="409" width="140" height="59" rx="8" class="c-mask"/>
+          <rect x="255" y="409" width="140" height="59" rx="8" class="c-backend" stroke-width="1.3"/>
+          <text data-node-label="" x="325" class="t-primary" font-size="13" font-weight="700" text-anchor="middle"><tspan x="325" y="433.5">shared/</tspan></text>
+          <text data-detail="context" x="325" class="t-muted" font-size="11" text-anchor="middle"><tspan x="325" y="452.5">Shared helpers</tspan></text>
+        </g>
+        <g id="node-s_cli" data-node-id="s_cli" data-node-label="cli.mjs" tabindex="0" role="button" aria-label="Focus cli.mjs, Load, validate, write, Leaf" aria-pressed="false" data-node-kind="external" data-node-sublabel="Load, validate, write" data-node-context="Leaf" data-tree-depth="4" data-tree-ancestors="r_shared renderers skill repo">
+          <title>cli.mjs · Load, validate, write · Leaf</title>
           
-          <rect x="1024" y="563" width="221" height="68" rx="7" class="c-mask"/>
-          <rect x="1024" y="563" width="221" height="68" rx="7" class="c-external" stroke-width="1.5"/>
-          <text data-node-label="" x="1134.5" class="t-primary" font-size="12.5" font-weight="650" text-anchor="middle"><tspan x="1134.5" y="586">cli.mjs</tspan></text>
-          <text data-detail="context" x="1134.5" class="t-muted" font-size="10.5" text-anchor="middle"><tspan x="1134.5" y="604">Load, validate, and write</tspan><tspan x="1134.5" y="617">one diagram</tspan></text>
+          <rect x="281" y="524" width="229" height="59" rx="8" class="c-mask"/>
+          <rect x="281" y="524" width="229" height="59" rx="8" class="c-external tree-leaf" stroke-width="1.3"/>
+          <text data-node-label="" x="295" class="t-primary" font-size="13" font-weight="600" text-anchor="start"><tspan x="295" y="548.5">cli.mjs</tspan></text>
+          <text data-detail="context" x="295" class="t-muted" font-size="11" text-anchor="start"><tspan x="295" y="567.5">Load, validate, write</tspan></text>
         </g>
-        <g id="node-s_geometry" data-node-id="s_geometry" data-node-label="geometry.mjs" tabindex="0" role="button" aria-label="Focus geometry.mjs, Clean Flow and composition gates, Leaf" aria-pressed="false" data-node-kind="external" data-node-sublabel="Clean Flow and composition gates" data-node-context="Leaf" data-tree-depth="4" data-tree-ancestors="r_shared renderers skill repo">
-          <title>geometry.mjs · Clean Flow and composition gates · Leaf</title>
+        <g id="node-s_geometry" data-node-id="s_geometry" data-node-label="geometry.mjs" tabindex="0" role="button" aria-label="Focus geometry.mjs, Composition gates, Leaf" aria-pressed="false" data-node-kind="external" data-node-sublabel="Composition gates" data-node-context="Leaf" data-tree-depth="4" data-tree-ancestors="r_shared renderers skill repo">
+          <title>geometry.mjs · Composition gates · Leaf</title>
           
-          <rect x="1024" y="649" width="221" height="68" rx="7" class="c-mask"/>
-          <rect x="1024" y="649" width="221" height="68" rx="7" class="c-external" stroke-width="1.5"/>
-          <text data-node-label="" x="1134.5" class="t-primary" font-size="12.5" font-weight="650" text-anchor="middle"><tspan x="1134.5" y="672">geometry.mjs</tspan></text>
-          <text data-detail="context" x="1134.5" class="t-muted" font-size="10.5" text-anchor="middle"><tspan x="1134.5" y="690">Clean Flow and composition</tspan><tspan x="1134.5" y="703">gates</tspan></text>
+          <rect x="281" y="593" width="229" height="59" rx="8" class="c-mask"/>
+          <rect x="281" y="593" width="229" height="59" rx="8" class="c-external tree-leaf" stroke-width="1.3"/>
+          <text data-node-label="" x="295" class="t-primary" font-size="13" font-weight="600" text-anchor="start"><tspan x="295" y="617.5">geometry.mjs</tspan></text>
+          <text data-detail="context" x="295" class="t-muted" font-size="11" text-anchor="start"><tspan x="295" y="636.5">Composition gates</tspan></text>
         </g>
-        <g id="node-s_i18n" data-node-id="s_i18n" data-node-label="i18n.mjs" tabindex="0" role="button" aria-label="Focus i18n.mjs, Bundled locale catalogs, Leaf" aria-pressed="false" data-node-kind="external" data-node-sublabel="Bundled locale catalogs" data-node-context="Leaf" data-tree-depth="4" data-tree-ancestors="r_shared renderers skill repo">
-          <title>i18n.mjs · Bundled locale catalogs · Leaf</title>
+        <g id="node-s_i18n" data-node-id="s_i18n" data-node-label="i18n.mjs" tabindex="0" role="button" aria-label="Focus i18n.mjs, Locale catalogs, Leaf" aria-pressed="false" data-node-kind="external" data-node-sublabel="Locale catalogs" data-node-context="Leaf" data-tree-depth="4" data-tree-ancestors="r_shared renderers skill repo">
+          <title>i18n.mjs · Locale catalogs · Leaf</title>
           
-          <rect x="1024" y="735" width="221" height="55" rx="7" class="c-mask"/>
-          <rect x="1024" y="735" width="221" height="55" rx="7" class="c-external" stroke-width="1.5"/>
-          <text data-node-label="" x="1134.5" class="t-primary" font-size="12.5" font-weight="650" text-anchor="middle"><tspan x="1134.5" y="758">i18n.mjs</tspan></text>
-          <text data-detail="context" x="1134.5" class="t-muted" font-size="10.5" text-anchor="middle"><tspan x="1134.5" y="776">Bundled locale catalogs</tspan></text>
+          <rect x="281" y="662" width="229" height="59" rx="8" class="c-mask"/>
+          <rect x="281" y="662" width="229" height="59" rx="8" class="c-external tree-leaf" stroke-width="1.3"/>
+          <text data-node-label="" x="295" class="t-primary" font-size="13" font-weight="600" text-anchor="start"><tspan x="295" y="686.5">i18n.mjs</tspan></text>
+          <text data-detail="context" x="295" class="t-muted" font-size="11" text-anchor="start"><tspan x="295" y="705.5">Locale catalogs</tspan></text>
         </g>
-        <g id="node-s_validators" data-node-id="s_validators" data-node-label="generated-validators.mjs" tabindex="0" role="button" aria-label="Focus generated-validators.mjs, Standalone schema validators, Leaf" aria-pressed="false" data-node-kind="external" data-node-sublabel="Standalone schema validators" data-node-context="Leaf" data-tree-depth="4" data-tree-ancestors="r_shared renderers skill repo">
-          <title>generated-validators.mjs · Standalone schema validators · Leaf</title>
+        <g id="node-s_validators" data-node-id="s_validators" data-node-label="generated-validators.mjs" tabindex="0" role="button" aria-label="Focus generated-validators.mjs, Schema validators, Leaf" aria-pressed="false" data-node-kind="external" data-node-sublabel="Schema validators" data-node-context="Leaf" data-tree-depth="4" data-tree-ancestors="r_shared renderers skill repo">
+          <title>generated-validators.mjs · Schema validators · Leaf</title>
           
-          <rect x="1024" y="808" width="221" height="55" rx="7" class="c-mask"/>
-          <rect x="1024" y="808" width="221" height="55" rx="7" class="c-external" stroke-width="1.5"/>
-          <text data-node-label="" x="1134.5" class="t-primary" font-size="12.5" font-weight="650" text-anchor="middle"><tspan x="1134.5" y="831">generated-validators.mjs</tspan></text>
-          <text data-detail="context" x="1134.5" class="t-muted" font-size="10.5" text-anchor="middle"><tspan x="1134.5" y="849">Standalone schema validators</tspan></text>
+          <rect x="281" y="731" width="229" height="59" rx="8" class="c-mask"/>
+          <rect x="281" y="731" width="229" height="59" rx="8" class="c-external tree-leaf" stroke-width="1.3"/>
+          <text data-node-label="" x="295" class="t-primary" font-size="13" font-weight="600" text-anchor="start"><tspan x="295" y="755.5">generated-validators.mjs</tspan></text>
+          <text data-detail="context" x="295" class="t-muted" font-size="11" text-anchor="start"><tspan x="295" y="774.5">Schema validators</tspan></text>
         </g>
-        <g id="node-r_shared" data-node-id="r_shared" data-node-label="shared/" tabindex="0" role="button" aria-label="Focus shared/, Helpers every renderer imports, Branch" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Helpers every renderer imports" data-node-context="Branch" data-tree-depth="3" data-tree-ancestors="renderers skill repo">
-          <title>shared/ · Helpers every renderer imports · Branch</title>
-          <rect data-tree-stack="" x="781" y="568" width="200" height="68" rx="7" class="c-backend" stroke-width="1.2"/>
-          <rect x="776" y="563" width="200" height="68" rx="7" class="c-mask"/>
-          <rect x="776" y="563" width="200" height="68" rx="7" class="c-backend" stroke-width="1.5"/>
-          <text data-node-label="" x="876" class="t-primary" font-size="12.5" font-weight="650" text-anchor="middle"><tspan x="876" y="586">shared/</tspan></text>
-          <text data-detail="context" x="876" class="t-muted" font-size="10.5" text-anchor="middle"><tspan x="876" y="604">Helpers every renderer</tspan><tspan x="876" y="617">imports</tspan></text>
-        </g>
-        <g id="node-renderers" data-node-id="renderers" data-node-label="renderers/" tabindex="0" role="button" aria-label="Focus renderers/, One renderer per diagram type, Branch" aria-pressed="false" data-node-kind="backend" data-node-sublabel="One renderer per diagram type" data-node-context="Branch" data-tree-depth="2" data-tree-ancestors="skill repo">
-          <title>renderers/ · One renderer per diagram type · Branch</title>
-          <rect data-tree-stack="" x="533" y="69" width="200" height="68" rx="7" class="c-backend" stroke-width="1.2"/>
-          <rect x="528" y="64" width="200" height="68" rx="7" class="c-mask"/>
-          <rect x="528" y="64" width="200" height="68" rx="7" class="c-backend" stroke-width="1.5"/>
-          <text data-node-label="" x="628" class="t-primary" font-size="12.5" font-weight="650" text-anchor="middle"><tspan x="628" y="87">renderers/</tspan></text>
-          <text data-detail="context" x="628" class="t-muted" font-size="10.5" text-anchor="middle"><tspan x="628" y="105">One renderer per diagram</tspan><tspan x="628" y="118">type</tspan></text>
-        </g>
-        <g id="node-schemas" data-node-id="schemas" data-node-label="schemas/" tabindex="0" role="button" aria-label="Focus schemas/, Typed JSON contracts, Leaf" aria-pressed="false" data-node-kind="external" data-node-sublabel="Typed JSON contracts" data-node-context="Leaf" data-tree-depth="2" data-tree-ancestors="skill repo">
-          <title>schemas/ · Typed JSON contracts · Leaf</title>
+        <g id="node-b_archify" data-node-id="b_archify" data-node-label="archify.mjs" tabindex="0" role="button" aria-label="Focus archify.mjs, CLI: validate, finalize, Leaf" aria-pressed="false" data-node-kind="external" data-node-sublabel="CLI: validate, finalize" data-node-context="Leaf" data-tree-depth="3" data-tree-ancestors="bin skill repo">
+          <title>archify.mjs · CLI: validate, finalize · Leaf</title>
           
-          <rect x="528" y="881" width="200" height="55" rx="7" class="c-mask"/>
-          <rect x="528" y="881" width="200" height="55" rx="7" class="c-external" stroke-width="1.5"/>
-          <text data-node-label="" x="628" class="t-primary" font-size="12.5" font-weight="650" text-anchor="middle"><tspan x="628" y="904">schemas/</tspan></text>
-          <text data-detail="context" x="628" class="t-muted" font-size="10.5" text-anchor="middle"><tspan x="628" y="922">Typed JSON contracts</tspan></text>
+          <rect x="752" y="409" width="182" height="59" rx="8" class="c-mask"/>
+          <rect x="752" y="409" width="182" height="59" rx="8" class="c-external tree-leaf" stroke-width="1.3"/>
+          <text data-node-label="" x="766" class="t-primary" font-size="13" font-weight="600" text-anchor="start"><tspan x="766" y="433.5">archify.mjs</tspan></text>
+          <text data-detail="context" x="766" class="t-muted" font-size="11" text-anchor="start"><tspan x="766" y="452.5">CLI: validate, finalize</tspan></text>
         </g>
-        <g id="node-b_archify" data-node-id="b_archify" data-node-label="archify.mjs" tabindex="0" role="button" aria-label="Focus archify.mjs, validate, deliver, finalize, doctor, Leaf" aria-pressed="false" data-node-kind="external" data-node-sublabel="validate, deliver, finalize, doctor" data-node-context="Leaf" data-tree-depth="3" data-tree-ancestors="bin skill repo">
-          <title>archify.mjs · validate, deliver, finalize, doctor · Leaf</title>
+        <g id="node-b_finalize" data-node-id="b_finalize" data-node-label="finalize.mjs" tabindex="0" role="button" aria-label="Focus finalize.mjs, Render, check, deliver, Leaf" aria-pressed="false" data-node-kind="external" data-node-sublabel="Render, check, deliver" data-node-context="Leaf" data-tree-depth="3" data-tree-ancestors="bin skill repo">
+          <title>finalize.mjs · Render, check, deliver · Leaf</title>
           
-          <rect x="776" y="954" width="200" height="68" rx="7" class="c-mask"/>
-          <rect x="776" y="954" width="200" height="68" rx="7" class="c-external" stroke-width="1.5"/>
-          <text data-node-label="" x="876" class="t-primary" font-size="12.5" font-weight="650" text-anchor="middle"><tspan x="876" y="977">archify.mjs</tspan></text>
-          <text data-detail="context" x="876" class="t-muted" font-size="10.5" text-anchor="middle"><tspan x="876" y="995">validate, deliver,</tspan><tspan x="876" y="1008">finalize, doctor</tspan></text>
+          <rect x="752" y="478" width="182" height="59" rx="8" class="c-mask"/>
+          <rect x="752" y="478" width="182" height="59" rx="8" class="c-external tree-leaf" stroke-width="1.3"/>
+          <text data-node-label="" x="766" class="t-primary" font-size="13" font-weight="600" text-anchor="start"><tspan x="766" y="502.5">finalize.mjs</tspan></text>
+          <text data-detail="context" x="766" class="t-muted" font-size="11" text-anchor="start"><tspan x="766" y="521.5">Render, check, deliver</tspan></text>
         </g>
         <g id="node-b_preview" data-node-id="b_preview" data-node-label="preview.mjs" tabindex="0" role="button" aria-label="Focus preview.mjs, Live preview server, Leaf" aria-pressed="false" data-node-kind="external" data-node-sublabel="Live preview server" data-node-context="Leaf" data-tree-depth="3" data-tree-ancestors="bin skill repo">
           <title>preview.mjs · Live preview server · Leaf</title>
           
-          <rect x="776" y="1040" width="200" height="55" rx="7" class="c-mask"/>
-          <rect x="776" y="1040" width="200" height="55" rx="7" class="c-external" stroke-width="1.5"/>
-          <text data-node-label="" x="876" class="t-primary" font-size="12.5" font-weight="650" text-anchor="middle"><tspan x="876" y="1063">preview.mjs</tspan></text>
-          <text data-detail="context" x="876" class="t-muted" font-size="10.5" text-anchor="middle"><tspan x="876" y="1081">Live preview server</tspan></text>
+          <rect x="752" y="547" width="182" height="59" rx="8" class="c-mask"/>
+          <rect x="752" y="547" width="182" height="59" rx="8" class="c-external tree-leaf" stroke-width="1.3"/>
+          <text data-node-label="" x="766" class="t-primary" font-size="13" font-weight="600" text-anchor="start"><tspan x="766" y="571.5">preview.mjs</tspan></text>
+          <text data-detail="context" x="766" class="t-muted" font-size="11" text-anchor="start"><tspan x="766" y="590.5">Live preview server</tspan></text>
         </g>
-        <g id="node-bin" data-node-id="bin" data-node-label="bin/" tabindex="0" role="button" aria-label="Focus bin/, CLI entry points, Branch" aria-pressed="false" data-node-kind="backend" data-node-sublabel="CLI entry points" data-node-context="Branch" data-tree-depth="2" data-tree-ancestors="skill repo">
-          <title>bin/ · CLI entry points · Branch</title>
-          <rect data-tree-stack="" x="533" y="966" width="200" height="55" rx="7" class="c-backend" stroke-width="1.2"/>
-          <rect x="528" y="961" width="200" height="55" rx="7" class="c-mask"/>
-          <rect x="528" y="961" width="200" height="55" rx="7" class="c-backend" stroke-width="1.5"/>
-          <text data-node-label="" x="628" class="t-primary" font-size="12.5" font-weight="650" text-anchor="middle"><tspan x="628" y="984">bin/</tspan></text>
-          <text data-detail="context" x="628" class="t-muted" font-size="10.5" text-anchor="middle"><tspan x="628" y="1002">CLI entry points</tspan></text>
-        </g>
-        <g id="node-references" data-node-id="references" data-node-label="references/" tabindex="0" role="button" aria-label="Focus references/, Authoring and delivery contracts, Leaf" aria-pressed="false" data-node-kind="external" data-node-sublabel="Authoring and delivery contracts" data-node-context="Leaf" data-tree-depth="2" data-tree-ancestors="skill repo">
-          <title>references/ · Authoring and delivery contracts · Leaf</title>
+        <g id="node-v_focus" data-node-id="v_focus" data-node-label="focus.js" tabindex="0" role="button" aria-label="Focus focus.js, Semantic passport, Leaf" aria-pressed="false" data-node-kind="external" data-node-sublabel="Semantic passport" data-node-context="Leaf" data-tree-depth="2" data-tree-ancestors="viewer repo">
+          <title>focus.js · Semantic passport · Leaf</title>
           
-          <rect x="528" y="1113" width="200" height="68" rx="7" class="c-mask"/>
-          <rect x="528" y="1113" width="200" height="68" rx="7" class="c-external" stroke-width="1.5"/>
-          <text data-node-label="" x="628" class="t-primary" font-size="12.5" font-weight="650" text-anchor="middle"><tspan x="628" y="1136">references/</tspan></text>
-          <text data-detail="context" x="628" class="t-muted" font-size="10.5" text-anchor="middle"><tspan x="628" y="1154">Authoring and delivery</tspan><tspan x="628" y="1167">contracts</tspan></text>
+          <rect x="1172" y="294" width="169" height="59" rx="8" class="c-mask"/>
+          <rect x="1172" y="294" width="169" height="59" rx="8" class="c-external tree-leaf" stroke-width="1.3"/>
+          <text data-node-label="" x="1186" class="t-primary" font-size="13" font-weight="600" text-anchor="start"><tspan x="1186" y="318.5">focus.js</tspan></text>
+          <text data-detail="context" x="1186" class="t-muted" font-size="11" text-anchor="start"><tspan x="1186" y="337.5">Semantic passport</tspan></text>
         </g>
-        <g id="node-skill" data-node-id="skill" data-node-label="archify/" tabindex="0" role="button" aria-label="Focus archify/, Installable Skill package, Branch" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Installable Skill package" data-node-context="Branch" data-tree-depth="1" data-tree-ancestors="repo">
-          <title>archify/ · Installable Skill package · Branch</title>
-          <rect data-tree-stack="" x="285" y="76" width="200" height="55" rx="7" class="c-backend" stroke-width="1.2"/>
-          <rect x="280" y="71" width="200" height="55" rx="7" class="c-mask"/>
-          <rect x="280" y="71" width="200" height="55" rx="7" class="c-backend" stroke-width="1.5"/>
-          <text data-node-label="" x="380" class="t-primary" font-size="12.5" font-weight="650" text-anchor="middle"><tspan x="380" y="94">archify/</tspan></text>
-          <text data-detail="context" x="380" class="t-muted" font-size="10.5" text-anchor="middle"><tspan x="380" y="112">Installable Skill package</tspan></text>
-        </g>
-        <g id="node-v_focus" data-node-id="v_focus" data-node-label="focus.js" tabindex="0" role="button" aria-label="Focus focus.js, Semantic passport and reach, Leaf" aria-pressed="false" data-node-kind="external" data-node-sublabel="Semantic passport and reach" data-node-context="Leaf" data-tree-depth="2" data-tree-ancestors="viewer repo">
-          <title>focus.js · Semantic passport and reach · Leaf</title>
+        <g id="node-v_export" data-node-id="v_export" data-node-label="export.js" tabindex="0" role="button" aria-label="Focus export.js, SVG, PNG, WebM export, Leaf" aria-pressed="false" data-node-kind="external" data-node-sublabel="SVG, PNG, WebM export" data-node-context="Leaf" data-tree-depth="2" data-tree-ancestors="viewer repo">
+          <title>export.js · SVG, PNG, WebM export · Leaf</title>
           
-          <rect x="528" y="1199" width="200" height="55" rx="7" class="c-mask"/>
-          <rect x="528" y="1199" width="200" height="55" rx="7" class="c-external" stroke-width="1.5"/>
-          <text data-node-label="" x="628" class="t-primary" font-size="12.5" font-weight="650" text-anchor="middle"><tspan x="628" y="1222">focus.js</tspan></text>
-          <text data-detail="context" x="628" class="t-muted" font-size="10.5" text-anchor="middle"><tspan x="628" y="1240">Semantic passport and reach</tspan></text>
+          <rect x="1172" y="363" width="169" height="59" rx="8" class="c-mask"/>
+          <rect x="1172" y="363" width="169" height="59" rx="8" class="c-external tree-leaf" stroke-width="1.3"/>
+          <text data-node-label="" x="1186" class="t-primary" font-size="13" font-weight="600" text-anchor="start"><tspan x="1186" y="387.5">export.js</tspan></text>
+          <text data-detail="context" x="1186" class="t-muted" font-size="11" text-anchor="start"><tspan x="1186" y="406.5">SVG, PNG, WebM export</tspan></text>
         </g>
-        <g id="node-v_export" data-node-id="v_export" data-node-label="export.js" tabindex="0" role="button" aria-label="Focus export.js, SVG, PNG, JPEG, WebP, WebM export, Leaf" aria-pressed="false" data-node-kind="external" data-node-sublabel="SVG, PNG, JPEG, WebP, WebM export" data-node-context="Leaf" data-tree-depth="2" data-tree-ancestors="viewer repo">
-          <title>export.js · SVG, PNG, JPEG, WebP, WebM export · Leaf</title>
+        <g id="node-v_tree" data-node-id="v_tree" data-node-label="tree-branches.js" tabindex="0" role="button" aria-label="Focus tree-branches.js, Expand and collapse, Leaf" aria-pressed="false" data-node-kind="external" data-node-sublabel="Expand and collapse" data-node-context="Leaf" data-tree-depth="2" data-tree-ancestors="viewer repo">
+          <title>tree-branches.js · Expand and collapse · Leaf</title>
           
-          <rect x="528" y="1272" width="200" height="68" rx="7" class="c-mask"/>
-          <rect x="528" y="1272" width="200" height="68" rx="7" class="c-external" stroke-width="1.5"/>
-          <text data-node-label="" x="628" class="t-primary" font-size="12.5" font-weight="650" text-anchor="middle"><tspan x="628" y="1295">export.js</tspan></text>
-          <text data-detail="context" x="628" class="t-muted" font-size="10.5" text-anchor="middle"><tspan x="628" y="1313">SVG, PNG, JPEG, WebP, WebM</tspan><tspan x="628" y="1326">export</tspan></text>
-        </g>
-        <g id="node-v_tree" data-node-id="v_tree" data-node-label="tree-branches.js" tabindex="0" role="button" aria-label="Focus tree-branches.js, Expand and collapse for trees, Leaf" aria-pressed="false" data-node-kind="external" data-node-sublabel="Expand and collapse for trees" data-node-context="Leaf" data-tree-depth="2" data-tree-ancestors="viewer repo">
-          <title>tree-branches.js · Expand and collapse for trees · Leaf</title>
-          
-          <rect x="528" y="1358" width="200" height="68" rx="7" class="c-mask"/>
-          <rect x="528" y="1358" width="200" height="68" rx="7" class="c-external" stroke-width="1.5"/>
-          <text data-node-label="" x="628" class="t-primary" font-size="12.5" font-weight="650" text-anchor="middle"><tspan x="628" y="1381">tree-branches.js</tspan></text>
-          <text data-detail="context" x="628" class="t-muted" font-size="10.5" text-anchor="middle"><tspan x="628" y="1399">Expand and collapse for</tspan><tspan x="628" y="1412">trees</tspan></text>
+          <rect x="1172" y="432" width="169" height="59" rx="8" class="c-mask"/>
+          <rect x="1172" y="432" width="169" height="59" rx="8" class="c-external tree-leaf" stroke-width="1.3"/>
+          <text data-node-label="" x="1186" class="t-primary" font-size="13" font-weight="600" text-anchor="start"><tspan x="1186" y="456.5">tree-branches.js</tspan></text>
+          <text data-detail="context" x="1186" class="t-muted" font-size="11" text-anchor="start"><tspan x="1186" y="475.5">Expand and collapse</tspan></text>
         </g>
         <g id="node-v_camera" data-node-id="v_camera" data-node-label="viewer-camera.js" tabindex="0" role="button" aria-label="Focus viewer-camera.js, Pan, zoom, reveal, Leaf" aria-pressed="false" data-node-kind="external" data-node-sublabel="Pan, zoom, reveal" data-node-context="Leaf" data-tree-depth="2" data-tree-ancestors="viewer repo">
           <title>viewer-camera.js · Pan, zoom, reveal · Leaf</title>
           
-          <rect x="528" y="1444" width="200" height="55" rx="7" class="c-mask"/>
-          <rect x="528" y="1444" width="200" height="55" rx="7" class="c-external" stroke-width="1.5"/>
-          <text data-node-label="" x="628" class="t-primary" font-size="12.5" font-weight="650" text-anchor="middle"><tspan x="628" y="1467">viewer-camera.js</tspan></text>
-          <text data-detail="context" x="628" class="t-muted" font-size="10.5" text-anchor="middle"><tspan x="628" y="1485">Pan, zoom, reveal</tspan></text>
+          <rect x="1172" y="501" width="169" height="59" rx="8" class="c-mask"/>
+          <rect x="1172" y="501" width="169" height="59" rx="8" class="c-external tree-leaf" stroke-width="1.3"/>
+          <text data-node-label="" x="1186" class="t-primary" font-size="13" font-weight="600" text-anchor="start"><tspan x="1186" y="525.5">viewer-camera.js</tspan></text>
+          <text data-detail="context" x="1186" class="t-muted" font-size="11" text-anchor="start"><tspan x="1186" y="544.5">Pan, zoom, reveal</tspan></text>
         </g>
-        <g id="node-viewer" data-node-id="viewer" data-node-label="viewer/" tabindex="0" role="button" aria-label="Focus viewer/, Viewer sources inlined into the template, Branch" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Viewer sources inlined into the template" data-node-context="Branch" data-tree-depth="1" data-tree-ancestors="repo">
-          <title>viewer/ · Viewer sources inlined into the template · Branch</title>
-          <rect data-tree-stack="" x="285" y="1198" width="200" height="68" rx="7" class="c-backend" stroke-width="1.2"/>
-          <rect x="280" y="1193" width="200" height="68" rx="7" class="c-mask"/>
-          <rect x="280" y="1193" width="200" height="68" rx="7" class="c-backend" stroke-width="1.5"/>
-          <text data-node-label="" x="380" class="t-primary" font-size="12.5" font-weight="650" text-anchor="middle"><tspan x="380" y="1216">viewer/</tspan></text>
-          <text data-detail="context" x="380" class="t-muted" font-size="10.5" text-anchor="middle"><tspan x="380" y="1234">Viewer sources inlined into</tspan><tspan x="380" y="1247">the template</tspan></text>
-        </g>
-        <g id="node-site" data-node-id="site" data-node-label="website/" tabindex="0" role="button" aria-label="Focus website/, Astro project site, Leaf" aria-pressed="false" data-node-kind="external" data-node-sublabel="Astro project site" data-node-context="Leaf" data-tree-depth="1" data-tree-ancestors="repo">
-          <title>website/ · Astro project site · Leaf</title>
+        <g id="node-sc_viewer" data-node-id="sc_viewer" data-node-label="generate-viewer.mjs" tabindex="0" role="button" aria-label="Focus generate-viewer.mjs, Inlines viewer/, Leaf" aria-pressed="false" data-node-kind="external" data-node-sublabel="Inlines viewer/" data-node-context="Leaf" data-tree-depth="2" data-tree-ancestors="scripts repo">
+          <title>generate-viewer.mjs · Inlines viewer/ · Leaf</title>
           
-          <rect x="280" y="1517" width="200" height="55" rx="7" class="c-mask"/>
-          <rect x="280" y="1517" width="200" height="55" rx="7" class="c-external" stroke-width="1.5"/>
-          <text data-node-label="" x="380" class="t-primary" font-size="12.5" font-weight="650" text-anchor="middle"><tspan x="380" y="1540">website/</tspan></text>
-          <text data-detail="context" x="380" class="t-muted" font-size="10.5" text-anchor="middle"><tspan x="380" y="1558">Astro project site</tspan></text>
+          <rect x="1571" y="294" width="188" height="59" rx="8" class="c-mask"/>
+          <rect x="1571" y="294" width="188" height="59" rx="8" class="c-external tree-leaf" stroke-width="1.3"/>
+          <text data-node-label="" x="1585" class="t-primary" font-size="13" font-weight="600" text-anchor="start"><tspan x="1585" y="318.5">generate-viewer.mjs</tspan></text>
+          <text data-detail="context" x="1585" class="t-muted" font-size="11" text-anchor="start"><tspan x="1585" y="337.5">Inlines viewer/</tspan></text>
         </g>
-        <g id="node-sc_viewer" data-node-id="sc_viewer" data-node-label="generate-viewer.mjs" tabindex="0" role="button" aria-label="Focus generate-viewer.mjs, Inlines viewer/ into the template, Leaf" aria-pressed="false" data-node-kind="external" data-node-sublabel="Inlines viewer/ into the template" data-node-context="Leaf" data-tree-depth="2" data-tree-ancestors="scripts repo">
-          <title>generate-viewer.mjs · Inlines viewer/ into the template · Leaf</title>
+        <g id="node-sc_zip" data-node-id="sc_zip" data-node-label="build-zip.sh" tabindex="0" role="button" aria-label="Focus build-zip.sh, Deterministic archive, Leaf" aria-pressed="false" data-node-kind="external" data-node-sublabel="Deterministic archive" data-node-context="Leaf" data-tree-depth="2" data-tree-ancestors="scripts repo">
+          <title>build-zip.sh · Deterministic archive · Leaf</title>
           
-          <rect x="528" y="1590" width="200" height="68" rx="7" class="c-mask"/>
-          <rect x="528" y="1590" width="200" height="68" rx="7" class="c-external" stroke-width="1.5"/>
-          <text data-node-label="" x="628" class="t-primary" font-size="12.5" font-weight="650" text-anchor="middle"><tspan x="628" y="1613">generate-viewer.mjs</tspan></text>
-          <text data-detail="context" x="628" class="t-muted" font-size="10.5" text-anchor="middle"><tspan x="628" y="1631">Inlines viewer/ into the</tspan><tspan x="628" y="1644">template</tspan></text>
-        </g>
-        <g id="node-sc_zip" data-node-id="sc_zip" data-node-label="build-zip.sh" tabindex="0" role="button" aria-label="Focus build-zip.sh, Deterministic Skill archive, Leaf" aria-pressed="false" data-node-kind="external" data-node-sublabel="Deterministic Skill archive" data-node-context="Leaf" data-tree-depth="2" data-tree-ancestors="scripts repo">
-          <title>build-zip.sh · Deterministic Skill archive · Leaf</title>
-          
-          <rect x="528" y="1676" width="200" height="55" rx="7" class="c-mask"/>
-          <rect x="528" y="1676" width="200" height="55" rx="7" class="c-external" stroke-width="1.5"/>
-          <text data-node-label="" x="628" class="t-primary" font-size="12.5" font-weight="650" text-anchor="middle"><tspan x="628" y="1699">build-zip.sh</tspan></text>
-          <text data-detail="context" x="628" class="t-muted" font-size="10.5" text-anchor="middle"><tspan x="628" y="1717">Deterministic Skill archive</tspan></text>
+          <rect x="1571" y="363" width="188" height="59" rx="8" class="c-mask"/>
+          <rect x="1571" y="363" width="188" height="59" rx="8" class="c-external tree-leaf" stroke-width="1.3"/>
+          <text data-node-label="" x="1585" class="t-primary" font-size="13" font-weight="600" text-anchor="start"><tspan x="1585" y="387.5">build-zip.sh</tspan></text>
+          <text data-detail="context" x="1585" class="t-muted" font-size="11" text-anchor="start"><tspan x="1585" y="406.5">Deterministic archive</tspan></text>
         </g>
         <g id="node-sc_gallery" data-node-id="sc_gallery" data-node-label="build-gallery.mjs" tabindex="0" role="button" aria-label="Focus build-gallery.mjs, Leaf" aria-pressed="false" data-node-kind="external" data-node-context="Leaf" data-tree-depth="2" data-tree-ancestors="scripts repo">
           <title>build-gallery.mjs · Leaf</title>
           
-          <rect x="528" y="1749" width="200" height="38" rx="7" class="c-mask"/>
-          <rect x="528" y="1749" width="200" height="38" rx="7" class="c-external" stroke-width="1.5"/>
-          <text data-node-label="" x="628" class="t-primary" font-size="12.5" font-weight="650" text-anchor="middle"><tspan x="628" y="1772">build-gallery.mjs</tspan></text>
+          <rect x="1571" y="432" width="188" height="59" rx="8" class="c-mask"/>
+          <rect x="1571" y="432" width="188" height="59" rx="8" class="c-external tree-leaf" stroke-width="1.3"/>
+          <text data-node-label="" x="1585" class="t-primary" font-size="13" font-weight="600" text-anchor="start"><tspan x="1585" y="465.5">build-gallery.mjs</tspan></text>
           
-        </g>
-        <g id="node-scripts" data-node-id="scripts" data-node-label="scripts/" tabindex="0" role="button" aria-label="Focus scripts/, Build and freshness tooling, Branch" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Build and freshness tooling" data-node-context="Branch" data-tree-depth="1" data-tree-ancestors="repo">
-          <title>scripts/ · Build and freshness tooling · Branch</title>
-          <rect data-tree-stack="" x="285" y="1602" width="200" height="55" rx="7" class="c-backend" stroke-width="1.2"/>
-          <rect x="280" y="1597" width="200" height="55" rx="7" class="c-mask"/>
-          <rect x="280" y="1597" width="200" height="55" rx="7" class="c-backend" stroke-width="1.5"/>
-          <text data-node-label="" x="380" class="t-primary" font-size="12.5" font-weight="650" text-anchor="middle"><tspan x="380" y="1620">scripts/</tspan></text>
-          <text data-detail="context" x="380" class="t-muted" font-size="10.5" text-anchor="middle"><tspan x="380" y="1638">Build and freshness tooling</tspan></text>
-        </g>
-        <g id="node-repo" data-node-id="repo" data-node-label="archify repository" tabindex="0" role="button" aria-label="Focus archify repository, Skill package, viewer, and site sources, Root" aria-pressed="false" data-node-kind="frontend" data-node-sublabel="Skill package, viewer, and site sources" data-node-context="Root" data-tree-depth="0">
-          <title>archify repository · Skill package, viewer, and site sources · Root</title>
-          <rect data-tree-stack="" x="37" y="70" width="200" height="68" rx="7" class="c-frontend" stroke-width="1.2"/>
-          <rect x="32" y="65" width="200" height="68" rx="7" class="c-mask"/>
-          <rect x="32" y="65" width="200" height="68" rx="7" class="c-frontend" stroke-width="2"/>
-          <text data-node-label="" x="132" class="t-primary" font-size="14" font-weight="750" text-anchor="middle"><tspan x="132" y="88">archify repository</tspan></text>
-          <text data-detail="context" x="132" class="t-muted" font-size="10.5" text-anchor="middle"><tspan x="132" y="106">Skill package, viewer, and</tspan><tspan x="132" y="119">site sources</tspan></text>
         </g>
 
         <!-- Branch toggles -->
-        <g data-tree-toggle="r_shared" data-tree-count="4" data-tree-ancestors="renderers skill repo" data-tree-label-collapse="Collapse shared/ (4 below)" data-tree-label-expand="Expand shared/ (4 hidden)" role="button" tabindex="0" aria-expanded="true" aria-label="Collapse shared/ (4 below)">
-          <circle cx="976" cy="597" r="15" class="tree-toggle-hit"/>
-          <circle cx="976" cy="597" r="9" class="tree-toggle-disc" stroke-width="1.4"/>
-          <path class="tree-toggle-glyph" d="M 972 597 H 980" stroke-width="1.6" stroke-linecap="round"/>
-          <path class="tree-toggle-glyph tree-toggle-plus" d="M 976 593 V 601" stroke-width="1.6" stroke-linecap="round"/>
-          <text class="tree-toggle-count t-muted" x="989" y="585" font-size="9.5" font-weight="650">4</text>
+        <g data-tree-toggle="repo" data-tree-count="30" data-tree-label-collapse="Collapse archify repository (30 below)" data-tree-label-expand="Expand archify repository (30 hidden)" role="button" tabindex="0" aria-expanded="true" aria-label="Collapse archify repository (30 below)">
+          <circle cx="1131" cy="123" r="15" class="tree-toggle-hit"/>
+          <circle cx="1131" cy="123" r="9" class="tree-toggle-disc" stroke-width="1.4"/>
+          <path class="tree-toggle-glyph" d="M 1127 123 H 1135" stroke-width="1.6" stroke-linecap="round"/>
+          <path class="tree-toggle-glyph tree-toggle-plus" d="M 1131 119 V 127" stroke-width="1.6" stroke-linecap="round"/>
+          <text class="tree-toggle-count t-muted" x="1145" y="126.5" font-size="9.5" font-weight="650">30</text>
         </g>
-        <g data-tree-toggle="renderers" data-tree-count="12" data-tree-ancestors="skill repo" data-tree-label-collapse="Collapse renderers/ (12 below)" data-tree-label-expand="Expand renderers/ (12 hidden)" role="button" tabindex="0" aria-expanded="true" aria-label="Collapse renderers/ (12 below)">
-          <circle cx="728" cy="98" r="15" class="tree-toggle-hit"/>
-          <circle cx="728" cy="98" r="9" class="tree-toggle-disc" stroke-width="1.4"/>
-          <path class="tree-toggle-glyph" d="M 724 98 H 732" stroke-width="1.6" stroke-linecap="round"/>
-          <path class="tree-toggle-glyph tree-toggle-plus" d="M 728 94 V 102" stroke-width="1.6" stroke-linecap="round"/>
-          <text class="tree-toggle-count t-muted" x="741" y="86" font-size="9.5" font-weight="650">12</text>
-        </g>
-        <g data-tree-toggle="bin" data-tree-count="2" data-tree-ancestors="skill repo" data-tree-label-collapse="Collapse bin/ (2 below)" data-tree-label-expand="Expand bin/ (2 hidden)" role="button" tabindex="0" aria-expanded="true" aria-label="Collapse bin/ (2 below)">
-          <circle cx="728" cy="988.5" r="15" class="tree-toggle-hit"/>
-          <circle cx="728" cy="988.5" r="9" class="tree-toggle-disc" stroke-width="1.4"/>
-          <path class="tree-toggle-glyph" d="M 724 988.5 H 732" stroke-width="1.6" stroke-linecap="round"/>
-          <path class="tree-toggle-glyph tree-toggle-plus" d="M 728 984.5 V 992.5" stroke-width="1.6" stroke-linecap="round"/>
-          <text class="tree-toggle-count t-muted" x="741" y="976.5" font-size="9.5" font-weight="650">2</text>
-        </g>
-        <g data-tree-toggle="skill" data-tree-count="18" data-tree-ancestors="repo" data-tree-label-collapse="Collapse archify/ (18 below)" data-tree-label-expand="Expand archify/ (18 hidden)" role="button" tabindex="0" aria-expanded="true" aria-label="Collapse archify/ (18 below)">
-          <circle cx="480" cy="98.5" r="15" class="tree-toggle-hit"/>
-          <circle cx="480" cy="98.5" r="9" class="tree-toggle-disc" stroke-width="1.4"/>
-          <path class="tree-toggle-glyph" d="M 476 98.5 H 484" stroke-width="1.6" stroke-linecap="round"/>
-          <path class="tree-toggle-glyph tree-toggle-plus" d="M 480 94.5 V 102.5" stroke-width="1.6" stroke-linecap="round"/>
-          <text class="tree-toggle-count t-muted" x="493" y="86.5" font-size="9.5" font-weight="650">18</text>
+        <g data-tree-toggle="skill" data-tree-count="19" data-tree-ancestors="repo" data-tree-label-collapse="Collapse archify/ (19 below)" data-tree-label-expand="Expand archify/ (19 hidden)" role="button" tabindex="0" aria-expanded="true" aria-label="Collapse archify/ (19 below)">
+          <circle cx="618.5" cy="238" r="15" class="tree-toggle-hit"/>
+          <circle cx="618.5" cy="238" r="9" class="tree-toggle-disc" stroke-width="1.4"/>
+          <path class="tree-toggle-glyph" d="M 614.5 238 H 622.5" stroke-width="1.6" stroke-linecap="round"/>
+          <path class="tree-toggle-glyph tree-toggle-plus" d="M 618.5 234 V 242" stroke-width="1.6" stroke-linecap="round"/>
+          <text class="tree-toggle-count t-muted" x="632.5" y="241.5" font-size="9.5" font-weight="650">19</text>
         </g>
         <g data-tree-toggle="viewer" data-tree-count="4" data-tree-ancestors="repo" data-tree-initially-collapsed="" data-tree-label-collapse="Collapse viewer/ (4 below)" data-tree-label-expand="Expand viewer/ (4 hidden)" role="button" tabindex="0" aria-expanded="true" aria-label="Collapse viewer/ (4 below)">
-          <circle cx="480" cy="1227" r="15" class="tree-toggle-hit"/>
-          <circle cx="480" cy="1227" r="9" class="tree-toggle-disc" stroke-width="1.4"/>
-          <path class="tree-toggle-glyph" d="M 476 1227 H 484" stroke-width="1.6" stroke-linecap="round"/>
-          <path class="tree-toggle-glyph tree-toggle-plus" d="M 480 1223 V 1231" stroke-width="1.6" stroke-linecap="round"/>
-          <text class="tree-toggle-count t-muted" x="493" y="1215" font-size="9.5" font-weight="650">4</text>
+          <circle cx="1158" cy="238" r="15" class="tree-toggle-hit"/>
+          <circle cx="1158" cy="238" r="9" class="tree-toggle-disc" stroke-width="1.4"/>
+          <path class="tree-toggle-glyph" d="M 1154 238 H 1162" stroke-width="1.6" stroke-linecap="round"/>
+          <path class="tree-toggle-glyph tree-toggle-plus" d="M 1158 234 V 242" stroke-width="1.6" stroke-linecap="round"/>
+          <text class="tree-toggle-count t-muted" x="1172" y="241.5" font-size="9.5" font-weight="650">4</text>
         </g>
         <g data-tree-toggle="scripts" data-tree-count="3" data-tree-ancestors="repo" data-tree-label-collapse="Collapse scripts/ (3 below)" data-tree-label-expand="Expand scripts/ (3 hidden)" role="button" tabindex="0" aria-expanded="true" aria-label="Collapse scripts/ (3 below)">
-          <circle cx="480" cy="1624.5" r="15" class="tree-toggle-hit"/>
-          <circle cx="480" cy="1624.5" r="9" class="tree-toggle-disc" stroke-width="1.4"/>
-          <path class="tree-toggle-glyph" d="M 476 1624.5 H 484" stroke-width="1.6" stroke-linecap="round"/>
-          <path class="tree-toggle-glyph tree-toggle-plus" d="M 480 1620.5 V 1628.5" stroke-width="1.6" stroke-linecap="round"/>
-          <text class="tree-toggle-count t-muted" x="493" y="1612.5" font-size="9.5" font-weight="650">3</text>
+          <circle cx="1557" cy="238" r="15" class="tree-toggle-hit"/>
+          <circle cx="1557" cy="238" r="9" class="tree-toggle-disc" stroke-width="1.4"/>
+          <path class="tree-toggle-glyph" d="M 1553 238 H 1561" stroke-width="1.6" stroke-linecap="round"/>
+          <path class="tree-toggle-glyph tree-toggle-plus" d="M 1557 234 V 242" stroke-width="1.6" stroke-linecap="round"/>
+          <text class="tree-toggle-count t-muted" x="1571" y="241.5" font-size="9.5" font-weight="650">3</text>
         </g>
-        <g data-tree-toggle="repo" data-tree-count="29" data-tree-label-collapse="Collapse archify repository (29 below)" data-tree-label-expand="Expand archify repository (29 hidden)" role="button" tabindex="0" aria-expanded="true" aria-label="Collapse archify repository (29 below)">
-          <circle cx="232" cy="99" r="15" class="tree-toggle-hit"/>
-          <circle cx="232" cy="99" r="9" class="tree-toggle-disc" stroke-width="1.4"/>
-          <path class="tree-toggle-glyph" d="M 228 99 H 236" stroke-width="1.6" stroke-linecap="round"/>
-          <path class="tree-toggle-glyph tree-toggle-plus" d="M 232 95 V 103" stroke-width="1.6" stroke-linecap="round"/>
-          <text class="tree-toggle-count t-muted" x="245" y="87" font-size="9.5" font-weight="650">29</text>
+        <g data-tree-toggle="renderers" data-tree-count="12" data-tree-ancestors="skill repo" data-tree-label-collapse="Collapse renderers/ (12 below)" data-tree-label-expand="Expand renderers/ (12 hidden)" role="button" tabindex="0" aria-expanded="true" aria-label="Collapse renderers/ (12 below)">
+          <circle cx="185" cy="353" r="15" class="tree-toggle-hit"/>
+          <circle cx="185" cy="353" r="9" class="tree-toggle-disc" stroke-width="1.4"/>
+          <path class="tree-toggle-glyph" d="M 181 353 H 189" stroke-width="1.6" stroke-linecap="round"/>
+          <path class="tree-toggle-glyph tree-toggle-plus" d="M 185 349 V 357" stroke-width="1.6" stroke-linecap="round"/>
+          <text class="tree-toggle-count t-muted" x="199" y="356.5" font-size="9.5" font-weight="650">12</text>
+        </g>
+        <g data-tree-toggle="bin" data-tree-count="3" data-tree-ancestors="skill repo" data-tree-label-collapse="Collapse bin/ (3 below)" data-tree-label-expand="Expand bin/ (3 hidden)" role="button" tabindex="0" aria-expanded="true" aria-label="Collapse bin/ (3 below)">
+          <circle cx="738" cy="353" r="15" class="tree-toggle-hit"/>
+          <circle cx="738" cy="353" r="9" class="tree-toggle-disc" stroke-width="1.4"/>
+          <path class="tree-toggle-glyph" d="M 734 353 H 742" stroke-width="1.6" stroke-linecap="round"/>
+          <path class="tree-toggle-glyph tree-toggle-plus" d="M 738 349 V 357" stroke-width="1.6" stroke-linecap="round"/>
+          <text class="tree-toggle-count t-muted" x="752" y="356.5" font-size="9.5" font-weight="650">3</text>
+        </g>
+        <g data-tree-toggle="r_shared" data-tree-count="4" data-tree-ancestors="renderers skill repo" data-tree-label-collapse="Collapse shared/ (4 below)" data-tree-label-expand="Expand shared/ (4 hidden)" role="button" tabindex="0" aria-expanded="true" aria-label="Collapse shared/ (4 below)">
+          <circle cx="267" cy="468" r="15" class="tree-toggle-hit"/>
+          <circle cx="267" cy="468" r="9" class="tree-toggle-disc" stroke-width="1.4"/>
+          <path class="tree-toggle-glyph" d="M 263 468 H 271" stroke-width="1.6" stroke-linecap="round"/>
+          <path class="tree-toggle-glyph tree-toggle-plus" d="M 267 464 V 472" stroke-width="1.6" stroke-linecap="round"/>
+          <text class="tree-toggle-count t-muted" x="281" y="471.5" font-size="9.5" font-weight="650">4</text>
         </g>
 
         <!-- Expand all (shown only while a branch is collapsed) -->

@@ -27,6 +27,7 @@ const { diagram: tree, template, outPath, sourceEvidence } = loadDiagram({
 });
 const locale = tree.meta.locale;
 const direction = tree.layout?.direction === 'right' ? 'right' : 'down';
+const down = direction === 'down';
 
 const layout = {
   margin: 32,
@@ -34,16 +35,16 @@ const layout = {
   // Sibling gap and generation gap. A downward tree needs room under each
   // parent for its toggle and the elbow; a rightward one needs room beside it.
   gapX: tree.layout?.gapX ?? (direction === 'down' ? 28 : 48),
-  gapY: tree.layout?.gapY ?? (direction === 'down' ? 64 : 18),
+  gapY: tree.layout?.gapY ?? (direction === 'down' ? 56 : 18),
   nodeW: tree.layout?.nodeW ?? 140,
   nodeMaxW: tree.layout?.nodeMaxW ?? (direction === 'down' ? 220 : 200),
   padX: 14,
-  padY: 11,
-  labelFont: 12.5,
-  labelLine: 16,
-  sublabelFont: 10.5,
-  sublabelLine: 13,
-  rootLabelFont: 14,
+  padY: 12,
+  labelFont: 13,
+  labelLine: 17,
+  sublabelFont: 11,
+  sublabelLine: 14,
+  rootLabelFont: 14.5,
   toggleR: 9,
 };
 
@@ -150,45 +151,94 @@ const depthOf = new Map();
   for (const child of childrenOf.get(id)) assignDepth(child, depth + 1);
 }(authoredRoot.id, 0));
 
+// Compact leaf runs (going down only): three or more consecutive leaf
+// children of one parent are stacked as an indented list under it instead of
+// being spread across the row. A wide fan of leaves is what makes a real
+// hierarchy (a repository, a capability map) far wider than any screen; a list
+// keeps it readable at the same scale. Shorter runs and every branch keep the
+// classic row layout.
+const STACK_MIN = 3;
+const STACK_INDENT = 26;
+const STACK_GAP = 10;
+const stackOf = new Map();
+const groupsOf = new Map();
+for (const [id, children] of childrenOf) {
+  const groups = [];
+  let run = [];
+  const flush = () => {
+    if (down && run.length >= STACK_MIN) groups.push({ stack: run });
+    else for (const child of run) groups.push({ single: child });
+    run = [];
+  };
+  for (const child of children) {
+    if (childrenOf.get(child).length) {
+      flush();
+      groups.push({ single: child });
+    } else run.push(child);
+  }
+  flush();
+  groupsOf.set(id, groups);
+  for (const group of groups) if (group.stack) for (const child of group.stack) stackOf.set(child, group);
+}
+
+// Width: a label wraps only when it must, and then at the narrowest width
+// that keeps the same number of lines, so a long name becomes a balanced
+// two-line box instead of one wide box beside narrow siblings.
 const measured = new Map(asArray(tree.nodes).map((node) => {
   const isRoot = node.id === authoredRoot.id;
   const labelFont = isRoot ? layout.rootLabelFont : layout.labelFont;
-  const natural = Math.max(
-    textUnits(node.label) * labelFont * ADVANCE * 1.06,
-    node.sublabel ? textUnits(node.sublabel) * layout.sublabelFont * ADVANCE : 0,
-  );
+  const labelAdvance = labelFont * ADVANCE * 1.06;
   // Text wraps between words, never inside one: the longest single word may
   // widen a node past nodeMaxW (up to half again), and only a word longer
   // than that is split.
-  const longestWord = Math.max(...String(node.label).split(/\s+/).map((word) => textUnits(word) * labelFont * ADVANCE * 1.06));
-  const width = Math.ceil(Math.min(layout.nodeMaxW * 1.5, Math.max(
-    layout.nodeW,
-    Math.min(layout.nodeMaxW, natural + layout.padX * 2),
-    longestWord + layout.padX * 2 + 2,
-  )));
-  const textWidth = width - layout.padX * 2;
-  const labelLines = wrapText(node.label, labelFont * 1.06, textWidth);
-  const sublabelLines = node.sublabel ? wrapText(node.sublabel, layout.sublabelFont, textWidth) : [];
-  const height = Math.ceil(layout.padY * 2 + labelLines.length * layout.labelLine
-    + (sublabelLines.length ? 4 + sublabelLines.length * layout.sublabelLine : 0));
-  return [node.id, { ...node, isRoot, labelFont, labelLines, sublabelLines, width, height, contentHeight: height - layout.padY * 2, depth: depthOf.get(node.id) }];
+  const longestWord = Math.max(...String(node.label).split(/\s+/).map((word) => textUnits(word) * labelAdvance));
+  const floor = Math.max(layout.nodeW, Math.ceil(longestWord + layout.padX * 2 + 2));
+  const cap = Math.ceil(Math.min(layout.nodeMaxW * 1.5, Math.max(floor, layout.nodeMaxW)));
+  const linesAt = (width) => ({
+    label: wrapText(node.label, labelFont * 1.06, width - layout.padX * 2),
+    sublabel: node.sublabel ? wrapText(node.sublabel, layout.sublabelFont, width - layout.padX * 2) : [],
+  });
+  const natural = Math.ceil(Math.max(textUnits(node.label) * labelAdvance, node.sublabel ? textUnits(node.sublabel) * layout.sublabelFont * ADVANCE : 0) + layout.padX * 2 + 2);
+  // A stacked list shares one width anyway, so its entries are not balanced.
+  const stacked = stackOf.has(node.id);
+  let width = Math.min(cap, Math.max(floor, natural));
+  const target = linesAt(width);
+  for (let candidate = floor; !stacked && candidate < width; candidate += 4) {
+    const lines = linesAt(candidate);
+    if (lines.label.length <= target.label.length && lines.sublabel.length <= target.sublabel.length) {
+      width = candidate;
+      break;
+    }
+  }
+  const { label: labelLines, sublabel: sublabelLines } = linesAt(width);
+  const contentHeight = labelLines.length * layout.labelLine + (sublabelLines.length ? 4 + sublabelLines.length * layout.sublabelLine : 0);
+  return [node.id, { ...node, isRoot, labelFont, labelLines, sublabelLines, width, height: Math.ceil(layout.padY * 2 + contentHeight), contentHeight, depth: depthOf.get(node.id), stacked }];
 }));
+
+// A stacked run reads as one list: one width, one row height.
+for (const group of new Set(stackOf.values())) {
+  const members = group.stack.map((id) => measured.get(id));
+  group.width = Math.max(...members.map((node) => node.width));
+  group.rowH = Math.max(...members.map((node) => node.height));
+  for (const node of members) measured.set(node.id, { ...node, width: group.width, height: group.rowH });
+}
 
 // ---- Layout --------------------------------------------------------------------
 // Every generation shares one band (a row going down, a column going right),
 // sized by its largest node, so siblings and cousins line up. Along the other
 // axis each subtree owns a contiguous span: leaves are laid out in order and a
-// parent is centred over its children. Positions never depend on collapse
-// state, so expanding or collapsing a branch leaves every visible node where
-// the reader last saw it.
-const down = direction === 'down';
+// parent is centred over its children. A stacked run hangs from its parent's
+// band and owns its own span, so it never meets a cousin. Positions never
+// depend on collapse state, so expanding or collapsing a branch leaves every
+// visible node where the reader last saw it.
 const breadthSize = (node) => (down ? node.width : node.height);
 const depthSize = (node) => (down ? node.height : node.width);
 const breadthGap = down ? layout.gapX : layout.gapY;
 const depthGap = down ? layout.gapY : layout.gapX;
 
-const bandSize = [];
-for (const node of measured.values()) bandSize[node.depth] = Math.max(bandSize[node.depth] || 0, depthSize(node));
+const maxDepth = Math.max(...[...measured.values()].map((node) => node.depth));
+const bandSize = Array.from({ length: maxDepth + 1 }, () => 0);
+for (const node of measured.values()) if (!node.stacked) bandSize[node.depth] = Math.max(bandSize[node.depth], depthSize(node));
 const bandStart = [];
 bandSize.reduce((offset, size, depth) => {
   bandStart[depth] = offset;
@@ -199,40 +249,54 @@ bandSize.reduce((offset, size, depth) => {
 // same height going down, the same width going right), so a generation reads
 // as one even row or column instead of a ragged one.
 for (const [id, node] of measured) {
+  if (node.stacked) continue;
   measured.set(id, down ? { ...node, height: bandSize[node.depth] } : { ...node, width: bandSize[node.depth] });
 }
 
+const groupSpan = (group) => (group.stack ? STACK_INDENT + group.width : span.get(group.single));
+const groupsSpan = (groups) => groups.reduce((sum, group, index) => sum + groupSpan(group) + (index ? breadthGap : 0), 0);
 const span = new Map();
 (function measureSpan(id) {
-  const children = childrenOf.get(id);
-  children.forEach(measureSpan);
-  const childSpan = children.reduce((sum, child, index) => sum + span.get(child) + (index ? breadthGap : 0), 0);
-  span.set(id, Math.max(breadthSize(measured.get(id)), childSpan));
+  for (const child of childrenOf.get(id)) measureSpan(child);
+  span.set(id, Math.max(breadthSize(measured.get(id)), groupsSpan(groupsOf.get(id))));
 }(authoredRoot.id));
 
 const placed = new Map();
+// Where a group meets its parent's crossbar: a single child at its centre, a
+// stacked run at its spine.
+const attachOf = (group) => (group.stack ? group.spine : centerOf(group.single));
 (function place(id, start) {
   const node = measured.get(id);
-  const children = childrenOf.get(id);
-  const childSpan = children.reduce((sum, child, index) => sum + span.get(child) + (index ? breadthGap : 0), 0);
-  let cursor = start + (span.get(id) - childSpan) / 2;
-  for (const child of children) {
-    place(child, cursor);
-    cursor += span.get(child) + breadthGap;
+  const groups = groupsOf.get(id);
+  // A parent whose only children are one stacked run sits at the run's left
+  // edge, with the spine dropping straight out of it.
+  const onlyStack = groups.length === 1 && groups[0].stack;
+  let cursor = onlyStack ? start : start + (span.get(id) - groupsSpan(groups)) / 2;
+  for (const group of groups) {
+    if (group.stack) {
+      group.spine = cursor + 12;
+      let y = bandStart[node.depth + 1];
+      for (const child of group.stack) {
+        const leaf = measured.get(child);
+        placed.set(child, { ...leaf, x: Math.round(cursor + STACK_INDENT), y: Math.round(y) });
+        y += leaf.height + STACK_GAP;
+      }
+    } else place(group.single, cursor);
+    cursor += groupSpan(group) + breadthGap;
   }
-  // Going down, a parent is centred over its first and last child. Going
-  // right, it lines up with its first child, like a file explorer: the root
-  // stays at the top-left of a tall canvas instead of in its middle, where a
-  // reader who starts at the top would never see it.
-  const center = !children.length ? start + span.get(id) / 2
-    : down ? (centerOf(children[0]) + centerOf(children.at(-1))) / 2
-      : centerOf(children[0]);
-  const breadth = center - breadthSize(node) / 2;
+  let center = groups.length ? (attachOf(groups[0]) + attachOf(groups.at(-1))) / 2 : start + span.get(id) / 2;
+  // A middle child a few px off the midpoint would put a small jog in the
+  // stem; the parent sits exactly over it instead.
+  const half = breadthSize(node) / 2;
+  const middle = groups.slice(1, -1).map(attachOf)
+    .find((attach) => Math.abs(attach - center) < 24 && attach - half >= start && attach + half <= start + span.get(id));
+  if (middle !== undefined) center = middle;
+  const breadth = onlyStack ? start : center - breadthSize(node) / 2;
   // A row going down centres each node in its band; a column going right
   // left-aligns them so every link into the column has the same stub.
   const depth = bandStart[node.depth] + (down ? (bandSize[node.depth] - depthSize(node)) / 2 : 0);
   const [x, y] = down ? [breadth, depth] : [depth, breadth];
-  placed.set(id, { ...node, x: Math.round(x), y: Math.round(y) });
+  placed.set(id, { ...node, x: Math.round(x), y: Math.round(y), toggleAt: onlyStack ? Math.round(groups[0].spine) : null });
 }(authoredRoot.id, down ? layout.margin : layout.top));
 
 function centerOf(id) {
@@ -240,7 +304,7 @@ function centerOf(id) {
   return down ? node.x + node.width / 2 : node.y + node.height / 2;
 }
 
-const all = [...placed.values()];
+const all = asArray(tree.nodes).map((node) => placed.get(node.id));
 const viewBox = Array.isArray(tree.meta?.viewBox) ? tree.meta.viewBox : [
   Math.max(320, Math.ceil(Math.max(...all.map((node) => node.x + node.width)) + layout.margin + (down ? 0 : layout.toggleR + 4))),
   Math.max(240, Math.ceil(Math.max(...all.map((node) => node.y + node.height)) + layout.margin + (down ? layout.toggleR + 4 : 0))),
@@ -249,15 +313,26 @@ const viewBox = Array.isArray(tree.meta?.viewBox) ? tree.meta.viewBox : [
 // ---- Edges ---------------------------------------------------------------------
 // One elbow per parent-child link: out of the parent's toggle side, across at
 // the midpoint of the generation gap, and into the child. Siblings share the
-// stem and the crossbar, which is how a containment tree is read.
+// stem and the crossbar, which is how a containment tree is read. A stacked
+// child is reached along its run's spine and enters from the left.
+function edgeStart(parent) {
+  if (!down) return [parent.x + parent.width, parent.y + parent.height / 2];
+  return [parent.toggleAt ?? parent.x + parent.width / 2, parent.y + parent.height];
+}
 function edgePoints(parent, child) {
+  const start = edgeStart(parent);
+  if (down && child.stacked) {
+    const spine = stackOf.get(child.id).spine;
+    const end = [child.x, child.y + child.height / 2];
+    if (parent.toggleAt !== null) return [start, [spine, end[1]], end];
+    const midY = bandStart[child.depth] - depthGap / 2;
+    return [start, [start[0], midY], [spine, midY], [spine, end[1]], end];
+  }
   if (down) {
-    const start = [parent.x + parent.width / 2, parent.y + parent.height];
     const end = [child.x + child.width / 2, child.y];
     const midY = bandStart[child.depth] - depthGap / 2;
     return Math.abs(start[0] - end[0]) < 0.5 ? [start, end] : [start, [start[0], midY], [end[0], midY], end];
   }
-  const start = [parent.x + parent.width, parent.y + parent.height / 2];
   const end = [child.x, child.y + child.height / 2];
   const midX = bandStart[child.depth] - depthGap / 2;
   return Math.abs(start[1] - end[1]) < 0.5 ? [start, end] : [start, [midX, start[1]], [midX, end[1]], end];
@@ -298,7 +373,7 @@ function buildLayoutReport() {
     diagram_type: 'tree',
     direction,
     viewBox,
-    nodes: all.map((node) => ({ id: node.id, parent: node.parent ?? null, depth: node.depth, x: node.x, y: node.y, width: node.width, height: node.height, lines: node.labelLines.length })),
+    nodes: all.map((node) => ({ id: node.id, parent: node.parent ?? null, depth: node.depth, x: node.x, y: node.y, width: node.width, height: node.height, lines: node.labelLines.length, stacked: node.stacked })),
     edges: edges.map((edge) => ({ from: edge.from, to: edge.to, points: edge.points })),
   };
 }
@@ -310,32 +385,36 @@ function treeAttrs(id) {
 }
 
 function renderNode(node) {
-  const tone = node.isRoot ? 'frontend' : childrenOf.get(node.id).length ? 'backend' : 'external';
+  const leaf = !childrenOf.get(node.id).length;
+  const tone = node.isRoot ? 'frontend' : leaf ? 'external' : 'backend';
   const context = i18nText(locale, node.isRoot ? 'node.context.tree.root' : childrenOf.get(node.id).length ? 'node.context.tree.branch' : 'node.context.tree.leaf');
   const passport = { kind: tone, sublabel: node.sublabel, context };
-  const cx = node.x + node.width / 2;
+  // A stacked list reads left-aligned, like a directory listing; a node in a
+  // row is centred under its link.
+  const cx = node.stacked ? node.x + layout.padX : node.x + node.width / 2;
+  const anchor = node.stacked ? 'start' : 'middle';
   let y = node.y + (node.height - node.contentHeight) / 2;
   const label = node.labelLines.map((line) => {
     y += layout.labelLine;
-    return `<tspan x="${cx}" y="${y - 4}">${esc(line)}</tspan>`;
+    return `<tspan x="${cx}" y="${y - 4.5}">${esc(line)}</tspan>`;
   }).join('');
   y += node.sublabelLines.length ? 4 : 0;
   const sublabel = node.sublabelLines.map((line) => {
     y += layout.sublabelLine;
-    return `<tspan x="${cx}" y="${y - 3}">${esc(line)}</tspan>`;
+    return `<tspan x="${cx}" y="${y - 3.5}">${esc(line)}</tspan>`;
   }).join('');
   // A collapsed branch shows a stacked card behind it, so the hidden subtree
   // stays visible as "there is more here" even before the badge is read.
   const stack = childrenOf.get(node.id).length
-    ? `<rect data-tree-stack="" x="${node.x + 5}" y="${node.y + 5}" width="${node.width}" height="${node.height}" rx="7" class="c-${tone}" stroke-width="1.2"/>`
+    ? `<rect data-tree-stack="" x="${node.x + 5}" y="${node.y + 5}" width="${node.width}" height="${node.height}" rx="8" class="c-${tone}" stroke-width="1.2"/>`
     : '';
   return `        <g ${focusNodeAttrs(node.id, node.label, passport, locale)} data-tree-depth="${node.depth}"${treeAttrs(node.id)}>
           ${focusNodeTitle(node.label, passport)}
           ${stack}
-          <rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="7" class="c-mask"/>
-          <rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="7" class="c-${tone}"${animateAttr(tree.meta, 'node', node.depth)} stroke-width="${node.isRoot ? 2 : 1.5}"/>
-          <text data-node-label="" x="${cx}" class="t-primary" font-size="${node.labelFont}" font-weight="${node.isRoot ? 750 : 650}" text-anchor="middle">${label}</text>
-          ${sublabel ? `<text data-detail="context" x="${cx}" class="t-muted" font-size="${layout.sublabelFont}" text-anchor="middle">${sublabel}</text>` : ''}
+          <rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="8" class="c-mask"/>
+          <rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="8" class="c-${tone}${leaf ? ' tree-leaf' : ''}"${animateAttr(tree.meta, 'node', node.depth)} stroke-width="${node.isRoot ? 1.8 : 1.3}"/>
+          <text data-node-label="" x="${cx}" class="t-primary" font-size="${node.labelFont}" font-weight="${node.isRoot ? 750 : leaf ? 600 : 700}" text-anchor="${anchor}">${label}</text>
+          ${sublabel ? `<text data-detail="context" x="${cx}" class="t-muted" font-size="${layout.sublabelFont}" text-anchor="${anchor}">${sublabel}</text>` : ''}
         </g>`;
 }
 
@@ -344,7 +423,7 @@ function renderNode(node) {
 function renderToggle(node) {
   const children = childrenOf.get(node.id);
   if (!children.length) return '';
-  const [cx, cy] = down ? [node.x + node.width / 2, node.y + node.height] : [node.x + node.width, node.y + node.height / 2];
+  const [cx, cy] = edgeStart(node);
   const hidden = descendantCount(node.id);
   const collapse = i18nText(locale, 'tree.toggle.collapse', { label: node.label, count: hidden });
   const expand = i18nText(locale, 'tree.toggle.expand', { label: node.label, count: hidden });
@@ -359,7 +438,7 @@ function renderToggle(node) {
 }
 
 function renderEdge(edge) {
-  return `        <path ${focusEdgeAttrs(edge.from, edge.to, undefined, edge.index)}${treeAttrs(edge.to)} data-composition-points="${routePointsValue(edge.points)}" d="${roundedPath(edge.points, 6)}" class="a-default tree-edge"${animateAttr(tree.meta, 'edge', placed.get(edge.to).depth)} stroke-width="1.5"/>`;
+  return `        <path ${focusEdgeAttrs(edge.from, edge.to, undefined, edge.index)}${treeAttrs(edge.to)} data-composition-points="${routePointsValue(edge.points)}" d="${roundedPath(edge.points, 8)}" class="a-default tree-edge"${animateAttr(tree.meta, 'edge', placed.get(edge.to).depth)} stroke-width="1.5"/>`;
 }
 
 function renderSvg() {
@@ -369,7 +448,8 @@ function renderSvg() {
 ${svgAccessibleText(tree.meta, 'tree')}
 ${renderDefinitions()}
         <style>
-          svg[data-tree-ui] .tree-edge { stroke-linejoin: round; }
+          svg[data-tree-ui] .tree-edge { stroke-linejoin: round; stroke-linecap: round; }
+          svg[data-tree-ui] .tree-leaf { fill: var(--mask); stroke: var(--lane-stroke); }
           svg[data-tree-ui] [data-tree-stack] { display: none; fill: var(--mask); }
           svg[data-tree-ui] [data-tree-collapsed] [data-tree-stack] { display: inline; }
           svg[data-tree-ui] [data-tree-hidden] { display: none; }

@@ -9,6 +9,9 @@
     "timezone": "Asia/Shanghai",
     "quality_profile": "showcase"
   },
+  "layout": {
+    "width": 1400
+  },
   "lanes": [
     {
       "id": "release",

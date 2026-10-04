@@ -71,10 +71,10 @@ const layout = {
   padX: 12,
   headerH: 44,
   headerPlainH: 34,
-  nameFont: 13,
+  nameFont: 13.5,
   stereotypeFont: 9.5,
-  memberFont: 10.5,
-  rowH: 19,
+  memberFont: 11,
+  rowH: 20,
   compartmentPad: 5,
   minRelationshipLength: 28,
 };
@@ -512,12 +512,15 @@ function validateClassDiagram() {
     if (seen.has(type.id)) problems.push(`Type ids must be unique; "${type.id}" is declared twice.`);
     seen.add(type.id);
     if (placedByGrid(type)) {
-      if (!Number.isInteger(type.row) || !Number.isInteger(type.col)) {
-        problems.push(`Type "${type.id}" needs grid row/col or an absolute pos [x,y].`);
+      if (!Number.isInteger(type.row) || !Number.isInteger(type.col * 2)) {
+        problems.push(`Type "${type.id}" needs grid row/col (col may be a half step, e.g. 1.5) or an absolute pos [x,y].`);
       } else {
-        const key = `${type.row},${type.col}`;
-        if (cells.has(key)) problems.push(`Types "${cells.get(key)}" and "${type.id}" share grid cell row ${type.row} col ${type.col}.`);
-        else cells.set(key, type.id);
+        // A half column straddles the two columns beside it.
+        for (const col of new Set([Math.floor(type.col), Math.ceil(type.col)])) {
+          const key = `${type.row},${col}`;
+          if (cells.has(key)) problems.push(`Types "${cells.get(key)}" and "${type.id}" share grid cell row ${type.row} col ${col}.`);
+          else cells.set(key, type.id);
+        }
       }
     }
     const attributeNames = new Set();
@@ -694,6 +697,26 @@ function buildLayoutReport() {
 }
 
 // ---- Rendering -----------------------------------------------------------------
+// A member reads like a signature in an editor: the visibility glyph and every
+// type annotation are quiet, so the names carry the row. Wrapping never splits
+// an annotation, so each line is coloured on its own.
+function memberSpans(text, first) {
+  let out = '';
+  let rest = text;
+  const glyph = first ? rest.match(/^([+#~-]) /) : null;
+  if (glyph) {
+    out += `<tspan class="t-muted">${esc(glyph[1])}</tspan> `;
+    rest = rest.slice(2);
+  }
+  const annotation = /:\s*[^,()]+/g;
+  let last = 0;
+  for (const match of rest.matchAll(annotation)) {
+    out += `${esc(rest.slice(last, match.index))}<tspan class="t-muted">${esc(match[0])}</tspan>`;
+    last = match.index + match[0].length;
+  }
+  return out + esc(rest.slice(last));
+}
+
 function renderMembers(type) {
   let top = type.y + headerHeight(type);
   return compartments(type).map((compartment) => {
@@ -708,7 +731,7 @@ function renderMembers(type) {
         const baseline = top + layout.compartmentPad + (line += 1) * layout.rowH - 5;
         const x = type.x + layout.padX + (index ? CONTINUATION_INDENT * MEMBER_ADVANCE : 0);
         const continued = index ? ' data-class-continuation=""' : '';
-        return `<text data-detail="context" data-class-member="${compartment.kind}"${continued} x="${x}" y="${baseline}" class="t-primary cl-member" font-size="${layout.memberFont}"${style ? ` style="${style}"` : ''}>${esc(text)}</text>`;
+        return `<text data-detail="context" data-class-member="${compartment.kind}"${continued} x="${x}" y="${baseline}" class="t-primary cl-member" font-size="${layout.memberFont}"${style ? ` style="${style}"` : ''}>${memberSpans(text, !index)}</text>`;
       });
     });
     top += line * layout.rowH + layout.compartmentPad * 2;
