@@ -39,6 +39,7 @@ const testFiles = [
   'repository-evidence.test.mjs',
   'repository-evidence-types-browser.test.mjs',
   'tree-branches-browser.test.mjs',
+  'class-motion-browser.test.mjs',
 ];
 
 const chrome = findChrome();

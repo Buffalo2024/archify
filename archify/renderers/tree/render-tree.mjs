@@ -413,7 +413,7 @@ function renderNode(node) {
   // A collapsed branch shows a stacked card behind it, so the hidden subtree
   // stays visible as "there is more here" even before the badge is read.
   const stack = childrenOf.get(node.id).length
-    ? `<rect data-tree-stack="" x="${node.x + 5}" y="${node.y + 5}" width="${node.width}" height="${node.height}" rx="8" class="c-${tone}" stroke-width="1.2"/>`
+    ? `<rect data-tree-stack="" x="${node.x + 5}" y="${node.y + 5}" width="${node.width}" height="${node.height}" rx="8" class="tree-stack-${tone}" stroke-width="1.2"/>`
     : '';
   return `        <g ${focusNodeAttrs(node.id, node.label, passport, locale)} data-tree-depth="${node.depth}"${treeAttrs(node.id)}>
           ${focusNodeTitle(node.label, passport)}
@@ -461,6 +461,8 @@ ${renderDefinitions()}
           svg[data-tree-ui] .tree-edge { stroke-linejoin: round; stroke-linecap: round; }
           svg[data-tree-ui] .tree-leaf { fill: var(--mask); stroke: var(--lane-stroke); }
           svg[data-tree-ui] [data-tree-stack] { display: none; fill: var(--mask); }
+          svg[data-tree-ui] .tree-stack-frontend { stroke: var(--frontend-stroke); }
+          svg[data-tree-ui] .tree-stack-backend { stroke: var(--backend-stroke); }
           svg[data-tree-ui] [data-tree-collapsed] [data-tree-stack] { display: inline; }
           svg[data-tree-ui] [data-tree-hidden] { display: none; }
           svg[data-tree-ui] .tree-toggle-hit { fill: transparent; }

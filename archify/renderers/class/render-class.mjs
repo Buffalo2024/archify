@@ -548,13 +548,6 @@ function validateClassDiagram() {
       if (attributeNames.has(attribute.name)) problems.push(`Type "${type.id}" declares attribute "${attribute.name}" twice.`);
       attributeNames.add(attribute.name);
     }
-    if (type.kind === 'interface' && asArray(type.attributes).some((attribute) => !attribute.static)) {
-      fail(detail('class/interface-state',
-        `Interface "${type.id}" declares instance attributes; an interface states a contract, not stored state. Move the fields to an implementing class, mark true constants as static, or use kind "abstract".`,
-        { path: `/types/${index}`, typeId: type.id },
-        { kind: type.kind, attributes: asArray(type.attributes).filter((attribute) => !attribute.static).map((attribute) => attribute.name) },
-        ['Move the fields to an implementing class.', 'Mark constants as static.', 'Use kind "abstract" for a base class with state.']));
-    }
     // Members wrap, but the title is one line: a box must be wide enough for it.
     const placed = types.get(type.id);
     const needed = headerWidth(type);
@@ -808,7 +801,7 @@ function renderRelationshipPath(relationship, index) {
   const routed = pathFor(relationship);
   const reversed = busPaths.has(relationship);
   const d = reversed ? roundedPath([...routed.points].reverse(), 8) : routed.d;
-  const bus = reversed ? ` data-class-bus="${esc(relationship.to)}"` : '';
+  const bus = reversed ? ` data-class-bus="${esc(relationship.to)}" data-motion-path="${esc(routed.d)}"` : '';
   return `        <path ${focusEdgeAttrs(relationship.from, relationship.to, relationship.label, index, relationship.id)} data-class-relationship="${relationship.kind}"${bus} data-composition-points="${routePointsValue(routed.points)}" d="${d}" class="${relationshipClass(relationship.kind)}"${animateAttr(cd.meta, 'edge', index)} stroke-width="1.5"${markerAttrs(relationship.kind, { reversed })}/>`;
 }
 

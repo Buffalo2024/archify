@@ -100,17 +100,8 @@
         else if (event.key === 'ArrowRight' && collapsed[id]) { event.preventDefault(); setCollapsed(id, false); }
       }, true);
 
-      // Finder, Outline, guided views, and shared links all select through the
-      // focus state; a selected node must never stay hidden. The public setter
-      // expands ancestors before the camera frames the node, and the observer
-      // covers any path that changes the pressed state directly.
-      if (Archify.focus && typeof Archify.focus.set === 'function') {
-        var focusSet = Archify.focus.set;
-        Archify.focus.set = function (ids) {
-          (Array.isArray(ids) ? ids : [ids]).forEach(function (id) { if (typeof id === 'string') reveal(id); });
-          return focusSet.apply(this, arguments);
-        };
-      }
+      // Focus reveals ancestors synchronously before positioning its lens.
+      // The observer also covers paths that change pressed state directly.
       new MutationObserver(function (records) {
         records.forEach(function (record) {
           var el = record.target;

@@ -62,6 +62,14 @@ const layout = {
 // Time is the one fact this diagram draws, so every timestamp must parse and
 // state its own offset (the schema requires Z or ±HH:MM); the display zone must
 // be a real IANA zone, and every event must sit in a declared lane.
+// Date.parse normalizes some impossible dates (February 30 becomes March 2).
+// Check the authored calendar date independently of its UTC offset first.
+function validCalendarDate(timestamp) {
+  const [year, month, day] = timestamp.slice(0, 10).split('-').map(Number);
+  const leap = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+  const days = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  return month >= 1 && month <= 12 && day >= 1 && day <= days[month - 1];
+}
 const timezone = tl.meta.timezone || 'UTC';
 {
   const problems = [];
@@ -81,7 +89,7 @@ const timezone = tl.meta.timezone || 'UTC';
   for (const [index, event] of asArray(tl.events).entries()) {
     if (seen.has(event.id)) fail('timeline/duplicate-id', `Event id "${event.id}" is declared twice.`, { path: `/events/${index}/id` }, { id: event.id }, ['Give every event a unique id.']);
     seen.add(event.id);
-    if (!Number.isFinite(Date.parse(event.at))) {
+    if (!validCalendarDate(event.at) || !Number.isFinite(Date.parse(event.at))) {
       fail('timeline/invalid-timestamp', `Event "${event.id}" timestamp "${event.at}" is not a valid date and time.`,
         { path: `/events/${index}/at`, nodeId: event.id }, { at: event.at }, ['Use ISO 8601 with an explicit offset, e.g. "2026-10-01T10:05:00+08:00".']);
     }
@@ -175,11 +183,26 @@ function approximateDuration(ms) {
 const gaps = times.slice(1).map((time, index) => ({ from: times[index], to: time, length: time - times[index] }));
 const sortedGaps = gaps.map((gap) => gap.length).sort((a, b) => a - b);
 const medianGap = sortedGaps.length ? sortedGaps[Math.floor((sortedGaps.length - 1) / 2)] : 0;
-const breaks = tl.layout?.breaks === 'none' ? [] : gaps
+const SEGMENT_FLOOR = 28;
+const candidates = tl.layout?.breaks === 'none' ? [] : gaps
   .filter((gap) => gap.length > 8 * medianGap && gap.length > 0.1 * span)
   .sort((a, b) => b.length - a.length)
-  .slice(0, 8)
-  .sort((a, b) => a.from - b.from);
+  .slice(0, 8);
+
+// Reserve room for proportional time before accepting a break. If fixed-width
+// labels would exhaust the authored axis, leave shorter quiet periods on the
+// linear scale instead of collapsing all distinct instants to one position.
+const breaks = [];
+let fixedWidth = layout.edgePad * 2 + SEGMENT_FLOOR;
+for (const gap of candidates) {
+  gap.label = `≈ ${approximateDuration(gap.length)}`;
+  gap.width = Math.max(layout.breakW, Math.ceil(textUnits(gap.label) * 10.5 * ADVANCE + 18));
+  const addedWidth = gap.width + SEGMENT_FLOOR;
+  if (fixedWidth + addedWidth + layout.minTickPx > layout.axisWidth) continue;
+  breaks.push(gap);
+  fixedWidth += addedWidth;
+}
+breaks.sort((a, b) => a.from - b.from);
 
 const segments = [];
 {
@@ -196,11 +219,6 @@ const axisX0 = layout.margin + layout.laneLabelW;
 // width so a lone event between two breaks never shares their x, and the rest
 // of the axis is shared in proportion to time. Inside a segment the scale is
 // one constant, so distances there are exact.
-const SEGMENT_FLOOR = 28;
-for (const gap of breaks) {
-  gap.label = `≈ ${approximateDuration(gap.length)}`;
-  gap.width = Math.max(layout.breakW, Math.ceil(textUnits(gap.label) * 10.5 * ADVANCE + 18));
-}
 const drawable = layout.axisWidth - layout.edgePad * 2
   - breaks.reduce((sum, gap) => sum + gap.width, 0) - SEGMENT_FLOOR * segments.length;
 const scale = linearTime > 0 ? Math.max(0, drawable) / linearTime : 0;

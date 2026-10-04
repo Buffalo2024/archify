@@ -41,8 +41,10 @@ An attribute is `{ name, type?, visibility?, static? }` and draws as
 `+ name: Type`. A method is `{ name, parameters?, returns?, visibility?,
 static?, abstract? }` and draws as `+ name(parameters): Returns`. Visibility
 uses the UML glyphs `+` public, `#` protected, `~` package, `-` private; a
-static member is underlined and an abstract method is italic. An interface may
-only declare `static` attributes (constants): `class/interface-state`.
+static member is underlined and an abstract method is italic. Interface
+attributes describe property contracts (for example, TypeScript's
+`interface Person { name: string }`); they do not imply stored implementation
+state. Interfaces may also declare static constants.
 
 ## Relationships
 
@@ -88,7 +90,9 @@ generalizations of one kind into one supertype, from subtypes placed below it
 with at least 40px of gap, draw as one hierarchy bus: a single triangle and
 trunk, a horizontal bus halfway down the gap, and a drop to each subtype. The
 bus is drawn from the supertype outward so a dashed realization bus keeps one
-dash phase. A bus that would cross another type falls back to ordinary routes.
+dash phase. Its `data-motion-path` carries the source-to-target route so Viewer
+tokens and flow overlays follow the relationship's semantic direction. A bus
+that would cross another type falls back to ordinary routes.
 All other relationships use the shared orthogonal router
 (`../architecture/routing.mjs`) and the shared Clean Flow, crossing, corridor,
 rhythm, and label-clearance gates.

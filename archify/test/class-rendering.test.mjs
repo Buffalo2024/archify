@@ -7,6 +7,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { textUnits } from '../renderers/shared/utils.mjs';
+import { bandedLayout, resolveEntityPos } from '../renderers/erd/grid.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const skillRoot = path.resolve(__dirname, '..');
@@ -100,6 +101,32 @@ test('class: implementations of one supertype share a hierarchy bus and a single
   assert.ok(Math.abs(centre(gateway) - (centre(boxes.get('card_gateway')) + centre(boxes.get('wallet_gateway'))) / 2) < 0.5);
 });
 
+test('class: half columns remain placeable without occupied integer neighbours', () => {
+  const grid = { origin: [100, 40], gapX: 128, gapY: 84, entityW: 180 };
+  for (const col of [0.5, 1.5, 3.5]) {
+    const entity = { row: 0, col, width: 180, height: 60 };
+    const bands = bandedLayout([entity], grid);
+    assert.deepEqual(resolveEntityPos(entity, grid, bands), [Math.max(100, 100 + 128 * col - 90), 40]);
+  }
+  const diagram = clone(small);
+  diagram.types = [{ id: 'person', label: 'Person', kind: 'interface', row: 0, col: 0.5, width: 300 }];
+  diagram.relationships = [];
+  const result = render(diagram);
+  assert.equal(result.status, 0, result.stderr);
+  assert.doesNotMatch(result.svg, /NaN|Infinity/);
+  const box = typeBoxes(result.svg).get('person');
+  assert.ok(box.x >= 0, 'half-column box must stay inside the canvas');
+  const check = spawnSync(process.execPath, [checker, result.output], { encoding: 'utf8' });
+  assert.equal(JSON.parse(check.stdout).ok, true, check.stdout);
+});
+
+test('class: shared grid preserves integer-column positions for ERD callers', () => {
+  const grid = { origin: [32, 40], gapX: 56, gapY: 44, entityW: 240 };
+  const entities = [{ row: 0, col: 0, width: 240, height: 60 }, { row: 0, col: 2, width: 120, height: 60 }];
+  const bands = bandedLayout(entities, grid);
+  assert.deepEqual(entities.map((entity) => resolveEntityPos(entity, grid, bands)), [[32, 40], [384, 40]]);
+});
+
 test('class: long members wrap inside the box instead of being truncated', () => {
   const { svg, status, stderr } = render(large);
   assert.equal(status, 0, stderr);
@@ -148,9 +175,27 @@ test('class: an inheritance cycle is rejected', () => {
   assert.match(stderr, /class\/inheritance-cycle/);
 });
 
-test('class: an interface cannot hold instance state', () => {
-  const stderr = failure((d) => { d.types.find((t) => t.id === 'payment_gateway').attributes = [{ name: 'apiKey', type: 'String' }]; });
-  assert.match(stderr, /class\/interface-state/);
+test('class: interfaces accept instance property contracts and static constants', () => {
+  const diagram = clone(small);
+  diagram.types.find((type) => type.id === 'payment_gateway').attributes = [
+    { name: 'name', type: 'string' },
+    { name: 'VERSION', type: 'string', static: true },
+  ];
+  const { status, stderr, svg } = render(diagram);
+  assert.equal(status, 0, stderr);
+  const text = svg.replace(/<[^>]+>/g, '');
+  assert.match(text, /name: string/);
+  assert.match(text, /VERSION: string/);
+});
+
+test('class: duplicate interface properties remain invalid', () => {
+  const stderr = failure((diagram) => {
+    diagram.types.find((type) => type.id === 'payment_gateway').attributes = [
+      { name: 'name', type: 'string' },
+      { name: 'name', type: 'string' },
+    ];
+  });
+  assert.match(stderr, /declares attribute "name" twice/);
 });
 
 test('class: an authored width too narrow for the title is reported, not clipped', () => {

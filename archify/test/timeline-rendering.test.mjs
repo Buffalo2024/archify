@@ -112,3 +112,48 @@ test('timeline: ambiguous or invalid time input is refused', () => {
   assert.match(failure((d) => { d.events[0].lane = 'billing'; }), /timeline\/unknown-lane/);
   assert.match(failure((d) => { delete d.meta.evidence; }), /evidence/);
 });
+
+test('timeline: invalid calendar dates are rejected before Date.parse can normalize them', () => {
+  for (const at of ['2026-02-30T10:00:00Z', '2025-02-29T10:00:00+05:30', '2100-02-29T10:00:00Z', '2026-04-31T10:00:00-04:00']) {
+    assert.match(failure((diagram) => { diagram.events[0].at = at; }), /timeline\/invalid-timestamp/);
+  }
+  for (const at of ['2024-02-29T10:00:00+05:30', '2000-02-29T10:00:00Z']) {
+    const diagram = clone(small);
+    diagram.events[0].at = at;
+    const event = layoutOf(diagram).events.find((entry) => entry.id === diagram.events[0].id);
+    assert.equal(event.t, Date.parse(at));
+  }
+});
+
+function crowdedBreaksDiagram() {
+  const diagram = clone(small);
+  diagram.layout = { width: 480, breaks: 'auto' };
+  const start = Date.parse('2026-01-01T00:00:00Z');
+  // Nine short bursts separated by eight eligible quiet periods. Their labels
+  // and segment floors previously exhausted a 480px axis and set scale to 0.
+  diagram.events = Array.from({ length: 18 }, (_, index) => ({
+    id: `event_${index}`,
+    at: new Date(start + Math.floor(index / 2) * (35 * 60 * 60000) + (index % 2) * 10 * 60000).toISOString(),
+    title: `Event ${index}`,
+    lane: 'release',
+  }));
+  return diagram;
+}
+
+test('timeline: automatic breaks leave room for proportional time on a narrow axis', () => {
+  const report = layoutOf(crowdedBreaksDiagram());
+  assert.ok(report.breaks.length > 0, 'eligible quiet periods still compress');
+  assert.ok(report.scalePxPerMinute > 0, 'distinct instants must retain a positive scale');
+  assert.ok(report.events.every((event, index, all) => !index || event.x > all[index - 1].x), 'distinct instants must not collapse to one x');
+  for (const segment of report.segments) {
+    assert.ok(segment.x0 <= segment.x1);
+    assert.ok(segment.x1 <= report.viewBox[0] - 28 - 72, 'segments stay within the authored axis');
+  }
+  for (const gap of report.breaks) assert.ok(gap.x1 <= report.viewBox[0] - 28 - 72, 'breaks stay within the authored axis');
+  const result = run(crowdedBreaksDiagram());
+  assert.equal(result.status, 0, result.stderr);
+  const html = fs.readFileSync(result.output, 'utf8');
+  assert.equal((html.match(/data-timeline-break=""/g) || []).length, report.breaks.length);
+  const receipt = JSON.parse(spawnSync(process.execPath, [checker, result.output], { encoding: 'utf8' }).stdout);
+  assert.equal(receipt.ok, true, JSON.stringify(receipt.checks.filter((entry) => !entry.ok)));
+});

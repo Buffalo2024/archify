@@ -19,9 +19,24 @@ test('Tree branches collapse in place, follow the keyboard, reveal selections, a
 }, async (t) => {
   const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'archify-tree-browser-'));
   t.after(() => fs.rmSync(scratch, { recursive: true, force: true }));
+  // Verified evidence on a root, branch and leaf exercises the shared beacon
+  // installer against both hidden stack decorations and actual node cards.
+  const git = (...args) => execFileSync('git', ['-C', scratch, ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+  fs.writeFileSync(path.join(scratch, 'source.js'), 'export const source = true;\n');
+  git('init');
+  git('config', 'user.name', 'Archify Tests');
+  git('config', 'user.email', 'archify@example.test');
+  git('add', 'source.js');
+  git('commit', '-m', 'source fixture');
+  git('remote', 'add', 'origin', 'https://github.com/example/evidence-repo');
   const render = (example, name) => {
     const output = path.join(scratch, name);
-    execFileSync(process.execPath, [path.join(skillRoot, 'renderers/tree/render-tree.mjs'), path.join(skillRoot, 'examples', example), output]);
+    const diagram = JSON.parse(fs.readFileSync(path.join(skillRoot, 'examples', example), 'utf8'));
+    diagram.meta.repository = { url: 'https://github.com/example/evidence-repo', revision: git('rev-parse', 'HEAD') };
+    diagram.nodes.forEach((node) => { node.sources = [{ path: 'source.js', line: 1 }]; });
+    const input = path.join(scratch, name + '.json');
+    fs.writeFileSync(input, JSON.stringify(diagram));
+    execFileSync(process.execPath, [path.join(skillRoot, 'bin/archify.mjs'), 'render', 'tree', input, output, '--repo-root', scratch]);
     return output;
   };
   const small = render('payment-platform.tree.json', 'small.html');
@@ -43,10 +58,11 @@ test('Tree branches collapse in place, follow the keyboard, reveal selections, a
     assert.equal(result.exceptionDetails, undefined, result.exceptionDetails?.exception?.description);
     return result.result?.value;
   }
-  async function load(file) {
+  let loadCount = 0;
+  async function load(file, hash = '', theme = 'light') {
     await send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
     const loaded = browser.cdp.waitFor('Page.loadEventFired', session);
-    await send('Page.navigate', { url: pathToFileURL(file).href + '?theme=light' });
+    await send('Page.navigate', { url: pathToFileURL(file).href + '?theme=' + theme + '&load=' + ++loadCount + hash });
     await loaded;
     await run('document.fonts.ready');
     await run('Archify.viewerChromeLayout.whenStable()');
@@ -59,6 +75,17 @@ test('Tree branches collapse in place, follow the keyboard, reveal selections, a
 
   await load(small);
   assert.equal(await run('Archify.treeBranches.active'), true);
+  async function checkBeacons() {
+    assert.deepEqual(await run(`(() => ['platform', 'payments', 'card_payment'].map(id => {
+      const node = document.querySelector('[data-node-id="' + id + '"]');
+      const beacon = node.querySelector('[data-source-evidence-beacon]');
+      const card = node.querySelector('rect.c-mask').getBoundingClientRect();
+      const box = beacon && beacon.getBoundingClientRect();
+      return { id, exists: !!beacon, onCard: !!box && box.x >= card.x && box.x + box.width <= card.x + card.width
+        && box.y >= card.y && box.y + box.height <= card.y + card.height };
+    }))()`), ['platform', 'payments', 'card_payment'].map(id => ({ id, exists: true, onCard: true })));
+  }
+  await checkBeacons();
   const before = await run(box('operations'));
   const started = await run('performance.now()');
   await run(`document.querySelector('[data-tree-toggle="payments"]').dispatchEvent(new MouseEvent('click', { bubbles: true }))`);
@@ -122,4 +149,21 @@ test('Tree branches collapse in place, follow the keyboard, reveal selections, a
   await load(large);
   assert.deepEqual(await run('Archify.treeBranches.collapsedIds()'), ['viewer']);
   assert.equal(await run(`document.querySelector('[data-node-id="v_tree"]').hasAttribute('data-tree-hidden')`), true);
+
+  // Initial shared links reveal the authored collapsed ancestors before focus
+  // measures the node. Hash updates use an internal setter, as do multi-selects.
+  await load(large, '#focus=v_tree');
+  assert.deepEqual(await run('Archify.treeBranches.collapsedIds()'), []);
+  assert.equal(await run('Archify.focus.active()'), 'v_tree');
+  assert.equal(await run(`document.querySelector('[data-node-id="v_tree"]').getBoundingClientRect().width > 0`), true);
+  assert.equal(await run(`document.getElementById('focus-chip').hidden`), false);
+  await run(`Archify.treeBranches.collapse('viewer'); location.hash = 'focus=v_focus'`);
+  await run(`new Promise(resolve => setTimeout(resolve, 50))`);
+  assert.equal(await run('Archify.focus.active()'), 'v_focus');
+  assert.deepEqual(await run('Archify.treeBranches.collapsedIds()'), []);
+  await run(`Archify.treeBranches.collapse('viewer'); Archify.focus.setMany(['v_tree', 'v_focus'])`);
+  assert.deepEqual(await run('Archify.treeBranches.collapsedIds()'), []);
+
+  await load(small, '', 'dark');
+  await checkBeacons();
 });

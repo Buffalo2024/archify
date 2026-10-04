@@ -5064,11 +5064,11 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <path data-edge-from="checkout_orchestrator" data-edge-to="order" data-edge-label="updates" data-edge-key="2" data-edge-id="orchestrator_order" data-class-relationship="dependency" data-composition-points="182,274;182,378" d="M 182 274 L 182 378" class="a-default cl-relationship cl-dashed" stroke-width="1.5" marker-end="url(#cl-open)"/>
         <path data-edge-from="order" data-edge-to="line_item" data-edge-label="owns lines" data-edge-key="3" data-edge-id="order_lines" data-class-relationship="composition" data-composition-points="182,612;182,721" d="M 182 612 L 182 721" class="a-default cl-relationship" stroke-width="1.5" marker-start="url(#cl-diamond-filled)"/>
         <path data-edge-from="order" data-edge-to="payment_status" data-edge-key="4" data-edge-id="order_status" data-class-relationship="association" data-composition-points="332,495;517,495" d="M 332 495 L 517 495" class="a-default cl-relationship" stroke-width="1.5" marker-end="url(#cl-open)"/>
-        <path data-edge-from="retrying_processor" data-edge-to="payment_processor" data-edge-key="5" data-edge-id="retrying_implements" data-class-relationship="realization" data-class-bus="payment_processor" data-composition-points="1038,383;1038,339;1252,339;1252,294" d="M 1252 294 L 1252 331 Q 1252 339 1244 339 L 1046 339 Q 1038 339 1038 347 L 1038 383" class="a-default cl-relationship cl-dashed" stroke-width="1.5" marker-start="url(#cl-triangle-start)"/>
-        <path data-edge-from="bank_transfer" data-edge-to="payment_processor" data-edge-key="6" data-edge-id="bank_implements" data-class-relationship="realization" data-class-bus="payment_processor" data-composition-points="1466,413;1466,339;1252,339;1252,294" d="M 1252 294 L 1252 331 Q 1252 339 1260 339 L 1458 339 Q 1466 339 1466 347 L 1466 413" class="a-default cl-relationship cl-dashed" stroke-width="1.5" marker-start="url(#cl-triangle-start)"/>
-        <path data-edge-from="stripe_card" data-edge-to="retrying_processor" data-edge-key="7" data-edge-id="stripe_extends" data-class-relationship="inheritance" data-class-bus="retrying_processor" data-composition-points="610,726;610,652;1038,652;1038,607" d="M 1038 607 L 1038 644 Q 1038 652 1030 652 L 618 652 Q 610 652 610 660 L 610 726" class="a-default cl-relationship" stroke-width="1.5" marker-start="url(#cl-triangle-start)"/>
-        <path data-edge-from="adyen_card" data-edge-to="retrying_processor" data-edge-key="8" data-edge-id="adyen_extends" data-class-relationship="inheritance" data-class-bus="retrying_processor" data-composition-points="1038,726;1038,607" d="M 1038 607 L 1038 726" class="a-default cl-relationship" stroke-width="1.5" marker-start="url(#cl-triangle-start)"/>
-        <path data-edge-from="paypal_wallet" data-edge-to="retrying_processor" data-edge-key="9" data-edge-id="paypal_extends" data-class-relationship="inheritance" data-class-bus="retrying_processor" data-composition-points="1466,696;1466,652;1038,652;1038,607" d="M 1038 607 L 1038 644 Q 1038 652 1046 652 L 1458 652 Q 1466 652 1466 660 L 1466 696" class="a-default cl-relationship" stroke-width="1.5" marker-start="url(#cl-triangle-start)"/>
+        <path data-edge-from="retrying_processor" data-edge-to="payment_processor" data-edge-key="5" data-edge-id="retrying_implements" data-class-relationship="realization" data-class-bus="payment_processor" data-motion-path="M 1038 383 L 1038 347 Q 1038 339 1046 339 L 1244 339 Q 1252 339 1252 331 L 1252 294" data-composition-points="1038,383;1038,339;1252,339;1252,294" d="M 1252 294 L 1252 331 Q 1252 339 1244 339 L 1046 339 Q 1038 339 1038 347 L 1038 383" class="a-default cl-relationship cl-dashed" stroke-width="1.5" marker-start="url(#cl-triangle-start)"/>
+        <path data-edge-from="bank_transfer" data-edge-to="payment_processor" data-edge-key="6" data-edge-id="bank_implements" data-class-relationship="realization" data-class-bus="payment_processor" data-motion-path="M 1466 413 L 1466 347 Q 1466 339 1458 339 L 1260 339 Q 1252 339 1252 331 L 1252 294" data-composition-points="1466,413;1466,339;1252,339;1252,294" d="M 1252 294 L 1252 331 Q 1252 339 1260 339 L 1458 339 Q 1466 339 1466 347 L 1466 413" class="a-default cl-relationship cl-dashed" stroke-width="1.5" marker-start="url(#cl-triangle-start)"/>
+        <path data-edge-from="stripe_card" data-edge-to="retrying_processor" data-edge-key="7" data-edge-id="stripe_extends" data-class-relationship="inheritance" data-class-bus="retrying_processor" data-motion-path="M 610 726 L 610 660 Q 610 652 618 652 L 1030 652 Q 1038 652 1038 644 L 1038 607" data-composition-points="610,726;610,652;1038,652;1038,607" d="M 1038 607 L 1038 644 Q 1038 652 1030 652 L 618 652 Q 610 652 610 660 L 610 726" class="a-default cl-relationship" stroke-width="1.5" marker-start="url(#cl-triangle-start)"/>
+        <path data-edge-from="adyen_card" data-edge-to="retrying_processor" data-edge-key="8" data-edge-id="adyen_extends" data-class-relationship="inheritance" data-class-bus="retrying_processor" data-motion-path="M 1038 726 L 1038 607" data-composition-points="1038,726;1038,607" d="M 1038 607 L 1038 726" class="a-default cl-relationship" stroke-width="1.5" marker-start="url(#cl-triangle-start)"/>
+        <path data-edge-from="paypal_wallet" data-edge-to="retrying_processor" data-edge-key="9" data-edge-id="paypal_extends" data-class-relationship="inheritance" data-class-bus="retrying_processor" data-motion-path="M 1466 696 L 1466 660 Q 1466 652 1458 652 L 1046 652 Q 1038 652 1038 644 L 1038 607" data-composition-points="1466,696;1466,652;1038,652;1038,607" d="M 1038 607 L 1038 644 Q 1038 652 1046 652 L 1458 652 Q 1466 652 1466 660 L 1466 696" class="a-default cl-relationship" stroke-width="1.5" marker-start="url(#cl-triangle-start)"/>
 
         <!-- Types -->
         <g id="node-checkout_orchestrator" data-node-id="checkout_orchestrator" data-node-label="CheckoutOrchestrator" tabindex="0" role="button" aria-label="Focus CheckoutOrchestrator, Runs one checkout from order to receipt, Class" aria-pressed="false" data-node-kind="class" data-node-sublabel="Runs one checkout from order to receipt" data-node-context="Class" data-class-kind="class">
@@ -6777,13 +6777,18 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 
           function samplesFor(element) {
             if (typeof element.getTotalLength !== 'function' || typeof element.getPointAtLength !== 'function') return [];
+            var geometry = element;
+            if (element.getAttribute('data-motion-path')) {
+              geometry = element.cloneNode(false);
+              geometry.setAttribute('d', element.getAttribute('data-motion-path'));
+            }
             var length;
-            try { length = element.getTotalLength(); } catch (_) { return []; }
+            try { length = geometry.getTotalLength(); } catch (_) { return []; }
             if (!Number.isFinite(length) || length <= 0) return [];
             var count = Math.max(12, Math.min(72, Math.ceil(length / 12)));
             var points = [];
             for (var i = 0; i <= count; i++) {
-              points.push(pointInRoot(element, element.getPointAtLength(length * i / count)));
+              points.push(pointInRoot(element, geometry.getPointAtLength(length * i / count)));
             }
             return points;
           }
@@ -7676,6 +7681,137 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     Archify.sourceEvidence.installBeacons();
 
     /* ============================================================
+       Tree Branches — expand/collapse for hierarchy diagrams. The renderer
+       lays out the complete tree once and tags every node, link, and toggle
+       with its ancestors; collapsing only hides descendants, so visible nodes
+       never move and the reader keeps their place. Selecting a hidden node
+       through Finder, Outline, or a shared link expands its ancestors. Export
+       always writes the complete tree (see Export Cleanup).
+       ============================================================ */
+    Archify.treeBranches = (function () {
+      var svg = document.querySelector('.diagram-container > svg[data-tree-ui]');
+      if (!svg) return { active: false };
+      var collapsed = Object.create(null);
+      var toggles = Object.create(null);
+      Array.prototype.forEach.call(svg.querySelectorAll('[data-tree-toggle]'), function (toggle) {
+        toggles[toggle.getAttribute('data-tree-toggle')] = toggle;
+      });
+      var tagged = svg.querySelectorAll('[data-tree-ancestors]');
+      var expandAll = svg.querySelector('[data-tree-expand-all]');
+
+      function ancestors(el) {
+        return (el.getAttribute('data-tree-ancestors') || '').split(' ').filter(Boolean);
+      }
+
+      function apply() {
+        Array.prototype.forEach.call(tagged, function (el) {
+          var hidden = ancestors(el).some(function (id) { return collapsed[id]; });
+          if (hidden) el.setAttribute('data-tree-hidden', '');
+          else el.removeAttribute('data-tree-hidden');
+        });
+        var any = false;
+        Object.keys(toggles).forEach(function (id) {
+          var toggle = toggles[id];
+          var isCollapsed = Boolean(collapsed[id]);
+          any = any || isCollapsed;
+          toggle.setAttribute('aria-expanded', isCollapsed ? 'false' : 'true');
+          toggle.setAttribute('aria-label', toggle.getAttribute(isCollapsed ? 'data-tree-label-expand' : 'data-tree-label-collapse') || '');
+          var node = svg.querySelector('[data-node-id="' + id + '"]');
+          if (node) {
+            if (isCollapsed) node.setAttribute('data-tree-collapsed', '');
+            else node.removeAttribute('data-tree-collapsed');
+          }
+        });
+        if (any) svg.setAttribute('data-tree-any-collapsed', '');
+        else svg.removeAttribute('data-tree-any-collapsed');
+      }
+
+      function setCollapsed(id, value) {
+        if (!toggles[id]) return false;
+        if (value) collapsed[id] = true;
+        else delete collapsed[id];
+        apply();
+        return true;
+      }
+
+      function toggle(id) { return setCollapsed(id, !collapsed[id]); }
+
+      // Reveal a node by expanding every collapsed ancestor; nothing else moves.
+      function reveal(id) {
+        var node = svg.querySelector('[data-node-id="' + id + '"]');
+        if (!node) return false;
+        var changed = false;
+        ancestors(node).forEach(function (ancestor) {
+          if (collapsed[ancestor]) { delete collapsed[ancestor]; changed = true; }
+        });
+        if (changed) apply();
+        return changed;
+      }
+
+      function restoreAll() {
+        collapsed = Object.create(null);
+        apply();
+      }
+
+      function activate(event) {
+        var target = event.target.closest('[data-tree-toggle], [data-tree-expand-all]');
+        if (!target || !svg.contains(target)) return false;
+        event.preventDefault();
+        event.stopPropagation();
+        if (target.hasAttribute('data-tree-expand-all')) {
+          restoreAll();
+          var root = svg.querySelector('[data-tree-toggle]:not([data-tree-ancestors])');
+          if (root) root.focus();
+        } else {
+          toggle(target.getAttribute('data-tree-toggle'));
+          target.focus();
+        }
+        return true;
+      }
+
+      // Capture phase so the canvas focus handler never treats a toggle press
+      // as a background click that clears the current focus.
+      svg.addEventListener('click', activate, true);
+      svg.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter' || event.key === ' ') { activate(event); return; }
+        var node = event.target.closest('[data-node-id]');
+        if (!node || !svg.contains(node)) return;
+        var id = node.getAttribute('data-node-id');
+        // Arrow keys follow the tree convention: left collapses, right expands.
+        if (event.key === 'ArrowLeft' && toggles[id] && !collapsed[id]) { event.preventDefault(); setCollapsed(id, true); }
+        else if (event.key === 'ArrowRight' && collapsed[id]) { event.preventDefault(); setCollapsed(id, false); }
+      }, true);
+
+      // Focus reveals ancestors synchronously before positioning its lens.
+      // The observer also covers paths that change pressed state directly.
+      new MutationObserver(function (records) {
+        records.forEach(function (record) {
+          var el = record.target;
+          if (el.hasAttribute && el.hasAttribute('data-tree-hidden') && el.getAttribute('aria-pressed') === 'true') {
+            reveal(el.getAttribute('data-node-id'));
+          }
+        });
+      }).observe(svg, { subtree: true, attributes: true, attributeFilter: ['aria-pressed'] });
+
+      Object.keys(toggles).forEach(function (id) {
+        if (toggles[id].hasAttribute('data-tree-initially-collapsed')) collapsed[id] = true;
+      });
+      apply();
+
+      return {
+        active: true,
+        toggle: toggle,
+        collapse: function (id) { return setCollapsed(id, true); },
+        expand: function (id) { return setCollapsed(id, false); },
+        reveal: reveal,
+        restoreAll: restoreAll,
+        collapsedIds: function () { return Object.keys(collapsed); },
+        expandAllControl: expandAll
+      };
+    })();
+
+
+    /* ============================================================
        Explore — stable-ID neighborhood focus + dependency-free pan/zoom.
        Renderer IDs become deep-linkable semantic hooks without turning the
        standalone artifact into a canvas editor.
@@ -8200,6 +8336,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       }
       function relationshipPulseGeometry(shape) {
         var clone = shape.cloneNode(false);
+        if (shape.getAttribute('data-motion-path')) clone.setAttribute('d', relationshipTokenPath(shape));
+        clone.removeAttribute('data-motion-path');
         clone.removeAttribute('id');
         clone.removeAttribute('class');
         clone.removeAttribute('style');
@@ -8244,7 +8382,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       function relationshipTokenPath(shape) {
         if (!shape) return '';
         var tagName = String(shape.tagName || '').toLowerCase();
-        if (tagName === 'path') return shape.getAttribute('d') || '';
+        if (tagName === 'path') return shape.getAttribute('data-motion-path') || shape.getAttribute('d') || '';
         if (tagName === 'line') {
           return 'M ' + shape.getAttribute('x1') + ' ' + shape.getAttribute('y1') +
             ' L ' + shape.getAttribute('x2') + ' ' + shape.getAttribute('y2');
@@ -9005,6 +9143,11 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           if (byId[id] && normalized.indexOf(id) === -1) normalized.push(id);
         });
         if (!normalized.length) return false;
+        // Hash restoration and internal selections use this path too. Reveal
+        // tree ancestors before measuring the selected node for its lens.
+        if (Archify.treeBranches && Archify.treeBranches.active) {
+          normalized.forEach(function (id) { Archify.treeBranches.reveal(id); });
+        }
         if (normalized.length === activeIds.length && normalized.every(function (id, index) { return activeIds[index] === id; }) && options.toggle !== false) {
           clear();
           return true;
@@ -9354,6 +9497,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       }
       function traceGeometry(shape, direction) {
         var clone = shape.cloneNode(false);
+        if (shape.getAttribute('data-motion-path')) clone.setAttribute('d', shape.getAttribute('data-motion-path'));
+        clone.removeAttribute('data-motion-path');
         clone.removeAttribute('id');
         clone.removeAttribute('class');
         clone.removeAttribute('style');
@@ -9500,6 +9645,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         active: function () { return activeId; }
       };
     })();
+
 
     /* ============================================================
        Adaptive Reader Shell — one diagram across laptop and monitor.
@@ -11951,145 +12097,6 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     })();
 
 
-    /* ============================================================
-       Tree Branches — expand/collapse for hierarchy diagrams. The renderer
-       lays out the complete tree once and tags every node, link, and toggle
-       with its ancestors; collapsing only hides descendants, so visible nodes
-       never move and the reader keeps their place. Selecting a hidden node
-       through Finder, Outline, or a shared link expands its ancestors. Export
-       always writes the complete tree (see Export Cleanup).
-       ============================================================ */
-    Archify.treeBranches = (function () {
-      var svg = document.querySelector('.diagram-container > svg[data-tree-ui]');
-      if (!svg) return { active: false };
-      var collapsed = Object.create(null);
-      var toggles = Object.create(null);
-      Array.prototype.forEach.call(svg.querySelectorAll('[data-tree-toggle]'), function (toggle) {
-        toggles[toggle.getAttribute('data-tree-toggle')] = toggle;
-      });
-      var tagged = svg.querySelectorAll('[data-tree-ancestors]');
-      var expandAll = svg.querySelector('[data-tree-expand-all]');
-
-      function ancestors(el) {
-        return (el.getAttribute('data-tree-ancestors') || '').split(' ').filter(Boolean);
-      }
-
-      function apply() {
-        Array.prototype.forEach.call(tagged, function (el) {
-          var hidden = ancestors(el).some(function (id) { return collapsed[id]; });
-          if (hidden) el.setAttribute('data-tree-hidden', '');
-          else el.removeAttribute('data-tree-hidden');
-        });
-        var any = false;
-        Object.keys(toggles).forEach(function (id) {
-          var toggle = toggles[id];
-          var isCollapsed = Boolean(collapsed[id]);
-          any = any || isCollapsed;
-          toggle.setAttribute('aria-expanded', isCollapsed ? 'false' : 'true');
-          toggle.setAttribute('aria-label', toggle.getAttribute(isCollapsed ? 'data-tree-label-expand' : 'data-tree-label-collapse') || '');
-          var node = svg.querySelector('[data-node-id="' + id + '"]');
-          if (node) {
-            if (isCollapsed) node.setAttribute('data-tree-collapsed', '');
-            else node.removeAttribute('data-tree-collapsed');
-          }
-        });
-        if (any) svg.setAttribute('data-tree-any-collapsed', '');
-        else svg.removeAttribute('data-tree-any-collapsed');
-      }
-
-      function setCollapsed(id, value) {
-        if (!toggles[id]) return false;
-        if (value) collapsed[id] = true;
-        else delete collapsed[id];
-        apply();
-        return true;
-      }
-
-      function toggle(id) { return setCollapsed(id, !collapsed[id]); }
-
-      // Reveal a node by expanding every collapsed ancestor; nothing else moves.
-      function reveal(id) {
-        var node = svg.querySelector('[data-node-id="' + id + '"]');
-        if (!node) return false;
-        var changed = false;
-        ancestors(node).forEach(function (ancestor) {
-          if (collapsed[ancestor]) { delete collapsed[ancestor]; changed = true; }
-        });
-        if (changed) apply();
-        return changed;
-      }
-
-      function restoreAll() {
-        collapsed = Object.create(null);
-        apply();
-      }
-
-      function activate(event) {
-        var target = event.target.closest('[data-tree-toggle], [data-tree-expand-all]');
-        if (!target || !svg.contains(target)) return false;
-        event.preventDefault();
-        event.stopPropagation();
-        if (target.hasAttribute('data-tree-expand-all')) {
-          restoreAll();
-          var root = svg.querySelector('[data-tree-toggle]:not([data-tree-ancestors])');
-          if (root) root.focus();
-        } else {
-          toggle(target.getAttribute('data-tree-toggle'));
-          target.focus();
-        }
-        return true;
-      }
-
-      // Capture phase so the canvas focus handler never treats a toggle press
-      // as a background click that clears the current focus.
-      svg.addEventListener('click', activate, true);
-      svg.addEventListener('keydown', function (event) {
-        if (event.key === 'Enter' || event.key === ' ') { activate(event); return; }
-        var node = event.target.closest('[data-node-id]');
-        if (!node || !svg.contains(node)) return;
-        var id = node.getAttribute('data-node-id');
-        // Arrow keys follow the tree convention: left collapses, right expands.
-        if (event.key === 'ArrowLeft' && toggles[id] && !collapsed[id]) { event.preventDefault(); setCollapsed(id, true); }
-        else if (event.key === 'ArrowRight' && collapsed[id]) { event.preventDefault(); setCollapsed(id, false); }
-      }, true);
-
-      // Finder, Outline, guided views, and shared links all select through the
-      // focus state; a selected node must never stay hidden. The public setter
-      // expands ancestors before the camera frames the node, and the observer
-      // covers any path that changes the pressed state directly.
-      if (Archify.focus && typeof Archify.focus.set === 'function') {
-        var focusSet = Archify.focus.set;
-        Archify.focus.set = function (ids) {
-          (Array.isArray(ids) ? ids : [ids]).forEach(function (id) { if (typeof id === 'string') reveal(id); });
-          return focusSet.apply(this, arguments);
-        };
-      }
-      new MutationObserver(function (records) {
-        records.forEach(function (record) {
-          var el = record.target;
-          if (el.hasAttribute && el.hasAttribute('data-tree-hidden') && el.getAttribute('aria-pressed') === 'true') {
-            reveal(el.getAttribute('data-node-id'));
-          }
-        });
-      }).observe(svg, { subtree: true, attributes: true, attributeFilter: ['aria-pressed'] });
-
-      Object.keys(toggles).forEach(function (id) {
-        if (toggles[id].hasAttribute('data-tree-initially-collapsed')) collapsed[id] = true;
-      });
-      apply();
-
-      return {
-        active: true,
-        toggle: toggle,
-        collapse: function (id) { return setCollapsed(id, true); },
-        expand: function (id) { return setCollapsed(id, false); },
-        reveal: reveal,
-        restoreAll: restoreAll,
-        collapsedIds: function () { return Object.keys(collapsed); },
-        expandAllControl: expandAll
-      };
-    })();
-
 
     /* ============================================================
        Route Probe — shortest directed path over compiled semantics.
@@ -12427,6 +12434,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       }
       function traceGeometry(shape, step) {
         var clone = shape.cloneNode(false);
+        if (shape.getAttribute('data-motion-path')) clone.setAttribute('d', shape.getAttribute('data-motion-path'));
+        clone.removeAttribute('data-motion-path');
         clone.removeAttribute('id');
         clone.removeAttribute('class');
         clone.removeAttribute('style');
@@ -12527,6 +12536,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       }
       function journeyGeometry(shape) {
         var clone = shape.cloneNode(false);
+        if (shape.getAttribute('data-motion-path')) clone.setAttribute('d', shape.getAttribute('data-motion-path'));
+        clone.removeAttribute('data-motion-path');
         clone.removeAttribute('id');
         clone.removeAttribute('class');
         clone.removeAttribute('style');
@@ -13123,6 +13134,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       };
     })();
 
+
     /* ============================================================
        Semantic Lens — a counted, viewer-only legend over data-node-kind.
        One selected kind reveals every authored relationship touching it.
@@ -13359,6 +13371,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       }
       function flowGeometry(shape, direction, step) {
         var clone = shape.cloneNode(false);
+        if (shape.getAttribute('data-motion-path')) clone.setAttribute('d', shape.getAttribute('data-motion-path'));
+        clone.removeAttribute('data-motion-path');
         clone.removeAttribute('id');
         clone.removeAttribute('class');
         clone.removeAttribute('style');
@@ -13795,6 +13809,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         kinds: function () { return collectKinds().map(function (kind) { return { id: kind.id, count: kind.nodes.length }; }); }
       };
     })();
+
 
     /* ============================================================
        Diagram Guide — a factual command deck over existing interactions.

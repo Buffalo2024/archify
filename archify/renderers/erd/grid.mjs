@@ -52,8 +52,10 @@ const gridColumn = (col) => Number.isInteger(col * 2) && col >= 0;
 export function bandedLayout(entities, grid) {
   const widths = new Map();
   const heights = new Map();
+  let maxCol = -1;
   for (const entity of entities) {
     if (!Number.isInteger(entity.row) || !gridColumn(entity.col)) continue;
+    maxCol = Math.max(maxCol, Math.ceil(entity.col));
     if (Number.isInteger(entity.col)) widths.set(entity.col, Math.max(widths.get(entity.col) || 0, resolvedEntityWidth(entity, grid)));
     heights.set(entity.row, Math.max(heights.get(entity.row) || 0, entity.height));
   }
@@ -61,10 +63,22 @@ export function bandedLayout(entities, grid) {
   const columnX = new Map();
   const rowY = new Map();
   let x = grid.origin[0];
-  const maxCol = Math.max(-1, ...widths.keys());
   for (let col = 0; col <= maxCol; col += 1) {
     columnX.set(col, x);
     x += (widths.get(col) || 0) + grid.gapX;
+  }
+  // A half-column box may be wider than its empty neighbouring bands. Keep
+  // every grid box inside the left margin without changing integer-only grids.
+  let leftInset = 0;
+  for (const entity of entities) {
+    if (!Number.isInteger(entity.row) || !gridColumn(entity.col) || Number.isInteger(entity.col)) continue;
+    const centre = (col) => columnX.get(col) + (widths.get(col) || 0) / 2;
+    const midpoint = (centre(Math.floor(entity.col)) + centre(Math.ceil(entity.col))) / 2;
+    leftInset = Math.max(leftInset, grid.origin[0] - midpoint + resolvedEntityWidth(entity, grid) / 2);
+  }
+  if (leftInset > 0) {
+    for (const [col, column] of columnX) columnX.set(col, column + leftInset);
+    x += leftInset;
   }
   let y = grid.origin[1];
   const maxRow = Math.max(-1, ...heights.keys());

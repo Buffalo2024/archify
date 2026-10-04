@@ -6789,13 +6789,18 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 
           function samplesFor(element) {
             if (typeof element.getTotalLength !== 'function' || typeof element.getPointAtLength !== 'function') return [];
+            var geometry = element;
+            if (element.getAttribute('data-motion-path')) {
+              geometry = element.cloneNode(false);
+              geometry.setAttribute('d', element.getAttribute('data-motion-path'));
+            }
             var length;
-            try { length = element.getTotalLength(); } catch (_) { return []; }
+            try { length = geometry.getTotalLength(); } catch (_) { return []; }
             if (!Number.isFinite(length) || length <= 0) return [];
             var count = Math.max(12, Math.min(72, Math.ceil(length / 12)));
             var points = [];
             for (var i = 0; i <= count; i++) {
-              points.push(pointInRoot(element, element.getPointAtLength(length * i / count)));
+              points.push(pointInRoot(element, geometry.getPointAtLength(length * i / count)));
             }
             return points;
           }
@@ -7688,6 +7693,137 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     Archify.sourceEvidence.installBeacons();
 
     /* ============================================================
+       Tree Branches — expand/collapse for hierarchy diagrams. The renderer
+       lays out the complete tree once and tags every node, link, and toggle
+       with its ancestors; collapsing only hides descendants, so visible nodes
+       never move and the reader keeps their place. Selecting a hidden node
+       through Finder, Outline, or a shared link expands its ancestors. Export
+       always writes the complete tree (see Export Cleanup).
+       ============================================================ */
+    Archify.treeBranches = (function () {
+      var svg = document.querySelector('.diagram-container > svg[data-tree-ui]');
+      if (!svg) return { active: false };
+      var collapsed = Object.create(null);
+      var toggles = Object.create(null);
+      Array.prototype.forEach.call(svg.querySelectorAll('[data-tree-toggle]'), function (toggle) {
+        toggles[toggle.getAttribute('data-tree-toggle')] = toggle;
+      });
+      var tagged = svg.querySelectorAll('[data-tree-ancestors]');
+      var expandAll = svg.querySelector('[data-tree-expand-all]');
+
+      function ancestors(el) {
+        return (el.getAttribute('data-tree-ancestors') || '').split(' ').filter(Boolean);
+      }
+
+      function apply() {
+        Array.prototype.forEach.call(tagged, function (el) {
+          var hidden = ancestors(el).some(function (id) { return collapsed[id]; });
+          if (hidden) el.setAttribute('data-tree-hidden', '');
+          else el.removeAttribute('data-tree-hidden');
+        });
+        var any = false;
+        Object.keys(toggles).forEach(function (id) {
+          var toggle = toggles[id];
+          var isCollapsed = Boolean(collapsed[id]);
+          any = any || isCollapsed;
+          toggle.setAttribute('aria-expanded', isCollapsed ? 'false' : 'true');
+          toggle.setAttribute('aria-label', toggle.getAttribute(isCollapsed ? 'data-tree-label-expand' : 'data-tree-label-collapse') || '');
+          var node = svg.querySelector('[data-node-id="' + id + '"]');
+          if (node) {
+            if (isCollapsed) node.setAttribute('data-tree-collapsed', '');
+            else node.removeAttribute('data-tree-collapsed');
+          }
+        });
+        if (any) svg.setAttribute('data-tree-any-collapsed', '');
+        else svg.removeAttribute('data-tree-any-collapsed');
+      }
+
+      function setCollapsed(id, value) {
+        if (!toggles[id]) return false;
+        if (value) collapsed[id] = true;
+        else delete collapsed[id];
+        apply();
+        return true;
+      }
+
+      function toggle(id) { return setCollapsed(id, !collapsed[id]); }
+
+      // Reveal a node by expanding every collapsed ancestor; nothing else moves.
+      function reveal(id) {
+        var node = svg.querySelector('[data-node-id="' + id + '"]');
+        if (!node) return false;
+        var changed = false;
+        ancestors(node).forEach(function (ancestor) {
+          if (collapsed[ancestor]) { delete collapsed[ancestor]; changed = true; }
+        });
+        if (changed) apply();
+        return changed;
+      }
+
+      function restoreAll() {
+        collapsed = Object.create(null);
+        apply();
+      }
+
+      function activate(event) {
+        var target = event.target.closest('[data-tree-toggle], [data-tree-expand-all]');
+        if (!target || !svg.contains(target)) return false;
+        event.preventDefault();
+        event.stopPropagation();
+        if (target.hasAttribute('data-tree-expand-all')) {
+          restoreAll();
+          var root = svg.querySelector('[data-tree-toggle]:not([data-tree-ancestors])');
+          if (root) root.focus();
+        } else {
+          toggle(target.getAttribute('data-tree-toggle'));
+          target.focus();
+        }
+        return true;
+      }
+
+      // Capture phase so the canvas focus handler never treats a toggle press
+      // as a background click that clears the current focus.
+      svg.addEventListener('click', activate, true);
+      svg.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter' || event.key === ' ') { activate(event); return; }
+        var node = event.target.closest('[data-node-id]');
+        if (!node || !svg.contains(node)) return;
+        var id = node.getAttribute('data-node-id');
+        // Arrow keys follow the tree convention: left collapses, right expands.
+        if (event.key === 'ArrowLeft' && toggles[id] && !collapsed[id]) { event.preventDefault(); setCollapsed(id, true); }
+        else if (event.key === 'ArrowRight' && collapsed[id]) { event.preventDefault(); setCollapsed(id, false); }
+      }, true);
+
+      // Focus reveals ancestors synchronously before positioning its lens.
+      // The observer also covers paths that change pressed state directly.
+      new MutationObserver(function (records) {
+        records.forEach(function (record) {
+          var el = record.target;
+          if (el.hasAttribute && el.hasAttribute('data-tree-hidden') && el.getAttribute('aria-pressed') === 'true') {
+            reveal(el.getAttribute('data-node-id'));
+          }
+        });
+      }).observe(svg, { subtree: true, attributes: true, attributeFilter: ['aria-pressed'] });
+
+      Object.keys(toggles).forEach(function (id) {
+        if (toggles[id].hasAttribute('data-tree-initially-collapsed')) collapsed[id] = true;
+      });
+      apply();
+
+      return {
+        active: true,
+        toggle: toggle,
+        collapse: function (id) { return setCollapsed(id, true); },
+        expand: function (id) { return setCollapsed(id, false); },
+        reveal: reveal,
+        restoreAll: restoreAll,
+        collapsedIds: function () { return Object.keys(collapsed); },
+        expandAllControl: expandAll
+      };
+    })();
+
+
+    /* ============================================================
        Explore — stable-ID neighborhood focus + dependency-free pan/zoom.
        Renderer IDs become deep-linkable semantic hooks without turning the
        standalone artifact into a canvas editor.
@@ -8212,6 +8348,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       }
       function relationshipPulseGeometry(shape) {
         var clone = shape.cloneNode(false);
+        if (shape.getAttribute('data-motion-path')) clone.setAttribute('d', relationshipTokenPath(shape));
+        clone.removeAttribute('data-motion-path');
         clone.removeAttribute('id');
         clone.removeAttribute('class');
         clone.removeAttribute('style');
@@ -8256,7 +8394,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       function relationshipTokenPath(shape) {
         if (!shape) return '';
         var tagName = String(shape.tagName || '').toLowerCase();
-        if (tagName === 'path') return shape.getAttribute('d') || '';
+        if (tagName === 'path') return shape.getAttribute('data-motion-path') || shape.getAttribute('d') || '';
         if (tagName === 'line') {
           return 'M ' + shape.getAttribute('x1') + ' ' + shape.getAttribute('y1') +
             ' L ' + shape.getAttribute('x2') + ' ' + shape.getAttribute('y2');
@@ -9017,6 +9155,11 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           if (byId[id] && normalized.indexOf(id) === -1) normalized.push(id);
         });
         if (!normalized.length) return false;
+        // Hash restoration and internal selections use this path too. Reveal
+        // tree ancestors before measuring the selected node for its lens.
+        if (Archify.treeBranches && Archify.treeBranches.active) {
+          normalized.forEach(function (id) { Archify.treeBranches.reveal(id); });
+        }
         if (normalized.length === activeIds.length && normalized.every(function (id, index) { return activeIds[index] === id; }) && options.toggle !== false) {
           clear();
           return true;
@@ -9366,6 +9509,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       }
       function traceGeometry(shape, direction) {
         var clone = shape.cloneNode(false);
+        if (shape.getAttribute('data-motion-path')) clone.setAttribute('d', shape.getAttribute('data-motion-path'));
+        clone.removeAttribute('data-motion-path');
         clone.removeAttribute('id');
         clone.removeAttribute('class');
         clone.removeAttribute('style');
@@ -9512,6 +9657,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         active: function () { return activeId; }
       };
     })();
+
 
     /* ============================================================
        Adaptive Reader Shell — one diagram across laptop and monitor.
@@ -11963,145 +12109,6 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     })();
 
 
-    /* ============================================================
-       Tree Branches — expand/collapse for hierarchy diagrams. The renderer
-       lays out the complete tree once and tags every node, link, and toggle
-       with its ancestors; collapsing only hides descendants, so visible nodes
-       never move and the reader keeps their place. Selecting a hidden node
-       through Finder, Outline, or a shared link expands its ancestors. Export
-       always writes the complete tree (see Export Cleanup).
-       ============================================================ */
-    Archify.treeBranches = (function () {
-      var svg = document.querySelector('.diagram-container > svg[data-tree-ui]');
-      if (!svg) return { active: false };
-      var collapsed = Object.create(null);
-      var toggles = Object.create(null);
-      Array.prototype.forEach.call(svg.querySelectorAll('[data-tree-toggle]'), function (toggle) {
-        toggles[toggle.getAttribute('data-tree-toggle')] = toggle;
-      });
-      var tagged = svg.querySelectorAll('[data-tree-ancestors]');
-      var expandAll = svg.querySelector('[data-tree-expand-all]');
-
-      function ancestors(el) {
-        return (el.getAttribute('data-tree-ancestors') || '').split(' ').filter(Boolean);
-      }
-
-      function apply() {
-        Array.prototype.forEach.call(tagged, function (el) {
-          var hidden = ancestors(el).some(function (id) { return collapsed[id]; });
-          if (hidden) el.setAttribute('data-tree-hidden', '');
-          else el.removeAttribute('data-tree-hidden');
-        });
-        var any = false;
-        Object.keys(toggles).forEach(function (id) {
-          var toggle = toggles[id];
-          var isCollapsed = Boolean(collapsed[id]);
-          any = any || isCollapsed;
-          toggle.setAttribute('aria-expanded', isCollapsed ? 'false' : 'true');
-          toggle.setAttribute('aria-label', toggle.getAttribute(isCollapsed ? 'data-tree-label-expand' : 'data-tree-label-collapse') || '');
-          var node = svg.querySelector('[data-node-id="' + id + '"]');
-          if (node) {
-            if (isCollapsed) node.setAttribute('data-tree-collapsed', '');
-            else node.removeAttribute('data-tree-collapsed');
-          }
-        });
-        if (any) svg.setAttribute('data-tree-any-collapsed', '');
-        else svg.removeAttribute('data-tree-any-collapsed');
-      }
-
-      function setCollapsed(id, value) {
-        if (!toggles[id]) return false;
-        if (value) collapsed[id] = true;
-        else delete collapsed[id];
-        apply();
-        return true;
-      }
-
-      function toggle(id) { return setCollapsed(id, !collapsed[id]); }
-
-      // Reveal a node by expanding every collapsed ancestor; nothing else moves.
-      function reveal(id) {
-        var node = svg.querySelector('[data-node-id="' + id + '"]');
-        if (!node) return false;
-        var changed = false;
-        ancestors(node).forEach(function (ancestor) {
-          if (collapsed[ancestor]) { delete collapsed[ancestor]; changed = true; }
-        });
-        if (changed) apply();
-        return changed;
-      }
-
-      function restoreAll() {
-        collapsed = Object.create(null);
-        apply();
-      }
-
-      function activate(event) {
-        var target = event.target.closest('[data-tree-toggle], [data-tree-expand-all]');
-        if (!target || !svg.contains(target)) return false;
-        event.preventDefault();
-        event.stopPropagation();
-        if (target.hasAttribute('data-tree-expand-all')) {
-          restoreAll();
-          var root = svg.querySelector('[data-tree-toggle]:not([data-tree-ancestors])');
-          if (root) root.focus();
-        } else {
-          toggle(target.getAttribute('data-tree-toggle'));
-          target.focus();
-        }
-        return true;
-      }
-
-      // Capture phase so the canvas focus handler never treats a toggle press
-      // as a background click that clears the current focus.
-      svg.addEventListener('click', activate, true);
-      svg.addEventListener('keydown', function (event) {
-        if (event.key === 'Enter' || event.key === ' ') { activate(event); return; }
-        var node = event.target.closest('[data-node-id]');
-        if (!node || !svg.contains(node)) return;
-        var id = node.getAttribute('data-node-id');
-        // Arrow keys follow the tree convention: left collapses, right expands.
-        if (event.key === 'ArrowLeft' && toggles[id] && !collapsed[id]) { event.preventDefault(); setCollapsed(id, true); }
-        else if (event.key === 'ArrowRight' && collapsed[id]) { event.preventDefault(); setCollapsed(id, false); }
-      }, true);
-
-      // Finder, Outline, guided views, and shared links all select through the
-      // focus state; a selected node must never stay hidden. The public setter
-      // expands ancestors before the camera frames the node, and the observer
-      // covers any path that changes the pressed state directly.
-      if (Archify.focus && typeof Archify.focus.set === 'function') {
-        var focusSet = Archify.focus.set;
-        Archify.focus.set = function (ids) {
-          (Array.isArray(ids) ? ids : [ids]).forEach(function (id) { if (typeof id === 'string') reveal(id); });
-          return focusSet.apply(this, arguments);
-        };
-      }
-      new MutationObserver(function (records) {
-        records.forEach(function (record) {
-          var el = record.target;
-          if (el.hasAttribute && el.hasAttribute('data-tree-hidden') && el.getAttribute('aria-pressed') === 'true') {
-            reveal(el.getAttribute('data-node-id'));
-          }
-        });
-      }).observe(svg, { subtree: true, attributes: true, attributeFilter: ['aria-pressed'] });
-
-      Object.keys(toggles).forEach(function (id) {
-        if (toggles[id].hasAttribute('data-tree-initially-collapsed')) collapsed[id] = true;
-      });
-      apply();
-
-      return {
-        active: true,
-        toggle: toggle,
-        collapse: function (id) { return setCollapsed(id, true); },
-        expand: function (id) { return setCollapsed(id, false); },
-        reveal: reveal,
-        restoreAll: restoreAll,
-        collapsedIds: function () { return Object.keys(collapsed); },
-        expandAllControl: expandAll
-      };
-    })();
-
 
     /* ============================================================
        Route Probe — shortest directed path over compiled semantics.
@@ -12439,6 +12446,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       }
       function traceGeometry(shape, step) {
         var clone = shape.cloneNode(false);
+        if (shape.getAttribute('data-motion-path')) clone.setAttribute('d', shape.getAttribute('data-motion-path'));
+        clone.removeAttribute('data-motion-path');
         clone.removeAttribute('id');
         clone.removeAttribute('class');
         clone.removeAttribute('style');
@@ -12539,6 +12548,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       }
       function journeyGeometry(shape) {
         var clone = shape.cloneNode(false);
+        if (shape.getAttribute('data-motion-path')) clone.setAttribute('d', shape.getAttribute('data-motion-path'));
+        clone.removeAttribute('data-motion-path');
         clone.removeAttribute('id');
         clone.removeAttribute('class');
         clone.removeAttribute('style');
@@ -13135,6 +13146,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       };
     })();
 
+
     /* ============================================================
        Semantic Lens — a counted, viewer-only legend over data-node-kind.
        One selected kind reveals every authored relationship touching it.
@@ -13371,6 +13383,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       }
       function flowGeometry(shape, direction, step) {
         var clone = shape.cloneNode(false);
+        if (shape.getAttribute('data-motion-path')) clone.setAttribute('d', shape.getAttribute('data-motion-path'));
+        clone.removeAttribute('data-motion-path');
         clone.removeAttribute('id');
         clone.removeAttribute('class');
         clone.removeAttribute('style');
@@ -13807,6 +13821,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         kinds: function () { return collectKinds().map(function (kind) { return { id: kind.id, count: kind.nodes.length }; }); }
       };
     })();
+
 
     /* ============================================================
        Diagram Guide — a factual command deck over existing interactions.

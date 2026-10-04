@@ -199,7 +199,25 @@ for (const shape of TYPES) {
     ]) {
       const result = run(args);
       assert.equal(result.status, 1, type);
-      assert.match(result.stdout, /ids must be unique|duplicate-node-id/, type);
+      const receipt = JSON.parse(result.stdout);
+      assert.equal(receipt.ok, false, type);
+      if (['tree', 'timeline', 'waterfall'].includes(type)) {
+        const duplicateDiagnostic = receipt.diagnostics.find((entry) => entry.code === `${type}/duplicate-id`);
+        assert.ok(duplicateDiagnostic, `${type}: duplicate ID diagnostic missing`);
+        assert.equal(duplicateDiagnostic.severity, 'error');
+        assert.deepEqual(duplicateDiagnostic.evidence, { id: first });
+        assert.deepEqual(duplicateDiagnostic.subject, {
+          diagramType: type,
+          path: `/${collection}/${data.diagram[collection].length - 1}/id`,
+        });
+      } else {
+        assert.ok(
+          /ids must be unique/.test(receipt.error) ||
+          receipt.diagnostics.some((entry) => entry.code === 'workflow/duplicate-node-id'),
+          `${type}: duplicate ID rejection missing`,
+        );
+      }
+      assert.equal(fs.readFileSync(output, 'utf8'), 'trusted previous artifact', `${type}/${args[0]}`);
     }
     assert.equal(fs.readFileSync(output, 'utf8'), 'trusted previous artifact');
   });

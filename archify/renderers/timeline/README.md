@@ -40,7 +40,8 @@ instant has one x in every lane, whatever offset each timestamp was written in.
 
 `layout.breaks: "auto"` (default) compresses a quiet period longer than 8× the
 median gap between distinct timestamps and 10% of the span (at most the eight
-longest). A break is a fixed-width hatched band with a zig-zag on the axis and
+longest that fit while preserving room for proportional time). A break is a
+fixed-width hatched band with a zig-zag on the axis and
 the omitted duration (`≈ 1 d 11 h`); the axis caption states how many periods
 were compressed, and each break carries `data-break-ms` and an accessible label.
 Inside each segment the scale is the same constant, so distances there remain
