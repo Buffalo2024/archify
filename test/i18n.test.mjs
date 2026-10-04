@@ -1118,14 +1118,20 @@ test('the bundled Korean catalog is complete and preserves interpolation variabl
 
 // Additional checked-in example catalogs demonstrating the same data
 // contract across a wider language set (representative real-diagram checks
-// requested in tt-a1i's review on #457): each is a complete, full-coverage
-// example a caller could supply via meta.translations, none of them built
-// into the renderer.
+// requested in tt-a1i's review on #457): reusable catalogs a caller can
+// supply via meta.translations. Historical key gaps fall back explicitly;
+// newly added diagram types must carry their own translations.
 for (const locale of ['fr', 'pt', 'ja', 'de', 'it', 'ru']) {
-  test(`the checked-in ${locale} example catalog validates reusable translations and discloses new-key gaps`, () => {
+  test(`the checked-in ${locale} example catalog validates reusable translations and discloses historical gaps`, () => {
     const translations = JSON.parse(fs.readFileSync(path.join(skillRoot, `examples/locales/${locale}.json`), 'utf8'));
     const report = validateTranslations(translations);
-    assert.ok(report.coverage > 0.9, 'reuse the established catalog while new keys fall back explicitly');
+    assert.ok(report.coverage > 0.9, 'reuse the established catalog while historical gaps fall back explicitly');
+    const newDiagramKeys = catalogKeys().filter((key) =>
+      /\.(?:tree|class|timeline|waterfall)(?:\.|$)/.test(key) || /^(?:tree|timeline|waterfall)\./.test(key));
+    for (const key of newDiagramKeys) {
+      assert.equal(typeof translations[key], 'string', `${locale}: missing ${key}`);
+      assert.ok(translations[key].trim(), `${locale}: empty ${key}`);
+    }
     assert.equal(report.unknownKeys.length, 0, `unknown: ${report.unknownKeys.join(', ')}`);
     assert.equal(report.placeholderMismatches.length, 0, JSON.stringify(report.placeholderMismatches));
     assert.equal(report.coveredKeys + report.missingKeys.length, report.totalKeys);

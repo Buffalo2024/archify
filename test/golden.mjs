@@ -81,6 +81,14 @@ const GOLDEN = [
   ['architecture', 'web-app.architecture.json', 'web-app-rendered.html'],
   ['erd', 'orders.erd.json', 'erd-orders-rendered.html'],
   ['erd', 'subscription-billing.erd.json', 'subscription-billing-rendered.html'],
+  ['tree', 'payment-platform.tree.json', 'tree-payment-platform-rendered.html'],
+  ['tree', 'archify-repository.tree.json', 'tree-archify-repository-rendered.html'],
+  ['class', 'payments.class.json', 'class-payments-rendered.html'],
+  ['class', 'payment-processors.class.json', 'class-payment-processors-rendered.html'],
+  ['timeline', 'payment-incident.timeline.json', 'timeline-payment-incident-rendered.html'],
+  ['timeline', 'archify-dev-activity.timeline.json', 'timeline-archify-dev-activity-rendered.html'],
+  ['waterfall', 'checkout-request.waterfall.json', 'waterfall-checkout-request-rendered.html'],
+  ['waterfall', 'example-rebuild.waterfall.json', 'waterfall-example-rebuild-rendered.html'],
 ];
 
 for (const [mode, input, golden] of GOLDEN) {
@@ -175,6 +183,24 @@ expectFailure('fk attribute without a target rejected by schema', 'erd',
     const fk = d.entities.flatMap((entity) => entity.attributes).find((attribute) => attribute.key === 'fk');
     delete fk.references;
   }, "must have required property 'references'");
+expectFailure('tree node without a label rejected by schema', 'tree',
+  (d) => { delete d.nodes[1].label; }, '/nodes/1');
+expectFailure('unknown tree direction rejected by schema', 'tree',
+  (d) => { d.layout = { direction: 'up' }; }, '/layout/direction');
+expectFailure('type without a kind rejected by schema', 'class',
+  (d) => { delete d.types[0].kind; }, '/types/0');
+expectFailure('unknown relationship kind rejected by schema', 'class',
+  (d) => { d.relationships[0].kind = 'uses'; }, '/relationships/0/kind');
+expectFailure('unknown member visibility rejected by schema', 'class',
+  (d) => { d.types[0].methods[0].visibility = 'internal'; }, '/types/0/methods/0/visibility');
+expectFailure('timeline timestamp without an offset rejected by schema', 'timeline',
+  (d) => { d.events[0].at = '2026-10-01T10:00:00'; }, '/events/0/at');
+expectFailure('timeline without evidence status rejected by schema', 'timeline',
+  (d) => { delete d.meta.evidence; }, "must have required property 'evidence'");
+expectFailure('negative span start rejected by schema', 'waterfall',
+  (d) => { d.spans[0].start = -1; }, '/spans/0/start');
+expectFailure('waterfall without evidence status rejected by schema', 'waterfall',
+  (d) => { delete d.meta.evidence; }, "must have required property 'evidence'");
 expectFailure('references outside entity.attribute rejected by schema', 'erd',
   (d) => {
     const fk = d.entities.flatMap((entity) => entity.attributes).find((attribute) => attribute.key === 'fk');
