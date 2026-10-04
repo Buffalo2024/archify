@@ -7,7 +7,7 @@ import { spawnCliSync } from './resolve-cli.mjs';
 export const integrationRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const repoRoot = path.resolve(integrationRoot, '..', '..');
 const adapterPrefix = 'integrations/deepseek-harness/';
-const requiredAdapterFiles = ['package.json', 'release.json', 'cordis.patch.yml', 'README.md', 'lib/index.js'];
+const requiredAdapterFiles = ['package.json', 'release.json', 'cordis.patch.yml', 'README.md', 'CHANGELOG.md', 'lib/index.js'];
 
 function readGit(args) {
   const result = spawnCliSync('git', args, { cwd: repoRoot, encoding: null, maxBuffer: 128 * 1024 * 1024 });
