@@ -65,6 +65,20 @@ content digest. Later render and validate operations require that exact digest;
 blocked, unavailable, changed, oversized, or unsafe content fails closed instead
 of silently changing the artifact.
 
+Remote-brand provenance in capture receipts, node metadata and SVG/HTML keeps
+the source URL's HTTP(S) scheme, host, port and path, but omits userinfo, query
+strings and fragments. The authored `brand.url` and all download/redirect URLs
+remain unchanged so existing pins still reproduce the same bytes and digest.
+Credential-bearing download URLs remain rejected. Built-in marks retain their
+recorded catalogue provenance.
+
+The public source link identifies the original site/path, not necessarily a
+downloadable asset: removing a signed query or a query-based page selector can
+make that link unusable or less specific. Prefer capturing a stable public
+landing page that exposes the intended icon when one is available; do not edit
+an existing pin's URL without capturing and verifying that source again. Paths
+are retained, so this normalization is not a general URL-secret scrubber.
+
 For ICO captures, every directory entry must reference a non-empty image range
 after the complete directory and within the downloaded file. This bounds check
 also applies when reproducing a pinned capture. PNG/DIB payloads, multiple
