@@ -40,7 +40,7 @@ The bundle's `cordis.patch.yml` contains a `!!js` expression that DSH evaluates 
 
 Every Archify release records a sync or deferral decision in the [DSH synchronization checklist](../../CONTRIBUTING.md#release-checklist-dsh-synchronization). Plugin and Archify versions are independent.
 
-On a release branch, bump `package.json`, update `release.json` with the full source commit and matching Skill/DSH versions, and prepare the package README. The pack command reads adapter files and release metadata from the current adapter Git HEAD blob: commit those changes before packing; working-tree edits are not package inputs. Run:
+On a release branch, bump `package.json`, update `release.json` with the full source commit and matching Skill/DSH versions, and prepare `PACKAGE_README.md`, which is staged as the npm package’s `README.md`. This repository README tracks publication status separately. The pack command reads adapter files and release metadata from the current adapter Git HEAD blob: commit those changes before packing; working-tree edits are not package inputs. Run:
 
 ```bash
 node --test integrations/deepseek-harness/test/*.test.mjs
