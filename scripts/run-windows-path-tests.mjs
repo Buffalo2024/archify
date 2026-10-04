@@ -606,7 +606,7 @@ await runControlledWindowsPathE2E();
 
 for (const args of groups) {
   const result = spawnSync(process.execPath, args, {
-    cwd: skillRoot,
+    cwd: repoRoot,
     stdio: 'inherit',
   });
   if (result.error) throw result.error;
