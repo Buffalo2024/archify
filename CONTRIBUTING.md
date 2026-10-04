@@ -37,7 +37,7 @@ Use [the PR template](.github/PULL_REQUEST_TEMPLATE.md); link existing receipts 
 
 Skill instructions, authored examples, build inputs, and generated-site sources are behavioral inputs even when they look like documentation. Policy changes need process review; runtime evidence depends on whether they affect runtime inputs.
 
-Start with focused checks for the affected behavior. Use the full `npm test` suite from `archify/` when shared behavior, broad changes, or findings require wider coverage. Final review needs sufficient evidence for the impact above; relevant CI results can supply that coverage without repeating the same run locally. Identify the revision and coverage of reused results, and explain material gaps. Required remote CI and branch protection still apply.
+Start with focused checks for the affected behavior. Use the full `npm test` suite from the repository root when shared behavior, broad changes, or findings require wider coverage. Final review needs sufficient evidence for the impact above; relevant CI results can supply that coverage without repeating the same run locally. Identify the revision and coverage of reused results, and explain material gaps. Required remote CI and branch protection still apply.
 
 ### Documentation-only CI
 
@@ -56,11 +56,11 @@ Any other changed path (including tests, Skill instructions, templates, generate
 
 ## Local setup and verification
 
-The renderer package is in `archify/`; its Node range and commands are defined in `archify/package.json`.
+The renderer package is in `archify/`; repository tests and their dependencies live at the root. Install both dependency sets before running tests. The supported Node range is defined in both package manifests.
 
 ```sh
-cd archify
 npm ci
+npm --prefix archify ci
 npm test
 ```
 
@@ -73,7 +73,6 @@ A visual PR must provide enough evidence to evaluate whether the intended user v
 Static SVG/XML checks cannot establish browser layout, font settling, or interaction behavior. When the adaptive reader or Viewer layout changes, run the real browser test with Chrome available:
 
 ```sh
-cd archify
 ARCHIFY_CHROME="/path/to/chrome" node --test test/desktop-reader-browser.test.mjs
 ```
 
@@ -82,7 +81,6 @@ A browser test skipped because Chrome was unavailable is **skipped**, not passed
 PR CI and tag releases run the same browser regression gate:
 
 ```sh
-cd archify
 ARCHIFY_CHROME="/path/to/chrome" npm run test:browser
 ```
 
