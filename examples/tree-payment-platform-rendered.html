@@ -5026,6 +5026,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           svg[data-tree-ui] .tree-toggle-disc { fill: var(--mask); stroke: var(--arrow); }
           svg[data-tree-ui] .tree-toggle-glyph { stroke: var(--text); fill: none; }
           svg[data-tree-ui] .tree-toggle-count { display: none; }
+          svg[data-tree-ui] .tree-count-pill { fill: var(--mask); stroke: var(--arrow); stroke-width: 1; }
           svg[data-tree-ui] [data-tree-toggle] { cursor: pointer; outline: none; }
           svg[data-tree-ui] [data-tree-toggle][aria-expanded="true"] .tree-toggle-plus { display: none; }
           svg[data-tree-ui] [data-tree-toggle][aria-expanded="false"] .tree-toggle-count { display: inline; }
@@ -5139,28 +5140,40 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           <circle cx="523" cy="123" r="9" class="tree-toggle-disc" stroke-width="1.4"/>
           <path class="tree-toggle-glyph" d="M 519 123 H 527" stroke-width="1.6" stroke-linecap="round"/>
           <path class="tree-toggle-glyph tree-toggle-plus" d="M 523 119 V 127" stroke-width="1.6" stroke-linecap="round"/>
-          <text class="tree-toggle-count t-muted" x="537" y="126.5" font-size="9.5" font-weight="650">9</text>
+          <g class="tree-toggle-count">
+            <rect x="535" y="115.5" width="17.2" height="15" rx="7.5" class="tree-count-pill"/>
+            <text x="543.6" y="126.6" class="t-primary" font-size="10" font-weight="700" text-anchor="middle">9</text>
+          </g>
         </g>
         <g data-tree-toggle="orders" data-tree-count="2" data-tree-ancestors="platform" data-tree-label-collapse="Collapse Orders (2 below)" data-tree-label-expand="Expand Orders (2 hidden)" role="button" tabindex="0" aria-expanded="true" aria-label="Collapse Orders (2 below)">
           <circle cx="186" cy="238" r="15" class="tree-toggle-hit"/>
           <circle cx="186" cy="238" r="9" class="tree-toggle-disc" stroke-width="1.4"/>
           <path class="tree-toggle-glyph" d="M 182 238 H 190" stroke-width="1.6" stroke-linecap="round"/>
           <path class="tree-toggle-glyph tree-toggle-plus" d="M 186 234 V 242" stroke-width="1.6" stroke-linecap="round"/>
-          <text class="tree-toggle-count t-muted" x="200" y="241.5" font-size="9.5" font-weight="650">2</text>
+          <g class="tree-toggle-count">
+            <rect x="198" y="230.5" width="17.2" height="15" rx="7.5" class="tree-count-pill"/>
+            <text x="206.6" y="241.6" class="t-primary" font-size="10" font-weight="700" text-anchor="middle">2</text>
+          </g>
         </g>
         <g data-tree-toggle="payments" data-tree-count="2" data-tree-ancestors="platform" data-tree-label-collapse="Collapse Payments (2 below)" data-tree-label-expand="Expand Payments (2 hidden)" role="button" tabindex="0" aria-expanded="true" aria-label="Collapse Payments (2 below)">
           <circle cx="523" cy="238" r="15" class="tree-toggle-hit"/>
           <circle cx="523" cy="238" r="9" class="tree-toggle-disc" stroke-width="1.4"/>
           <path class="tree-toggle-glyph" d="M 519 238 H 527" stroke-width="1.6" stroke-linecap="round"/>
           <path class="tree-toggle-glyph tree-toggle-plus" d="M 523 234 V 242" stroke-width="1.6" stroke-linecap="round"/>
-          <text class="tree-toggle-count t-muted" x="537" y="241.5" font-size="9.5" font-weight="650">2</text>
+          <g class="tree-toggle-count">
+            <rect x="535" y="230.5" width="17.2" height="15" rx="7.5" class="tree-count-pill"/>
+            <text x="543.6" y="241.6" class="t-primary" font-size="10" font-weight="700" text-anchor="middle">2</text>
+          </g>
         </g>
         <g data-tree-toggle="operations" data-tree-count="2" data-tree-ancestors="platform" data-tree-label-collapse="Collapse Operations (2 below)" data-tree-label-expand="Expand Operations (2 hidden)" role="button" tabindex="0" aria-expanded="true" aria-label="Collapse Operations (2 below)">
           <circle cx="875" cy="238" r="15" class="tree-toggle-hit"/>
           <circle cx="875" cy="238" r="9" class="tree-toggle-disc" stroke-width="1.4"/>
           <path class="tree-toggle-glyph" d="M 871 238 H 879" stroke-width="1.6" stroke-linecap="round"/>
           <path class="tree-toggle-glyph tree-toggle-plus" d="M 875 234 V 242" stroke-width="1.6" stroke-linecap="round"/>
-          <text class="tree-toggle-count t-muted" x="889" y="241.5" font-size="9.5" font-weight="650">2</text>
+          <g class="tree-toggle-count">
+            <rect x="887" y="230.5" width="17.2" height="15" rx="7.5" class="tree-count-pill"/>
+            <text x="895.6" y="241.6" class="t-primary" font-size="10" font-weight="700" text-anchor="middle">2</text>
+          </g>
         </g>
 
         <!-- Expand all (shown only while a branch is collapsed) -->

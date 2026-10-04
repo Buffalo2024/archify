@@ -158,7 +158,6 @@ const depthOf = new Map();
 // keeps it readable at the same scale. Shorter runs and every branch keep the
 // classic row layout.
 const STACK_MIN = 3;
-const STACK_INDENT = 26;
 const STACK_GAP = 10;
 const stackOf = new Map();
 const groupsOf = new Map();
@@ -177,6 +176,14 @@ for (const [id, children] of childrenOf) {
     } else run.push(child);
   }
   flush();
+  // A list that is a parent's only child group drops its spine from inside
+  // the parent's box, clear of the rounded corner; one beside other children
+  // hangs off the shared crossbar.
+  for (const group of groups) {
+    if (!group.stack) continue;
+    group.spineOffset = groups.length === 1 ? 22 : 12;
+    group.indent = group.spineOffset + 16;
+  }
   groupsOf.set(id, groups);
   for (const group of groups) if (group.stack) for (const child of group.stack) stackOf.set(child, group);
 }
@@ -253,7 +260,7 @@ for (const [id, node] of measured) {
   measured.set(id, down ? { ...node, height: bandSize[node.depth] } : { ...node, width: bandSize[node.depth] });
 }
 
-const groupSpan = (group) => (group.stack ? STACK_INDENT + group.width : span.get(group.single));
+const groupSpan = (group) => (group.stack ? group.indent + group.width : span.get(group.single));
 const groupsSpan = (groups) => groups.reduce((sum, group, index) => sum + groupSpan(group) + (index ? breadthGap : 0), 0);
 const span = new Map();
 (function measureSpan(id) {
@@ -274,11 +281,11 @@ const attachOf = (group) => (group.stack ? group.spine : centerOf(group.single))
   let cursor = onlyStack ? start : start + (span.get(id) - groupsSpan(groups)) / 2;
   for (const group of groups) {
     if (group.stack) {
-      group.spine = cursor + 12;
+      group.spine = cursor + group.spineOffset;
       let y = bandStart[node.depth + 1];
       for (const child of group.stack) {
         const leaf = measured.get(child);
-        placed.set(child, { ...leaf, x: Math.round(cursor + STACK_INDENT), y: Math.round(y) });
+        placed.set(child, { ...leaf, x: Math.round(cursor + group.indent), y: Math.round(y) });
         y += leaf.height + STACK_GAP;
       }
     } else place(group.single, cursor);
@@ -433,7 +440,10 @@ function renderToggle(node) {
           <circle cx="${cx}" cy="${cy}" r="${r}" class="tree-toggle-disc" stroke-width="1.4"/>
           <path class="tree-toggle-glyph" d="M ${cx - 4} ${cy} H ${cx + 4}" stroke-width="1.6" stroke-linecap="round"/>
           <path class="tree-toggle-glyph tree-toggle-plus" d="M ${cx} ${cy - 4} V ${cy + 4}" stroke-width="1.6" stroke-linecap="round"/>
-          <text class="tree-toggle-count t-muted" x="${down ? cx + r + 5 : cx + r + 4}" y="${down ? cy + 3.5 : cy - r - 3}" font-size="9.5" font-weight="650">${hidden}</text>
+          <g class="tree-toggle-count">
+            <rect x="${cx + r + 3}" y="${cy - 7.5}" width="${String(hidden).length * 6.2 + 11}" height="15" rx="7.5" class="tree-count-pill"/>
+            <text x="${cx + r + 3 + (String(hidden).length * 6.2 + 11) / 2}" y="${cy + 3.6}" class="t-primary" font-size="10" font-weight="700" text-anchor="middle">${hidden}</text>
+          </g>
         </g>`;
 }
 
@@ -457,6 +467,7 @@ ${renderDefinitions()}
           svg[data-tree-ui] .tree-toggle-disc { fill: var(--mask); stroke: var(--arrow); }
           svg[data-tree-ui] .tree-toggle-glyph { stroke: var(--text); fill: none; }
           svg[data-tree-ui] .tree-toggle-count { display: none; }
+          svg[data-tree-ui] .tree-count-pill { fill: var(--mask); stroke: var(--arrow); stroke-width: 1; }
           svg[data-tree-ui] [data-tree-toggle] { cursor: pointer; outline: none; }
           svg[data-tree-ui] [data-tree-toggle][aria-expanded="true"] .tree-toggle-plus { display: none; }
           svg[data-tree-ui] [data-tree-toggle][aria-expanded="false"] .tree-toggle-count { display: inline; }

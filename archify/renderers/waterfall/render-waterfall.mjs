@@ -294,6 +294,8 @@ ${renderDefinitions()}
           svg[data-waterfall-ui] .wf-num { font-variant-numeric: tabular-nums; }
           svg[data-waterfall-ui] .wf-caps { letter-spacing: .06em; }
           svg[data-waterfall-ui] .wf-solid { stroke: none; }
+          /* Thin bars stay crisp: the classic preset's card shadow blurs their edges. */
+          svg[data-waterfall-ui] [data-node-id] > rect { filter: none !important; }
 ${SOLID_TONES.map((tone) => `          svg[data-waterfall-ui] .wf-solid.c-${tone} { fill: var(--${tone}-stroke); }
           svg[data-waterfall-ui] .wf-open-edge.t-${tone} { stroke: var(--${tone}-stroke); }`).join('\n')}
         </style>

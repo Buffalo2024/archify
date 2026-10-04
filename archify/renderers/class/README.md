@@ -75,8 +75,10 @@ leave room for markers and labels; `layout.typeW` (180) is the minimum and
 `layout.typeMaxW` (300) the maximum automatic width.
 
 Members are never truncated. A type without `width` grows to its widest member
-up to `typeMaxW`; longer members wrap after `(` or a parameter comma, or before
-the return type, with an indented continuation. An authored `width` is
+up to `typeMaxW`; longer members wrap. A wrapped method is set like formatter
+output: `name(` ends the first line, parameters hang one step deeper (breaking
+after commas), and `): Return` closes it. Visibility glyphs and type
+annotations are set in the muted ink so member names carry the row. An authored `width` is
 authoritative, and only a title that does not fit it is an error
 (`class/title-text-capacity`).
 

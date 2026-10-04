@@ -131,32 +131,52 @@ function memberRows(type) {
 
 // A member longer than its box wraps instead of being cut: breaks fall after
 // an opening parenthesis or a parameter comma, or before the return type, and
-// continuation lines are indented so they read as one signature. A single
-// token longer than a whole line is split by character, never dropped.
-function wrapMember(text, availablePx) {
-  const limit = Math.max(8, Math.floor(availablePx / MEMBER_ADVANCE));
-  if (textUnits(text) <= limit) return [text];
-  const pieces = text.split(/(?<=\(|, )|(?=\): )/);
+// continuation lines are indented so they read as one signature. A method
+// that wraps is set the way a formatter sets it: the open parenthesis ends the
+// first line, parameters hang one step deeper, and `): Return` closes it, so
+// every wrapped signature in a diagram has the same shape. A single token
+// longer than a whole line is split by character, never dropped.
+const PARAMETER_INDENT = 4;
+
+function fillLines(pieces, limit, firstIndent, indent) {
   const lines = [];
   let current = '';
-  const room = () => limit - (lines.length ? CONTINUATION_INDENT : 0);
+  const room = () => limit - (lines.length ? indent : firstIndent);
+  const push = (text) => lines.push({ text, indent: lines.length ? indent : firstIndent });
   for (const piece of pieces) {
     if (textUnits(current + piece) <= room()) {
       current += piece;
       continue;
     }
-    if (current) lines.push(current.trimEnd());
+    if (current) push(current.trimEnd());
     current = piece.trimStart();
     while (textUnits(current) > room()) {
       const chars = Array.from(current);
       let cut = 0;
       for (let units = 0; cut < chars.length && units + textUnits(chars[cut]) <= room(); cut += 1) units += textUnits(chars[cut]);
-      lines.push(chars.slice(0, Math.max(1, cut)).join(''));
+      push(chars.slice(0, Math.max(1, cut)).join(''));
       current = chars.slice(Math.max(1, cut)).join('');
     }
   }
-  if (current) lines.push(current.trimEnd());
+  if (current) push(current.trimEnd());
   return lines;
+}
+
+function wrapMember(text, availablePx) {
+  const limit = Math.max(8, Math.floor(availablePx / MEMBER_ADVANCE));
+  if (textUnits(text) <= limit) return [{ text, indent: 0 }];
+  const lines = fillLines(text.split(/(?<=\(|, )|(?=\): )/), limit, 0, CONTINUATION_INDENT);
+  const open = text.indexOf('(');
+  const close = text.lastIndexOf(')');
+  if (open === -1 || close < open) return lines;
+  const head = text.slice(0, open + 1);
+  const parameters = text.slice(open + 1, close).split(/(?<=, )/);
+  const tail = text.slice(close);
+  return [
+    ...fillLines([head], limit, 0, CONTINUATION_INDENT),
+    ...fillLines(parameters, limit, PARAMETER_INDENT, PARAMETER_INDENT),
+    ...fillLines([tail], limit, CONTINUATION_INDENT, CONTINUATION_INDENT),
+  ];
 }
 
 function headerHeight(type) {
@@ -703,6 +723,9 @@ function buildLayoutReport() {
 function memberSpans(text, first) {
   let out = '';
   let rest = text;
+  // A continuation line with no annotation of its own is the rest of a type
+  // (`PaymentProcessor>`), so it is set quiet like the start of that type.
+  if (!first && !rest.includes(':') && !rest.startsWith(')')) return `<tspan class="t-muted">${esc(rest)}</tspan>`;
   const glyph = first ? rest.match(/^([+#~-]) /) : null;
   if (glyph) {
     out += `<tspan class="t-muted">${esc(glyph[1])}</tspan> `;
@@ -727,11 +750,11 @@ function renderMembers(type) {
         member.static ? 'text-decoration: underline' : '',
         member.abstract ? 'font-style: italic' : '',
       ].filter(Boolean).join('; ');
-      return lines.map((text, index) => {
+      return lines.map((entry, index) => {
         const baseline = top + layout.compartmentPad + (line += 1) * layout.rowH - 5;
-        const x = type.x + layout.padX + (index ? CONTINUATION_INDENT * MEMBER_ADVANCE : 0);
+        const x = type.x + layout.padX + entry.indent * MEMBER_ADVANCE;
         const continued = index ? ' data-class-continuation=""' : '';
-        return `<text data-detail="context" data-class-member="${compartment.kind}"${continued} x="${x}" y="${baseline}" class="t-primary cl-member" font-size="${layout.memberFont}"${style ? ` style="${style}"` : ''}>${memberSpans(text, !index)}</text>`;
+        return `<text data-detail="context" data-class-member="${compartment.kind}"${continued} x="${x}" y="${baseline}" class="t-primary cl-member" font-size="${layout.memberFont}"${style ? ` style="${style}"` : ''}>${memberSpans(entry.text, !index)}</text>`;
       });
     });
     top += line * layout.rowH + layout.compartmentPad * 2;

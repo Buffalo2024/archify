@@ -442,7 +442,7 @@ function renderEvent(card, order) {
           ${accent}
           ${time}
           <text data-node-label="" class="t-primary" font-size="${layout.titleFont}" font-weight="650">${title}</text>
-          <circle cx="${card.x}" cy="${card.lineY}" r="5" class="t-${tone} tl-dot" stroke-width="2.5"/>
+          <circle cx="${card.x}" cy="${card.lineY}" r="4.75" class="t-${tone}"/>
         </g>`;
 }
 
@@ -463,7 +463,9 @@ ${renderDefinitions(breaks.length ? `
           svg[data-timeline-ui] .tl-lane-line { stroke: var(--lane-stroke); }
           svg[data-timeline-ui] .tl-stem { stroke: var(--text-dim); }
           svg[data-timeline-ui] .tl-card { fill-opacity: .55; stroke-opacity: .5; }
+          svg[data-timeline-ui] .tl-card.c-external { fill: var(--mask); stroke: var(--lane-stroke); stroke-opacity: 1; }
           svg[data-timeline-ui] .tl-dot { stroke: var(--mask); }
+          svg[data-timeline-ui] .tl-halo { fill: var(--mask); }
           svg[data-timeline-ui] .tl-break-band { opacity: .55; }
           svg[data-timeline-ui] .tl-break-chip { fill: var(--mask); stroke: var(--lane-stroke); stroke-width: 1; }
           svg[data-timeline-ui] .tl-hatch { stroke: var(--lane-stroke); }
@@ -486,6 +488,10 @@ ${renderAxis()}
         <!-- Stems sit behind every card, so a stacked card is never crossed by
              another event's connector -->
 ${cards.map((card) => `        <line data-detail="context" data-timeline-stem="${esc(card.id)}" x1="${card.x}" y1="${card.lineY}" x2="${card.x}" y2="${card.side === 'above' ? card.top + card.height : card.top}" class="tl-stem" stroke-width="1"/>`).join('\n')}
+
+        <!-- One halo layer under every dot, so events seconds apart merge into
+             one outlined capsule instead of cutting crescents into each other -->
+${cards.map((card) => `        <circle data-detail="context" cx="${card.x}" cy="${card.lineY}" r="7.5" class="tl-halo"/>`).join('\n')}
 
         <!-- Events in time order -->
 ${cards.map(renderEvent).join('\n')}

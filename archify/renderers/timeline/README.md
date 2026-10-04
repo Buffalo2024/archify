@@ -54,7 +54,7 @@ Cards are centred on their instant and sit on either side of the lane line,
 packed into rows outward from it: each takes whichever side lets it sit closest
 to the line without touching an earlier card (ties go below), so simultaneous
 and close events stack instead of overprinting and a burst spreads both ways.
-Stems are drawn behind every card. A card is a quiet surface with a tone accent
+Stems are drawn behind every card, and every dot sits on one shared halo layer, so events seconds apart merge into one outlined capsule. A card is a quiet surface with a tone accent
 for its kind. Titles wrap between words. On a multi-day axis a tick names its
 date only when the date changes.
 
