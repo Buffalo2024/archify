@@ -81,6 +81,8 @@ const GOLDEN = [
   ['architecture', 'web-app.architecture.json', 'web-app-rendered.html'],
   ['erd', 'orders.erd.json', 'erd-orders-rendered.html'],
   ['erd', 'subscription-billing.erd.json', 'subscription-billing-rendered.html'],
+  ['timeline', 'payment-incident.timeline.json', 'timeline-payment-incident-rendered.html'],
+  ['timeline', 'archify-dev-activity.timeline.json', 'timeline-archify-dev-activity-rendered.html'],
 ];
 
 for (const [mode, input, golden] of GOLDEN) {
@@ -175,6 +177,10 @@ expectFailure('fk attribute without a target rejected by schema', 'erd',
     const fk = d.entities.flatMap((entity) => entity.attributes).find((attribute) => attribute.key === 'fk');
     delete fk.references;
   }, "must have required property 'references'");
+expectFailure('timeline timestamp without an offset rejected by schema', 'timeline',
+  (d) => { d.events[0].at = '2026-10-01T10:00:00'; }, '/events/0/at');
+expectFailure('timeline without evidence status rejected by schema', 'timeline',
+  (d) => { delete d.meta.evidence; }, "must have required property 'evidence'");
 expectFailure('references outside entity.attribute rejected by schema', 'erd',
   (d) => {
     const fk = d.entities.flatMap((entity) => entity.attributes).find((attribute) => attribute.key === 'fk');

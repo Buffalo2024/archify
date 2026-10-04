@@ -391,6 +391,25 @@ capacity instead of dropping the key; see
 [`../renderers/erd/README.md`](../renderers/erd/README.md) for the band, port, and
 reader contract.
 
+### Timeline
+
+A timeline answers "when did what happen, and how far apart?". Every event
+needs an ISO 8601 `at` with an explicit `Z` or `±HH:MM` offset; a timestamp
+without one is rejected rather than guessed. `meta.timezone` (IANA, default
+`UTC`) is the display clock for ticks and labels, and the axis caption states
+it. `meta.evidence` is required: `observed` for recorded events (logs, git
+history, pager records) and `illustrative` for explanatory input. Never mark
+invented or approximate times as observed, and never fill gaps with events the
+input does not contain.
+
+Use `lanes` for sources or categories (release, monitoring, response); every
+event then names one. `kind` (`change`, `alert`, `action`, `recovery`) only
+colours the card. Events are drawn in time order whatever the authored order;
+simultaneous and close events stack. By default a quiet period longer than 8×
+the median gap and 10% of the span is drawn as a fixed-width break labelled
+with the omitted duration; `layout.breaks: "none"` keeps one proportional axis.
+See [`../renderers/timeline/README.md`](../renderers/timeline/README.md).
+
 ### Lifecycle
 
 Schema v2 (new diagrams): each populated lane is one row, `main` first,

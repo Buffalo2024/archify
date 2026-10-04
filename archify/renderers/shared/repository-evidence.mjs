@@ -130,6 +130,7 @@ const EVIDENCE_NODE_COLLECTIONS = {
   dataflow: 'nodes',
   lifecycle: 'states',
   erd: 'entities',
+  timeline: 'events',
 };
 
 function evidenceNodes(diagramType, diagram) {

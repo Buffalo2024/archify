@@ -444,5 +444,16 @@
   "viewer.rail.controls": "측면 패널",
   "viewer.rail.collapse": "측면 패널 접기",
   "viewer.rail.bottom": "패널을 다이어그램 아래로 이동",
-  "viewer.rail.right": "패널을 다이어그램 옆으로 이동"
+  "viewer.rail.right": "패널을 다이어그램 옆으로 이동",
+  "diagram.description.timeline": "Archify로 생성한 이벤트 타임라인입니다.",
+  "timeline.axis": "시간",
+  "timeline.break": "축 생략: 이벤트 없는 {duration} 생략",
+  "timeline.compressed": "유휴 구간 {count}개 압축 (≈)",
+  "timeline.evidence.observed": "관측된 이벤트",
+  "timeline.evidence.illustrative": "예시 데이터",
+  "legend.timeline.default": "이벤트",
+  "legend.timeline.change": "변경",
+  "legend.timeline.alert": "알림",
+  "legend.timeline.action": "대응",
+  "legend.timeline.recovery": "복구"
 }
