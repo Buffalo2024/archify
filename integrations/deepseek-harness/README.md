@@ -46,7 +46,7 @@ node integrations/deepseek-harness/scripts/distribution-acceptance.mjs
 node integrations/deepseek-harness/scripts/pack.mjs --out /tmp/archify-dsh.tgz --json
 ```
 
-Distribution acceptance requires Node 22 for the canonical ZIP regression check and pnpm 10. It installs the real pinned DSH runtime and tarball in temporary profiles, checks discovery and loading, runs the installed Skill smoke test, and checks uninstall. Release CI runs this on Linux, macOS, and Windows. Publish only the tested tarball as a new version; tag the corresponding adapter commit as `archify-dsh-v<version>`. After v0.2.0 is published and publicly verified, switch the public install examples to `@0.2.0`. Rebuilding a released adapter uses its tag and recorded Skill commit, not a moving branch.
+Distribution acceptance requires Node 22 for the canonical ZIP regression check and pnpm 10. It installs the real pinned DSH runtime and tarball in temporary profiles, checks discovery and loading, runs `doctor` and `demo` through the installed CLI, and checks uninstall. The full source-version package smoke runs on a temporary copy of the installed Skill because it rewrites bundled examples; the copy preserves pnpm store hard links in the actual installation. Release CI runs this on Linux, macOS, and Windows. Publish only the tested tarball as a new version; tag the corresponding adapter commit as `archify-dsh-v<version>`. After v0.2.0 is published and publicly verified, switch the public install examples to `@0.2.0`. Rebuilding a released adapter uses its tag and recorded Skill commit, not a moving branch.
 
 ## Invoke
 
