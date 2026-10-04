@@ -171,7 +171,7 @@ const measured = new Map(asArray(tree.nodes).map((node) => {
   const sublabelLines = node.sublabel ? wrapText(node.sublabel, layout.sublabelFont, textWidth) : [];
   const height = Math.ceil(layout.padY * 2 + labelLines.length * layout.labelLine
     + (sublabelLines.length ? 4 + sublabelLines.length * layout.sublabelLine : 0));
-  return [node.id, { ...node, isRoot, labelFont, labelLines, sublabelLines, width, height, depth: depthOf.get(node.id) }];
+  return [node.id, { ...node, isRoot, labelFont, labelLines, sublabelLines, width, height, contentHeight: height - layout.padY * 2, depth: depthOf.get(node.id) }];
 }));
 
 // ---- Layout --------------------------------------------------------------------
@@ -194,6 +194,13 @@ bandSize.reduce((offset, size, depth) => {
   bandStart[depth] = offset;
   return offset + size + depthGap;
 }, down ? layout.top : layout.margin);
+
+// Nodes of one generation share their band's size along the depth axis (the
+// same height going down, the same width going right), so a generation reads
+// as one even row or column instead of a ragged one.
+for (const [id, node] of measured) {
+  measured.set(id, down ? { ...node, height: bandSize[node.depth] } : { ...node, width: bandSize[node.depth] });
+}
 
 const span = new Map();
 (function measureSpan(id) {
@@ -307,7 +314,7 @@ function renderNode(node) {
   const context = i18nText(locale, node.isRoot ? 'node.context.tree.root' : childrenOf.get(node.id).length ? 'node.context.tree.branch' : 'node.context.tree.leaf');
   const passport = { kind: tone, sublabel: node.sublabel, context };
   const cx = node.x + node.width / 2;
-  let y = node.y + layout.padY;
+  let y = node.y + (node.height - node.contentHeight) / 2;
   const label = node.labelLines.map((line) => {
     y += layout.labelLine;
     return `<tspan x="${cx}" y="${y - 4}">${esc(line)}</tspan>`;

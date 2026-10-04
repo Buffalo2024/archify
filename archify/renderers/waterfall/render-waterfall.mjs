@@ -28,6 +28,8 @@ const { diagram: wf, template, outPath, sourceEvidence } = loadDiagram({
 });
 const locale = wf.meta.locale;
 const unit = wf.meta.unit || 'ms';
+// The schema spells microseconds `us` for ASCII input; the canvas uses µs.
+const unitLabel = unit === 'us' ? 'µs' : unit;
 const ADVANCE = nodeTextFit.widthFactor;
 
 const layout = {
@@ -127,7 +129,7 @@ function number(value) {
   const rounded = Math.round(value * 100) / 100;
   return rounded.toLocaleString('en-US', { maximumFractionDigits: 2 });
 }
-const formatDuration = (value) => `${number(value)} ${unit}`;
+const formatDuration = (value) => `${number(value)} ${unitLabel}`;
 function percent(value) {
   if (!wall) return '100%';
   const share = (value / wall) * 100;
@@ -186,7 +188,7 @@ function renderHeader() {
   const evidence = i18nText(locale, `waterfall.evidence.${wf.meta.evidence}`);
   const evidenceW = Math.ceil(textUnits(evidence) * 10 * ADVANCE + 22);
   const tone = wf.meta.evidence === 'measured' ? 'backend' : 'messagebus';
-  const total = `${i18nText(locale, 'waterfall.wall', { duration: formatDuration(wall) })} (${number(t0)} → ${number(t1)} ${unit})`;
+  const total = `${i18nText(locale, 'waterfall.wall', { duration: formatDuration(wall) })} (${number(t0)} → ${number(t1)} ${unitLabel})`;
   return `        <g data-waterfall-evidence="${esc(wf.meta.evidence)}">
           <rect x="${layout.margin}" y="12" width="${evidenceW}" height="20" rx="10" class="c-${tone}" stroke-width="1.2"/>
           <text x="${layout.margin + evidenceW / 2}" y="26" class="t-${tone}" font-size="10" font-weight="700" text-anchor="middle">${esc(evidence)}</text>
@@ -200,7 +202,7 @@ function renderAxis() {
     `        <text x="${layout.margin}" y="${lineY - 8}" class="t-muted" font-size="10" font-weight="650">${esc(i18nText(locale, 'waterfall.operation'))}</text>`,
     `        <line x1="${axisX0}" y1="${lineY}" x2="${axisX1}" y2="${lineY}" class="wf-axis" stroke-width="1.2"/>`,
     ...ticks.map((tick) => `        <line x1="${tick.x}" y1="${lineY}" x2="${tick.x}" y2="${contentBottom}" class="wf-grid" stroke-width="1"/>
-        <text x="${tick.x}" y="${lineY - 8}" class="t-muted wf-num" font-size="10" text-anchor="middle">${esc(number(tick.t))} ${esc(unit)}</text>`),
+        <text x="${tick.x}" y="${lineY - 8}" class="t-muted wf-num" font-size="10" text-anchor="middle">${esc(number(tick.t))} ${esc(unitLabel)}</text>`),
   ].join('\n');
 }
 
@@ -219,7 +221,7 @@ function renderGuides() {
 function renderRow(row, order) {
   const tone = STATUS_TONE[row.status];
   const parent = row.parent !== undefined ? placed.find((candidate) => candidate.id === row.parent) : null;
-  const timing = `${number(row.start)}–${row.open ? '…' : number(row.end)} ${unit} · ${row.label} · ${i18nText(locale, 'waterfall.share', { percent: percent(row.duration), total: formatDuration(wall) })}`;
+  const timing = `${number(row.start)}–${row.open ? '…' : number(row.end)} ${unitLabel} · ${row.label} · ${i18nText(locale, 'waterfall.share', { percent: percent(row.duration), total: formatDuration(wall) })}`;
   const passport = { kind: tone, sublabel: [timing, row.detail].filter(Boolean).join(' — '), context: [row.service, parent?.name].filter(Boolean).join(' \u203a ') || undefined };
   const nameX = layout.margin + row.depth * layout.indent + (row.depth ? 12 : 0);
   const midY = row.y + layout.rowH / 2;
@@ -251,7 +253,7 @@ ${renderDefinitions()}
           svg[data-waterfall-ui] .wf-row { fill: transparent; }
           svg[data-waterfall-ui] .wf-row-alt { fill: var(--lane-fill); opacity: .45; }
           svg[data-waterfall-ui] .wf-guide { stroke: var(--lane-stroke); }
-          svg[data-waterfall-ui] .wf-root { stroke-dasharray: 5 3; }
+          svg[data-waterfall-ui] .wf-root { fill-opacity: .35; }
           svg[data-waterfall-ui] .wf-open { stroke-dasharray: 2 3; fill-opacity: .55; }
           svg[data-waterfall-ui] .wf-open-edge { stroke: var(--messagebus-stroke); }
           svg[data-waterfall-ui] .wf-num { font-variant-numeric: tabular-nums; }

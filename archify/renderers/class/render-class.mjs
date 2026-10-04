@@ -401,9 +401,13 @@ const busPaths = new Map();
         ? [[source.cx, source.y], [target.cx, bottom]]
         : [[source.cx, source.y], [source.cx, busY], [target.cx, busY], [target.cx, bottom]];
     });
-    const others = [...types.values()].filter((type) => type !== target && !sources.includes(type));
-    const clear = paths.every((points) => points.slice(1).every((point, index) => others
-      .every((type) => !segmentIntersectsRect({ start: points[index], end: point }, type))));
+    // Each drop may touch only its own subtype and the supertype; a deeper
+    // subtype's drop must not run through a sibling placed above it.
+    const clear = paths.every((points, member) => {
+      const others = [...types.values()].filter((type) => type !== target && type !== sources[member]);
+      return points.slice(1).every((point, index) => others
+        .every((type) => !segmentIntersectsRect({ start: points[index], end: point }, type)));
+    });
     if (!clear) continue;
     members.forEach((relationship, index) => busPaths.set(relationship, paths[index]));
   }

@@ -34,8 +34,12 @@ const DAY = 24 * HOUR;
 const layout = {
   margin: 28,
   top: 46,
-  axisH: 44,
-  laneLabelW: asArray(tl.lanes).length ? 112 : 0,
+  axisH: 58,
+  // The lane column fits its longest label (12px bold), so a lane name never
+  // runs into the axis.
+  laneLabelW: asArray(tl.lanes).length
+    ? Math.ceil(Math.max(80, ...tl.lanes.map((lane) => textUnits(lane.label) * 12 * nodeTextFit.widthFactor * 1.06 + 20)))
+    : 0,
   axisWidth: tl.layout?.width ?? 960,
   edgePad: 64,
   breakW: 56,
@@ -315,7 +319,7 @@ function renderAxis() {
   const bottom = contentBottom;
   const lineY = top + layout.axisH - 10;
   // Tick labels never overprint each other or a break's duration label.
-  const taken = breaks.map((gap) => [gap.x0 - 4, gap.x1 + 4]);
+  const taken = [];
   const shown = ticks.filter((tick) => {
     const half = textUnits(clockLabel(tick.t, { seconds: tickSeconds })) * 10 * ADVANCE / 2 + 4;
     const box = [tick.x - half, tick.x + half];
@@ -335,9 +339,9 @@ function renderAxis() {
     const zig = (x) => `M ${x - 3} ${lineY - 7} L ${x + 3} ${lineY - 2} L ${x - 3} ${lineY + 2} L ${x + 3} ${lineY + 7}`;
     const omitted = i18nText(locale, 'timeline.break', { duration: durationLabel(gap.length) });
     return `          <g data-timeline-break="" data-break-ms="${gap.length}" aria-label="${esc(omitted)}" role="img">
-            <rect x="${gap.x0 + 6}" y="${lineY}" width="${gap.width - 12}" height="${bottom - lineY}" class="tl-break-band"/>
+            <rect x="${gap.x0 + 6}" y="${lineY}" width="${gap.width - 12}" height="${bottom - lineY}" fill="url(#tl-break-hatch)" class="tl-break-band"/>
             <path d="${zig(gap.x0 + 8)} ${zig(gap.x1 - 8)}" class="tl-break-zig" stroke-width="1.4" fill="none"/>
-            <text x="${mid}" y="${lineY - 8}" class="t-primary" font-size="9.5" font-weight="700" text-anchor="middle">${esc(gap.label)}</text>
+            <text x="${mid}" y="${lineY - 24}" class="t-primary" font-size="9.5" font-weight="700" text-anchor="middle">${esc(gap.label)}</text>
           </g>`;
   }).join('\n');
   return `${grid}\n${segmentLines}\n${breakMarks}`;
@@ -395,7 +399,8 @@ function legendSwatch(entry) {
 function renderSvg() {
   return `      <svg viewBox="0 0 ${viewBox[0]} ${viewBox[1]}" ${svgRootAttrs(tl.meta)} data-timeline-ui="" data-reader-fit="intrinsic-height" data-reader-min-text="7.5">
 ${svgAccessibleText(tl.meta, 'timeline')}
-${renderDefinitions()}
+${renderDefinitions(breaks.length ? `
+          <pattern id="tl-break-hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" class="tl-hatch" stroke-width="1"/></pattern>` : '')}
         <style>
           svg[data-timeline-ui] .tl-grid { stroke: var(--lane-stroke); stroke-dasharray: 3 5; opacity: .8; }
           svg[data-timeline-ui] .tl-axis { stroke: var(--text-muted); }
@@ -403,7 +408,8 @@ ${renderDefinitions()}
           svg[data-timeline-ui] .tl-lane-alt { opacity: .3; }
           svg[data-timeline-ui] .tl-lane-line { stroke: var(--lane-stroke); }
           svg[data-timeline-ui] .tl-stem { stroke: var(--text-muted); opacity: .7; }
-          svg[data-timeline-ui] .tl-break-band { fill: var(--mask); opacity: .85; }
+          svg[data-timeline-ui] .tl-break-band { opacity: .9; }
+          svg[data-timeline-ui] .tl-hatch { stroke: var(--lane-stroke); }
           svg[data-timeline-ui] .tl-break-zig { stroke: var(--text-muted); }
           svg[data-timeline-ui] .tl-tick, svg[data-timeline-ui] .tl-time { font-variant-numeric: tabular-nums; }
         </style>

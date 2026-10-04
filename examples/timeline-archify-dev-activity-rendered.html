@@ -4995,7 +4995,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     <!-- Main Diagram -->
     <div class="diagram-container" data-detail-level="read"
          data-preset-badge-editorial-plate="ARCHIFY / PLATE 04">
-      <svg viewBox="0 0 1128 1026" role="img" lang="en" aria-labelledby="archify-diagram-title archify-diagram-description" data-preset="classic" data-quality-profile="showcase" data-timeline-ui="" data-reader-fit="intrinsic-height" data-reader-min-text="7.5">
+      <svg viewBox="0 0 1128 1040" role="img" lang="en" aria-labelledby="archify-diagram-title archify-diagram-description" data-preset="classic" data-quality-profile="showcase" data-timeline-ui="" data-reader-fit="intrinsic-height" data-reader-min-text="7.5">
         <title id="archify-diagram-title">Archify dev branch activity, 28 Sep – 4 Oct 2026</title>
         <desc id="archify-diagram-description">Observed from this repository&#39;s git history: tag creation dates and merge commit times on origin/dev.</desc>
         <!-- Definitions -->
@@ -5015,6 +5015,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
             <path d="M 40 0 L 0 0 0 40" class="c-grid" stroke-width="0.5"/>
           </pattern>
+          <pattern id="tl-break-hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" class="tl-hatch" stroke-width="1"/></pattern>
         </defs>
         <style>
           svg[data-timeline-ui] .tl-grid { stroke: var(--lane-stroke); stroke-dasharray: 3 5; opacity: .8; }
@@ -5023,7 +5024,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           svg[data-timeline-ui] .tl-lane-alt { opacity: .3; }
           svg[data-timeline-ui] .tl-lane-line { stroke: var(--lane-stroke); }
           svg[data-timeline-ui] .tl-stem { stroke: var(--text-muted); opacity: .7; }
-          svg[data-timeline-ui] .tl-break-band { fill: var(--mask); opacity: .85; }
+          svg[data-timeline-ui] .tl-break-band { opacity: .9; }
+          svg[data-timeline-ui] .tl-hatch { stroke: var(--lane-stroke); }
           svg[data-timeline-ui] .tl-break-zig { stroke: var(--text-muted); }
           svg[data-timeline-ui] .tl-tick, svg[data-timeline-ui] .tl-time { font-variant-numeric: tabular-nums; }
         </style>
@@ -5039,259 +5041,269 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 
         <!-- Lanes -->
         <g data-timeline-lane="release">
-          <rect x="140" y="90" width="960" height="138" rx="8" class="tl-lane"/>
-          <line x1="148" y1="112" x2="1092" y2="112" class="tl-lane-line" stroke-width="1"/>
-          <text x="28" y="116" class="t-primary" font-size="12" font-weight="700">Releases</text>
+          <rect x="140" y="104" width="960" height="138" rx="8" class="tl-lane"/>
+          <line x1="148" y1="126" x2="1092" y2="126" class="tl-lane-line" stroke-width="1"/>
+          <text x="28" y="130" class="t-primary" font-size="12" font-weight="700">Releases</text>
         </g>
         <g data-timeline-lane="merge">
-          <rect x="140" y="238" width="960" height="564" rx="8" class="tl-lane tl-lane-alt"/>
-          <line x1="148" y1="260" x2="1092" y2="260" class="tl-lane-line" stroke-width="1"/>
-          <text x="28" y="264" class="t-primary" font-size="12" font-weight="700">PR merges</text>
+          <rect x="140" y="252" width="960" height="564" rx="8" class="tl-lane tl-lane-alt"/>
+          <line x1="148" y1="274" x2="1092" y2="274" class="tl-lane-line" stroke-width="1"/>
+          <text x="28" y="278" class="t-primary" font-size="12" font-weight="700">PR merges</text>
         </g>
         <g data-timeline-lane="sync">
-          <rect x="140" y="812" width="960" height="152" rx="8" class="tl-lane"/>
-          <line x1="148" y1="834" x2="1092" y2="834" class="tl-lane-line" stroke-width="1"/>
-          <text x="28" y="838" class="t-primary" font-size="12" font-weight="700">Branch syncs</text>
+          <rect x="140" y="826" width="960" height="152" rx="8" class="tl-lane"/>
+          <line x1="148" y1="848" x2="1092" y2="848" class="tl-lane-line" stroke-width="1"/>
+          <text x="28" y="852" class="t-primary" font-size="12" font-weight="700">Branch syncs</text>
         </g>
 
         <!-- Time axis (proportional within each segment; breaks are disclosed) -->
-          <line x1="218" y1="80" x2="218" y2="964" class="tl-grid" stroke-width="1"/>
-          <text x="218" y="72" class="t-muted tl-tick" font-size="10" text-anchor="middle">09-28 19:13</text>
-          <line x1="148" y1="80" x2="280.61478409961455" y2="80" class="tl-axis" stroke-width="1.5"/>
-          <line x1="353.61478409961455" y1="80" x2="506.73846322215064" y2="80" class="tl-axis" stroke-width="1.5"/>
-          <line x1="597.7384632221506" y1="80" x2="670.1717961501514" y2="80" class="tl-axis" stroke-width="1.5"/>
-          <line x1="755.1717961501514" y1="80" x2="783.1717961501514" y2="80" class="tl-axis" stroke-width="1.5"/>
-          <line x1="851.1717961501514" y1="80" x2="894.7847684132447" y2="80" class="tl-axis" stroke-width="1.5"/>
-          <line x1="967.7847684132447" y1="80" x2="1092" y2="80" class="tl-axis" stroke-width="1.5"/>
+          <line x1="218" y1="94" x2="218" y2="978" class="tl-grid" stroke-width="1"/>
+          <text x="218" y="86" class="t-muted tl-tick" font-size="10" text-anchor="middle">09-28 19:13</text>
+          <line x1="484.26" y1="94" x2="484.26" y2="978" class="tl-grid" stroke-width="1"/>
+          <text x="484.26" y="86" class="t-muted tl-tick" font-size="10" text-anchor="middle">09-30 00:00</text>
+          <line x1="611.7384632221506" y1="94" x2="611.7384632221506" y2="978" class="tl-grid" stroke-width="1"/>
+          <text x="611.7384632221506" y="86" class="t-muted tl-tick" font-size="10" text-anchor="middle">09-30 14:36</text>
+          <line x1="769.1717961501514" y1="94" x2="769.1717961501514" y2="978" class="tl-grid" stroke-width="1"/>
+          <text x="769.1717961501514" y="86" class="t-muted tl-tick" font-size="10" text-anchor="middle">10-01 18:58</text>
+          <line x1="865.1717961501514" y1="94" x2="865.1717961501514" y2="978" class="tl-grid" stroke-width="1"/>
+          <text x="865.1717961501514" y="86" class="t-muted tl-tick" font-size="10" text-anchor="middle">10-02 20:49</text>
+          <line x1="1006.35" y1="94" x2="1006.35" y2="978" class="tl-grid" stroke-width="1"/>
+          <text x="1006.35" y="86" class="t-muted tl-tick" font-size="10" text-anchor="middle">10-04 12:00</text>
+          <line x1="148" y1="94" x2="280.61478409961455" y2="94" class="tl-axis" stroke-width="1.5"/>
+          <line x1="353.61478409961455" y1="94" x2="506.73846322215064" y2="94" class="tl-axis" stroke-width="1.5"/>
+          <line x1="597.7384632221506" y1="94" x2="670.1717961501514" y2="94" class="tl-axis" stroke-width="1.5"/>
+          <line x1="755.1717961501514" y1="94" x2="783.1717961501514" y2="94" class="tl-axis" stroke-width="1.5"/>
+          <line x1="851.1717961501514" y1="94" x2="894.7847684132447" y2="94" class="tl-axis" stroke-width="1.5"/>
+          <line x1="967.7847684132447" y1="94" x2="1092" y2="94" class="tl-axis" stroke-width="1.5"/>
           <g data-timeline-break="" data-break-ms="54003000" aria-label="Axis break: 15 h 3 s without events omitted" role="img">
-            <rect x="286.61478409961455" y="80" width="61" height="884" class="tl-break-band"/>
-            <path d="M 285.61478409961455 73 L 291.61478409961455 78 L 285.61478409961455 82 L 291.61478409961455 87 M 342.61478409961455 73 L 348.61478409961455 78 L 342.61478409961455 82 L 348.61478409961455 87" class="tl-break-zig" stroke-width="1.4" fill="none"/>
-            <text x="317.11478409961455" y="72" class="t-primary" font-size="9.5" font-weight="700" text-anchor="middle">≈ 15 h 3 s</text>
+            <rect x="286.61478409961455" y="94" width="61" height="884" fill="url(#tl-break-hatch)" class="tl-break-band"/>
+            <path d="M 285.61478409961455 87 L 291.61478409961455 92 L 285.61478409961455 96 L 291.61478409961455 101 M 342.61478409961455 87 L 348.61478409961455 92 L 342.61478409961455 96 L 348.61478409961455 101" class="tl-break-zig" stroke-width="1.4" fill="none"/>
+            <text x="317.11478409961455" y="70" class="t-primary" font-size="9.5" font-weight="700" text-anchor="middle">≈ 15 h 3 s</text>
           </g>
           <g data-timeline-break="" data-break-ms="50075000" aria-label="Axis break: 13 h 54 min without events omitted" role="img">
-            <rect x="512.7384632221506" y="80" width="79" height="884" class="tl-break-band"/>
-            <path d="M 511.7384632221506 73 L 517.7384632221506 78 L 511.7384632221506 82 L 517.7384632221506 87 M 586.7384632221506 73 L 592.7384632221506 78 L 586.7384632221506 82 L 592.7384632221506 87" class="tl-break-zig" stroke-width="1.4" fill="none"/>
-            <text x="552.2384632221506" y="72" class="t-primary" font-size="9.5" font-weight="700" text-anchor="middle">≈ 13 h 54 min</text>
+            <rect x="512.7384632221506" y="94" width="79" height="884" fill="url(#tl-break-hatch)" class="tl-break-band"/>
+            <path d="M 511.7384632221506 87 L 517.7384632221506 92 L 511.7384632221506 96 L 517.7384632221506 101 M 586.7384632221506 87 L 592.7384632221506 92 L 586.7384632221506 96 L 592.7384632221506 101" class="tl-break-zig" stroke-width="1.4" fill="none"/>
+            <text x="552.2384632221506" y="70" class="t-primary" font-size="9.5" font-weight="700" text-anchor="middle">≈ 13 h 54 min</text>
           </g>
           <g data-timeline-break="" data-break-ms="88776000" aria-label="Axis break: 1 d 39 min without events omitted" role="img">
-            <rect x="676.1717961501514" y="80" width="73" height="884" class="tl-break-band"/>
-            <path d="M 675.1717961501514 73 L 681.1717961501514 78 L 675.1717961501514 82 L 681.1717961501514 87 M 744.1717961501514 73 L 750.1717961501514 78 L 744.1717961501514 82 L 750.1717961501514 87" class="tl-break-zig" stroke-width="1.4" fill="none"/>
-            <text x="712.6717961501514" y="72" class="t-primary" font-size="9.5" font-weight="700" text-anchor="middle">≈ 1 d 39 min</text>
+            <rect x="676.1717961501514" y="94" width="73" height="884" fill="url(#tl-break-hatch)" class="tl-break-band"/>
+            <path d="M 675.1717961501514 87 L 681.1717961501514 92 L 675.1717961501514 96 L 681.1717961501514 101 M 744.1717961501514 87 L 750.1717961501514 92 L 744.1717961501514 96 L 750.1717961501514 101" class="tl-break-zig" stroke-width="1.4" fill="none"/>
+            <text x="712.6717961501514" y="70" class="t-primary" font-size="9.5" font-weight="700" text-anchor="middle">≈ 1 d 39 min</text>
           </g>
           <g data-timeline-break="" data-break-ms="93066000" aria-label="Axis break: 1 d 1 h without events omitted" role="img">
-            <rect x="789.1717961501514" y="80" width="56" height="884" class="tl-break-band"/>
-            <path d="M 788.1717961501514 73 L 794.1717961501514 78 L 788.1717961501514 82 L 794.1717961501514 87 M 840.1717961501514 73 L 846.1717961501514 78 L 840.1717961501514 82 L 846.1717961501514 87" class="tl-break-zig" stroke-width="1.4" fill="none"/>
-            <text x="817.1717961501514" y="72" class="t-primary" font-size="9.5" font-weight="700" text-anchor="middle">≈ 1 d 1 h</text>
+            <rect x="789.1717961501514" y="94" width="56" height="884" fill="url(#tl-break-hatch)" class="tl-break-band"/>
+            <path d="M 788.1717961501514 87 L 794.1717961501514 92 L 788.1717961501514 96 L 794.1717961501514 101 M 840.1717961501514 87 L 846.1717961501514 92 L 840.1717961501514 96 L 846.1717961501514 101" class="tl-break-zig" stroke-width="1.4" fill="none"/>
+            <text x="817.1717961501514" y="70" class="t-primary" font-size="9.5" font-weight="700" text-anchor="middle">≈ 1 d 1 h</text>
           </g>
           <g data-timeline-break="" data-break-ms="128945000" aria-label="Axis break: 1 d 11 h without events omitted" role="img">
-            <rect x="900.7847684132447" y="80" width="61" height="884" class="tl-break-band"/>
-            <path d="M 899.7847684132447 73 L 905.7847684132447 78 L 899.7847684132447 82 L 905.7847684132447 87 M 956.7847684132447 73 L 962.7847684132447 78 L 956.7847684132447 82 L 962.7847684132447 87" class="tl-break-zig" stroke-width="1.4" fill="none"/>
-            <text x="931.2847684132447" y="72" class="t-primary" font-size="9.5" font-weight="700" text-anchor="middle">≈ 1 d 11 h</text>
+            <rect x="900.7847684132447" y="94" width="61" height="884" fill="url(#tl-break-hatch)" class="tl-break-band"/>
+            <path d="M 899.7847684132447 87 L 905.7847684132447 92 L 899.7847684132447 96 L 905.7847684132447 101 M 956.7847684132447 87 L 962.7847684132447 92 L 956.7847684132447 96 L 962.7847684132447 101" class="tl-break-zig" stroke-width="1.4" fill="none"/>
+            <text x="931.2847684132447" y="70" class="t-primary" font-size="9.5" font-weight="700" text-anchor="middle">≈ 1 d 11 h</text>
           </g>
 
         <!-- Stems sit behind every card, so a stacked card is never crossed by
              another event's connector -->
-        <line data-detail="context" data-timeline-stem="v3_0_0" x1="218" y1="112" x2="218" y2="126" class="tl-stem" stroke-width="1"/>
-        <line data-detail="context" data-timeline-stem="v3_0_1" x1="266.61" y1="112" x2="266.61" y2="176" class="tl-stem" stroke-width="1"/>
-        <line data-detail="context" data-timeline-stem="pr627" x1="367.61" y1="260" x2="367.61" y2="274" class="tl-stem" stroke-width="1"/>
-        <line data-detail="context" data-timeline-stem="pr628" x1="367.83" y1="260" x2="367.83" y2="338" class="tl-stem" stroke-width="1"/>
-        <line data-detail="context" data-timeline-stem="pr629" x1="370.11" y1="260" x2="370.11" y2="402" class="tl-stem" stroke-width="1"/>
-        <line data-detail="context" data-timeline-stem="pr635" x1="487.39" y1="260" x2="487.39" y2="466" class="tl-stem" stroke-width="1"/>
-        <line data-detail="context" data-timeline-stem="pr636" x1="488.99" y1="260" x2="488.99" y2="530" class="tl-stem" stroke-width="1"/>
-        <line data-detail="context" data-timeline-stem="pr634" x1="489.05" y1="260" x2="489.05" y2="608" class="tl-stem" stroke-width="1"/>
-        <line data-detail="context" data-timeline-stem="pr637" x1="492.74" y1="260" x2="492.74" y2="672" class="tl-stem" stroke-width="1"/>
-        <line data-detail="context" data-timeline-stem="sync_main" x1="611.74" y1="834" x2="611.74" y2="848" class="tl-stem" stroke-width="1"/>
-        <line data-detail="context" data-timeline-stem="pr615" x1="656.17" y1="260" x2="656.17" y2="274" class="tl-stem" stroke-width="1"/>
-        <line data-detail="context" data-timeline-stem="sync_upstream" x1="769.17" y1="834" x2="769.17" y2="898" class="tl-stem" stroke-width="1"/>
-        <line data-detail="context" data-timeline-stem="pr655" x1="865.17" y1="260" x2="865.17" y2="274" class="tl-stem" stroke-width="1"/>
-        <line data-detail="context" data-timeline-stem="pr587" x1="869.95" y1="260" x2="869.95" y2="338" class="tl-stem" stroke-width="1"/>
-        <line data-detail="context" data-timeline-stem="pr399" x1="874.53" y1="260" x2="874.53" y2="402" class="tl-stem" stroke-width="1"/>
-        <line data-detail="context" data-timeline-stem="pr632" x1="880.78" y1="260" x2="880.78" y2="466" class="tl-stem" stroke-width="1"/>
-        <line data-detail="context" data-timeline-stem="pr672" x1="981.78" y1="260" x2="981.78" y2="530" class="tl-stem" stroke-width="1"/>
-        <line data-detail="context" data-timeline-stem="pr677" x1="985.34" y1="260" x2="985.34" y2="608" class="tl-stem" stroke-width="1"/>
-        <line data-detail="context" data-timeline-stem="pr674" x1="985.76" y1="260" x2="985.76" y2="672" class="tl-stem" stroke-width="1"/>
-        <line data-detail="context" data-timeline-stem="pr668" x1="1022" y1="260" x2="1022" y2="736" class="tl-stem" stroke-width="1"/>
+        <line data-detail="context" data-timeline-stem="v3_0_0" x1="218" y1="126" x2="218" y2="140" class="tl-stem" stroke-width="1"/>
+        <line data-detail="context" data-timeline-stem="v3_0_1" x1="266.61" y1="126" x2="266.61" y2="190" class="tl-stem" stroke-width="1"/>
+        <line data-detail="context" data-timeline-stem="pr627" x1="367.61" y1="274" x2="367.61" y2="288" class="tl-stem" stroke-width="1"/>
+        <line data-detail="context" data-timeline-stem="pr628" x1="367.83" y1="274" x2="367.83" y2="352" class="tl-stem" stroke-width="1"/>
+        <line data-detail="context" data-timeline-stem="pr629" x1="370.11" y1="274" x2="370.11" y2="416" class="tl-stem" stroke-width="1"/>
+        <line data-detail="context" data-timeline-stem="pr635" x1="487.39" y1="274" x2="487.39" y2="480" class="tl-stem" stroke-width="1"/>
+        <line data-detail="context" data-timeline-stem="pr636" x1="488.99" y1="274" x2="488.99" y2="544" class="tl-stem" stroke-width="1"/>
+        <line data-detail="context" data-timeline-stem="pr634" x1="489.05" y1="274" x2="489.05" y2="622" class="tl-stem" stroke-width="1"/>
+        <line data-detail="context" data-timeline-stem="pr637" x1="492.74" y1="274" x2="492.74" y2="686" class="tl-stem" stroke-width="1"/>
+        <line data-detail="context" data-timeline-stem="sync_main" x1="611.74" y1="848" x2="611.74" y2="862" class="tl-stem" stroke-width="1"/>
+        <line data-detail="context" data-timeline-stem="pr615" x1="656.17" y1="274" x2="656.17" y2="288" class="tl-stem" stroke-width="1"/>
+        <line data-detail="context" data-timeline-stem="sync_upstream" x1="769.17" y1="848" x2="769.17" y2="912" class="tl-stem" stroke-width="1"/>
+        <line data-detail="context" data-timeline-stem="pr655" x1="865.17" y1="274" x2="865.17" y2="288" class="tl-stem" stroke-width="1"/>
+        <line data-detail="context" data-timeline-stem="pr587" x1="869.95" y1="274" x2="869.95" y2="352" class="tl-stem" stroke-width="1"/>
+        <line data-detail="context" data-timeline-stem="pr399" x1="874.53" y1="274" x2="874.53" y2="416" class="tl-stem" stroke-width="1"/>
+        <line data-detail="context" data-timeline-stem="pr632" x1="880.78" y1="274" x2="880.78" y2="480" class="tl-stem" stroke-width="1"/>
+        <line data-detail="context" data-timeline-stem="pr672" x1="981.78" y1="274" x2="981.78" y2="544" class="tl-stem" stroke-width="1"/>
+        <line data-detail="context" data-timeline-stem="pr677" x1="985.34" y1="274" x2="985.34" y2="622" class="tl-stem" stroke-width="1"/>
+        <line data-detail="context" data-timeline-stem="pr674" x1="985.76" y1="274" x2="985.76" y2="686" class="tl-stem" stroke-width="1"/>
+        <line data-detail="context" data-timeline-stem="pr668" x1="1022" y1="274" x2="1022" y2="750" class="tl-stem" stroke-width="1"/>
 
         <!-- Events in time order -->
         <g id="node-v3_0_0" data-node-id="v3_0_0" data-node-label="Tag v3.0.0" tabindex="0" role="button" aria-label="Focus Tag v3.0.0, git tag v3.0.0, Releases › 09-28 19:13:16 UTC+08:00" aria-pressed="false" data-node-kind="frontend" data-node-sublabel="git tag v3.0.0" data-node-context="Releases › 09-28 19:13:16 UTC+08:00" data-timeline-at="2026-09-28T19:13:16+08:00" data-timeline-ms="1790593996000" data-timeline-x="218">
           <title>Tag v3.0.0 · git tag v3.0.0 · Releases › 09-28 19:13:16 UTC+08:00</title>
-          <rect x="167" y="126" width="102" height="40" rx="6" class="c-mask"/>
-          <rect x="167" y="126" width="102" height="40" rx="6" class="c-frontend" stroke-width="1.3"/>
-          <text x="176" y="144" class="t-muted tl-time" font-size="10" font-weight="600">09-28 19:13:16</text>
-          <text data-node-label="" class="t-primary" font-size="11.5" font-weight="650"><tspan x="176" y="158">Tag v3.0.0</tspan></text>
-          <circle cx="218" cy="112" r="5.5" class="c-frontend tl-dot" stroke-width="2"/>
+          <rect x="167" y="140" width="102" height="40" rx="6" class="c-mask"/>
+          <rect x="167" y="140" width="102" height="40" rx="6" class="c-frontend" stroke-width="1.3"/>
+          <text x="176" y="158" class="t-muted tl-time" font-size="10" font-weight="600">09-28 19:13:16</text>
+          <text data-node-label="" class="t-primary" font-size="11.5" font-weight="650"><tspan x="176" y="172">Tag v3.0.0</tspan></text>
+          <circle cx="218" cy="126" r="5.5" class="c-frontend tl-dot" stroke-width="2"/>
         </g>
         <g id="node-v3_0_1" data-node-id="v3_0_1" data-node-label="Tag v3.0.1" tabindex="0" role="button" aria-label="Focus Tag v3.0.1, git tag v3.0.1, Releases › 09-28 23:16:27 UTC+08:00" aria-pressed="false" data-node-kind="frontend" data-node-sublabel="git tag v3.0.1" data-node-context="Releases › 09-28 23:16:27 UTC+08:00" data-timeline-at="2026-09-28T23:16:27+08:00" data-timeline-ms="1790608587000" data-timeline-x="266.61">
           <title>Tag v3.0.1 · git tag v3.0.1 · Releases › 09-28 23:16:27 UTC+08:00</title>
-          <rect x="215.61" y="176" width="102" height="40" rx="6" class="c-mask"/>
-          <rect x="215.61" y="176" width="102" height="40" rx="6" class="c-frontend" stroke-width="1.3"/>
-          <text x="224.61" y="194" class="t-muted tl-time" font-size="10" font-weight="600">09-28 23:16:27</text>
-          <text data-node-label="" class="t-primary" font-size="11.5" font-weight="650"><tspan x="224.61" y="208">Tag v3.0.1</tspan></text>
-          <circle cx="266.61" cy="112" r="5.5" class="c-frontend tl-dot" stroke-width="2"/>
+          <rect x="215.61" y="190" width="102" height="40" rx="6" class="c-mask"/>
+          <rect x="215.61" y="190" width="102" height="40" rx="6" class="c-frontend" stroke-width="1.3"/>
+          <text x="224.61" y="208" class="t-muted tl-time" font-size="10" font-weight="600">09-28 23:16:27</text>
+          <text data-node-label="" class="t-primary" font-size="11.5" font-weight="650"><tspan x="224.61" y="222">Tag v3.0.1</tspan></text>
+          <circle cx="266.61" cy="126" r="5.5" class="c-frontend tl-dot" stroke-width="2"/>
         </g>
         <g id="node-pr627" data-node-id="pr627" data-node-label="Merge #627 restore Kimi poster" tabindex="0" role="button" aria-label="Focus Merge #627 restore Kimi poster, Merge commit on dev, PR merges › 09-29 14:16:30 UTC+08:00" aria-pressed="false" data-node-kind="external" data-node-sublabel="Merge commit on dev" data-node-context="PR merges › 09-29 14:16:30 UTC+08:00" data-timeline-at="2026-09-29T14:16:30+08:00" data-timeline-ms="1790662590000" data-timeline-x="367.61">
           <title>Merge #627 restore Kimi poster · Merge commit on dev · PR merges › 09-29 14:16:30 UTC+08:00</title>
-          <rect x="272.61" y="274" width="190" height="54" rx="6" class="c-mask"/>
-          <rect x="272.61" y="274" width="190" height="54" rx="6" class="c-external" stroke-width="1.3"/>
-          <text x="281.61" y="292" class="t-muted tl-time" font-size="10" font-weight="600">09-29 14:16:30</text>
-          <text data-node-label="" class="t-primary" font-size="11.5" font-weight="650"><tspan x="281.61" y="306">Merge #627 restore Kimi</tspan><tspan x="281.61" y="320">poster</tspan></text>
-          <circle cx="367.61" cy="260" r="5.5" class="c-external tl-dot" stroke-width="2"/>
+          <rect x="272.61" y="288" width="190" height="54" rx="6" class="c-mask"/>
+          <rect x="272.61" y="288" width="190" height="54" rx="6" class="c-external" stroke-width="1.3"/>
+          <text x="281.61" y="306" class="t-muted tl-time" font-size="10" font-weight="600">09-29 14:16:30</text>
+          <text data-node-label="" class="t-primary" font-size="11.5" font-weight="650"><tspan x="281.61" y="320">Merge #627 restore Kimi</tspan><tspan x="281.61" y="334">poster</tspan></text>
+          <circle cx="367.61" cy="274" r="5.5" class="c-external tl-dot" stroke-width="2"/>
         </g>
         <g id="node-pr628" data-node-id="pr628" data-node-label="Merge #628 restore Kimi poster" tabindex="0" role="button" aria-label="Focus Merge #628 restore Kimi poster, Merge commit on dev, PR merges › 09-29 14:17:35 UTC+08:00" aria-pressed="false" data-node-kind="external" data-node-sublabel="Merge commit on dev" data-node-context="PR merges › 09-29 14:17:35 UTC+08:00" data-timeline-at="2026-09-29T14:17:35+08:00" data-timeline-ms="1790662655000" data-timeline-x="367.83">
           <title>Merge #628 restore Kimi poster · Merge commit on dev · PR merges › 09-29 14:17:35 UTC+08:00</title>
-          <rect x="272.83" y="338" width="190" height="54" rx="6" class="c-mask"/>
-          <rect x="272.83" y="338" width="190" height="54" rx="6" class="c-external" stroke-width="1.3"/>
-          <text x="281.83" y="356" class="t-muted tl-time" font-size="10" font-weight="600">09-29 14:17:35</text>
-          <text data-node-label="" class="t-primary" font-size="11.5" font-weight="650"><tspan x="281.83" y="370">Merge #628 restore Kimi</tspan><tspan x="281.83" y="384">poster</tspan></text>
-          <circle cx="367.83" cy="260" r="5.5" class="c-external tl-dot" stroke-width="2"/>
+          <rect x="272.83" y="352" width="190" height="54" rx="6" class="c-mask"/>
+          <rect x="272.83" y="352" width="190" height="54" rx="6" class="c-external" stroke-width="1.3"/>
+          <text x="281.83" y="370" class="t-muted tl-time" font-size="10" font-weight="600">09-29 14:17:35</text>
+          <text data-node-label="" class="t-primary" font-size="11.5" font-weight="650"><tspan x="281.83" y="384">Merge #628 restore Kimi</tspan><tspan x="281.83" y="398">poster</tspan></text>
+          <circle cx="367.83" cy="274" r="5.5" class="c-external tl-dot" stroke-width="2"/>
         </g>
         <g id="node-pr629" data-node-id="pr629" data-node-label="Merge #629 README sponsor name" tabindex="0" role="button" aria-label="Focus Merge #629 README sponsor name, Merge commit on dev, PR merges › 09-29 14:28:59 UTC+08:00" aria-pressed="false" data-node-kind="external" data-node-sublabel="Merge commit on dev" data-node-context="PR merges › 09-29 14:28:59 UTC+08:00" data-timeline-at="2026-09-29T14:28:59+08:00" data-timeline-ms="1790663339000" data-timeline-x="370.11">
           <title>Merge #629 README sponsor name · Merge commit on dev · PR merges › 09-29 14:28:59 UTC+08:00</title>
-          <rect x="275.11" y="402" width="190" height="54" rx="6" class="c-mask"/>
-          <rect x="275.11" y="402" width="190" height="54" rx="6" class="c-external" stroke-width="1.3"/>
-          <text x="284.11" y="420" class="t-muted tl-time" font-size="10" font-weight="600">09-29 14:28:59</text>
-          <text data-node-label="" class="t-primary" font-size="11.5" font-weight="650"><tspan x="284.11" y="434">Merge #629 README</tspan><tspan x="284.11" y="448">sponsor name</tspan></text>
-          <circle cx="370.11" cy="260" r="5.5" class="c-external tl-dot" stroke-width="2"/>
+          <rect x="275.11" y="416" width="190" height="54" rx="6" class="c-mask"/>
+          <rect x="275.11" y="416" width="190" height="54" rx="6" class="c-external" stroke-width="1.3"/>
+          <text x="284.11" y="434" class="t-muted tl-time" font-size="10" font-weight="600">09-29 14:28:59</text>
+          <text data-node-label="" class="t-primary" font-size="11.5" font-weight="650"><tspan x="284.11" y="448">Merge #629 README</tspan><tspan x="284.11" y="462">sponsor name</tspan></text>
+          <circle cx="370.11" cy="274" r="5.5" class="c-external tl-dot" stroke-width="2"/>
         </g>
         <g id="node-pr635" data-node-id="pr635" data-node-label="Merge #635 README launch v4" tabindex="0" role="button" aria-label="Focus Merge #635 README launch v4, Merge commit on dev, PR merges › 09-30 00:15:40 UTC+08:00" aria-pressed="false" data-node-kind="external" data-node-sublabel="Merge commit on dev" data-node-context="PR merges › 09-30 00:15:40 UTC+08:00" data-timeline-at="2026-09-30T00:15:40+08:00" data-timeline-ms="1790698540000" data-timeline-x="487.39">
           <title>Merge #635 README launch v4 · Merge commit on dev · PR merges › 09-30 00:15:40 UTC+08:00</title>
-          <rect x="392.39" y="466" width="190" height="54" rx="6" class="c-mask"/>
-          <rect x="392.39" y="466" width="190" height="54" rx="6" class="c-external" stroke-width="1.3"/>
-          <text x="401.39" y="484" class="t-muted tl-time" font-size="10" font-weight="600">09-30 00:15:40</text>
-          <text data-node-label="" class="t-primary" font-size="11.5" font-weight="650"><tspan x="401.39" y="498">Merge #635 README</tspan><tspan x="401.39" y="512">launch v4</tspan></text>
-          <circle cx="487.39" cy="260" r="5.5" class="c-external tl-dot" stroke-width="2"/>
+          <rect x="392.39" y="480" width="190" height="54" rx="6" class="c-mask"/>
+          <rect x="392.39" y="480" width="190" height="54" rx="6" class="c-external" stroke-width="1.3"/>
+          <text x="401.39" y="498" class="t-muted tl-time" font-size="10" font-weight="600">09-30 00:15:40</text>
+          <text data-node-label="" class="t-primary" font-size="11.5" font-weight="650"><tspan x="401.39" y="512">Merge #635 README</tspan><tspan x="401.39" y="526">launch v4</tspan></text>
+          <circle cx="487.39" cy="274" r="5.5" class="c-external tl-dot" stroke-width="2"/>
         </g>
         <g id="node-pr636" data-node-id="pr636" data-node-label="Merge #636 README support section" tabindex="0" role="button" aria-label="Focus Merge #636 README support section, Merge commit on dev, PR merges › 09-30 00:23:38 UTC+08:00" aria-pressed="false" data-node-kind="external" data-node-sublabel="Merge commit on dev" data-node-context="PR merges › 09-30 00:23:38 UTC+08:00" data-timeline-at="2026-09-30T00:23:38+08:00" data-timeline-ms="1790699018000" data-timeline-x="488.99">
           <title>Merge #636 README support section · Merge commit on dev · PR merges › 09-30 00:23:38 UTC+08:00</title>
-          <rect x="393.99" y="530" width="190" height="54" rx="6" class="c-mask"/>
-          <rect x="393.99" y="530" width="190" height="54" rx="6" class="c-external" stroke-width="1.3"/>
-          <text x="402.99" y="548" class="t-muted tl-time" font-size="10" font-weight="600">09-30 00:23:38</text>
-          <text data-node-label="" class="t-primary" font-size="11.5" font-weight="650"><tspan x="402.99" y="562">Merge #636 README</tspan><tspan x="402.99" y="576">support section</tspan></text>
-          <circle cx="488.99" cy="260" r="5.5" class="c-external tl-dot" stroke-width="2"/>
+          <rect x="393.99" y="544" width="190" height="54" rx="6" class="c-mask"/>
+          <rect x="393.99" y="544" width="190" height="54" rx="6" class="c-external" stroke-width="1.3"/>
+          <text x="402.99" y="562" class="t-muted tl-time" font-size="10" font-weight="600">09-30 00:23:38</text>
+          <text data-node-label="" class="t-primary" font-size="11.5" font-weight="650"><tspan x="402.99" y="576">Merge #636 README</tspan><tspan x="402.99" y="590">support section</tspan></text>
+          <circle cx="488.99" cy="274" r="5.5" class="c-external tl-dot" stroke-width="2"/>
         </g>
         <g id="node-pr634" data-node-id="pr634" data-node-label="Merge #634 repair-rounds bench" tabindex="0" role="button" aria-label="Focus Merge #634 repair-rounds bench, Merge commit on dev, PR merges › 09-30 00:23:57 UTC+08:00" aria-pressed="false" data-node-kind="external" data-node-sublabel="Merge commit on dev" data-node-context="PR merges › 09-30 00:23:57 UTC+08:00" data-timeline-at="2026-09-30T00:23:57+08:00" data-timeline-ms="1790699037000" data-timeline-x="489.05">
           <title>Merge #634 repair-rounds bench · Merge commit on dev · PR merges › 09-30 00:23:57 UTC+08:00</title>
-          <rect x="394.05" y="608" width="190" height="54" rx="6" class="c-mask"/>
-          <rect x="394.05" y="608" width="190" height="54" rx="6" class="c-external" stroke-width="1.3"/>
-          <text x="403.05" y="626" class="t-muted tl-time" font-size="10" font-weight="600">09-30 00:23:57</text>
-          <text data-node-label="" class="t-primary" font-size="11.5" font-weight="650"><tspan x="403.05" y="640">Merge #634</tspan><tspan x="403.05" y="654">repair-rounds bench</tspan></text>
-          <circle cx="489.05" cy="260" r="5.5" class="c-external tl-dot" stroke-width="2"/>
+          <rect x="394.05" y="622" width="190" height="54" rx="6" class="c-mask"/>
+          <rect x="394.05" y="622" width="190" height="54" rx="6" class="c-external" stroke-width="1.3"/>
+          <text x="403.05" y="640" class="t-muted tl-time" font-size="10" font-weight="600">09-30 00:23:57</text>
+          <text data-node-label="" class="t-primary" font-size="11.5" font-weight="650"><tspan x="403.05" y="654">Merge #634</tspan><tspan x="403.05" y="668">repair-rounds bench</tspan></text>
+          <circle cx="489.05" cy="274" r="5.5" class="c-external tl-dot" stroke-width="2"/>
         </g>
         <g id="node-pr637" data-node-id="pr637" data-node-label="Merge #637 README Alipay support" tabindex="0" role="button" aria-label="Focus Merge #637 README Alipay support, Merge commit on dev, PR merges › 09-30 00:42:24 UTC+08:00" aria-pressed="false" data-node-kind="external" data-node-sublabel="Merge commit on dev" data-node-context="PR merges › 09-30 00:42:24 UTC+08:00" data-timeline-at="2026-09-30T00:42:24+08:00" data-timeline-ms="1790700144000" data-timeline-x="492.74">
           <title>Merge #637 README Alipay support · Merge commit on dev · PR merges › 09-30 00:42:24 UTC+08:00</title>
-          <rect x="397.74" y="672" width="190" height="54" rx="6" class="c-mask"/>
-          <rect x="397.74" y="672" width="190" height="54" rx="6" class="c-external" stroke-width="1.3"/>
-          <text x="406.74" y="690" class="t-muted tl-time" font-size="10" font-weight="600">09-30 00:42:24</text>
-          <text data-node-label="" class="t-primary" font-size="11.5" font-weight="650"><tspan x="406.74" y="704">Merge #637 README</tspan><tspan x="406.74" y="718">Alipay support</tspan></text>
-          <circle cx="492.74" cy="260" r="5.5" class="c-external tl-dot" stroke-width="2"/>
+          <rect x="397.74" y="686" width="190" height="54" rx="6" class="c-mask"/>
+          <rect x="397.74" y="686" width="190" height="54" rx="6" class="c-external" stroke-width="1.3"/>
+          <text x="406.74" y="704" class="t-muted tl-time" font-size="10" font-weight="600">09-30 00:42:24</text>
+          <text data-node-label="" class="t-primary" font-size="11.5" font-weight="650"><tspan x="406.74" y="718">Merge #637 README</tspan><tspan x="406.74" y="732">Alipay support</tspan></text>
+          <circle cx="492.74" cy="274" r="5.5" class="c-external tl-dot" stroke-width="2"/>
         </g>
         <g id="node-sync_main" data-node-id="sync_main" data-node-label="Merge main into dev" tabindex="0" role="button" aria-label="Focus Merge main into dev, Merge commit on dev, Branch syncs › 09-30 14:36:59 UTC+08:00" aria-pressed="false" data-node-kind="messagebus" data-node-sublabel="Merge commit on dev" data-node-context="Branch syncs › 09-30 14:36:59 UTC+08:00" data-timeline-at="2026-09-30T14:36:59+08:00" data-timeline-ms="1790750219000" data-timeline-x="611.74">
           <title>Merge main into dev · Merge commit on dev · Branch syncs › 09-30 14:36:59 UTC+08:00</title>
-          <rect x="533.74" y="848" width="156" height="40" rx="6" class="c-mask"/>
-          <rect x="533.74" y="848" width="156" height="40" rx="6" class="c-messagebus" stroke-width="1.3"/>
-          <text x="542.74" y="866" class="t-muted tl-time" font-size="10" font-weight="600">09-30 14:36:59</text>
-          <text data-node-label="" class="t-primary" font-size="11.5" font-weight="650"><tspan x="542.74" y="880">Merge main into dev</tspan></text>
-          <circle cx="611.74" cy="834" r="5.5" class="c-messagebus tl-dot" stroke-width="2"/>
+          <rect x="533.74" y="862" width="156" height="40" rx="6" class="c-mask"/>
+          <rect x="533.74" y="862" width="156" height="40" rx="6" class="c-messagebus" stroke-width="1.3"/>
+          <text x="542.74" y="880" class="t-muted tl-time" font-size="10" font-weight="600">09-30 14:36:59</text>
+          <text data-node-label="" class="t-primary" font-size="11.5" font-weight="650"><tspan x="542.74" y="894">Merge main into dev</tspan></text>
+          <circle cx="611.74" cy="848" r="5.5" class="c-messagebus tl-dot" stroke-width="2"/>
         </g>
         <g id="node-pr615" data-node-id="pr615" data-node-label="Merge #615 stable manifest v3.0.1" tabindex="0" role="button" aria-label="Focus Merge #615 stable manifest v3.0.1, Merge commit on dev, PR merges › 09-30 18:19:15 UTC+08:00" aria-pressed="false" data-node-kind="external" data-node-sublabel="Merge commit on dev" data-node-context="PR merges › 09-30 18:19:15 UTC+08:00" data-timeline-at="2026-09-30T18:19:15+08:00" data-timeline-ms="1790763555000" data-timeline-x="656.17">
           <title>Merge #615 stable manifest v3.0.1 · Merge commit on dev · PR merges › 09-30 18:19:15 UTC+08:00</title>
-          <rect x="561.17" y="274" width="190" height="54" rx="6" class="c-mask"/>
-          <rect x="561.17" y="274" width="190" height="54" rx="6" class="c-external" stroke-width="1.3"/>
-          <text x="570.17" y="292" class="t-muted tl-time" font-size="10" font-weight="600">09-30 18:19:15</text>
-          <text data-node-label="" class="t-primary" font-size="11.5" font-weight="650"><tspan x="570.17" y="306">Merge #615 stable</tspan><tspan x="570.17" y="320">manifest v3.0.1</tspan></text>
-          <circle cx="656.17" cy="260" r="5.5" class="c-external tl-dot" stroke-width="2"/>
+          <rect x="561.17" y="288" width="190" height="54" rx="6" class="c-mask"/>
+          <rect x="561.17" y="288" width="190" height="54" rx="6" class="c-external" stroke-width="1.3"/>
+          <text x="570.17" y="306" class="t-muted tl-time" font-size="10" font-weight="600">09-30 18:19:15</text>
+          <text data-node-label="" class="t-primary" font-size="11.5" font-weight="650"><tspan x="570.17" y="320">Merge #615 stable</tspan><tspan x="570.17" y="334">manifest v3.0.1</tspan></text>
+          <circle cx="656.17" cy="274" r="5.5" class="c-external tl-dot" stroke-width="2"/>
         </g>
         <g id="node-sync_upstream" data-node-id="sync_upstream" data-node-label="Merge upstream dev and regenerate artifacts" tabindex="0" role="button" aria-label="Focus Merge upstream dev and regenerate artifacts, Merge commit on dev, Branch syncs › 10-01 18:58:51 UTC+08:00" aria-pressed="false" data-node-kind="messagebus" data-node-sublabel="Merge commit on dev" data-node-context="Branch syncs › 10-01 18:58:51 UTC+08:00" data-timeline-at="2026-10-01T16:28:51+05:30" data-timeline-ms="1790852331000" data-timeline-x="769.17">
           <title>Merge upstream dev and regenerate artifacts · Merge commit on dev · Branch syncs › 10-01 18:58:51 UTC+08:00</title>
-          <rect x="674.17" y="898" width="190" height="54" rx="6" class="c-mask"/>
-          <rect x="674.17" y="898" width="190" height="54" rx="6" class="c-messagebus" stroke-width="1.3"/>
-          <text x="683.17" y="916" class="t-muted tl-time" font-size="10" font-weight="600">10-01 18:58:51</text>
-          <text data-node-label="" class="t-primary" font-size="11.5" font-weight="650"><tspan x="683.17" y="930">Merge upstream dev and</tspan><tspan x="683.17" y="944">regenerate artifacts</tspan></text>
-          <circle cx="769.17" cy="834" r="5.5" class="c-messagebus tl-dot" stroke-width="2"/>
+          <rect x="674.17" y="912" width="190" height="54" rx="6" class="c-mask"/>
+          <rect x="674.17" y="912" width="190" height="54" rx="6" class="c-messagebus" stroke-width="1.3"/>
+          <text x="683.17" y="930" class="t-muted tl-time" font-size="10" font-weight="600">10-01 18:58:51</text>
+          <text data-node-label="" class="t-primary" font-size="11.5" font-weight="650"><tspan x="683.17" y="944">Merge upstream dev and</tspan><tspan x="683.17" y="958">regenerate artifacts</tspan></text>
+          <circle cx="769.17" cy="848" r="5.5" class="c-messagebus tl-dot" stroke-width="2"/>
         </g>
         <g id="node-pr655" data-node-id="pr655" data-node-label="Merge #655 locale catalogs" tabindex="0" role="button" aria-label="Focus Merge #655 locale catalogs, Merge commit on dev, PR merges › 10-02 20:49:57 UTC+08:00" aria-pressed="false" data-node-kind="external" data-node-sublabel="Merge commit on dev" data-node-context="PR merges › 10-02 20:49:57 UTC+08:00" data-timeline-at="2026-10-02T20:49:57+08:00" data-timeline-ms="1790945397000" data-timeline-x="865.17">
           <title>Merge #655 locale catalogs · Merge commit on dev · PR merges › 10-02 20:49:57 UTC+08:00</title>
-          <rect x="770.17" y="274" width="190" height="54" rx="6" class="c-mask"/>
-          <rect x="770.17" y="274" width="190" height="54" rx="6" class="c-external" stroke-width="1.3"/>
-          <text x="779.17" y="292" class="t-muted tl-time" font-size="10" font-weight="600">10-02 20:49:57</text>
-          <text data-node-label="" class="t-primary" font-size="11.5" font-weight="650"><tspan x="779.17" y="306">Merge #655 locale</tspan><tspan x="779.17" y="320">catalogs</tspan></text>
-          <circle cx="865.17" cy="260" r="5.5" class="c-external tl-dot" stroke-width="2"/>
+          <rect x="770.17" y="288" width="190" height="54" rx="6" class="c-mask"/>
+          <rect x="770.17" y="288" width="190" height="54" rx="6" class="c-external" stroke-width="1.3"/>
+          <text x="779.17" y="306" class="t-muted tl-time" font-size="10" font-weight="600">10-02 20:49:57</text>
+          <text data-node-label="" class="t-primary" font-size="11.5" font-weight="650"><tspan x="779.17" y="320">Merge #655 locale</tspan><tspan x="779.17" y="334">catalogs</tspan></text>
+          <circle cx="865.17" cy="274" r="5.5" class="c-external tl-dot" stroke-width="2"/>
         </g>
         <g id="node-pr587" data-node-id="pr587" data-node-label="Merge #587 brand ICO bounds" tabindex="0" role="button" aria-label="Focus Merge #587 brand ICO bounds, Merge commit on dev, PR merges › 10-02 21:13:51 UTC+08:00" aria-pressed="false" data-node-kind="external" data-node-sublabel="Merge commit on dev" data-node-context="PR merges › 10-02 21:13:51 UTC+08:00" data-timeline-at="2026-10-02T21:13:51+08:00" data-timeline-ms="1790946831000" data-timeline-x="869.95">
           <title>Merge #587 brand ICO bounds · Merge commit on dev · PR merges › 10-02 21:13:51 UTC+08:00</title>
-          <rect x="774.95" y="338" width="190" height="54" rx="6" class="c-mask"/>
-          <rect x="774.95" y="338" width="190" height="54" rx="6" class="c-external" stroke-width="1.3"/>
-          <text x="783.95" y="356" class="t-muted tl-time" font-size="10" font-weight="600">10-02 21:13:51</text>
-          <text data-node-label="" class="t-primary" font-size="11.5" font-weight="650"><tspan x="783.95" y="370">Merge #587 brand ICO</tspan><tspan x="783.95" y="384">bounds</tspan></text>
-          <circle cx="869.95" cy="260" r="5.5" class="c-external tl-dot" stroke-width="2"/>
+          <rect x="774.95" y="352" width="190" height="54" rx="6" class="c-mask"/>
+          <rect x="774.95" y="352" width="190" height="54" rx="6" class="c-external" stroke-width="1.3"/>
+          <text x="783.95" y="370" class="t-muted tl-time" font-size="10" font-weight="600">10-02 21:13:51</text>
+          <text data-node-label="" class="t-primary" font-size="11.5" font-weight="650"><tspan x="783.95" y="384">Merge #587 brand ICO</tspan><tspan x="783.95" y="398">bounds</tspan></text>
+          <circle cx="869.95" cy="274" r="5.5" class="c-external tl-dot" stroke-width="2"/>
         </g>
         <g id="node-pr399" data-node-id="pr399" data-node-label="Merge #399 ERD diagrams" tabindex="0" role="button" aria-label="Focus Merge #399 ERD diagrams, Merge commit on dev, PR merges › 10-02 21:36:46 UTC+08:00" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Merge commit on dev" data-node-context="PR merges › 10-02 21:36:46 UTC+08:00" data-timeline-at="2026-10-02T21:36:46+08:00" data-timeline-ms="1790948206000" data-timeline-x="874.53">
           <title>Merge #399 ERD diagrams · Merge commit on dev · PR merges › 10-02 21:36:46 UTC+08:00</title>
-          <rect x="782.03" y="402" width="185" height="40" rx="6" class="c-mask"/>
-          <rect x="782.03" y="402" width="185" height="40" rx="6" class="c-backend" stroke-width="1.3"/>
-          <text x="791.03" y="420" class="t-muted tl-time" font-size="10" font-weight="600">10-02 21:36:46</text>
-          <text data-node-label="" class="t-primary" font-size="11.5" font-weight="650"><tspan x="791.03" y="434">Merge #399 ERD diagrams</tspan></text>
-          <circle cx="874.53" cy="260" r="5.5" class="c-backend tl-dot" stroke-width="2"/>
+          <rect x="782.03" y="416" width="185" height="40" rx="6" class="c-mask"/>
+          <rect x="782.03" y="416" width="185" height="40" rx="6" class="c-backend" stroke-width="1.3"/>
+          <text x="791.03" y="434" class="t-muted tl-time" font-size="10" font-weight="600">10-02 21:36:46</text>
+          <text data-node-label="" class="t-primary" font-size="11.5" font-weight="650"><tspan x="791.03" y="448">Merge #399 ERD diagrams</tspan></text>
+          <circle cx="874.53" cy="274" r="5.5" class="c-backend tl-dot" stroke-width="2"/>
         </g>
         <g id="node-pr632" data-node-id="pr632" data-node-label="Merge #632 card note overflow" tabindex="0" role="button" aria-label="Focus Merge #632 card note overflow, Merge commit on dev, PR merges › 10-02 22:08:03 UTC+08:00" aria-pressed="false" data-node-kind="external" data-node-sublabel="Merge commit on dev" data-node-context="PR merges › 10-02 22:08:03 UTC+08:00" data-timeline-at="2026-10-02T22:08:03+08:00" data-timeline-ms="1790950083000" data-timeline-x="880.78">
           <title>Merge #632 card note overflow · Merge commit on dev · PR merges › 10-02 22:08:03 UTC+08:00</title>
-          <rect x="785.78" y="466" width="190" height="54" rx="6" class="c-mask"/>
-          <rect x="785.78" y="466" width="190" height="54" rx="6" class="c-external" stroke-width="1.3"/>
-          <text x="794.78" y="484" class="t-muted tl-time" font-size="10" font-weight="600">10-02 22:08:03</text>
-          <text data-node-label="" class="t-primary" font-size="11.5" font-weight="650"><tspan x="794.78" y="498">Merge #632 card note</tspan><tspan x="794.78" y="512">overflow</tspan></text>
-          <circle cx="880.78" cy="260" r="5.5" class="c-external tl-dot" stroke-width="2"/>
+          <rect x="785.78" y="480" width="190" height="54" rx="6" class="c-mask"/>
+          <rect x="785.78" y="480" width="190" height="54" rx="6" class="c-external" stroke-width="1.3"/>
+          <text x="794.78" y="498" class="t-muted tl-time" font-size="10" font-weight="600">10-02 22:08:03</text>
+          <text data-node-label="" class="t-primary" font-size="11.5" font-weight="650"><tspan x="794.78" y="512">Merge #632 card note</tspan><tspan x="794.78" y="526">overflow</tspan></text>
+          <circle cx="880.78" cy="274" r="5.5" class="c-external tl-dot" stroke-width="2"/>
         </g>
         <g id="node-pr672" data-node-id="pr672" data-node-label="Merge #672 repair-rounds blind spots" tabindex="0" role="button" aria-label="Focus Merge #672 repair-rounds blind spots, Merge commit on dev, PR merges › 10-04 09:57:08 UTC+08:00" aria-pressed="false" data-node-kind="external" data-node-sublabel="Merge commit on dev" data-node-context="PR merges › 10-04 09:57:08 UTC+08:00" data-timeline-at="2026-10-04T09:57:08+08:00" data-timeline-ms="1791079028000" data-timeline-x="981.78">
           <title>Merge #672 repair-rounds blind spots · Merge commit on dev · PR merges › 10-04 09:57:08 UTC+08:00</title>
-          <rect x="886.78" y="530" width="190" height="68" rx="6" class="c-mask"/>
-          <rect x="886.78" y="530" width="190" height="68" rx="6" class="c-external" stroke-width="1.3"/>
-          <text x="895.78" y="548" class="t-muted tl-time" font-size="10" font-weight="600">10-04 09:57:08</text>
-          <text data-node-label="" class="t-primary" font-size="11.5" font-weight="650"><tspan x="895.78" y="562">Merge #672</tspan><tspan x="895.78" y="576">repair-rounds blind</tspan><tspan x="895.78" y="590">spots</tspan></text>
-          <circle cx="981.78" cy="260" r="5.5" class="c-external tl-dot" stroke-width="2"/>
+          <rect x="886.78" y="544" width="190" height="68" rx="6" class="c-mask"/>
+          <rect x="886.78" y="544" width="190" height="68" rx="6" class="c-external" stroke-width="1.3"/>
+          <text x="895.78" y="562" class="t-muted tl-time" font-size="10" font-weight="600">10-04 09:57:08</text>
+          <text data-node-label="" class="t-primary" font-size="11.5" font-weight="650"><tspan x="895.78" y="576">Merge #672</tspan><tspan x="895.78" y="590">repair-rounds blind</tspan><tspan x="895.78" y="604">spots</tspan></text>
+          <circle cx="981.78" cy="274" r="5.5" class="c-external tl-dot" stroke-width="2"/>
         </g>
         <g id="node-pr677" data-node-id="pr677" data-node-label="Merge #677 release subscriptions" tabindex="0" role="button" aria-label="Focus Merge #677 release subscriptions, Merge commit on dev, PR merges › 10-04 10:14:55 UTC+08:00" aria-pressed="false" data-node-kind="external" data-node-sublabel="Merge commit on dev" data-node-context="PR merges › 10-04 10:14:55 UTC+08:00" data-timeline-at="2026-10-04T10:14:55+08:00" data-timeline-ms="1791080095000" data-timeline-x="985.34">
           <title>Merge #677 release subscriptions · Merge commit on dev · PR merges › 10-04 10:14:55 UTC+08:00</title>
-          <rect x="890.34" y="608" width="190" height="54" rx="6" class="c-mask"/>
-          <rect x="890.34" y="608" width="190" height="54" rx="6" class="c-external" stroke-width="1.3"/>
-          <text x="899.34" y="626" class="t-muted tl-time" font-size="10" font-weight="600">10-04 10:14:55</text>
-          <text data-node-label="" class="t-primary" font-size="11.5" font-weight="650"><tspan x="899.34" y="640">Merge #677 release</tspan><tspan x="899.34" y="654">subscriptions</tspan></text>
-          <circle cx="985.34" cy="260" r="5.5" class="c-external tl-dot" stroke-width="2"/>
+          <rect x="890.34" y="622" width="190" height="54" rx="6" class="c-mask"/>
+          <rect x="890.34" y="622" width="190" height="54" rx="6" class="c-external" stroke-width="1.3"/>
+          <text x="899.34" y="640" class="t-muted tl-time" font-size="10" font-weight="600">10-04 10:14:55</text>
+          <text data-node-label="" class="t-primary" font-size="11.5" font-weight="650"><tspan x="899.34" y="654">Merge #677 release</tspan><tspan x="899.34" y="668">subscriptions</tspan></text>
+          <circle cx="985.34" cy="274" r="5.5" class="c-external tl-dot" stroke-width="2"/>
         </g>
         <g id="node-pr674" data-node-id="pr674" data-node-label="Merge #674 community registry v0" tabindex="0" role="button" aria-label="Focus Merge #674 community registry v0, Merge commit on dev, PR merges › 10-04 10:17:01 UTC+08:00" aria-pressed="false" data-node-kind="external" data-node-sublabel="Merge commit on dev" data-node-context="PR merges › 10-04 10:17:01 UTC+08:00" data-timeline-at="2026-10-04T10:17:01+08:00" data-timeline-ms="1791080221000" data-timeline-x="985.76">
           <title>Merge #674 community registry v0 · Merge commit on dev · PR merges › 10-04 10:17:01 UTC+08:00</title>
-          <rect x="890.76" y="672" width="190" height="54" rx="6" class="c-mask"/>
-          <rect x="890.76" y="672" width="190" height="54" rx="6" class="c-external" stroke-width="1.3"/>
-          <text x="899.76" y="690" class="t-muted tl-time" font-size="10" font-weight="600">10-04 10:17:01</text>
-          <text data-node-label="" class="t-primary" font-size="11.5" font-weight="650"><tspan x="899.76" y="704">Merge #674 community</tspan><tspan x="899.76" y="718">registry v0</tspan></text>
-          <circle cx="985.76" cy="260" r="5.5" class="c-external tl-dot" stroke-width="2"/>
+          <rect x="890.76" y="686" width="190" height="54" rx="6" class="c-mask"/>
+          <rect x="890.76" y="686" width="190" height="54" rx="6" class="c-external" stroke-width="1.3"/>
+          <text x="899.76" y="704" class="t-muted tl-time" font-size="10" font-weight="600">10-04 10:17:01</text>
+          <text data-node-label="" class="t-primary" font-size="11.5" font-weight="650"><tspan x="899.76" y="718">Merge #674 community</tspan><tspan x="899.76" y="732">registry v0</tspan></text>
+          <circle cx="985.76" cy="274" r="5.5" class="c-external tl-dot" stroke-width="2"/>
         </g>
         <g id="node-pr668" data-node-id="pr668" data-node-label="Merge #668 MCO artifact refresh" tabindex="0" role="button" aria-label="Focus Merge #668 MCO artifact refresh, Merge commit on dev, PR merges › 10-04 13:18:18 UTC+08:00" aria-pressed="false" data-node-kind="external" data-node-sublabel="Merge commit on dev" data-node-context="PR merges › 10-04 13:18:18 UTC+08:00" data-timeline-at="2026-10-04T13:18:18+08:00" data-timeline-ms="1791091098000" data-timeline-x="1022">
           <title>Merge #668 MCO artifact refresh · Merge commit on dev · PR merges › 10-04 13:18:18 UTC+08:00</title>
-          <rect x="906" y="736" width="190" height="54" rx="6" class="c-mask"/>
-          <rect x="906" y="736" width="190" height="54" rx="6" class="c-external" stroke-width="1.3"/>
-          <text x="915" y="754" class="t-muted tl-time" font-size="10" font-weight="600">10-04 13:18:18</text>
-          <text data-node-label="" class="t-primary" font-size="11.5" font-weight="650"><tspan x="915" y="768">Merge #668 MCO artifact</tspan><tspan x="915" y="782">refresh</tspan></text>
-          <circle cx="1022" cy="260" r="5.5" class="c-external tl-dot" stroke-width="2"/>
+          <rect x="906" y="750" width="190" height="54" rx="6" class="c-mask"/>
+          <rect x="906" y="750" width="190" height="54" rx="6" class="c-external" stroke-width="1.3"/>
+          <text x="915" y="768" class="t-muted tl-time" font-size="10" font-weight="600">10-04 13:18:18</text>
+          <text data-node-label="" class="t-primary" font-size="11.5" font-weight="650"><tspan x="915" y="782">Merge #668 MCO artifact</tspan><tspan x="915" y="796">refresh</tspan></text>
+          <circle cx="1022" cy="274" r="5.5" class="c-external tl-dot" stroke-width="2"/>
         </g>
 
         <!-- Legend -->
         <g data-legend="">
-          <text x="28" y="990" class="t-primary" font-size="12" font-weight="650">Legend</text>
-          <g data-legend-semantic-kind="default" data-legend-x="28" data-legend-baseline="1010" data-legend-width="53">
-            <circle cx="34" cy="1006" r="5" class="c-external" stroke-width="2"/>
-            <text x="50" y="1010" class="t-muted" font-size="12" font-weight="500">Event</text>
+          <text x="28" y="1004" class="t-primary" font-size="12" font-weight="650">Legend</text>
+          <g data-legend-semantic-kind="default" data-legend-x="28" data-legend-baseline="1024" data-legend-width="53">
+            <circle cx="34" cy="1020" r="5" class="c-external" stroke-width="2"/>
+            <text x="50" y="1024" class="t-muted" font-size="12" font-weight="500">Event</text>
           </g>
-          <g data-legend-semantic-kind="change" data-legend-x="103" data-legend-baseline="1010" data-legend-width="60">
-            <circle cx="109" cy="1006" r="5" class="c-frontend" stroke-width="2"/>
-            <text x="125" y="1010" class="t-muted" font-size="12" font-weight="500">Change</text>
+          <g data-legend-semantic-kind="change" data-legend-x="103" data-legend-baseline="1024" data-legend-width="60">
+            <circle cx="109" cy="1020" r="5" class="c-frontend" stroke-width="2"/>
+            <text x="125" y="1024" class="t-muted" font-size="12" font-weight="500">Change</text>
           </g>
-          <g data-legend-semantic-kind="action" data-legend-x="185" data-legend-baseline="1010" data-legend-width="72">
-            <circle cx="191" cy="1006" r="5" class="c-messagebus" stroke-width="2"/>
-            <text x="207" y="1010" class="t-muted" font-size="12" font-weight="500">Response</text>
+          <g data-legend-semantic-kind="action" data-legend-x="185" data-legend-baseline="1024" data-legend-width="72">
+            <circle cx="191" cy="1020" r="5" class="c-messagebus" stroke-width="2"/>
+            <text x="207" y="1024" class="t-muted" font-size="12" font-weight="500">Response</text>
           </g>
-          <g data-legend-semantic-kind="recovery" data-legend-x="279" data-legend-baseline="1010" data-legend-width="72">
-            <circle cx="285" cy="1006" r="5" class="c-backend" stroke-width="2"/>
-            <text x="301" y="1010" class="t-muted" font-size="12" font-weight="500">Recovery</text>
+          <g data-legend-semantic-kind="recovery" data-legend-x="279" data-legend-baseline="1024" data-legend-width="72">
+            <circle cx="285" cy="1020" r="5" class="c-backend" stroke-width="2"/>
+            <text x="301" y="1024" class="t-muted" font-size="12" font-weight="500">Recovery</text>
           </g>
         </g>
       </svg>
