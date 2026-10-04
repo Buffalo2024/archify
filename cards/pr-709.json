@@ -1,0 +1,10 @@
+{
+  "templateVersion": 1,
+  "repository": "tt-a1i/archify",
+  "number": 709,
+  "author": "tt-a1i",
+  "title": "release(dsh): prepare 1.0.0 with stable Archify 3.0.1",
+  "mergedAt": "2026-10-04T16:40:49Z",
+  "mergeCommit": "594f6087358610bd16e64e5602976020871b6bff",
+  "url": "https://github.com/tt-a1i/archify/pull/709"
+}
