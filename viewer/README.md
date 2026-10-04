@@ -651,6 +651,16 @@ the modes are overview, manual and semantic. Zoom and Reset return undefined;
 delegates to `reveal` or returns false. Manual Reset interrupts callers, whereas
 `reset({ automatic: true })` stops camera motion without the manual takeover path.
 
+Manual zoom uses 25 percentage point steps from 25% through 300%, relative to
+the Reader's fitted size. Below 100%, the diagram centers within the visible
+horizontal scroll viewport; diagrams taller than the viewport stay top-aligned.
+Manual zoom adjusts page scrolling for those long diagrams to preserve the
+visible reading region, or reveal the whole diagram when it fits onscreen.
+Map detail and no camera dragging apply; wide mobile layouts retain
+their contained horizontal scroll. Reset restores 100% overview. Semantic reveal
+and Radar centering retain their existing minimum of 100%. Canonical exports
+retain the original geometry regardless of the manual zoom.
+
 `reveal` returns a transaction or false, with branch-specific side effects.
 Desktop empty/unknown targets can return before changing the camera. At widths
 up to 720px it first stops motion and applies a semantic scale-1 state; a wide

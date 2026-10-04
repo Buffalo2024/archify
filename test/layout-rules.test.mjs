@@ -1397,7 +1397,7 @@ for (const [mode, doc, authoredViewBox] of [
     flows: [{ from: 'a', to: 'b', label: 'write' }],
   }, [1080, 520]],
 ]) {
-  test(`${mode}: default canvas declares intrinsic-height fit, authored viewBox does not`, () => {
+  test(`${mode}: default canvas declares intrinsic-height fit and preserves authored viewBox contract`, () => {
     const automatic = render(mode, doc);
     assert.equal(automatic.code, 0, automatic.stderr);
     const automaticSvg = fs.readFileSync(automatic.outPath, 'utf8').match(/<svg\b[^>]*>/)?.[0];
@@ -1410,7 +1410,12 @@ for (const [mode, doc, authoredViewBox] of [
     assert.equal(pinned.code, 0, pinned.stderr);
     const authoredSvg = fs.readFileSync(pinned.outPath, 'utf8').match(/<svg\b[^>]*>/)?.[0];
     assert.ok(authoredSvg, `expected an SVG root for the authored ${mode} canvas`);
-    assert.doesNotMatch(authoredSvg, /data-reader-fit=/);
+    if (mode === 'dataflow') {
+      assert.match(authoredSvg, /data-reader-fit="authored-height"/);
+      assert.match(authoredSvg, /data-diagram-type="dataflow"/);
+    } else {
+      assert.doesNotMatch(authoredSvg, /data-reader-fit=/);
+    }
   });
 }
 

@@ -180,15 +180,18 @@ their offsets around zero:
 }
 ```
 
-An implicit readable-v2 vertical stack whose measured lane height exceeds the
-104px baseline opts into the desktop Viewer's height budget. This decision
+An implicit readable-v2 canvas that would overflow the desktop page at the
+Reader's full width opts into the desktop Viewer's height budget. Vertical
+stacks whose measured lane height exceeds the 104px baseline also retain this
+fitting contract. This decision
 comes from compiled geometry, not an authored sizing field. The Viewer changes only
-the outer reader width so the complete lane remains on screen; canonical SVG
+the outer reader width to fit the complete canvas when readable; canonical SVG
 geometry and explicit `meta.viewBox` workflows retain their authored contracts.
 When necessary, the Viewer may scale below the intrinsic 1:1 width only as far
 as the 6px projected node-text floor. If the complete workflow still cannot fit
-at that readable scale, `visual-check` reports the remaining viewport overflow
-instead of clipping or introducing an internal scroller.
+at that readable scale, the Reader preserves the text floor and permits document
+scrolling. Browser checks accept that declared scroll only when text remains
+readable and the canvas is unclipped; undeclared overflow still fails.
 
 Authored `via`, `labelAt`, `channelX`, and `channelY` are absolute hard pins in
 v2; an infeasible pin returns `workflow/explicit-pin-conflict` rather than being

@@ -181,9 +181,38 @@ test('Semantic Radar derives semantic node bounds and focuses stable IDs', () =>
 
 test('Semantic Radar tracks desktop camera and mobile contained scroll', () => {
   const html = render('sequence', CASES.sequence);
-  assert.match(html, /function logicalViewport\(\)/);
-  assert.match(html, /x = viewBox\.x \+ container\.scrollLeft \/ metrics\.scale/);
-  assert.match(html, /x = viewBox\.x \+ \(\(-state\.x \/ state\.scale\) - metrics\.offsetX\) \/ metrics\.scale/);
+  // Execute the delivered Camera calculation with measured-layout fixtures.
+  // Radar integration below still runs in Chrome; these numerical checks keep
+  // the visible-range contract independent of the formula's source spelling.
+  const viewportSource = html.match(/function logicalViewport\(\) \{[\s\S]*?\n      \}(?=\n      function detailLevel)/)?.[0];
+  assert.ok(viewportSource, 'delivered Viewer exposes the logical viewport calculation');
+  const logicalViewport = new Function('viewBox', 'contentMetrics', 'state', 'container', 'window',
+    `return (${viewportSource})();`);
+  function viewport({ scale, x, y = 0, scrollLeft = 0, wide = false, mobile = false }) {
+    const viewBox = { x: 0, y: 0, width: mobile ? 1600 : 1000, height: mobile ? 700 : 500 };
+    const metrics = { width: mobile ? 800 : 1000, height: mobile ? 350 : 500,
+      scale: mobile ? 0.5 : 1, offsetX: 0, offsetY: 0 };
+    return logicalViewport(viewBox, () => metrics, { scale, x, y },
+      { scrollLeft, clientWidth: mobile ? 320 : 1000, hasAttribute: () => wide },
+      { innerWidth: mobile ? 360 : 1440 });
+  }
+  assert.deepEqual(viewport({ scale: 1.25, x: -125, y: -62.5 }),
+    { x: 100, y: 50, width: 800, height: 400, scale: 1.25 });
+  assert.deepEqual(viewport({ scale: 0.75, x: 125, y: 62.5 }),
+    { x: 0, y: 0, width: 1000, height: 500, scale: 0.75 });
+  assert.deepEqual(viewport({ mobile: true, wide: true, scale: 1, x: 0, scrollLeft: 100 }),
+    { x: 200, y: 0, width: 640, height: 700, scale: 1 });
+  const scrolledOverview = viewport({ mobile: true, wide: true, scale: 0.75, x: 0, scrollLeft: 100 });
+  assert.ok(Math.abs(scrolledOverview.x - 800 / 3) < 0.001);
+  assert.ok(Math.abs(scrolledOverview.width - 2560 / 3) < 0.001);
+  assert.equal(scrolledOverview.height, 700);
+  assert.equal(scrolledOverview.scale, 0.75);
+  for (const scrollLeft of [0, 100]) {
+    assert.deepEqual(viewport({ mobile: true, wide: true, scale: 0.25, x: scrollLeft + 60, scrollLeft }),
+      { x: 0, y: 0, width: 1600, height: 700, scale: 0.25 });
+  }
+  const rightEdge = viewport({ mobile: true, wide: true, scale: 0.75, x: 0, scrollLeft: 600 });
+  assert.ok(Math.abs(rightEdge.x + rightEdge.width - 1600) < 0.001);
   assert.match(html, /viewport\.setAttribute\('width', String\(visible\.width\)\)/);
   assert.match(html, /viewerText\('viewer\.radar\.viewport\.width'/);
   assert.match(html, /function centerAt\(logicalX, logicalY, options\)/);
@@ -730,6 +759,11 @@ test('Radar reflects camera viewport, status and Focus activity through normal c
     assert.notDeepEqual(zoomed.actual, initial.actual);
     assert.equal(zoomed.status, zoomed.count + ' nodes · ' + Math.round(zoomed.scale * 100) + '% viewport');
     assert.notEqual(zoomed.status, initial.status);
+    const overview = await observe(`for (let i = 0; i < 4; i++) Archify.view.zoomOut();`);
+    assert.equal(overview.scale, 0.25);
+    assert.deepEqual(overview.actual, overview.expected);
+    assert.deepEqual(overview.actual, initial.actual, 'Radar shows the full logical map at 25%');
+    assert.equal(overview.status, overview.count + ' nodes · full map');
     assert.deepEqual((await observe(`Archify.focus.set('lb', { toggle:false });`)).active, ['lb']);
     assert.deepEqual((await observe(`Archify.focus.set('db', { toggle:false });`)).active, ['db']);
     assert.deepEqual((await observe(`Archify.focus.clear();`)).active, []);

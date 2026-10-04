@@ -84,10 +84,10 @@ test('render output check: predicts the certain 1440x900 overflow of a fixed-wid
   const declaredFit = checkHtml('viewport-height-fit', node, 'showcase', '0 0 1080 780', '', ' data-reader-fit="intrinsic-height"');
   assert.equal(declaredFit.result.composition.issues.some((item) => item.code === 'composition/viewport-height'), false, 'a Reader-declared fit can scroll readably');
 
-  for (const type of ['architecture', 'workflow', '']) {
+  for (const type of ['architecture', 'dataflow', 'workflow', '']) {
     const fixed = checkHtml(`viewport-authored-${type}`, node, 'showcase', '0 0 1080 780', '',
       ` data-reader-fit="authored-height" data-diagram-type="${type}"`);
-    assert.equal(fixed.result.composition.issues.some(item => item.code === 'composition/viewport-height'), type !== 'architecture');
+    assert.equal(fixed.result.composition.issues.some(item => item.code === 'composition/viewport-height'), !['architecture', 'dataflow'].includes(type));
   }
 
   const wide = checkHtml('viewport-height-wide', node, 'showcase', '0 0 1600 900');

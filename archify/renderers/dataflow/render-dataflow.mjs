@@ -507,7 +507,9 @@ function renderSvg() {
   // Same default-canvas contract as lifecycle: 940x720 is below the 1.55 wide
   // ratio, so without intrinsic-height the desktop Reader can neither narrow
   // nor scroll it and every default dataflow fails the browser gate.
-  const readerFit = dataflow.meta?.viewBox ? '' : ' data-reader-fit="intrinsic-height"';
+  const readerFit = dataflow.meta?.viewBox
+    ? ' data-diagram-type="dataflow" data-reader-fit="authored-height"'
+    : ' data-reader-fit="intrinsic-height"';
   return `      <svg viewBox="0 0 ${viewBox[0]} ${viewBox[1]}"${readerFit} ${svgRootAttrs(dataflow.meta)}>
 ${svgAccessibleText(dataflow.meta, 'dataflow')}
 ${renderDefinitions()}

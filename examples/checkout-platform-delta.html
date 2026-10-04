@@ -15066,6 +15066,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       var resetPercentLabel = resetBtn.querySelector(&#39;[data-view-percent]&#39;);
       var inBtn = container.querySelector(&#39;[data-view=&quot;in&quot;]&#39;);
       var state = { scale: 1, x: 0, y: 0, mode: &#39;overview&#39; };
+      var minimumZoom = 0.25;
+      var maximumZoom = 3;
       var drag = null;
       var cameraTimer = null;
       var cameraFrame = null;
@@ -15080,6 +15082,16 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       function clamp() {
         var width = svg.clientWidth || 1;
         var height = svg.clientHeight || 1;
+        if (state.scale &lt; 1) {
+          var visibleWidth = Math.min(width, container.clientWidth);
+          var availableX = visibleWidth - width * state.scale;
+          state.x = availableX &gt;= 0 ? container.scrollLeft + availableX / 2
+            : Math.max(container.scrollLeft + availableX, Math.min(container.scrollLeft, state.x));
+          // Long sequences keep their first rows in view instead of centering
+          // inside a layout box that can be several screens tall.
+          state.y = height &gt; window.innerHeight ? 0 : height * (1 - state.scale) / 2;
+          return;
+        }
         state.x = Math.min(0, Math.max(width - width * state.scale, state.x));
         state.y = Math.min(0, Math.max(height - height * state.scale, state.y));
       }
@@ -15106,15 +15118,15 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         var y;
         var width;
         var height;
-        if (window.innerWidth &lt;= 720 &amp;&amp; container.hasAttribute(&#39;data-wide-diagram&#39;)) {
+        if (window.innerWidth &lt;= 720 &amp;&amp; container.hasAttribute(&#39;data-wide-diagram&#39;) &amp;&amp; state.scale &gt;= 1) {
           x = viewBox.x + container.scrollLeft / metrics.scale;
           y = viewBox.y;
           width = Math.min(viewBox.width, Math.max(1, container.clientWidth / metrics.scale));
           height = viewBox.height;
         } else {
-          x = viewBox.x + ((-state.x / state.scale) - metrics.offsetX) / metrics.scale;
+          x = viewBox.x + (((container.scrollLeft - state.x) / state.scale) - metrics.offsetX) / metrics.scale;
           y = viewBox.y + ((-state.y / state.scale) - metrics.offsetY) / metrics.scale;
-          width = Math.min(viewBox.width, metrics.width / state.scale / metrics.scale);
+          width = Math.min(viewBox.width, Math.min(metrics.width, container.clientWidth) / state.scale / metrics.scale);
           height = Math.min(viewBox.height, metrics.height / state.scale / metrics.scale);
         }
         width = Math.max(1, Math.min(viewBox.width, width));
@@ -15195,8 +15207,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         svg.style.transform = &#39;translate(&#39; + state.x + &#39;px,&#39; + state.y + &#39;px) scale(&#39; + state.scale + &#39;)&#39;;
         syncViewportClip();
         renderControls();
-        outBtn.disabled = state.scale &lt;= 1;
-        inBtn.disabled = state.scale &gt;= 3;
+        outBtn.disabled = state.scale &lt;= minimumZoom;
+        inBtn.disabled = state.scale &gt;= maximumZoom;
         container.classList.toggle(&#39;is-pannable&#39;, state.scale &gt; 1);
         svg.setAttribute(&#39;data-view-scale&#39;, String(state.scale));
         if (Archify.radar &amp;&amp; typeof Archify.radar.sync === &#39;function&#39;) Archify.radar.sync();
@@ -15292,8 +15304,14 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         options = options || {};
         if (options.manual !== false) interruptCamera();
         var previous = state.scale;
-        next = Math.max(1, Math.min(3, Math.round(next * 4) / 4));
+        next = Math.max(minimumZoom, Math.min(maximumZoom, Math.round(next * 4) / 4));
         if (next === previous) return;
+        var longDiagram = svg.clientHeight &gt; window.innerHeight &amp;&amp; Math.min(previous, next) &lt; 1;
+        var before = longDiagram ? svg.getBoundingClientRect() : null;
+        var anchorY = before ? Math.max(0, Math.min(window.innerHeight, before.bottom) + Math.max(0, before.top)) / 2 : 0;
+        if (before &amp;&amp; (before.bottom &lt;= 0 || before.top &gt;= window.innerHeight)) anchorY = window.innerHeight / 2;
+        var logicalY = before ? Math.max(0, Math.min(svg.clientHeight, (anchorY - before.top) / previous)) : 0;
+        var documentTop = before ? window.scrollY + before.top - state.y : 0;
         var centerX = (svg.clientWidth || 1) / 2;
         var centerY = (svg.clientHeight || 1) / 2;
         var contentX = (centerX - state.x) / previous;
@@ -15302,6 +15320,12 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         state.x = centerX - contentX * next;
         state.y = centerY - contentY * next;
         apply();
+        if (longDiagram) {
+          var scaledHeight = svg.clientHeight * next;
+          var pageY = scaledHeight &lt;= window.innerHeight ? documentTop + state.y
+            : documentTop + state.y + logicalY * next - anchorY;
+          window.scrollTo({ left: window.scrollX, top: Math.max(0, pageY), behavior: &#39;instant&#39; });
+        }
       }
       function reset(options) {
         options = options || {};
@@ -29309,6 +29333,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       var resetPercentLabel = resetBtn.querySelector(&#39;[data-view-percent]&#39;);
       var inBtn = container.querySelector(&#39;[data-view=&quot;in&quot;]&#39;);
       var state = { scale: 1, x: 0, y: 0, mode: &#39;overview&#39; };
+      var minimumZoom = 0.25;
+      var maximumZoom = 3;
       var drag = null;
       var cameraTimer = null;
       var cameraFrame = null;
@@ -29323,6 +29349,16 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       function clamp() {
         var width = svg.clientWidth || 1;
         var height = svg.clientHeight || 1;
+        if (state.scale &lt; 1) {
+          var visibleWidth = Math.min(width, container.clientWidth);
+          var availableX = visibleWidth - width * state.scale;
+          state.x = availableX &gt;= 0 ? container.scrollLeft + availableX / 2
+            : Math.max(container.scrollLeft + availableX, Math.min(container.scrollLeft, state.x));
+          // Long sequences keep their first rows in view instead of centering
+          // inside a layout box that can be several screens tall.
+          state.y = height &gt; window.innerHeight ? 0 : height * (1 - state.scale) / 2;
+          return;
+        }
         state.x = Math.min(0, Math.max(width - width * state.scale, state.x));
         state.y = Math.min(0, Math.max(height - height * state.scale, state.y));
       }
@@ -29349,15 +29385,15 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         var y;
         var width;
         var height;
-        if (window.innerWidth &lt;= 720 &amp;&amp; container.hasAttribute(&#39;data-wide-diagram&#39;)) {
+        if (window.innerWidth &lt;= 720 &amp;&amp; container.hasAttribute(&#39;data-wide-diagram&#39;) &amp;&amp; state.scale &gt;= 1) {
           x = viewBox.x + container.scrollLeft / metrics.scale;
           y = viewBox.y;
           width = Math.min(viewBox.width, Math.max(1, container.clientWidth / metrics.scale));
           height = viewBox.height;
         } else {
-          x = viewBox.x + ((-state.x / state.scale) - metrics.offsetX) / metrics.scale;
+          x = viewBox.x + (((container.scrollLeft - state.x) / state.scale) - metrics.offsetX) / metrics.scale;
           y = viewBox.y + ((-state.y / state.scale) - metrics.offsetY) / metrics.scale;
-          width = Math.min(viewBox.width, metrics.width / state.scale / metrics.scale);
+          width = Math.min(viewBox.width, Math.min(metrics.width, container.clientWidth) / state.scale / metrics.scale);
           height = Math.min(viewBox.height, metrics.height / state.scale / metrics.scale);
         }
         width = Math.max(1, Math.min(viewBox.width, width));
@@ -29438,8 +29474,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         svg.style.transform = &#39;translate(&#39; + state.x + &#39;px,&#39; + state.y + &#39;px) scale(&#39; + state.scale + &#39;)&#39;;
         syncViewportClip();
         renderControls();
-        outBtn.disabled = state.scale &lt;= 1;
-        inBtn.disabled = state.scale &gt;= 3;
+        outBtn.disabled = state.scale &lt;= minimumZoom;
+        inBtn.disabled = state.scale &gt;= maximumZoom;
         container.classList.toggle(&#39;is-pannable&#39;, state.scale &gt; 1);
         svg.setAttribute(&#39;data-view-scale&#39;, String(state.scale));
         if (Archify.radar &amp;&amp; typeof Archify.radar.sync === &#39;function&#39;) Archify.radar.sync();
@@ -29535,8 +29571,14 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         options = options || {};
         if (options.manual !== false) interruptCamera();
         var previous = state.scale;
-        next = Math.max(1, Math.min(3, Math.round(next * 4) / 4));
+        next = Math.max(minimumZoom, Math.min(maximumZoom, Math.round(next * 4) / 4));
         if (next === previous) return;
+        var longDiagram = svg.clientHeight &gt; window.innerHeight &amp;&amp; Math.min(previous, next) &lt; 1;
+        var before = longDiagram ? svg.getBoundingClientRect() : null;
+        var anchorY = before ? Math.max(0, Math.min(window.innerHeight, before.bottom) + Math.max(0, before.top)) / 2 : 0;
+        if (before &amp;&amp; (before.bottom &lt;= 0 || before.top &gt;= window.innerHeight)) anchorY = window.innerHeight / 2;
+        var logicalY = before ? Math.max(0, Math.min(svg.clientHeight, (anchorY - before.top) / previous)) : 0;
+        var documentTop = before ? window.scrollY + before.top - state.y : 0;
         var centerX = (svg.clientWidth || 1) / 2;
         var centerY = (svg.clientHeight || 1) / 2;
         var contentX = (centerX - state.x) / previous;
@@ -29545,6 +29587,12 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         state.x = centerX - contentX * next;
         state.y = centerY - contentY * next;
         apply();
+        if (longDiagram) {
+          var scaledHeight = svg.clientHeight * next;
+          var pageY = scaledHeight &lt;= window.innerHeight ? documentTop + state.y
+            : documentTop + state.y + logicalY * next - anchorY;
+          window.scrollTo({ left: window.scrollX, top: Math.max(0, pageY), behavior: &#39;instant&#39; });
+        }
       }
       function reset(options) {
         options = options || {};

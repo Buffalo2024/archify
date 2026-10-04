@@ -70,6 +70,15 @@ without a database node keeps it visual-only.
 Route presets for flows: `straight`, `vertical-channel`, `bottom-channel`,
 `top-channel`, explicit `via` points, or the default `auto` (midpoint elbow).
 
+An explicit `meta.viewBox` retains its authored aspect ratio, stage/row geometry,
+and existing desktop Reader scale. The SVG declares
+`data-diagram-type="dataflow"` and `data-reader-fit="authored-height"` so
+[the browser gate](../../references/delivery-contract.md#automated-browser-evidence) can
+accept normal document scrolling when the full SVG remains inside its panel
+and measured text stays readable. Horizontal overflow, clipped content, and
+internal diagram scrollers still fail. Omitting `meta.viewBox` keeps the
+default canvas and its `intrinsic-height` Reader contract.
+
 ## Design Rules
 
 - Use stages for data lifecycle boundaries: source, ingest, process, store,

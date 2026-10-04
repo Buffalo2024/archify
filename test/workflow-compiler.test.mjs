@@ -512,6 +512,31 @@ test('height-aware reader fitting stays off for authored canvases, fixed-v1, and
   }
 });
 
+test('many baseline lanes opt implicit readable-v2 canvases into height fitting', () => {
+  const workflow = {
+    schema_version: 2,
+    diagram_type: 'workflow',
+    meta: { title: 'Seventeen stages', output: 'stages.html' },
+    lanes: Array.from({ length: 17 }, (_, index) => ({ id: `lane${index}`, label: `Stage ${index + 1}` })),
+    nodes: Array.from({ length: 17 }, (_, index) => ({
+      id: `node${index}`, lane: `lane${index}`, col: 0, type: 'backend', label: `Step ${index + 1}`,
+    })),
+    edges: [],
+  };
+  const result = compileSuccessfully(workflow);
+  assert.equal(attribute(result.svg.match(/<svg\b[^>]*>/)[0], 'data-reader-fit'), 'intrinsic-height');
+
+  const authored = clone(workflow);
+  authored.meta.viewBox = [...result.receipt.viewBox];
+  const authoredResult = compileSuccessfully(authored);
+  assert.equal(attributeOrUndefined(authoredResult.svg.match(/<svg\b[^>]*>/)[0], 'data-reader-fit'), undefined);
+  assert.equal(
+    result.svg.replace(' data-reader-fit="intrinsic-height"', ''),
+    authoredResult.svg,
+    'reader fitting must not change compiled geometry or text',
+  );
+});
+
 test('independent lane measurement keeps a negative-offset member clear of its group label', () => {
   const workflow = stackedGroupWorkflow({ schemaVersion: 2, offsets: [-90, 0, 90] });
   workflow.groups[0].fromCol = 2;

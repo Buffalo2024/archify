@@ -67,7 +67,25 @@ test('default sequence and dataflow canvases fit the real desktop reader without
         fs.writeFileSync(input, JSON.stringify(candidate));
         execFileSync(process.execPath, [path.join(skillRoot, 'bin/archify.mjs'), 'render', type, input, artifact]);
         const result = await runVisualCheck({ artifactPath: artifact, chromePath });
-        if (authored) {
+        if (authored && type === 'dataflow') {
+          assert.equal(result.exitCode, 0, JSON.stringify(result.receipt.diagnostics));
+          const html = fs.readFileSync(artifact, 'utf8');
+          assert.match(html, new RegExp(`viewBox="0 0 ${viewBox[0]} ${viewBox[1]}"`));
+          const baseline = path.join(tmp, `${type}-legacy.html`);
+          fs.writeFileSync(baseline, html.replace(' data-diagram-type="dataflow" data-reader-fit="authored-height"', ''));
+          const old = await runVisualCheck({ artifactPath: baseline, chromePath });
+          assert.equal(old.exitCode, 1, 'the markerless authored Dataflow rejects document overflow');
+          for (const viewport of result.receipt.containment.viewports) {
+            const before = old.receipt.containment.viewports.find(v => v.width === viewport.width && v.theme === viewport.theme);
+            for (const field of ['diagramWidth', 'readerWidth', 'scrollHeight', 'scrollWidth', 'readerLayout']) {
+              assert.equal(viewport[field], before[field], `preserve authored Dataflow ${field}`);
+            }
+            assert.equal(viewport.readerFit, 'authored-height');
+            assert.equal(viewport.documentScrollUnclipped, true);
+            assert.equal(viewport.ok, true);
+            if (viewport.overflowY) assert.equal(viewport.verticalScrollAccepted, true);
+          }
+        } else if (authored) {
           assert.equal(result.exitCode, 1, `${type}: explicit narrow canvas still requires repair`);
           assert.ok(result.receipt.diagnostics.some(({ code }) => code === 'viewer/viewport-overflow'));
           assert.ok(result.receipt.containment.viewports.every((v) => !v.verticalScrollAccepted));
@@ -527,6 +545,58 @@ test('authored Architecture canvas keeps its scale and accepts readable document
     assert.equal(viewport.readerWidth, before.readerWidth);
     assert.equal(viewport.readerLayout, before.readerLayout);
     assert.equal(viewport.readerFit, 'authored-height');
+    assert.equal(viewport.overflowX, false);
+    if (viewport.overflowY) assert.equal(viewport.verticalScrollAccepted, true);
+  }
+  for (const overflow of ['hidden', 'auto']) {
+    const clipped = path.join(tmp, `clipped-${overflow}.html`);
+    fs.writeFileSync(clipped, html.replace('</head>', `<style>.diagram-container { height: 300px !important; overflow: ${overflow} !important; }</style></head>`));
+    const failed = await runVisualCheck({ artifactPath: clipped, chromePath });
+    assert.equal(failed.exitCode, 1);
+    assert.ok(failed.receipt.diagnostics.some(d => d.code === 'viewer/diagram-clipped'), JSON.stringify(failed.receipt.diagnostics));
+  }
+});
+
+test('authored five-stage Dataflow preserves geometry and scale with readable document scrolling', {
+  skip: chromePath ? false : 'Set ARCHIFY_CHROME to run the real browser regression.',
+}, async t => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'archify-authored-dataflow-'));
+  t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+  const input = path.join(tmp, 'fixed.json');
+  const artifact = path.join(tmp, 'fixed.html');
+  const doc = {
+    schema_version: 1, diagram_type: 'dataflow',
+    meta: { title: 'Authored five-stage data flow', output: 'fixed.html', viewBox: [1080, 720], quality_profile: 'showcase' },
+    stages: ['Source', 'Ingest', 'Process', 'Store', 'Consume'].map(label => ({ label })),
+    nodes: [
+      { id: 'source', type: 'external', label: 'Source', stage: 0, row: 0 },
+      { id: 'consumer', type: 'frontend', label: 'Consumer', stage: 4, row: 0 },
+      { id: 'report', type: 'frontend', label: 'Report', stage: 4, row: 4 },
+    ],
+    flows: [
+      { from: 'source', to: 'consumer', label: 'facts', route: 'straight' },
+      { from: 'consumer', to: 'report', label: 'report', route: 'straight', fromSide: 'bottom', toSide: 'top', labelAt: [1010, 360] },
+    ],
+  };
+  fs.writeFileSync(input, JSON.stringify(doc));
+  execFileSync(process.execPath, [path.join(skillRoot, 'bin/archify.mjs'), 'render', 'dataflow', input, artifact]);
+  const html = fs.readFileSync(artifact, 'utf8');
+  assert.match(html, /viewBox="0 0 1080 720"/);
+  assert.match(html, /data-diagram-type="dataflow" data-reader-fit="authored-height"/);
+  assert.match(html, /<rect x="904" y="584" width="112" height="58"/);
+  const baseline = path.join(tmp, 'legacy.html');
+  fs.writeFileSync(baseline, html.replace(' data-reader-fit="authored-height"', ''));
+  const old = await runVisualCheck({ artifactPath: baseline, chromePath });
+  assert.equal(old.exitCode, 1, 'legacy page rejects the ordinary document overflow');
+  const result = await runVisualCheck({ artifactPath: artifact, chromePath });
+  assert.equal(result.exitCode, 0, JSON.stringify(result.receipt.diagnostics));
+  for (const viewport of result.receipt.containment.viewports) {
+    const before = old.receipt.containment.viewports.find(v => v.width === viewport.width && v.theme === viewport.theme);
+    for (const dimension of ['diagramWidth', 'readerWidth', 'scrollHeight', 'scrollWidth', 'readerLayout']) {
+      assert.equal(viewport[dimension], before[dimension], `preserve authored ${dimension}`);
+    }
+    assert.equal(viewport.readerFit, 'authored-height');
+    assert.equal(viewport.documentScrollUnclipped, true);
     assert.equal(viewport.overflowX, false);
     if (viewport.overflowY) assert.equal(viewport.verticalScrollAccepted, true);
   }

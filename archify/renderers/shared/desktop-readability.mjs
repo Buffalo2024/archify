@@ -87,6 +87,12 @@ export function declaredWideReadabilityBudget({
 // Cards are excluded so the prediction stays a lower bound.
 export const DESKTOP_FIXED_VERTICAL_CHROME_PX = Object.freeze({ body: 12, header: 39, diagram: 75 });
 
+// Authored canvases in these modes preserve page scale and permit unclipped
+// document scrolling, subject to the measured browser readability gate.
+export function isAuthoredHeightFit(readerFit, diagramType) {
+  return readerFit === 'authored-height' && (diagramType === 'architecture' || diagramType === 'dataflow');
+}
+
 // A canvas the Reader can neither narrow (viewBox ratio below the wide
 // threshold) nor scroll readably (no intrinsic-height fit) renders at the full
 // reader width, so its page height is a function of the viewBox alone. Returns
@@ -105,7 +111,7 @@ export function predictedFixedWidthOverflow({
   if (![viewBoxWidth, viewBoxHeight].every(Number.isFinite) || viewBoxWidth <= 0 || viewBoxHeight <= 0) return null;
   const ratio = viewBoxWidth / viewBoxHeight;
   if (readerFit === 'intrinsic-height'
-      || (readerFit === 'authored-height' && diagramType === 'architecture')
+      || isAuthoredHeightFit(readerFit, diagramType)
       || ratio >= DECLARED_WIDE_READER_RATIO) return null;
   const svgWidthPx = viewport.width - bodyHorizontalPx - diagramHorizontalPx;
   const svgHeightPx = Math.round(svgWidthPx * viewBoxHeight / viewBoxWidth);

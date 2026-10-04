@@ -38,6 +38,23 @@ test('Camera preserves transactions, rendered state and real caller handoffs', {
   files.trace = path.join(scratch, 'trace.html');
   execFileSync(process.execPath, [path.join(skillRoot, 'renderers/architecture/render-architecture.mjs'),
     path.join(scratch, 'trace.json'), files.trace]);
+  const longSequence = JSON.parse(fs.readFileSync(path.join(skillRoot, 'examples', cases.sequence), 'utf8'));
+  longSequence.meta.viewBox = [1080, 3400];
+  longSequence.segments = [];
+  longSequence.activations = [];
+  longSequence.messages = Array.from({ length: 60 }, (_, i) => ({
+    id: `long-${i}`, from: 'web', to: 'api', y: 160 + i * 50, label: `Request ${i + 1}`,
+  }));
+  fs.writeFileSync(path.join(scratch, 'long-sequence.json'), JSON.stringify(longSequence));
+  files.longSequence = path.join(scratch, 'long-sequence.html');
+  execFileSync(process.execPath, [path.join(skillRoot, 'renderers/sequence/render-sequence.mjs'),
+    path.join(scratch, 'long-sequence.json'), files.longSequence]);
+  const mobileWide = JSON.parse(fs.readFileSync(path.join(skillRoot, 'examples', cases.architecture), 'utf8'));
+  mobileWide.meta.viewBox = [1600, 700];
+  fs.writeFileSync(path.join(scratch, 'mobile-wide.json'), JSON.stringify(mobileWide));
+  files.mobileWide = path.join(scratch, 'mobile-wide.html');
+  execFileSync(process.execPath, [path.join(skillRoot, 'renderers/architecture/render-architecture.mjs'),
+    path.join(scratch, 'mobile-wide.json'), files.mobileWide]);
   const browser = new ChromeVisualBrowser(chrome);
   t.after(() => browser.close());
   const session = await browser.sessionPromise;
@@ -131,9 +148,151 @@ test('Camera preserves transactions, rendered state and real caller handoffs', {
         for (let i = 0; i < 12; i++) Archify.view.zoomOut();
         return { independent, max, min: Archify.view.state().scale };
       })()`);
-      assert.deepEqual(limits, { independent: true, max: 3, min: 1 });
+      assert.deepEqual(limits, { independent: true, max: 3, min: 0.25 });
       await stable();
       assert.equal((await snapshot(`${mode}-limits`)).viewBox, initial.viewBox);
+    }
+  });
+
+  await t.test('manual overview zoom centers below 100%, restores reset and survives viewport changes', async () => {
+    for (const width of [1440, 720]) {
+      await load('architecture', { width, reduced: true });
+      const initial = await snapshot(`underscale-${width}-initial`);
+      await run(`document.querySelector('[data-view="out"]').click()`);
+      await stable();
+      const inspect = `(() => {
+        const c = document.querySelector('.diagram-container'), s = c.querySelector(':scope > svg');
+        const state = Archify.view.state();
+        return { state, width: s.clientWidth, height: s.clientHeight, visibleWidth: Math.min(s.clientWidth, c.clientWidth), scrollLeft: c.scrollLeft,
+          percent: c.querySelector('[data-view-percent]').textContent,
+          out: c.querySelector('[data-view="out"]').disabled,
+          incoming: c.querySelector('[data-view="in"]').disabled,
+          pannable: c.classList.contains('is-pannable'), clip: s.style.clipPath,
+          viewport: Archify.view.logicalViewport(), viewBox: s.getAttribute('viewBox') };
+      })()`;
+      let value = await run(inspect);
+      assert.equal(value.state.scale, 0.75);
+      assert.equal(value.percent, '75%');
+      assert.equal(value.out, false);
+      assert.equal(value.pannable, false);
+      assert.equal(value.clip, '');
+      assert.ok(Math.abs(value.state.x - value.scrollLeft - (value.visibleWidth - value.width * 0.75) / 2) < 0.1);
+      assert.ok(Math.abs(value.state.y - value.height * 0.125) < 0.1);
+      assert.equal(value.viewport.scale, 0.75);
+      await snapshot(`underscale-${width}-75`);
+      await screenshot(`underscale-${width}-75`);
+      await run(`for (let i = 0; i < 8; i++) Archify.view.zoomOut()`);
+      await stable();
+      value = await run(inspect);
+      assert.equal(value.state.scale, 0.25);
+      assert.equal(value.percent, '25%');
+      assert.equal(value.out, true);
+      assert.equal(value.incoming, false);
+      assert.equal(value.viewBox, initial.viewBox);
+      await viewport(width === 1440 ? 1280 : 600, 800);
+      await stable();
+      value = await run(inspect);
+      assert.equal(value.state.scale, 0.25);
+      assert.ok(Math.abs(value.state.x - value.scrollLeft - (value.visibleWidth - value.width * 0.25) / 2) < 0.1);
+      assert.ok(Math.abs(value.state.y - value.height * 0.375) < 0.1);
+      await snapshot(`underscale-${width}-25-resized`);
+      await screenshot(`underscale-${width}-25-resized`);
+      await run(`document.querySelector('[data-view="reset"]').click()`);
+      await stable();
+      value = await run(inspect);
+      assert.deepEqual(value.state, { scale: 1, x: 0, y: 0, mode: 'overview' });
+      assert.equal(value.percent, '100%');
+      assert.equal(value.out, false);
+      await run(`Archify.view.zoomOut(); Archify.finder.select('api')`);
+      await stable();
+      assert.equal(await run(`Archify.focus.active()`), 'api');
+      assert.ok((await run(inspect)).state.scale >= 1);
+      await snapshot(`underscale-${width}-finder`);
+    }
+    await load();
+    await run(`document.getElementById('btn-present').click()`);
+    await stable();
+    await run(`Archify.view.zoomOut()`);
+    await stable();
+    assert.equal(await run(`document.documentElement.getAttribute('data-present')`), 'true');
+    assert.equal((await snapshot('underscale-present-75')).state.scale, 0.75);
+    await screenshot('underscale-present-75');
+  });
+
+  await t.test('long sequences keep the first row visible below 100% and the final row reachable', async () => {
+    await load('longSequence', { width: 1280, height: 800, reduced: true });
+    await run(`Archify.view.zoomOut(); Archify.view.zoomOut(); Archify.view.zoomOut()`);
+    await stable();
+    const value = await run(`(() => {
+      const s = document.querySelector('.diagram-container > svg');
+      const rows = [...s.querySelectorAll('[data-edge-from]')];
+      const first = rows[0].getBoundingClientRect(), last = rows[rows.length - 1].getBoundingClientRect();
+      return { height: s.clientHeight, state: Archify.view.state(), first: first.y, last: last.y,
+        scrollHeight: document.documentElement.scrollHeight, windowHeight: innerHeight };
+    })()`);
+    assert.ok(value.height > value.windowHeight);
+    assert.equal(value.state.scale, 0.25);
+    assert.equal(value.state.y, 0);
+    assert.ok(value.first >= 0 && value.first < value.windowHeight, 'the first row remains on screen');
+    assert.ok(value.last <= value.scrollHeight, 'the final row remains reachable by page scroll');
+    await snapshot('long-sequence-25-top');
+    await screenshot('long-sequence-25-top');
+    await run(`window.scrollTo(0, ${Math.max(0, value.last - value.windowHeight / 2)})`);
+    await stable();
+    await snapshot('long-sequence-25-final');
+    await screenshot('long-sequence-25-final');
+  });
+
+  await t.test('long-diagram zoom preserves visible content from middle and bottom scroll positions', async () => {
+    for (const position of [0.5, 0.85, 'page-bottom']) {
+      await load('longSequence', { width: 1280, height: 800, reduced: true });
+      const scrollTarget = position === 'page-bottom' ? 'document.documentElement.scrollHeight'
+        : `document.querySelector('.diagram-container > svg').clientHeight * ${position}`;
+      await run(`window.scrollTo(0, ${scrollTarget})`);
+      await stable();
+      for (const scale of [0.75, 0.5, 0.25, 0.5, 0.75, 1]) {
+        const currentScale = await run('Archify.view.state().scale');
+        await run(`Archify.view.${scale < currentScale ? 'zoomOut' : 'zoomIn'}()`);
+        await stable();
+        const value = await run(`(() => {
+          const s = document.querySelector('.diagram-container > svg'), c = s.parentElement;
+          const r = s.getBoundingClientRect(), nav = c.querySelector('.diagram-nav').getBoundingClientRect();
+          return { state: Archify.view.state(), top: r.top, bottom: r.bottom,
+            scrollY, navTop: nav.top, navBottom: nav.bottom, windowHeight: innerHeight };
+        })()`);
+        assert.equal(value.state.scale, scale);
+        assert.ok(value.bottom > 0 && value.top < value.windowHeight, 'shrunk content stays on screen');
+        assert.ok(value.navTop >= 0 && value.navBottom <= value.windowHeight, 'existing dock lift keeps controls usable');
+        await snapshot(`long-scrolled-${position}-${scale}`);
+        await screenshot(`long-scrolled-${position}-${scale}`);
+      }
+    }
+  });
+
+  await t.test('a true narrow wide canvas centers a fitting overview inside its visible scroll viewport', async () => {
+    for (const scrolled of [false, true]) {
+      await load('mobileWide', { width: 360, height: 800, reduced: true });
+      if (scrolled) {
+        await run(`document.querySelector('.diagram-container').scrollTo({ left: 240, behavior: 'instant' })`);
+        await stable();
+      }
+      await run(`Archify.view.zoomOut(); Archify.view.zoomOut(); Archify.view.zoomOut()`);
+      await stable();
+      const value = await run(`(() => {
+        const c = document.querySelector('.diagram-container'), s = c.querySelector(':scope > svg');
+        const box = c.getBoundingClientRect(), r = s.getBoundingClientRect();
+        return { scale: Archify.view.state().scale, wide: c.hasAttribute('data-wide-diagram'),
+          svgWidth: s.clientWidth, clientWidth: c.clientWidth, scrollLeft: c.scrollLeft,
+          left: r.left, right: r.right, containerLeft: box.left + c.clientLeft,
+          containerRight: box.left + c.clientLeft + c.clientWidth };
+      })()`);
+      assert.equal(value.wide, true);
+      assert.ok(value.svgWidth > value.clientWidth);
+      assert.equal(value.scale, 0.25);
+      if (scrolled) assert.ok(value.scrollLeft > 0);
+      assert.ok(value.left >= value.containerLeft - 1 && value.right <= value.containerRight + 1);
+      await snapshot(`mobile-wide-360-25-${scrolled ? 'scrolled' : 'initial'}`);
+      await screenshot(`mobile-wide-360-25-${scrolled ? 'scrolled' : 'initial'}`);
     }
   });
 
@@ -353,7 +512,7 @@ test('Camera preserves transactions, rendered state and real caller handoffs', {
 
   await t.test('export removes camera transforms without mutating the live camera', async () => {
     await load();
-    await run(`Archify.view.reveal(['api'], { instant: true })`);
+    await run(`Archify.view.zoomOut(); Archify.view.zoomOut()`);
     await stable();
     const exported = await run(`(async () => {
       const svg = document.querySelector('.diagram-container > svg'), before = svg.outerHTML;

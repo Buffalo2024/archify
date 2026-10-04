@@ -15,6 +15,7 @@ import {
   withDiagnosticRecordingSuppressed,
 } from '../shared/diagnostics.mjs';
 import { validateSchema } from '../shared/validator.mjs';
+import { predictedFixedWidthOverflow } from '../shared/desktop-readability.mjs';
 import {
   legendFootprint,
   measureLegend,
@@ -4753,8 +4754,12 @@ function renderLegend() {
 function renderSvg() {
   const readerFit = workflow.schema_version === 2
     && !workflow.meta?.viewBox
-    && hasVerticalStack(workflow)
-    && asArray(layout.laneHeights).some((height) => height > 104)
+    && ((hasVerticalStack(workflow)
+      && asArray(layout.laneHeights).some((height) => height > 104))
+      || predictedFixedWidthOverflow({
+        viewBoxWidth: viewBox[0],
+        viewBoxHeight: viewBox[1],
+      }))
     ? ' data-reader-fit="intrinsic-height"'
     : '';
   const contract = workflow.schema_version === 2 ? ' data-layout-contract="readable-v2"' : '';
