@@ -1,0 +1,10 @@
+{
+  "templateVersion": 1,
+  "repository": "tt-a1i/archify",
+  "number": 696,
+  "author": "tt-a1i",
+  "title": "test(migration): generate cleanup-failure hook at test time",
+  "mergedAt": "2026-10-04T08:07:24Z",
+  "mergeCommit": "1544510e29d0a12ba91544f18a3a88e50ff1d2d4",
+  "url": "https://github.com/tt-a1i/archify/pull/696"
+}
