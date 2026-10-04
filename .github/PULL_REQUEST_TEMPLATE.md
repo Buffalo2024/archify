@@ -31,4 +31,4 @@ Omit this section if generated outputs are unaffected. Otherwise list regenerate
 
 ## Release follow-up
 
-Omit for changes without release scope. For a release, link the completed or explicitly deferred stages and evidence in the [central release checklist](../CONTRIBUTING.md#release-checklist), including the DSH decision. Do not equate PR completion with publication or deployment.
+Omit for changes without release scope. For a release, link the completed or explicitly deferred stages and evidence in the [central release checklist](https://github.com/tt-a1i/archify/blob/main/CONTRIBUTING.md#release-checklist), including the DSH decision. Do not equate PR completion with publication or deployment.
