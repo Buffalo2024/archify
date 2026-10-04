@@ -1,0 +1,10 @@
+{
+  "templateVersion": 1,
+  "repository": "tt-a1i/archify",
+  "number": 686,
+  "author": "tt-a1i",
+  "title": "fix(website): add community to stable top navigation (#685)",
+  "mergedAt": "2026-10-04T03:09:03Z",
+  "mergeCommit": "bb6f126f1748a4079df1d263302466eb4333e3b0",
+  "url": "https://github.com/tt-a1i/archify/pull/686"
+}
