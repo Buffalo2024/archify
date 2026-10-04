@@ -444,5 +444,16 @@
   "viewer.rail.controls": "측면 패널",
   "viewer.rail.collapse": "측면 패널 접기",
   "viewer.rail.bottom": "패널을 다이어그램 아래로 이동",
-  "viewer.rail.right": "패널을 다이어그램 옆으로 이동"
+  "viewer.rail.right": "패널을 다이어그램 옆으로 이동",
+  "diagram.description.waterfall": "Archify로 생성한 실행 워터폴입니다.",
+  "waterfall.evidence.measured": "측정된 시간",
+  "waterfall.evidence.illustrative": "예시 시간",
+  "waterfall.wall": "전체 경과 {duration}",
+  "waterfall.share": "전체 {total} 중 {percent}",
+  "waterfall.incomplete": "미완료, ≥ {duration}",
+  "waterfall.operation": "작업",
+  "legend.waterfall.ok": "완료",
+  "legend.waterfall.error": "오류",
+  "legend.waterfall.cancelled": "취소됨",
+  "legend.waterfall.incomplete": "미완료 (종료 기록 없음)"
 }

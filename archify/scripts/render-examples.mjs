@@ -17,6 +17,8 @@ const TARGETS = [
   ['architecture', 'web-app.architecture.json', 'web-app-rendered.html'],
   ['erd', 'orders.erd.json', 'erd-orders-rendered.html'],
   ['erd', 'subscription-billing.erd.json', 'subscription-billing-rendered.html'],
+  ['waterfall', 'checkout-request.waterfall.json', 'waterfall-checkout-request-rendered.html'],
+  ['waterfall', 'example-rebuild.waterfall.json', 'waterfall-example-rebuild-rendered.html'],
 ];
 
 for (const [mode, input, output] of TARGETS) {

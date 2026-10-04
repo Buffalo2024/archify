@@ -444,5 +444,16 @@
   "viewer.common.copyFailed": "Error al copiar",
   "viewer.common.copyLink": "Copiar enlace",
   "viewer.common.clear": "Borrar",
-  "viewer.common.close": "Cerrar"
+  "viewer.common.close": "Cerrar",
+  "diagram.description.waterfall": "Una cascada de ejecución generada por Archify.",
+  "waterfall.evidence.measured": "Tiempos medidos",
+  "waterfall.evidence.illustrative": "Tiempos ilustrativos",
+  "waterfall.wall": "Tiempo total {duration}",
+  "waterfall.share": "{percent} de {total} de tiempo total",
+  "waterfall.incomplete": "incompleto, ≥ {duration}",
+  "waterfall.operation": "Operación",
+  "legend.waterfall.ok": "Completado",
+  "legend.waterfall.error": "Error",
+  "legend.waterfall.cancelled": "Cancelado",
+  "legend.waterfall.incomplete": "Incompleto (sin fin registrado)"
 }

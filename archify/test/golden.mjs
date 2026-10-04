@@ -81,6 +81,8 @@ const GOLDEN = [
   ['architecture', 'web-app.architecture.json', 'web-app-rendered.html'],
   ['erd', 'orders.erd.json', 'erd-orders-rendered.html'],
   ['erd', 'subscription-billing.erd.json', 'subscription-billing-rendered.html'],
+  ['waterfall', 'checkout-request.waterfall.json', 'waterfall-checkout-request-rendered.html'],
+  ['waterfall', 'example-rebuild.waterfall.json', 'waterfall-example-rebuild-rendered.html'],
 ];
 
 for (const [mode, input, golden] of GOLDEN) {
@@ -175,6 +177,10 @@ expectFailure('fk attribute without a target rejected by schema', 'erd',
     const fk = d.entities.flatMap((entity) => entity.attributes).find((attribute) => attribute.key === 'fk');
     delete fk.references;
   }, "must have required property 'references'");
+expectFailure('negative span start rejected by schema', 'waterfall',
+  (d) => { d.spans[0].start = -1; }, '/spans/0/start');
+expectFailure('waterfall without evidence status rejected by schema', 'waterfall',
+  (d) => { delete d.meta.evidence; }, "must have required property 'evidence'");
 expectFailure('references outside entity.attribute rejected by schema', 'erd',
   (d) => {
     const fk = d.entities.flatMap((entity) => entity.attributes).find((attribute) => attribute.key === 'fk');
