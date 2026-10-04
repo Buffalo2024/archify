@@ -16,6 +16,7 @@ against one of the schemas in this folder before any layout work happens.
 | `tree.schema.json` | `diagram_type: "tree"` | `nodes` (each with one `parent`) |
 | `class.schema.json` | `diagram_type: "class"` | `types`, `relationships` |
 | `timeline.schema.json` | `diagram_type: "timeline"` | `events` (`lanes` optional) |
+| `waterfall.schema.json` | `diagram_type: "waterfall"` | `spans` (each with optional `parent`) |
 | `common.schema.json` | shared `$defs` only (no top-level document) | — |
 
 Every diagram schema requires `schema_version`, `diagram_type`, `meta` (with

@@ -87,6 +87,8 @@ const GOLDEN = [
   ['class', 'payment-processors.class.json', 'class-payment-processors-rendered.html'],
   ['timeline', 'payment-incident.timeline.json', 'timeline-payment-incident-rendered.html'],
   ['timeline', 'archify-dev-activity.timeline.json', 'timeline-archify-dev-activity-rendered.html'],
+  ['waterfall', 'checkout-request.waterfall.json', 'waterfall-checkout-request-rendered.html'],
+  ['waterfall', 'example-rebuild.waterfall.json', 'waterfall-example-rebuild-rendered.html'],
 ];
 
 for (const [mode, input, golden] of GOLDEN) {
@@ -194,6 +196,10 @@ expectFailure('unknown member visibility rejected by schema', 'class',
 expectFailure('timeline timestamp without an offset rejected by schema', 'timeline',
   (d) => { d.events[0].at = '2026-10-01T10:00:00'; }, '/events/0/at');
 expectFailure('timeline without evidence status rejected by schema', 'timeline',
+  (d) => { delete d.meta.evidence; }, "must have required property 'evidence'");
+expectFailure('negative span start rejected by schema', 'waterfall',
+  (d) => { d.spans[0].start = -1; }, '/spans/0/start');
+expectFailure('waterfall without evidence status rejected by schema', 'waterfall',
   (d) => { delete d.meta.evidence; }, "must have required property 'evidence'");
 expectFailure('references outside entity.attribute rejected by schema', 'erd',
   (d) => {

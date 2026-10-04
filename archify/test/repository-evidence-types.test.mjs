@@ -25,6 +25,7 @@ const TYPES = [
   { type: 'tree', collection: 'nodes', example: 'payment-platform.tree.json', first: 'platform' },
   { type: 'class', collection: 'types', example: 'payments.class.json', first: 'order_service' },
   { type: 'timeline', collection: 'events', example: 'payment-incident.timeline.json', first: 'deploy' },
+  { type: 'waterfall', collection: 'spans', example: 'checkout-request.waterfall.json', first: 'request' },
 ];
 
 function git(repo, ...args) {

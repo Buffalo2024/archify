@@ -474,5 +474,16 @@
   "legend.timeline.change": "变更",
   "legend.timeline.alert": "告警",
   "legend.timeline.action": "处置",
-  "legend.timeline.recovery": "恢复"
+  "legend.timeline.recovery": "恢复",
+  "diagram.description.waterfall": "由 Archify 生成的执行瀑布图。",
+  "waterfall.evidence.measured": "实测耗时",
+  "waterfall.evidence.illustrative": "示例耗时",
+  "waterfall.wall": "总耗时 {duration}",
+  "waterfall.share": "占总耗时 {total} 的 {percent}",
+  "waterfall.incomplete": "未完成，≥ {duration}",
+  "waterfall.operation": "操作",
+  "legend.waterfall.ok": "已完成",
+  "legend.waterfall.error": "出错",
+  "legend.waterfall.cancelled": "已取消",
+  "legend.waterfall.incomplete": "未完成（无结束记录）"
 }

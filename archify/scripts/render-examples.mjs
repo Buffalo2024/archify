@@ -23,6 +23,8 @@ const TARGETS = [
   ['class', 'payment-processors.class.json', 'class-payment-processors-rendered.html'],
   ['timeline', 'payment-incident.timeline.json', 'timeline-payment-incident-rendered.html'],
   ['timeline', 'archify-dev-activity.timeline.json', 'timeline-archify-dev-activity-rendered.html'],
+  ['waterfall', 'checkout-request.waterfall.json', 'waterfall-checkout-request-rendered.html'],
+  ['waterfall', 'example-rebuild.waterfall.json', 'waterfall-example-rebuild-rendered.html'],
 ];
 
 for (const [mode, input, output] of TARGETS) {

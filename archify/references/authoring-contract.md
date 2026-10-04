@@ -453,6 +453,24 @@ the median gap and 10% of the span is drawn as a fixed-width break labelled
 with the omitted duration; `layout.breaks: "none"` keeps one proportional axis.
 See [`../renderers/timeline/README.md`](../renderers/timeline/README.md).
 
+### Waterfall
+
+A waterfall answers "where did the time go?" for one request, job, or agent
+run. Each span has `id`, `name`, `start`, and `end` or `duration` in
+`meta.unit` (`us`, `ms`, `s`; default `ms`), plus optional `parent`, `status`,
+`service`, and `detail`. Bar position and length come only from these numbers.
+`meta.evidence` is required: `measured` only for recorded timing (trace export,
+logs, profiler, timed run); otherwise `illustrative`. Never infer a duration
+from code structure, and never present estimated numbers as measured.
+
+A span with no recorded end must be `status: "incomplete"`; it is drawn as an
+open lower bound to the last recorded instant. Contradictory end/duration,
+an end before the start, a missing parent, or a parent cycle is refused.
+Percentages are always "of the wall-clock total"; parent and child durations
+are inclusive and never summed. Do not mark a critical path or waiting time
+unless the input states the dependency. See
+[`../renderers/waterfall/README.md`](../renderers/waterfall/README.md).
+
 ### Lifecycle
 
 Schema v2 (new diagrams): each populated lane is one row, `main` first,
