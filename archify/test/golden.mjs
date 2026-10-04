@@ -81,6 +81,8 @@ const GOLDEN = [
   ['architecture', 'web-app.architecture.json', 'web-app-rendered.html'],
   ['erd', 'orders.erd.json', 'erd-orders-rendered.html'],
   ['erd', 'subscription-billing.erd.json', 'subscription-billing-rendered.html'],
+  ['class', 'payments.class.json', 'class-payments-rendered.html'],
+  ['class', 'payment-processors.class.json', 'class-payment-processors-rendered.html'],
 ];
 
 for (const [mode, input, golden] of GOLDEN) {
@@ -175,6 +177,12 @@ expectFailure('fk attribute without a target rejected by schema', 'erd',
     const fk = d.entities.flatMap((entity) => entity.attributes).find((attribute) => attribute.key === 'fk');
     delete fk.references;
   }, "must have required property 'references'");
+expectFailure('type without a kind rejected by schema', 'class',
+  (d) => { delete d.types[0].kind; }, '/types/0');
+expectFailure('unknown relationship kind rejected by schema', 'class',
+  (d) => { d.relationships[0].kind = 'uses'; }, '/relationships/0/kind');
+expectFailure('unknown member visibility rejected by schema', 'class',
+  (d) => { d.types[0].methods[0].visibility = 'internal'; }, '/types/0/methods/0/visibility');
 expectFailure('references outside entity.attribute rejected by schema', 'erd',
   (d) => {
     const fk = d.entities.flatMap((entity) => entity.attributes).find((attribute) => attribute.key === 'fk');

@@ -444,5 +444,17 @@
   "legend.erd.uk": "唯一键",
   "legend.erd.one": "一",
   "legend.erd.many": "多",
-  "legend.erd.optional": "可选"
+  "legend.erd.optional": "可选",
+  "diagram.description.class": "由 Archify 生成的类与接口图。",
+  "node.context.class.class": "类",
+  "node.context.class.abstract": "抽象类",
+  "node.context.class.interface": "接口",
+  "node.context.class.enum": "枚举",
+  "node.context.class.record": "记录类型",
+  "legend.class.dependency": "依赖",
+  "legend.class.association": "关联",
+  "legend.class.inheritance": "继承",
+  "legend.class.realization": "实现接口",
+  "legend.class.composition": "组合",
+  "legend.class.aggregation": "聚合"
 }

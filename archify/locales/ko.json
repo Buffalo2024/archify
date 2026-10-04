@@ -444,5 +444,17 @@
   "viewer.rail.controls": "측면 패널",
   "viewer.rail.collapse": "측면 패널 접기",
   "viewer.rail.bottom": "패널을 다이어그램 아래로 이동",
-  "viewer.rail.right": "패널을 다이어그램 옆으로 이동"
+  "viewer.rail.right": "패널을 다이어그램 옆으로 이동",
+  "diagram.description.class": "Archify로 생성한 클래스 및 인터페이스 다이어그램입니다.",
+  "node.context.class.class": "클래스",
+  "node.context.class.abstract": "추상 클래스",
+  "node.context.class.interface": "인터페이스",
+  "node.context.class.enum": "열거형",
+  "node.context.class.record": "레코드",
+  "legend.class.dependency": "의존",
+  "legend.class.association": "연관",
+  "legend.class.inheritance": "상속",
+  "legend.class.realization": "구현",
+  "legend.class.composition": "합성",
+  "legend.class.aggregation": "집합"
 }

@@ -391,6 +391,31 @@ capacity instead of dropping the key; see
 [`../renderers/erd/README.md`](../renderers/erd/README.md) for the band, port, and
 reader contract.
 
+### Class
+
+A class diagram explains the contracts inside one module: which types exist,
+which members matter to the explanation, and how the types relate. Choose the
+members the question needs; a type may show none. Each type states its `kind`
+(`class`, `abstract`, `interface`, `enum`, `record`); every kind except `class`
+draws its UML keyword, so an interface never reads as an empty class. For a real
+codebase, ground every type, member, and relationship in repository evidence and
+attach `sources`.
+
+Every relationship reads `from` -> `to` and its `kind` owns the notation:
+`dependency` (`from` uses `to`, dashed open arrow), `association` (`from` holds a
+`to`, solid open arrow), `inheritance` (`from` extends `to`, solid hollow
+triangle), `realization` (`from` implements interface `to`, dashed hollow
+triangle), `composition` and `aggregation` (`from` is the whole, filled or
+hollow diamond at `from`). Realization must target an interface from a
+non-interface; inheritance must not cross the interface boundary; an
+inheritance cycle is rejected.
+
+Place types on the `row`/`col` grid with supertypes above their subtypes. Two
+or more automatic generalizations into one supertype draw as one hierarchy bus
+with a single triangle. Members never truncate: a type grows to its widest
+member up to `layout.typeMaxW` and longer members wrap at parameter boundaries.
+See [`../renderers/class/README.md`](../renderers/class/README.md).
+
 ### Lifecycle
 
 Schema v2 (new diagrams): each populated lane is one row, `main` first,
