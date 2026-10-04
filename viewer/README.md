@@ -568,6 +568,14 @@ The source split narrows maintenance scope while preserving runtime dependencies
   `data-reader-layout` / `data-reader-overflow` attributes. Ineligible measures
   clear them and reset the recorded width. CSS consumes the width on `.container`.
   Reader never writes canonical SVG geometry, viewBox or semantic IDs.
+- Automatic (`intrinsic-height`) Sequence and Waterfall canvases use the
+  available desktop reading width and retain authored vertical page scroll;
+  overflow settling must not shrink them back to fit the viewport height.
+  Other diagram families retain height fitting. All automatic canvases cap
+  enlargement at 1.5 times the authored SVG width, independently of the 960px
+  shell floor used by the header and controls. An explicit viewBox retains
+  its existing fixed-canvas fit. Present still provides the full overview;
+  camera 100% is relative to the fitted reading size, not intrinsic SVG pixels.
 - Initial wide-diagram classification sets `data-wide-diagram` on the diagram
   container and `data-diagram-shape` on `html`. These survive eligibility changes;
   CSS and camera/radar behavior still depend on the wide-diagram flag on narrow
@@ -577,8 +585,8 @@ The source split narrows maintenance scope while preserving runtime dependencies
   the page lifetime. `schedule` coalesces requests; deferred overflow settling
   rechecks eligibility. Leaving adaptive layout clears its state without
   unmounting the module or clearing another module's state.
-- Width eligibility, overflow fallback and optional-observer behavior are
-  unchanged. Shared `waitForStableLayout` waits for fonts, pending work and
+- Desktop eligibility and optional-observer behavior are unchanged. Shared
+  `waitForStableLayout` waits for fonts, pending work and
   consecutive stable dimensions; its default 240-frame sampling limit starts
   after font readiness. It is not a wall-clock timeout for stalled fonts or
   background pages. Keep this helper shared with Viewer Chrome Layout.

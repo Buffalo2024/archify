@@ -81,15 +81,18 @@ participant ids; activations also require `to > from`.
 
 ### Column fit
 
-Sequence diagrams use `meta.column_fit: "fixed"` by default so existing
-documents keep their historical coordinates. Use `"spread"` when a wide
+Sequence diagrams with automatic canvases default to `meta.column_fit: "spread"`.
+Explicit `"fixed"` preserves the historical 86px boxes and 108px column gap.
+Documents with an explicit `meta.viewBox` and no `column_fit` also keep their
+historical fixed coordinates. Use `"spread"` when a wide
 viewBox would otherwise leave empty space on the right or when meaningful
 participant labels do not fit the fixed 86px boxes. Spread derives box width
 and column distance from the viewBox while preserving participant order,
 lifelines, and message semantics.
 
 The artifact checker reports `composition.sequenceColumnSpace` from the rendered
-participants, routes and text. A large unused right-hand region in a fixed layout
+participants, routes and READ-visible text; hidden `data-detail="fine"` notes do
+not fill this region. Detailed content remains present and validated. A large unused right-hand region in a fixed layout
 can produce an `inspect-sequence-width` recommendation in `finalize`; it is advice,
 not a new warning or failure. See [Sequence width review](../../references/delivery-contract.md#sequence-width-review)
 for the bounded authoring repair and explicit-fixed/legacy preservation rules.

@@ -65,9 +65,9 @@ const viewBox = sequence.meta?.viewBox || [920, Math.max(760, legendRequiredHeig
 // a shorter one shrinks the readable band (validated below) instead of clipping.
 // `column_fit: "spread"` widens the lanes with the viewBox instead of keeping
 // the fixed 108px gap, so a wide canvas gains column distance and label room
-// rather than dead space on the right. The default stays "fixed" so existing
-// diagrams keep their coordinates.
-const columnFit = sequence.meta?.column_fit === 'spread' ? 'spread' : 'fixed';
+// rather than dead space on the right. Automatic canvases spread by default;
+// an authored viewBox retains legacy coordinates unless spread is requested.
+const columnFit = sequence.meta?.column_fit || (sequence.meta?.viewBox ? 'fixed' : 'spread');
 const participantCount = Math.max(1, asArray(sequence.participants).length);
 const sideMargin = 62;
 const participantW = columnFit === 'spread'

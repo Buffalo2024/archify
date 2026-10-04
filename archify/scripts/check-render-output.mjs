@@ -790,7 +790,7 @@ function collectArchitectureLeadingSpace({ svgAttrs, fragment, nodeRects, frames
 }
 
 // Advisory only: fixed columns are a compatibility contract. Measure semantic
-// content, including long labels/notes, rather than treating every wide canvas
+// READ-visible content, including long labels, rather than treating every wide canvas
 // as wasted space. Auto-sized segment frames do not add a participant column.
 function collectSequenceColumnSpace({ svgAttrs, fragment, nodeRects, arrows }) {
   const columnFit = svgAttrs['data-sequence-column-fit'];
@@ -825,14 +825,26 @@ function collectSequenceColumnSpace({ svgAttrs, fragment, nodeRects, arrows }) {
   for (const arrow of semanticArrows) {
     for (const point of arrow.routePoints) rightEdges.push(point[0]);
   }
-  // Label plates, activations and segment titles also reserve horizontal room.
-  for (const match of fragment.matchAll(/<rect\b[^>]*>/gi)) {
-    const attrs = parseAttrs(match[0]);
-    if (!String(attrs.class || '').split(/\s+/).includes('c-mask')) continue;
-    rightEdges.push(numberAttr(attrs, 'x') + numberAttr(attrs, 'width'));
-  }
-  for (const match of fragment.matchAll(/<text\b([^>]*)>([\s\S]*?)<\/text>/gi)) {
-    const box = textBox(parseAttrs(match[1]), stripTags(match[2]).trim());
+  // Measure the default READ view: fine notes remain in the artifact and its
+  // validity checks, but cannot fill apparent whitespace while hidden. Keep
+  // ancestry so a fine group hides its label plates and text together.
+  const detailGroups = [];
+  for (const match of fragment.matchAll(/<!--[\s\S]*?(?:-->|$)|<!\[CDATA\[[\s\S]*?(?:\]\]>|$)|<text\b([^>]*)>([\s\S]*?)<\/text>|<rect\b[^>]*>|<g\b[^>]*>|<\/g\s*>/gi)) {
+    if (match[0].startsWith('<!')) continue;
+    if (/^<\/g/i.test(match[0])) { detailGroups.pop(); continue; }
+    const attrs = parseAttrs(match[1] ?? match[0]);
+    if (/^<g\b/i.test(match[0])) {
+      if (!/\/\s*>$/.test(match[0])) detailGroups.push(attrs);
+      continue;
+    }
+    if (attrs['data-detail'] === 'fine' || detailGroups.some((group) => group['data-detail'] === 'fine')) continue;
+    if (/^<rect\b/i.test(match[0])) {
+      if (String(attrs.class || '').split(/\s+/).includes('c-mask')) {
+        rightEdges.push(numberAttr(attrs, 'x') + numberAttr(attrs, 'width'));
+      }
+      continue;
+    }
+    const box = textBox(attrs, stripTags(match[2]).trim());
     if (!box) return evidence;
     rightEdges.push(box.x2);
   }

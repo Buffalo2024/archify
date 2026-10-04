@@ -599,10 +599,10 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       color: var(--frontend-stroke);
     }
 
-    /* The reader owns only the outer scale. Wide diagrams and measured tall workflows keep one authored
-       SVG/viewBox while the runtime chooses a desktop width from the actual
-       vertical budget. This avoids device-specific files and breakpoint
-       jumps between a laptop and a tall monitor. */
+    /* The reader owns only the outer scale. Long sequences and waterfall rows
+       favor reading width and page scroll; other diagrams keep height fitting.
+       Small automatic canvases retain a modest scale inside a usable shell.
+       Every strategy preserves the authored SVG/viewBox and semantic geometry. */
     .container {
       width: 100%;
       max-width: var(--archify-reader-width, 1440px);
@@ -9505,6 +9505,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       var viewBox = svg && svg.viewBox && svg.viewBox.baseVal;
       var ratio = viewBox && viewBox.height > 0 ? viewBox.width / viewBox.height : 0;
       var measuredHeightFit = svg && svg.getAttribute('data-reader-fit') === 'intrinsic-height';
+      var widthFirstReading = measuredHeightFit && svg &&
+        (svg.hasAttribute('data-sequence-column-fit') || svg.hasAttribute('data-waterfall-ui'));
       var frame = 0;
       var settleFrame = 0;
       var lastWidth = 0;
@@ -9517,6 +9519,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       var MIN_DESKTOP_WIDTH = 1024;
       var MIN_READER_WIDTH = 960;
       var MAX_READER_WIDTH = 1920;
+      var MAX_AUTOMATIC_SCALE = 1.5;
       var MIN_PROJECTED_NODE_TEXT_PX = 6;
       var declaredMinimumText = svg ? parseFloat(svg.getAttribute('data-reader-min-text') || '') : null;
       var requestedMinimumText = Number.isFinite(declaredMinimumText)
@@ -9695,7 +9698,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       // usable header, toolbar, and controls; its SVG is centred instead.
       function applyWidth(width, minWidth) {
         var rounded = Math.max(Math.ceil(minWidth || 0), Math.round(width));
-        if (Math.abs(rounded - lastWidth) < 1) return false;
+        var changed = Math.abs(rounded - lastWidth) >= 1;
         lastWidth = rounded;
         var shellFloor = Math.min(MIN_READER_WIDTH, Math.max(0, window.innerWidth - chromeMetrics().bodyX));
         html.style.setProperty('--archify-reader-width', Math.max(rounded, shellFloor) + 'px');
@@ -9710,7 +9713,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           html.removeAttribute('data-reader-narrow');
         }
         html.setAttribute('data-reader-layout', 'adaptive');
-        return true;
+        return changed;
       }
       function settleOverflow(minWidth) {
         if (settleFrame) cancelAnimationFrame(settleFrame);
@@ -9722,7 +9725,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
             document.documentElement.scrollHeight,
             document.body.scrollHeight
           ) - window.innerHeight - belowFold();
-          if (overflow > 1 && lastWidth > Math.ceil(minWidth)) {
+          if (overflow > 1 && !widthFirstReading && lastWidth > Math.ceil(minWidth)) {
             applyWidth(Math.max(minWidth, lastWidth - overflow * ratio - 4), minWidth);
             settledCap = lastWidth;
             html.setAttribute('data-reader-overflow', 'reduced');
@@ -9773,10 +9776,9 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           if (collapsedPreference === '1' || (collapsedPreference !== '0' && !comfortable)) mode = 'collapsed';
           else mode = fitsReadable ? 'true' : 'overlay';
         }
-        // With notes below the fold, the first screen belongs to the whole
-        // diagram and its controls: it may shrink past the comfortable primary
-        // size down to the renderer's readable text floor, and zoom restores
-        // detail. Only a graph taller than that floor allows still scrolls.
+        // Height-fit families with notes below the fold may shrink to their
+        // readable floor. Width-first families choose their reading width
+        // below and retain page scrolling instead.
         if (mode === 'bottom') primaryWidth = 0;
         if (primaryWidth > 0) minWidth = Math.max(minWidth, Math.min(maxWidth, primaryWidth + chrome.diagramX));
         var docked = mode === 'true';
@@ -9788,6 +9790,19 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           outerHeight(header) + stackedBelow;
         var availableSvgHeight = Math.max(1, window.innerHeight - fixedHeight);
         var desiredWidth = availableSvgHeight * ratio + chrome.diagramX + (docked ? railExtra : 0);
+        // Long sequences and waterfall rows use the available horizontal room;
+        // ordinary page scrolling keeps their text and row spacing readable.
+        // Other diagram families retain the existing height-fit strategy.
+        if (widthFirstReading) desiredWidth = maxWidth;
+        // An automatic canvas can enlarge modestly, but a short diagram must
+        // not grow several times merely to fill a tall monitor. This caps the
+        // SVG share; applyWidth still keeps the header and controls at the
+        // desktop shell floor. Explicit canvases retain their existing fit.
+        if (measuredHeightFit && viewBox && viewBox.width > 0) {
+          var naturalWidthCap = viewBox.width * MAX_AUTOMATIC_SCALE + chrome.diagramX + (docked ? railExtra : 0);
+          desiredWidth = Math.min(desiredWidth, naturalWidthCap);
+          minWidth = Math.min(minWidth, naturalWidthCap);
+        }
         var width = Math.max(minWidth, Math.min(maxWidth, desiredWidth, settledCap || desiredWidth));
         applyWidth(width, minWidth);
         settleOverflow(minWidth);
