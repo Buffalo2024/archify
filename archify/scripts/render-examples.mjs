@@ -21,6 +21,8 @@ const TARGETS = [
   ['tree', 'archify-repository.tree.json', 'tree-archify-repository-rendered.html'],
   ['class', 'payments.class.json', 'class-payments-rendered.html'],
   ['class', 'payment-processors.class.json', 'class-payment-processors-rendered.html'],
+  ['timeline', 'payment-incident.timeline.json', 'timeline-payment-incident-rendered.html'],
+  ['timeline', 'archify-dev-activity.timeline.json', 'timeline-archify-dev-activity-rendered.html'],
 ];
 
 for (const [mode, input, output] of TARGETS) {

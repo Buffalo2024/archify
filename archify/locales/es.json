@@ -463,5 +463,16 @@
   "legend.class.inheritance": "Hereda",
   "legend.class.realization": "Implementa",
   "legend.class.composition": "Composición",
-  "legend.class.aggregation": "Agregación"
+  "legend.class.aggregation": "Agregación",
+  "diagram.description.timeline": "Una línea de tiempo de eventos generada por Archify.",
+  "timeline.axis": "Hora",
+  "timeline.break": "Corte del eje: se omiten {duration} sin eventos",
+  "timeline.compressed": "{count} periodo(s) sin eventos comprimido(s) (≈)",
+  "timeline.evidence.observed": "Eventos observados",
+  "timeline.evidence.illustrative": "Datos ilustrativos",
+  "legend.timeline.default": "Evento",
+  "legend.timeline.change": "Cambio",
+  "legend.timeline.alert": "Alerta",
+  "legend.timeline.action": "Respuesta",
+  "legend.timeline.recovery": "Recuperación"
 }

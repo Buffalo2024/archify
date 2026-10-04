@@ -463,5 +463,16 @@
   "legend.class.inheritance": "继承",
   "legend.class.realization": "实现接口",
   "legend.class.composition": "组合",
-  "legend.class.aggregation": "聚合"
+  "legend.class.aggregation": "聚合",
+  "diagram.description.timeline": "由 Archify 生成的事件时间线。",
+  "timeline.axis": "时间",
+  "timeline.break": "时间轴断开：省略 {duration} 无事件区间",
+  "timeline.compressed": "已压缩 {count} 段空闲期（≈）",
+  "timeline.evidence.observed": "实测事件",
+  "timeline.evidence.illustrative": "示例数据",
+  "legend.timeline.default": "事件",
+  "legend.timeline.change": "变更",
+  "legend.timeline.alert": "告警",
+  "legend.timeline.action": "处置",
+  "legend.timeline.recovery": "恢复"
 }

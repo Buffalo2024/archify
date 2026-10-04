@@ -463,5 +463,16 @@
   "legend.class.inheritance": "상속",
   "legend.class.realization": "구현",
   "legend.class.composition": "합성",
-  "legend.class.aggregation": "집합"
+  "legend.class.aggregation": "집합",
+  "diagram.description.timeline": "Archify로 생성한 이벤트 타임라인입니다.",
+  "timeline.axis": "시간",
+  "timeline.break": "축 생략: 이벤트 없는 {duration} 생략",
+  "timeline.compressed": "유휴 구간 {count}개 압축 (≈)",
+  "timeline.evidence.observed": "관측된 이벤트",
+  "timeline.evidence.illustrative": "예시 데이터",
+  "legend.timeline.default": "이벤트",
+  "legend.timeline.change": "변경",
+  "legend.timeline.alert": "알림",
+  "legend.timeline.action": "대응",
+  "legend.timeline.recovery": "복구"
 }

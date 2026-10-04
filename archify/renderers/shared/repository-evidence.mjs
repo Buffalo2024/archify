@@ -132,6 +132,7 @@ const EVIDENCE_NODE_COLLECTIONS = {
   erd: 'entities',
   tree: 'nodes',
   class: 'types',
+  timeline: 'events',
 };
 
 function evidenceNodes(diagramType, diagram) {

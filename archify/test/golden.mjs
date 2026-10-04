@@ -85,6 +85,8 @@ const GOLDEN = [
   ['tree', 'archify-repository.tree.json', 'tree-archify-repository-rendered.html'],
   ['class', 'payments.class.json', 'class-payments-rendered.html'],
   ['class', 'payment-processors.class.json', 'class-payment-processors-rendered.html'],
+  ['timeline', 'payment-incident.timeline.json', 'timeline-payment-incident-rendered.html'],
+  ['timeline', 'archify-dev-activity.timeline.json', 'timeline-archify-dev-activity-rendered.html'],
 ];
 
 for (const [mode, input, golden] of GOLDEN) {
@@ -189,6 +191,10 @@ expectFailure('unknown relationship kind rejected by schema', 'class',
   (d) => { d.relationships[0].kind = 'uses'; }, '/relationships/0/kind');
 expectFailure('unknown member visibility rejected by schema', 'class',
   (d) => { d.types[0].methods[0].visibility = 'internal'; }, '/types/0/methods/0/visibility');
+expectFailure('timeline timestamp without an offset rejected by schema', 'timeline',
+  (d) => { d.events[0].at = '2026-10-01T10:00:00'; }, '/events/0/at');
+expectFailure('timeline without evidence status rejected by schema', 'timeline',
+  (d) => { delete d.meta.evidence; }, "must have required property 'evidence'");
 expectFailure('references outside entity.attribute rejected by schema', 'erd',
   (d) => {
     const fk = d.entities.flatMap((entity) => entity.attributes).find((attribute) => attribute.key === 'fk');
