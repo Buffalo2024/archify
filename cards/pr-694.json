@@ -1,0 +1,10 @@
+{
+  "templateVersion": 1,
+  "repository": "tt-a1i/archify",
+  "number": 694,
+  "author": "tt-a1i",
+  "title": "docs(readme): show install count and supported agents in badges",
+  "mergedAt": "2026-10-04T08:07:00Z",
+  "mergeCommit": "2f49b61365bf3296715981868a6a66f65e1a496d",
+  "url": "https://github.com/tt-a1i/archify/pull/694"
+}
