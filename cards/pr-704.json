@@ -1,0 +1,10 @@
+{
+  "templateVersion": 1,
+  "repository": "tt-a1i/archify",
+  "number": 704,
+  "author": "tt-a1i",
+  "title": "fix(skill): restore Archify installation on main (#702)",
+  "mergedAt": "2026-10-04T12:48:09Z",
+  "mergeCommit": "7158026e852f3aa6578c741e673b46d7878c92c1",
+  "url": "https://github.com/tt-a1i/archify/pull/704"
+}
