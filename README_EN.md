@@ -40,17 +40,15 @@
   <a href="https://x.com/t20000622yy"><img src="https://img.shields.io/badge/Creator_on_X-181717?style=for-the-badge&amp;logo=x&amp;logoColor=white" alt="Follow the creator on X" /></a>
 </p>
 
-<p align="center"><a href="#sponsors"><strong>❤️ Partners & sponsors: Kimi Work · Supercode · OpenLux · EverMind/Raven</strong></a></p>
+<p align="center"><a href="#sponsors"><strong>❤️ Partners & sponsors: Kimi Work · Supercode · OpenLux</strong></a></p>
 
 ## See Archify in action
 
-<p align="center">
-  <a href="https://tt-a1i.github.io/archify/gallery.html"><img src="docs/assets/archify-live-proof.gif" alt="Three verified Archify artifacts moving through Signal Flow, Blueprint, and Classic presets" width="960"/></a>
-  <br/>
-  <sub><strong>Three real generated artifacts.</strong> Signal Flow · Blueprint · Classic · <a href="https://tt-a1i.github.io/archify/gallery.html">open the interactive Proof Lab ↗</a></sub>
-</p>
+<!-- archify-launch-video -->
 
-**Click the preview to open real interactive artifacts.** The GIF shows the motion; the HTML lets you explore it yourself.
+https://github.com/user-attachments/assets/78570807-ba1d-4737-953f-55504a378a87
+
+**One sentence. Your repo, mapped.** Watch the 35-second demo: explore the diagram, follow source links, and trace a path. [Try the interactive examples ↗](https://tt-a1i.github.io/archify/gallery.html)
 
 <a id="start"></a>
 
@@ -210,6 +208,14 @@ Archify may GET the fixed stable manifest solely to show an optional reminder; i
 
 </details>
 
+### Stay updated
+
+- **Get release notifications:** select **Watch → Custom → Releases** at the top of this GitHub repository. Starring the project does not subscribe you to release notifications.
+- **See what changed:** [Release notes](https://github.com/tt-a1i/archify/releases).
+- **Use a feed reader:** [Subscribe to the release feed](https://github.com/tt-a1i/archify/releases.atom).
+
+Installations with the update checker also check for newer stable releases during diagram delivery and can show a reminder. Older installations without the checker need a manual update to gain this feature. You choose whether and when to upgrade; Archify never installs updates automatically.
+
 ### 2. Start from a description — no repository required
 
 ```text
@@ -345,7 +351,7 @@ Settings:
 }
 ```
 
-`meta.locale` localizes page title, Legend, states/errors, a11y, HTML/SVG `lang`—never authored content. `en`/`zh-CN` are built in; other languages, including Spanish (`es`), need `meta.translations` (canonical message key → translated string; see `examples/locales/es.json`), or the renderer falls back to English and discloses it. Static omits `animation`; `classic` defaults.
+`meta.locale` localizes page title, Legend, states/errors, a11y, HTML/SVG `lang`—never authored content. `en`, `zh-CN`, `es`, and `ko` are bundled and need only `meta.locale`; `meta.translations` (canonical message key → translated string) overrides individual keys and keeps the rest of the language. Other languages supply their catalog there (see `archify/examples/locales/`), or the renderer falls back to English and discloses it. Static omits `animation`; `classic` defaults.
 
 </details>
 
@@ -412,6 +418,30 @@ Connect with other users and developers, share ideas, request features, report b
 ## Contributing
 
 Issues, pull requests, and real-world diagrams are welcome. Start with the [contribution guide](CONTRIBUTING.md), use the reproducible bug form for failures, or submit a validated diagram through the [community showcase form](https://github.com/tt-a1i/archify/issues/new?template=showcase.yml).&nbsp;·&nbsp;[LINUX&nbsp;DO](https://linux.do)
+
+## Support Archify
+
+If Archify has been useful to you, you can support its continued development. Thank you for helping keep the project going ❤️
+
+<details>
+<summary>Support via WeChat Pay</summary>
+
+Scan the QR code below with WeChat, or save it and open it in WeChat to scan.
+
+<p align="center"><img src="docs/assets/support/wechat-pay.png" alt="WeChat Pay QR code to support the Archify maintainer" width="240" /></p>
+
+</details>
+
+<details>
+<summary>Support via Alipay</summary>
+
+Scan the QR code below with Alipay, or save it and open it in Alipay to scan.
+
+<p align="center"><img src="docs/assets/support/alipay.png" alt="Alipay QR code to support the Archify maintainer (name redacted)" width="240" /></p>
+
+</details>
+
+Using Archify, sharing it, reporting bugs, and contributing improvements are also ways to help.
 
 ## Star History
 
