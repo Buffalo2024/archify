@@ -32,6 +32,7 @@ import {
 } from './grid.mjs';
 import {
   asArray,
+  authoredStraightRouteAttrs,
   arrowClassMap,
   cleanAmbiguousCorridorProblems,
   cleanCrossingProblems,
@@ -1345,7 +1346,7 @@ function renderRelationshipPath(relationship, index) {
   const routed = pathFor(relationship);
   const d = bundledRelationshipD(routed, relationshipTrunkRuns(relationship));
   const strokeWidth = Number.isFinite(relationship.width) ? relationship.width : 1.5;
-  return `        <path ${focusEdgeAttrs(relationship.from, relationship.to, relationship.label, index, relationship.id)} data-er-ends="${relationshipEnds(relationship).join(' ')}" data-composition-points="${routePointsValue(routed.points)}" d="${d}" class="${cls}"${animateAttr(er.meta, 'edge', index)} stroke-width="${strokeWidth}" marker-start="url(#${cardinalityMarkerId(relationship, 'from')})" marker-end="url(#${cardinalityMarkerId(relationship, 'to')})"/>`;
+  return `        <path ${focusEdgeAttrs(relationship.from, relationship.to, relationship.label, index, relationship.id)} data-er-ends="${relationshipEnds(relationship).join(' ')}" data-composition-points="${routePointsValue(routed.points)}"${authoredStraightRouteAttrs(relationship, routed.points)} d="${d}" class="${cls}"${animateAttr(er.meta, 'edge', index)} stroke-width="${strokeWidth}" marker-start="url(#${cardinalityMarkerId(relationship, 'from')})" marker-end="url(#${cardinalityMarkerId(relationship, 'to')})"/>`;
 }
 
 function renderRelationshipLabel(relationship, index) {

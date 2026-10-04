@@ -1323,6 +1323,8 @@ function compileWorkflowInternal({
   sourceEvidence,
   discoverFixes = true,
   layoutFeedback = {},
+  routePlanningOrder,
+  portReservationRecovery = false,
 } = {}) {
   if (!inputWorkflow || typeof inputWorkflow !== 'object' || Array.isArray(inputWorkflow)) {
     const diagnostics = [{
@@ -2319,11 +2321,30 @@ function validateReadablePinnedGeometry() {
   // Reserve absolute geometry at contested nodes before automatic routing,
   // independently of IDs. Unrelated routes retain their diagnostic ordering.
   for (const edge of workflow.edges) {
-    if (!hasAbsoluteRoutePins(edge) || !nodes.has(edge.from) || !nodes.has(edge.to)) continue;
+    if (!(hasAbsoluteRoutePins(edge) || (portReservationRecovery && edge.route === 'straight'))
+      || !nodes.has(edge.from) || !nodes.has(edge.to)) continue;
     if (!workflow.edges.some(other => !hasAbsoluteRoutePins(other)
       && [edge.from, edge.to].some(id => id === other.from || id === other.to))) continue;
     validateReadableRouteControls(edge);
     pathFor(edge);
+  }
+  // Planning order is separate from document/paint order. A failed automatic
+  // scene may be replayed with a different reservation order; all geometry
+  // gates below still inspect the complete canonical scene.
+  if (routePlanningOrder) {
+    const planningEdges = workflow.edges.filter(independentAutomaticRoute);
+    if (routePlanningOrder === 'reverse') planningEdges.reverse();
+    else if (routePlanningOrder === 'long-first') {
+      const distance = edge => {
+        const from = nodes.get(edge.from), to = nodes.get(edge.to);
+        return Math.abs(from.cx - to.cx) + Math.abs(from.cy - to.cy);
+      };
+      planningEdges.sort((left, right) => distance(right) - distance(left)
+        || stableCompare(left.id, right.id)
+        || stableCompare(left.from, right.from)
+        || stableCompare(left.to, right.to));
+    }
+    for (const edge of planningEdges) pathFor(edge);
   }
   for (const edge of workflow.edges) {
     if (!nodes.has(edge.from) || !nodes.has(edge.to)) continue;
@@ -3415,7 +3436,19 @@ function labelRouteClearanceDeficit(edge, points, threshold = 8) {
   return deficit;
 }
 
-function routeClearsPlacedLabels(edge, points) {
+function routeClearsPlacedLabels(edge, points, failures) {
+  const reject = (kind, labelEdge, routeEdge, labelRect, segment, segmentIndex, clearancePx) => {
+    if (failures && segment) failures.push({
+      predicate: 'routeClearsPlacedLabels', kind,
+      labelEdge: labelEdge.id ?? null, routeEdge: routeEdge?.id ?? null,
+      blockingEdge: (labelEdge === edge ? routeEdge : labelEdge)?.id ?? null,
+      labelPath: `/edges/${sourceIndexes.edges.get(labelEdge)}/label`,
+      ...(routeEdge ? { routePath: `/edges/${sourceIndexes.edges.get(routeEdge)}/route` } : {}),
+      labelRect: { ...labelRect },
+      ...(segment ? { segment: segment.map(point => [...point]), segmentIndex, clearancePx, minimumClearancePx: 4 } : {}),
+    });
+    return false;
+  };
   const candidateLabel = candidateLabelRect(edge, points);
   const candidateExtent = routeBounds(points);
   const queryBox = {
@@ -3431,7 +3464,7 @@ function routeClearsPlacedLabels(edge, points) {
   for (const item of obstacleGrid.query(queryBox)) {
     // A label may sit far from the route it annotates, so both boxes are queried.
     if (item.kind === 'label') {
-      if (candidateLabel && rectsOverlap(candidateLabel, item.rect, -2)) return false;
+      if (candidateLabel && rectsOverlap(candidateLabel, item.rect, -2)) return reject('label-label-overlap', edge, null, candidateLabel);
       const rect = item.rect;
       // Either axis further than the minimum clearance means no segment can reach it.
       if (Math.max(rect.x - candidateExtent.maxX, candidateExtent.minX - (rect.x + rect.width)) >= 4
@@ -3441,7 +3474,7 @@ function routeClearsPlacedLabels(edge, points) {
           start: points[index],
           end: points[index + 1],
         }, rect);
-        if (clearance != null && clearance + 0.0001 < 4) return false;
+        if (clearance != null && clearance + 0.0001 < 4) return reject('route-near-placed-label', item.edge, edge, rect, [points[index], points[index + 1]], index, clearance);
       }
     } else if (item.kind === 'route' && candidateLabel) {
       const otherBounds = item.bounds;
@@ -3453,7 +3486,7 @@ function routeClearsPlacedLabels(edge, points) {
           start: otherPoints[index],
           end: otherPoints[index + 1],
         }, candidateLabel);
-        if (clearance != null && clearance + 0.0001 < 4) return false;
+        if (clearance != null && clearance + 0.0001 < 4) return reject('label-near-placed-route', edge, item.edge, candidateLabel, [otherPoints[index], otherPoints[index + 1]], index, clearance);
       }
     }
   }
@@ -3547,7 +3580,7 @@ function routeFitsCanvasOrigin(edge, points) {
 // Predicates are pure, so their order does not change the result; they are
 // ordered by "cheap and selective first" so the expensive clearance work runs
 // on fewer candidates.
-function readableCandidateIsFeasible(edge, points, from, to, fromSide, toSide) {
+function readableCandidateIsFeasible(edge, points, from, to, fromSide, toSide, failures) {
   return points.length >= 2
     && orthogonalRoute(points)
     && routeMeetsHardRhythm(points)
@@ -3556,7 +3589,7 @@ function readableCandidateIsFeasible(edge, points, from, to, fromSide, toSide) {
     && routeLabelClearsNodes(edge, points)
     && routeClearsSceneLabelObstacles(edge, points)
     && routeClearsUnrelatedNodes(edge, points)
-    && routeClearsPlacedLabels(edge, points)
+    && routeClearsPlacedLabels(edge, points, failures)
     && routeFitsCanvasOrigin(edge, points)
     && routeClearsFrameBorders(points)
     && routeClearsLegend(edge, points);
@@ -3954,7 +3987,8 @@ function readablePresetVia(edge, from, to, start, end, fromSide, toSide) {
       return readableAutomaticVia(edge, from, to, start, end, fromSide, toSide);
   }
   const points = joinRoutePoints(start, via, end);
-  if (readableCandidateIsFeasible(edge, points, from, to, fromSide, toSide)
+  const feasibilityFailures = [];
+  if (readableCandidateIsFeasible(edge, points, from, to, fromSide, toSide, feasibilityFailures)
     && routeMatchesPresetFamily(preset, points, from, to)) {
     return points.slice(1, -1);
   }
@@ -3964,6 +3998,10 @@ function readablePresetVia(edge, from, to, start, end, fromSide, toSide) {
   const edgeName = workflowEdgeName(edge);
   const supportedFixes = [];
   const verifiedRepairs = [];
+  for (const failure of feasibilityFailures) {
+    if (!failure.segment) continue;
+    supportedFixes.push(`Edge "${failure.labelEdge}" label (${failure.labelPath}) has ${failure.clearancePx}px clearance from edge "${failure.routeEdge}" segment ${failure.segmentIndex}; at least ${failure.minimumClearancePx}px is required. If those controls are optional, adjust the label's labelAt, or labelDx/labelDy when labelAt is absent (labelAt takes precedence), or the measured route's via/channel geometry to separate them, then replay the complete compiler and final artifact checks. This geometric suggestion is not a verified repair.`);
+  }
   const recordRepair = (message, edits) => {
     supportedFixes.push(message);
     verifiedRepairs.push(rememberVerifiedRepair(message, edits));
@@ -4005,6 +4043,7 @@ function readablePresetVia(edge, from, to, start, end, fromSide, toSide) {
     },
     evidence: {
       attemptedCandidateFamily: preset,
+      ...(feasibilityFailures.length ? { feasibilityFailures } : {}),
       points,
       fromSide,
       toSide,
@@ -4145,7 +4184,10 @@ const automaticPorts = automaticPortSpread(workflow.edges, nodes, {
 });
 
 function automaticPortCandidates(edge, node, side, preferred, counterpart) {
-  if (!independentAutomaticRoute(edge)) return [preferred];
+  const movableSidePort = portReservationRecovery && workflow.schema_version === 2
+    && !edge.via && edge.channelX === undefined && edge.channelY === undefined
+    && (!edge.route || edge.route === 'auto') && !edge.labelAt;
+  if (!independentAutomaticRoute(edge) && !movableSidePort) return [preferred];
   const verticalSide = side === 'left' || side === 'right';
   const axis = verticalSide ? 1 : 0;
   const center = anchor(node, side);
@@ -4990,7 +5032,7 @@ function feedbackFailure(request) {
   return compilerFailure('readable-v2', diagnostics, message);
 }
 
-function compileWorkflowWithFeedback({ workflow, qualityProfile, sourceEvidence, discoverFixes = true } = {}) {
+function compileWorkflowLayoutFeedback({ workflow, qualityProfile, sourceEvidence, discoverFixes = true, routePlanningOrder, portReservationRecovery } = {}) {
   let layoutFeedback = {};
   for (let attempt = 0; attempt <= MAX_READABLE_LAYOUT_FEEDBACK_ROUNDS; attempt += 1) {
     try {
@@ -5000,6 +5042,8 @@ function compileWorkflowWithFeedback({ workflow, qualityProfile, sourceEvidence,
         sourceEvidence,
         discoverFixes,
         layoutFeedback,
+        routePlanningOrder,
+        portReservationRecovery,
       });
     } catch (error) {
       if (!(error instanceof WorkflowLayoutFeedback)) throw error;
@@ -5045,6 +5089,58 @@ function compileWorkflowWithFeedback({ workflow, qualityProfile, sourceEvidence,
     }
   }
   throw new Error('unreachable readable-v2 layout feedback state');
+}
+
+function compileWorkflowWithFeedback(options = {}) {
+  const original = compileWorkflowLayoutFeedback(options);
+  const { workflow, discoverFixes = true } = options;
+  // Repair verification already replays the compiler with discoverFixes=false.
+  // Keep those nested calls single-plan, and never multiply fallback attempts.
+  if (original.ok || !discoverFixes || workflow?.schema_version !== 2
+    || !original.diagnostics?.some(diagnostic => diagnostic.severity === 'error'
+      && ['composition/proper-crossing', 'composition/ambiguous-corridor'].includes(diagnostic.code))) {
+    return original;
+  }
+  // A side fixes direction, not a midpoint coordinate. Reserve straight
+  // authored geometry before allowing an auto route to use another port on
+  // its required side. No document field or absolute geometry is rewritten.
+  const edges = asArray(workflow.edges);
+  if (edges.some(edge => edge.route === 'straight')
+    && edges.some(edge => (!edge.route || edge.route === 'auto')
+      && !edge.via && edge.channelX === undefined && edge.channelY === undefined && !edge.labelAt
+      && ((edge.fromSide && edge.fromSide !== 'auto') || (edge.toSide && edge.toSide !== 'auto')))) {
+    const candidate = compileWorkflowLayoutFeedback({ ...options, discoverFixes: false, portReservationRecovery: true });
+    if (candidate.ok) {
+      const canonicalEdges = canonicalReadableWorkflow(workflow).edges;
+      const geometryPreserved = JSON.stringify(original.receipt?.nodes) === JSON.stringify(candidate.receipt?.nodes)
+        && canonicalEdges.every((edge, index) => {
+          if (!(edge.via || edge.channelX !== undefined || edge.channelY !== undefined
+            || (edge.route && edge.route !== 'auto') || edge.labelAt)) return true;
+          const before = original.receipt?.edges?.[index]?.points;
+          const after = candidate.receipt?.edges?.[index]?.points;
+          return before && after && JSON.stringify(before) === JSON.stringify(after);
+        });
+      if (geometryPreserved) return candidate;
+    }
+  }
+  if (workflow.meta?.viewBox !== undefined
+    || asArray(workflow.nodes).some(node => node.yOffset !== undefined)
+    || asArray(workflow.edges).some(edge => (
+      edge.via !== undefined || edge.channelX !== undefined || edge.channelY !== undefined
+      || (edge.route !== undefined && edge.route !== 'auto')
+      || (edge.fromSide !== undefined && edge.fromSide !== 'auto')
+      || (edge.toSide !== undefined && edge.toSide !== 'auto')
+      || ['labelAt', 'labelDx', 'labelDy', 'labelSegment'].some(field => edge[field] !== undefined)
+    ))) {
+    return original;
+  }
+  // Two deterministic full-scene replays bound the cost. A locally improved
+  // but still invalid scene must not replace the original diagnostic receipt.
+  for (const routePlanningOrder of ['reverse', 'long-first']) {
+    const candidate = compileWorkflowLayoutFeedback({ ...options, discoverFixes: false, routePlanningOrder });
+    if (candidate.ok) return candidate;
+  }
+  return original;
 }
 
 export function compileWorkflow({ workflow, qualityProfile, sourceEvidence } = {}) {

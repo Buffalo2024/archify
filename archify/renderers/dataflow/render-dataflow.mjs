@@ -7,6 +7,7 @@ import { resolveLegend, renderLegend as renderResolvedLegend } from '../shared/l
 import { availableNodeTextWidth, fittedNodeFontSize, minimumNodeTextWidth, nodeLabelLayout } from '../shared/text-fit.mjs';
 import { brandLabelFitWidth, brandMarkFor, brandMetadataFor, brandTopRailProblem, renderBrandMark } from '../shared/brand-marks.mjs';
 import { translateMessage as i18nText } from '../shared/i18n.mjs';
+import { minimumReadableSourceTextPx, projectedNodeTextPx, MIN_PROJECTED_NODE_TEXT_PX } from '../shared/desktop-readability.mjs';
 import {
   asArray,
   isFinitePoint,
@@ -495,20 +496,48 @@ function renderStage(stage, index) {
         ${renderStageHeader(stage, index, cx)}`;
 }
 
+// Preserve existing readable text exactly. A wider authored canvas can make
+// the historical 7px preference unreadable even when the box has ample room;
+// raise only that implicit preference, using the unchanged conservative Reader
+// budget. If the target cannot fit, retain the measured font and let the public
+// readability gate report the real failure instead of overflowing the box.
+function sublabelFontSize(node, labelFont, tagFont) {
+  const current = fittedNodeFontSize(node.sublabel, node.width, nodeTextFit.sublabelPreferred, nodeTextFit.sublabelMinimum);
+  if (!node.sublabel || projectedNodeTextPx(current, viewBox[0]) >= MIN_PROJECTED_NODE_TEXT_PX) return current;
+  const target = Math.ceil((minimumReadableSourceTextPx(viewBox[0]) + 0.001) * 10) / 10;
+  if (minimumNodeTextWidth(node.sublabel, target) > availableNodeTextWidth(node.width)) return current;
+  const candidate = fittedNodeFontSize(node.sublabel, node.width, Math.max(nodeTextFit.sublabelPreferred, target), nodeTextFit.sublabelMinimum);
+  const { rows, layout: candidateLayout } = nodeTextLayout(node, labelFont, candidate, tagFont);
+  const bounds = rows.map((row, index) => ({ top: candidateLayout.ys[index] - row.font * 1.2, bottom: candidateLayout.ys[index] + row.font * 0.3 }));
+  // Retain the compact shared layout's .5px inset: font glyph descent can
+  // extend slightly beyond the estimated .3em on fractional box boundaries.
+  if (bounds.some((row) => row.top < 0.5 || row.bottom > node.height - 0.5)) return current;
+  if (bounds.some((row, index) => bounds.slice(index + 1).some((other) => Math.max(row.top, other.top) < Math.min(row.bottom, other.bottom) + 1))) return current;
+  return candidate;
+}
+
+// Use the same decoration-aware positions for the candidate capacity check
+// and the final SVG. The conservative 1.2em ascent / .3em descent follows the
+// existing text-layout helper; font growth needs both bounds and clear rows.
+function nodeTextLayout(node, labelFont, sublabelFont, tagFont) {
+  const rows = [{ text: node.label, font: labelFont, y: 21 }];
+  if (node.sublabel != null && node.sublabel !== '') rows.push({ text: node.sublabel, font: sublabelFont, y: 37 });
+  if (node.tag) rows.push({ text: node.tag, font: tagFont, y: node.height - 11 });
+  const layout = nodeLabelLayout({ width: node.width, height: node.height, rows,
+    brand: Boolean(brandMarkFor(node)), source: Boolean(sourceEvidence?.nodes?.[node.id]?.length) });
+  return { rows, layout };
+}
+
 function renderNode(node) {
   const fill = componentFill[node.type] || 'c-external';
   const accent = componentText[node.type] || 't-muted';
   const hasSub = node.sublabel != null && node.sublabel !== '';
   const labelFontSize = fittedNodeFontSize(node.label, brandLabelFitWidth(node, node.width), 10, 8);
-  const sublabelFontSize = fittedNodeFontSize(node.sublabel, node.width, nodeTextFit.sublabelPreferred, nodeTextFit.sublabelMinimum);
   const tagFontSize = fittedNodeFontSize(node.tag, node.width, nodeTextFit.tagPreferred, nodeTextFit.tagMinimum);
-  const textRows = [{ text: node.label, font: labelFontSize, y: 21 }];
-  if (hasSub) textRows.push({ text: node.sublabel, font: sublabelFontSize, y: 37 });
-  if (node.tag) textRows.push({ text: node.tag, font: tagFontSize, y: node.height - 11 });
-  const labelLayout = nodeLabelLayout({ width: node.width, height: node.height, rows: textRows,
-    brand: Boolean(brandMarkFor(node)), source: Boolean(sourceEvidence?.nodes?.[node.id]?.length) });
+  const sublabelFont = sublabelFontSize(node, labelFontSize, tagFontSize);
+  const { layout: labelLayout } = nodeTextLayout(node, labelFontSize, sublabelFont, tagFontSize);
   const sub = hasSub
-    ? `\n          <text data-detail="context" x="${node.cx}" y="${node.y + labelLayout.ys[1]}" class="t-muted" font-size="${sublabelFontSize}" text-anchor="middle">${esc(node.sublabel)}</text>`
+    ? `\n          <text data-detail="context" x="${node.cx}" y="${node.y + labelLayout.ys[1]}" class="t-muted" font-size="${sublabelFont}" text-anchor="middle">${esc(node.sublabel)}</text>`
     : '';
   const tag = node.tag
     ? `\n        <text data-detail="fine" x="${node.cx}" y="${node.y + labelLayout.ys[hasSub ? 2 : 1]}" class="${accent}" font-size="${tagFontSize}" text-anchor="middle">${esc(node.tag)}</text>`
