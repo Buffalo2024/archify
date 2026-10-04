@@ -444,5 +444,12 @@
   "viewer.rail.controls": "측면 패널",
   "viewer.rail.collapse": "측면 패널 접기",
   "viewer.rail.bottom": "패널을 다이어그램 아래로 이동",
-  "viewer.rail.right": "패널을 다이어그램 옆으로 이동"
+  "viewer.rail.right": "패널을 다이어그램 옆으로 이동",
+  "diagram.description.tree": "Archify로 생성한 계층 구조 다이어그램입니다.",
+  "node.context.tree.root": "루트",
+  "node.context.tree.branch": "분기",
+  "node.context.tree.leaf": "리프",
+  "tree.toggle.collapse": "{label} 접기 (하위 {count}개)",
+  "tree.toggle.expand": "{label} 펼치기 ({count}개 숨김)",
+  "tree.expandAll": "모두 펼치기"
 }

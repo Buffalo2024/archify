@@ -81,6 +81,8 @@ const GOLDEN = [
   ['architecture', 'web-app.architecture.json', 'web-app-rendered.html'],
   ['erd', 'orders.erd.json', 'erd-orders-rendered.html'],
   ['erd', 'subscription-billing.erd.json', 'subscription-billing-rendered.html'],
+  ['tree', 'payment-platform.tree.json', 'tree-payment-platform-rendered.html'],
+  ['tree', 'archify-repository.tree.json', 'tree-archify-repository-rendered.html'],
 ];
 
 for (const [mode, input, golden] of GOLDEN) {
@@ -175,6 +177,10 @@ expectFailure('fk attribute without a target rejected by schema', 'erd',
     const fk = d.entities.flatMap((entity) => entity.attributes).find((attribute) => attribute.key === 'fk');
     delete fk.references;
   }, "must have required property 'references'");
+expectFailure('tree node without a label rejected by schema', 'tree',
+  (d) => { delete d.nodes[1].label; }, '/nodes/1');
+expectFailure('unknown tree direction rejected by schema', 'tree',
+  (d) => { d.layout = { direction: 'up' }; }, '/layout/direction');
 expectFailure('references outside entity.attribute rejected by schema', 'erd',
   (d) => {
     const fk = d.entities.flatMap((entity) => entity.attributes).find((attribute) => attribute.key === 'fk');

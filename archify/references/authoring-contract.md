@@ -391,6 +391,24 @@ capacity instead of dropping the key; see
 [`../renderers/erd/README.md`](../renderers/erd/README.md) for the band, port, and
 reader contract.
 
+### Tree
+
+A tree answers "how is this decomposed?": one root, and every other node names
+exactly one `parent`. Links mean containment only; do not use a tree for calls,
+data movement, or cross-branch dependencies. Nothing is inferred: a missing
+parent (`tree/missing-parent`), zero or several roots (`tree/root-count`), a
+parent cycle (`tree/cycle`, which also covers every node stranded beneath it),
+and duplicate ids are refused. Children read in declaration order.
+
+Use `layout.direction: "down"` (default) for a shallow, balanced breakdown and
+`"right"` for a deep or leaf-heavy tree such as a repository layout; a rightward
+tree aligns each parent with its first child and scrolls vertically in the
+reader. Labels wrap between words. `collapsed: true` makes a branch start
+collapsed in the Viewer; it never removes content from the artifact, and every
+export is the complete tree. For a real codebase, ground each node in the
+observed path and attach `sources`. See
+[`../renderers/tree/README.md`](../renderers/tree/README.md).
+
 ### Lifecycle
 
 Schema v2 (new diagrams): each populated lane is one row, `main` first,

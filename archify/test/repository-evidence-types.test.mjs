@@ -22,6 +22,7 @@ const TYPES = [
   { type: 'dataflow', collection: 'nodes', example: 'product-analytics.dataflow.json', first: 'web' },
   { type: 'lifecycle', collection: 'states', example: 'agent-run.lifecycle.json', first: 'queued' },
   { type: 'erd', collection: 'entities', example: 'orders.erd.json', first: 'customer' },
+  { type: 'tree', collection: 'nodes', example: 'payment-platform.tree.json', first: 'platform' },
 ];
 
 function git(repo, ...args) {

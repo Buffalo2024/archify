@@ -444,5 +444,12 @@
   "legend.erd.uk": "唯一键",
   "legend.erd.one": "一",
   "legend.erd.many": "多",
-  "legend.erd.optional": "可选"
+  "legend.erd.optional": "可选",
+  "diagram.description.tree": "由 Archify 生成的层级结构图。",
+  "node.context.tree.root": "根节点",
+  "node.context.tree.branch": "分支",
+  "node.context.tree.leaf": "叶子节点",
+  "tree.toggle.collapse": "收起 {label}（下方 {count} 项）",
+  "tree.toggle.expand": "展开 {label}（已隐藏 {count} 项）",
+  "tree.expandAll": "全部展开"
 }

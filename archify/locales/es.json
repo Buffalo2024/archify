@@ -444,5 +444,12 @@
   "viewer.common.copyFailed": "Error al copiar",
   "viewer.common.copyLink": "Copiar enlace",
   "viewer.common.clear": "Borrar",
-  "viewer.common.close": "Cerrar"
+  "viewer.common.close": "Cerrar",
+  "diagram.description.tree": "Un diagrama jerárquico generado por Archify.",
+  "node.context.tree.root": "Raíz",
+  "node.context.tree.branch": "Rama",
+  "node.context.tree.leaf": "Hoja",
+  "tree.toggle.collapse": "Contraer {label} ({count} debajo)",
+  "tree.toggle.expand": "Expandir {label} ({count} ocultos)",
+  "tree.expandAll": "Expandir todo"
 }
