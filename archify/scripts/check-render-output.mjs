@@ -483,9 +483,8 @@ function collectArrows(fragment, useActualPoints = false) {
     const parsed = line ? null : inspectedPath(attrs, tag.index, pathIndex, 'relationship');
     const segments = line ? lineSegments(attrs) : parsed.subpaths.flatMap(part => part.segments);
     const borderSegments = line ? segments : parsed.subpaths.flatMap(part => part.straightSegments);
-    const pointsOf = parts => parts.length ? [parts[0].start, ...parts.map(segment => segment.end)] : [];
-    let routeSubpaths = line ? [pointsOf(segments)]
-      : parsed.subpaths.map(part => pointsOf(part.straightSegments));
+    let routeSubpaths = line ? continuousRoutePoints(segments)
+      : parsed.subpaths.flatMap(part => continuousRoutePoints(part.straightSegments));
     // Legacy single-path metadata remains supported. It cannot bridge actual moveto boundaries.
     if (!useActualPoints && (line || parsed.subpaths.length === 1)) {
       const authoredPoints = parseRoutePoints(attrs['data-composition-points']);
@@ -524,6 +523,21 @@ function collectArrows(fragment, useActualPoints = false) {
   }
 
   return arrows;
+}
+
+function continuousRoutePoints(segments) {
+  const parts = [];
+  for (const { start, end } of segments) {
+    const previous = parts.at(-1);
+    // 非共线 Q 不参与直线预算；其两端也不能被拼接成一条虚构直线。
+    if (previous && previous.at(-1)[0] === start[0] && previous.at(-1)[1] === start[1]) {
+      previous.push(end);
+    } else {
+      parts.push([start, end]);
+    }
+  }
+  // 保留没有直线的子路径位置，避免把前一片段误认作语义终点。
+  return parts.length ? parts : [[]];
 }
 
 function inspectedPath(attrs, offset, pathIndex, role) {

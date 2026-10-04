@@ -38,7 +38,7 @@ async function check(t, body, { publicCli = false, rootAttrs = '', profile = 'sh
   return execute(t, args, body);
 }
 
-async function execute(t, args, description) {
+async function execute(t, args, description, timeoutMs = deadlineMs) {
   const child = spawn(process.execPath, args, {
     detached: process.platform !== 'win32',
     stdio: ['ignore', 'pipe', 'pipe'],
@@ -55,7 +55,7 @@ async function execute(t, args, description) {
   const timer = setTimeout(() => {
     timedOut = true;
     try { killTree(child); } catch (error) { cleanupError = error; }
-  }, deadlineMs);
+  }, timeoutMs);
   t.after(async () => {
     clearTimeout(timer);
     if (!exited) killTree(child);
@@ -65,7 +65,7 @@ async function execute(t, args, description) {
   clearTimeout(timer);
   assert.ifError(spawnError);
   assert.ifError(cleanupError);
-  assert.equal(timedOut, false, `路径检查在 ${deadlineMs}ms 内未退出，已终止进程树：${description}`);
+  assert.equal(timedOut, false, `路径检查在 ${timeoutMs}ms 内未退出，已终止进程树：${description}`);
   assert.equal(result.signal, null, stderr);
   assert.ok(stdout.trim(), `路径检查必须返回 JSON 回执：${stderr}`);
   return { ...result, receipt: JSON.parse(stdout), stderr };
@@ -141,6 +141,32 @@ test('大小写指数、小数、隐式重复和相对坐标保留同一条实�
 test('正常二次曲线继续受检，不能为拒绝其他曲线而禁止已有 Q', async t => {
   assertPass(await check(t, arrow('M20 20L80 20Q100 20 100 40L100 120')));
   assertPass(await check(t, arrow('m20 20l60 0q20 0 20 20v80')));
+});
+
+test('readable-v2 的圆角前后直线不生成虚假跨越，采样点不成为微线段', async t => {
+  const rounded = arrow('M20 20L80 20Q100 20 100 40L100 120');
+  const other = arrow('M50 70H96', { id: 'other', from: 'c', to: 'd', extra: 'data-edge-key="1"' });
+  const label = '<g data-edge-key="1" data-edge-from="c" data-edge-to="d" data-edge-label="Clear"><rect class="c-mask" x="84" y="64" width="8" height="12"/></g>';
+  const result = await check(t, rounded + other + label, {
+    publicCli: true, rootAttrs: 'data-layout-contract="readable-v2"',
+  });
+  assertPass(result);
+  const metrics = result.receipt.composition.metrics;
+  assert.equal(metrics.properCrossings, 0);
+  assert.equal(metrics.labelRouteClearanceIssues, 0);
+  assert.equal(metrics.maxBends, 0);
+  assert.equal(metrics.minSegmentPx, 46);
+  assert.equal(metrics.microSegmentCount, 0);
+});
+
+test('readable-v2 仍检出圆角后可见直线上的真实交叉', async t => {
+  const result = await check(t, arrow('M20 20L80 20Q100 20 100 40L100 120')
+    + arrow('M92 70H160', { id: 'other', from: 'c', to: 'd' }), {
+    publicCli: true, rootAttrs: 'data-layout-contract="readable-v2"',
+  });
+  assert.equal(result.code, 1);
+  assert.equal(result.receipt.checks.find(item => item.name === 'relationship_crossings').ok, false);
+  assert.deepEqual(result.receipt.composition.issues.find(item => item.code === 'composition/proper-crossing').point, [100, 70]);
 });
 
 const disconnected = 'M20 20L100 20M100 100L200 100';
@@ -246,6 +272,15 @@ test('多子路径只以真实最后一段检测 marker-end，早期片段不产
   assert.equal(result.receipt.composition.metrics.arrowheadCollisions, 0);
 });
 
+test('末尾仅有 M 的子路径不把早期直线当作最终箭头', async t => {
+  const result = await check(t, arrow('M20 20H100 M200 100', { from: 'a', to: 'end' })
+    + arrow('M20 21H100 M200 200', { id: 'other', from: 'b', to: 'end' }), {
+    publicCli: true, rootAttrs: 'data-layout-contract="readable-v2"',
+  });
+  assertPass(result);
+  assert.equal(result.receipt.composition.metrics.arrowheadCollisions, 0);
+});
+
 for (const [name, left, right, from, to, passes] of [
   ['实际 source', 'M20 20H40V60 M100 100H140', 'M20 20H40V0 M180 100H220', 'a', 'other-end', true],
   ['内部 source', 'M20 20H60 M100 100H120V140', 'M20 60H60 M100 100H120V60', 'a', 'other-end', false],
@@ -322,7 +357,7 @@ process.argv = [process.execPath, ${JSON.stringify(cli)}, 'deliver', 'architectu
   ${JSON.stringify(path.join(skillRoot, 'examples/web-app.architecture.json'))}, ${JSON.stringify(output)}, '--json'];
 await import(${JSON.stringify(pathToFileURL(cli).href)});
 `);
-  const result = await execute(t, [wrapper], 'deliver with an unsupported rendered path');
+  const result = await execute(t, [wrapper], 'deliver with an unsupported rendered path', deadlineMs * 5);
   assert.equal(result.code, 1, JSON.stringify(result.receipt));
   assert.equal(result.receipt.stage, 'check');
   assert.equal(result.receipt.ok, false);
