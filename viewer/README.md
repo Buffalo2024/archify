@@ -26,7 +26,7 @@ Checkout comparison from its tracked snapshots. From the repository root, run:
 node archify/bin/archify.mjs compare architecture archify/examples/checkout-platform.base.architecture.json archify/examples/checkout-platform.head.architecture.json examples/checkout-platform-delta.html --receipt examples/checkout-platform-delta.receipt.json --quality showcase --json
 ```
 
-`archify/test/architecture-delta.test.mjs` verifies those artifact and receipt
+`test/architecture-delta.test.mjs` verifies those artifact and receipt
 bytes. Rebuild other affected examples and distribution outputs according to
 [Contributing](../CONTRIBUTING.md#packages-and-generated-artifacts).
 
