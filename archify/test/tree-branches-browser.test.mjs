@@ -81,9 +81,18 @@ test('Tree branches collapse in place, follow the keyboard, reveal selections, a
       const beacon = node.querySelector('[data-source-evidence-beacon]');
       const card = node.querySelector('rect.c-mask').getBoundingClientRect();
       const box = beacon && beacon.getBoundingClientRect();
+      const texts = [...node.querySelectorAll('text:not(.source-evidence-beacon text)')];
+      texts.forEach(text => {
+        text.style.setProperty('display', 'inline', 'important');
+        text.style.setProperty('opacity', '1', 'important');
+      });
+      const textCollisions = texts.filter(text => {
+        const other = text.getBoundingClientRect();
+        return box && box.left < other.right && other.left < box.right && box.top < other.bottom && other.top < box.bottom;
+      }).map(text => text.textContent);
       return { id, exists: !!beacon, onCard: !!box && box.x >= card.x && box.x + box.width <= card.x + card.width
-        && box.y >= card.y && box.y + box.height <= card.y + card.height };
-    }))()`), ['platform', 'payments', 'card_payment'].map(id => ({ id, exists: true, onCard: true })));
+        && box.y >= card.y && box.y + box.height <= card.y + card.height, textCollisions };
+    }))()`), ['platform', 'payments', 'card_payment'].map(id => ({ id, exists: true, onCard: true, textCollisions: [] })));
   }
   await checkBeacons();
   const before = await run(box('operations'));

@@ -219,7 +219,11 @@ const measured = new Map(asArray(tree.nodes).map((node) => {
   }
   const { label: labelLines, sublabel: sublabelLines } = linesAt(width);
   const contentHeight = labelLines.length * layout.labelLine + (sublabelLines.length ? 4 + sublabelLines.length * layout.sublabelLine : 0);
-  return [node.id, { ...node, isRoot, labelFont, labelLines, sublabelLines, width, height: Math.ceil(layout.padY * 2 + contentHeight), contentHeight, depth: depthOf.get(node.id), stacked }];
+  // Verified source badges occupy the top-right 18px of a card. Give sourced
+  // nodes a separate header so centred and wrapped labels never sit under it;
+  // diagrams without sources retain their existing geometry.
+  const evidenceHeader = sourceEvidence?.nodes?.[node.id]?.length ? 18 : 0;
+  return [node.id, { ...node, isRoot, labelFont, labelLines, sublabelLines, width, height: Math.ceil(layout.padY * 2 + evidenceHeader + contentHeight), contentHeight, evidenceHeader, depth: depthOf.get(node.id), stacked }];
 }));
 
 // A stacked run reads as one list: one width, one row height.
@@ -400,7 +404,7 @@ function renderNode(node) {
   // row is centred under its link.
   const cx = node.stacked ? node.x + layout.padX : node.x + node.width / 2;
   const anchor = node.stacked ? 'start' : 'middle';
-  let y = node.y + (node.height - node.contentHeight) / 2;
+  let y = node.y + node.evidenceHeader + (node.height - node.evidenceHeader - node.contentHeight) / 2;
   const label = node.labelLines.map((line) => {
     y += layout.labelLine;
     return `<tspan x="${cx}" y="${y - 4.5}">${esc(line)}</tspan>`;
