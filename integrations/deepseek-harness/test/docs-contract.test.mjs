@@ -39,7 +39,9 @@ test('DSH documentation identifies the published release and pinned candidate sn
   assert.ok(integration.includes(candidate.sourceCommit));
   assert.ok(integration.includes(`@deepseek-ai/dsh@${candidate.dshVersion}`));
   assert.match(integration, /not published or available as an npm install yet/);
-  assert.match(integration, /not an Archify 2\.17 stable release/);
+  assert.match(integration, /pinned to stable `main` commit/);
+  assert.match(integration, /landed after the `v3\.0\.1` tag/);
+  assert.match(integration, /not a byte-for-byte copy of that tag/);
   assert.match(integration, /notification-only/);
   assert.match(integration, /does not update an already installed plugin/);
   assert.match(integration, /repository root is not a DSH package/);
@@ -112,4 +114,16 @@ test('Skills CLI, Cursor, Codex, Claude Code, OpenCode, and Raven remain the def
   const dshEnglishIndex = english.indexOf('DeepSeek Harness');
   const quickStartIndex = english.indexOf('## Quick start');
   assert.ok(dshEnglishIndex > quickStartIndex, 'DSH docs must not precede the default quick start');
+});
+
+test('npm README describes the packaged version independently of publication status', () => {
+  const packaged = read('integrations/deepseek-harness/PACKAGE_README.md');
+  assert.ok(packaged.includes(`@tt-a1i/archify-dsh@${candidate.adapterVersion}`));
+  assert.ok(packaged.includes(`Archify ${candidate.skillVersion}`));
+  assert.ok(packaged.includes(`@deepseek-ai/dsh@${candidate.dshVersion}`));
+  assert.ok(packaged.includes(candidate.sourceCommit));
+  assert.ok(packaged.includes(manifest.engines.node));
+  assert.doesNotMatch(packaged, /currently published npm package|not published or available as an npm install yet/);
+  assert.match(packaged, /After this version is available in the npm registry/);
+  assert.match(packaged, /outside the agent sandbox/);
 });
