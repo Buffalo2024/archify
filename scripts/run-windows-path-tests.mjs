@@ -533,6 +533,8 @@ async function runControlledWindowsPathE2E() {
 
 const fullSuites = [
   'test/release-package-gates.test.mjs',
+  'test/skill-metadata.test.mjs',
+  'test/skill-installation.test.mjs',
   'test/copy-site-assets.test.mjs',
   'test/path-boundary-contract.test.mjs',
   'test/path-semantics.test.mjs',
