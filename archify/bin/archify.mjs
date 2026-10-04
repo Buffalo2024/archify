@@ -10,6 +10,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const skillRoot = path.resolve(__dirname, '..');
 
 const TYPES = new Set(['architecture', 'workflow', 'sequence', 'dataflow', 'lifecycle', 'erd', 'tree', 'class', 'timeline', 'waterfall']);
+const LAYOUT_TYPES = new Set(['architecture', 'workflow', 'erd', 'class', 'dataflow']);
 const DELIVERY_SIDECAR_SUFFIXES = Object.freeze([
   '.delivery.json',
   '.delivery-pending.json',
@@ -4259,6 +4260,23 @@ function reportValidateFailure(options) {
   reportArtifactFailure({ ...options, command: 'validate' });
 }
 
+function reportLayoutFailure({ type, input, stage, error, diagnostics, status = 1 }) {
+  console.log(JSON.stringify({
+    contract: 'archify-layout-report/v1',
+    schemaVersion: 1,
+    ok: false,
+    status: 'fail',
+    command: 'validate',
+    type,
+    input,
+    stage,
+    geometryStatus: 'unavailable',
+    error,
+    diagnostics,
+  }, null, 2));
+  process.exitCode = status;
+}
+
 function reportArtifactArgumentFailure(command, error) {
   const details = error.archifyArgument || {};
   reportArtifactFailure({
@@ -6714,8 +6732,8 @@ async function commandValidate(args) {
     subject: { option: unknown[0] },
     supportedFixes: ['remove the unknown option and retry'],
   });
-  const json = args.includes('--json');
   const layoutJson = args.includes('--layout-json');
+  const json = args.includes('--json') || layoutJson;
   const rest = args.filter((arg) => !knownOptions.has(arg));
   const [type, input] = rest;
   if (!type || !input || rest.length !== 2) rejectCliArgument(usage(), {
@@ -6724,11 +6742,11 @@ async function commandValidate(args) {
   });
   const renderer = rendererPath(type);
 
-  if (layoutJson && !['architecture', 'workflow'].includes(type)) {
-    rejectCliArgument('--layout-json is currently supported for architecture and workflow diagrams only.', {
+  if (layoutJson && !LAYOUT_TYPES.has(type)) {
+    rejectCliArgument(`--layout-json is supported for ${[...LAYOUT_TYPES].join(', ')} diagrams.`, {
       code: 'cli/unsupported-option',
       subject: { option: '--layout-json', type },
-      supportedFixes: ['remove --layout-json or use an architecture or workflow diagram'],
+      supportedFixes: [`remove --layout-json or use one of: ${[...LAYOUT_TYPES].join(', ')}`],
     });
   }
 
@@ -6745,7 +6763,7 @@ async function commandValidate(args) {
     else validateAuthoredOutputPath(document.meta.output);
   } catch (error) {
     const diagnostics = error.archifyDiagnostics || [inputDiagnostic(error, inputPath)];
-    reportValidateFailure({
+    (layoutJson ? reportLayoutFailure : reportValidateFailure)({
       json,
       stage: diagnostics.some((entry) => entry.code.startsWith('input/')) ? 'input' : 'render',
       type,
@@ -6777,11 +6795,10 @@ async function commandValidate(args) {
         // receipt was produced (for example, input JSON could not be read).
       }
       const failure = rendererFailure(result);
-      reportValidateFailure({
-        json,
+      reportLayoutFailure({
         stage: failure.diagnostics.some((entry) => entry.code.startsWith('input/')) ? 'input' : 'render',
         type,
-        input: path.resolve(input),
+        input: inputPath,
         error: failure.error,
         diagnostics: failure.diagnostics,
         status: result.status ?? 1,
@@ -6955,7 +6972,8 @@ try {
   }
 } catch (error) {
   if (!error.archifyArgument) throw error;
-  if (['validate', 'deliver', 'finalize'].includes(command) && args.includes('--json')) {
+  if ((['validate', 'deliver', 'finalize'].includes(command) && args.includes('--json'))
+    || (command === 'validate' && args.includes('--layout-json'))) {
     reportArtifactArgumentFailure(command, error);
   } else {
     fail(error.message);

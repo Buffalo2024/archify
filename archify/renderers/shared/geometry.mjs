@@ -393,6 +393,7 @@ export function cleanEndpointSideProblems({
   relationCollection,
   fromSideFor,
   toSideFor,
+  repairForIssue,
   shouldCheckRelation = () => true,
   routeHint = 'align the first/final via segment with fromSide/toSide, change the side, or remove explicit routing so auto can choose a perpendicular approach',
 }) {
@@ -424,6 +425,9 @@ export function cleanEndpointSideProblems({
         : null,
     ].filter((issue) => issue?.endpoint);
     for (const issue of checks) {
+      const repair = typeof repairForIssue === 'function'
+        ? repairForIssue({ relation, relationIndex, issue })
+        : undefined;
       const relationId = relation.id ? ` id "${relation.id}"` : '';
       const authoredField = issue.endpoint === 'source' ? 'fromSide' : 'toSide';
       const sideField = issue.sideOrigin === 'inferred' ? `inferred ${authoredField}` : authoredField;
@@ -446,6 +450,7 @@ export function cleanEndpointSideProblems({
           to: issue.end,
           expectedAxis: issue.expectedAxis,
           expectedDirection: issue.expectedDirection,
+          ...(repair ? { repair } : {}),
         },
         supportedFixes: [routeHint],
       });

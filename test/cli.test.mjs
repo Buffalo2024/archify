@@ -4084,8 +4084,15 @@ test('cli: validate rejects unknown flags, layout-json assignment typos, and ext
   for (const { args, pattern } of cases) {
     const result = run(args);
     assert.equal(result.status, 2, `${args.join(' ')}\n${result.stderr}\n${result.stdout}`);
-    assert.equal(result.stdout, '');
-    assert.match(result.stderr, pattern);
+    if (args.includes('--layout-json')) {
+      const receipt = JSON.parse(result.stdout);
+      assert.equal(receipt.ok, false);
+      assert.equal(receipt.stage, 'arguments');
+      assert.match(receipt.error, pattern);
+    } else {
+      assert.equal(result.stdout, '');
+      assert.match(result.stderr, pattern);
+    }
   }
 });
 

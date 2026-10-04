@@ -102,6 +102,17 @@ The receipt reports the selected contract, measured `viewBox` and
 `requiredViewBox`, solved columns, nodes, edges, labels, and causal diagnostics.
 It deliberately omits solver iterations and candidate scores.
 
+`geometryStatus` distinguishes `complete`, `partial`, and `unavailable` measurements.
+A failed compile can report measured nodes and cached edge points without an
+SVG; those edge entries have status `measured-invalid`, while unplanned edges
+are `blocked`. Partial geometry is diagnosis evidence, never a valid artifact.
+Independent presets with both endpoint sides supplied are checked together;
+omitted sides remain solver choices. A verified repair carries exact authored
+JSON paths in `diagnostics[].evidence.verifiedRepairs[].edits` and names its
+`verification.scope`: `workflow-compiler` means the complete compiler replay
+passed, not delivery or browser acceptance. Suggested removal of optional
+routing constraints never changes the failing input automatically.
+
 ## Legend
 
 The default legend derives component kinds from `nodes[].type`. Supported
@@ -123,7 +134,7 @@ backed by rendered nodes receive Semantic Legend controls.
 | Phase headers | Optional `phases[]` render above the first lane, spanning `fromCol..toCol` |
 | Lane groups | Optional `groups[]` frame parallel work or branch work inside one lane |
 | Exception lanes | Set `lane.variant: "exception"` for retry, denial, fallback, or failure paths |
-| Main path lint | Optional `mainPath[]` checks that happy-path steps have matching edges and do not move backward |
+| Main path lint | Optional `mainPath[]` requires matching directed edges. Fixed-v1 also enforces nondecreasing columns; readable-v2 reports spatial backtracking separately without dropping narrative steps. |
 | Default node | 92×52 (height 68 when `tag` is set) |
 | Node spacing | ≥8px between nodes in the same lane |
 | Edge length | straight segments must span ≥28px |
@@ -207,7 +218,7 @@ a feasible side; an authored side restricts that endpoint to the named port.
 - Use groups for parallel checks, branch handling, or bounded work within a lane; every group must contain at least one node.
 - For sequential stages stacked inside one container, use one v2 lane and one group, keep the stages in one column, and omit `meta.viewBox`. `yOffset` is relative to the center of the lane's content area, so center a three-stage stack with `-90 / 0 / 90` rather than `0 / 90 / 180`. With compiler-owned routes and canvas, the compiler expands only that lane.
 - Use `lane.variant: "exception"` for human wait, denial, retry, fallback, and failure lanes instead of mixing those paths into the happy path.
-- Set `mainPath` when the diagram has a clear happy path; the renderer validates that consecutive ids have matching edges and move left-to-right.
+- Set `mainPath` to the complete narrative when the diagram has a clear happy path. Consecutive ids must have matching directed edges. In v2, placing a successor to the left or wrapping to another lane does not imply a business loop: the receipt reports `mainPath.spatialWarnings` for reading-direction review and preserves every step. V1 retains its linear-column validation. A repeated v2 step retains existing behavior and reports `mainPath.semanticWarnings`; the node's Viewer step index uses its last occurrence.
 - Place nodes with lane IDs and `col` indexes in `0..5`, not raw SVG coordinates.
 - Preserve semantic edge labels. Readable v2 allocates measured label clearance;
   when a label does not fit, repair the reported capacity or route constraint

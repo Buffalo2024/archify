@@ -11,7 +11,7 @@ import {
   svgRootAttrs,
   writeDiagram,
 } from '../shared/cli.mjs';
-import { throwDiagnosticProblems } from '../shared/diagnostics.mjs';
+import { rendererFailure, throwDiagnosticProblems } from '../shared/diagnostics.mjs';
 import {
   legendFootprint,
   measureLegend,
@@ -45,6 +45,7 @@ import {
   rectsOverlap,
   roundedPath,
   routePointsValue,
+  routeHonorsEndpointSides,
   segmentIntersectsRect,
   suggestComponentSeparation,
   suggestLabelObstacleFix,
@@ -1088,6 +1089,7 @@ function validateEr() {
     relationCollection: 'relationships',
     fromSideFor: (relationship) => connectionEndpointSide(relationship, 'source'),
     toSideFor: (relationship) => connectionEndpointSide(relationship, 'target'),
+    repairForIssue: endpointRepair,
     routeHint: 'keep automatic routing so the renderer can use a side-aware bridge, or set truthful fromSide/toSide',
   }));
   problems.push(...cleanFlowProblems({
@@ -1165,19 +1167,123 @@ function validateEr() {
   }
 }
 
-function buildLayoutReport() {
+function finitePoint(point) { return Array.isArray(point) && point.length === 2 && point.every(Number.isFinite); }
+function finiteBox(box) { return [box.x, box.y, box.width, box.height, box.x + box.width, box.y + box.height].every(Number.isFinite); }
+
+// Stable archify-layout-report/v1 contract: computed geometry is independent of
+// validation success. Unknown endpoints remain explicit unavailable entries;
+// readerBudget is a source projection, not a browser readability acceptance.
+function buildLayoutReport(diagnostics = []) {
+  let incomplete = entities.size !== asArray(er.entities).length;
+  const relationshipGeometry = relationships.map((relationship, index) => {
+    const identity = { index, from: relationship.from, to: relationship.to, label: relationship.label ?? null };
+    if (!renderableRelationship(relationship) || relationship.from === relationship.to) {
+      incomplete = true;
+      return { ...identity, available: false, geometryStatus: 'unavailable', reason: 'unknown or unsupported self endpoint' };
+    }
+    try {
+      const routed = pathFor(relationship);
+      if (!routed.points.length || !routed.points.every(finitePoint)) throw new Error('route coordinates are not finite');
+      const sides = inferredSides(relationship);
+      const actualLabel = relationship.label ? erLabelPoint(relationship) : null;
+      if (actualLabel && (!finitePoint(actualLabel) || !finiteBox(relationshipLabelBox(relationship)))) throw new Error('label coordinates are not finite');
+      return {
+        ...identity, ...relationshipPath(relationship, routed, relationship.labelAt), fromCardinality: cardinalityOf(relationship, 'from'), toCardinality: cardinalityOf(relationship, 'to'),
+        available: true, geometryStatus: 'complete',
+        validationStatus: diagnostics.some((d) => d.subject?.collection === 'relationships' && (d.subject?.index === index || d.subject?.id === relationship.id && relationship.id)) ? 'invalid' : 'not-individually-validated',
+        ports: {
+          source: { point: routed.points[0], side: connectionEndpointSide(relationship, 'source'), origin: relationship.fromSide ? 'authored' : 'computed' },
+          target: { point: routed.points.at(-1), side: connectionEndpointSide(relationship, 'target'), origin: relationship.toSide ? 'authored' : 'computed' },
+        },
+        inferredSides: sides,
+        labelGeometry: actualLabel ? { point: actualLabel, rect: relationshipLabelBox(relationship), fontSize: RELATIONSHIP_LABEL_FONT, origin: relationship.labelAt ? 'authored' : 'computed' } : null,
+      };
+    } catch (error) {
+      incomplete = true;
+      return { ...identity, available: false, geometryStatus: 'unavailable', reason: error.message };
+    }
+  });
+  function nodeLabelGeometry(node) {
+    const point = [entityHeader(node).labelX, node.y + entityHeader(node).labelY];
+    const fontSize = entityHeader(node).labelFont;
+    if (!finitePoint(point) || !Number.isFinite(fontSize)) {
+      incomplete = true;
+      return { available: false, geometryStatus: 'unavailable', reason: 'node label coordinates or font size are not finite' };
+    }
+    return { available: true, geometryStatus: 'complete', point, fontSize, measurement: 'renderer-text-metrics' };
+  }
+  const nodeGeometry = [...entities.values()].map((node) => {
+    if (!finiteBox(node)) {
+      incomplete = true;
+      return { id: node.id, label: node.label, available: false, geometryStatus: 'unavailable', reason: 'node position or dimensions are not finite' };
+    }
+    return {
+      id: node.id, label: node.label, x: node.x, y: node.y, width: node.width, height: node.height,
+      ...(Number.isInteger(node.row) ? { row: node.row } : {}),
+      ...(Number.isInteger(node.col) ? { col: node.col } : {}),
+      ...(Array.isArray(node.pos) ? { pos: node.pos.map(Math.round) } : {}),
+      geometryStatus: 'complete', labelGeometry: nodeLabelGeometry(node), attributes: (node.attributes || []).map((a) => a.name),
+      available: true,
+    };
+  });
+  const finiteCanvas = finitePoint(viewBox) && viewBox.every((value) => value > 0);
+  if (!finiteCanvas) incomplete = true;
+  let measuredLegend = finiteCanvas ? measureLegend(erLegendEntries, legendLayout(viewBox[0], viewBox[1], { unfit: 'hide' })) : null;
+  if (measuredLegend && measuredLegend.entries.length && (
+    !Number.isFinite(measuredLegend.titleY) || !Number.isFinite(measuredLegend.fontSize)
+    || !measuredLegend.entries.every((entry) => finiteBox({ x: entry.x, y: entry.baseline - 10, width: entry.width, height: 14 }))
+  )) measuredLegend = null;
+  if (!measuredLegend && erLegendEntries.length) incomplete = true;
+  const labels = relationshipGeometry.flatMap((r) => r.labelGeometry ? [r.labelGeometry] : []);
+  const projectedLabelTextPx = RELATIONSHIP_LABEL_FONT * Math.min(1, 930 / viewBox[0]);
   return {
-    diagram_type: 'erd',
-    viewBox,
-    layout,
-    entities: [...entities.values()].map(entityBox),
-    relationships: relationships
-      .filter(renderableRelationship)
-      .map((relationship) => ({
-        ...relationshipPath(relationship, pathFor(relationship), relationship.labelAt),
-        fromCardinality: cardinalityOf(relationship, 'from'),
-        toCardinality: cardinalityOf(relationship, 'to'),
-      })),
+    contract: 'archify-layout-report/v1', schemaVersion: 1,
+    ok: diagnostics.length === 0, status: diagnostics.length ? 'fail' : 'pass', diagnostics,
+    geometryStatus: incomplete ? (nodeGeometry.some((node) => node.available) || relationshipGeometry.some((r) => r.available) ? 'partial' : 'unavailable') : 'complete',
+    diagram_type: 'erd', viewBox: finiteCanvas ? viewBox : null, layout,
+    entities: nodeGeometry,
+    relationships: relationshipGeometry,
+    legend: measuredLegend ? {
+      geometryStatus: 'complete', ...measuredLegend,
+      rects: [
+        ...(measuredLegend.titleY == null ? [] : [{ kind: 'title', x: layout.margin, y: measuredLegend.titleY - 10, width: 48, height: 14 }]),
+        ...measuredLegend.entries.map((entry) => ({ kind: entry.kind, x: entry.x, y: entry.baseline - 10, width: entry.width, height: 14 })),
+      ],
+    } : { geometryStatus: 'unavailable', entries: erLegendEntries, reason: 'legend does not fit the authored canvas' },
+    readerBudget: {
+      scope: 'source-projection', geometryStatus: finiteCanvas ? 'complete' : 'unavailable', diagramWidth: 930, canvasWidth: finiteCanvas ? viewBox[0] : null, canvasHeight: finiteCanvas ? viewBox[1] : null,
+      nodeMemberFontPx: layout.rowFont, legendFontPx: LEGEND_FONT_SIZE,
+      relationshipLabelFontPx: RELATIONSHIP_LABEL_FONT, projectedRelationshipLabelPx: finiteCanvas ? projectedLabelTextPx : null,
+      minimumProjectedTextPx: 6, maxCanvasWidthForRelationshipLabels: 930 * RELATIONSHIP_LABEL_FONT / 6,
+      relationshipLabelCount: labels.length, projectedRelationshipLabelsMeetFloor: finiteCanvas ? (!labels.length || projectedLabelTextPx >= 6) : null,
+      validationPassed: diagnostics.length === 0,
+    },
+  };
+}
+
+// A local waypoint alignment is deliberately verified only at the endpoint.
+// Moving it can affect its next segment, node clearance, labels, or the legend.
+function endpointRepair({ relation, issue }) {
+  if (!Array.isArray(relation.via) || !relation.via.length) return undefined;
+  const index = issue.endpoint === 'source' ? 0 : relation.via.length - 1;
+  const coordinate = issue.expectedAxis === 'horizontal' ? 1 : 0;
+  const endpoint = issue.endpoint === 'source' ? issue.start : issue.end;
+  const adjacent = relation.via[index];
+  const alongCoordinate = 1 - coordinate;
+  const sign = { left: -1, right: 1, top: -1, bottom: 1 }[issue.side];
+  if (!adjacent || (adjacent[alongCoordinate] - endpoint[alongCoordinate]) * sign <= 0) return undefined;
+  if (adjacent[coordinate] === endpoint[coordinate]) return undefined;
+  const repairedVia = relation.via.map((point) => [...point]);
+  repairedVia[index][coordinate] = endpoint[coordinate];
+  const originalPoints = pathFor(relation).points;
+  const candidate = [originalPoints[0], ...repairedVia, originalPoints.at(-1)];
+  const verified = issue.endpoint === 'source'
+    ? routeHonorsEndpointSides(candidate, issue.side, null)
+    : routeHonorsEndpointSides(candidate, null, issue.side);
+  if (!verified) return undefined;
+  return {
+    edits: [{ path: `/relationships/${relationships.indexOf(relation)}/via/${index}/${coordinate}`, value: endpoint[coordinate] }],
+    verification: { scope: 'endpoint', endpoint: issue.endpoint, side: issue.side, expectedAxis: issue.expectedAxis, endpointPoint: endpoint, passed: true, unchecked: ['remaining route segments', 'node and label clearance', 'legend', 'reader budget'] },
   };
 }
 
@@ -1365,11 +1471,16 @@ ${renderLegend()}
       </svg>`;
 }
 
-validateEr();
 if (layoutJsonMode) {
-  console.log(JSON.stringify(buildLayoutReport(), null, 2));
-  process.exit(0);
-}
+  const diagnostics = [];
+  try { validateEr(); } catch (error) { diagnostics.push(...rendererFailure(error).diagnostics); }
+  // Legend checks happen during SVG rendering too; inspect must report them.
+  try { renderLegend(); } catch (error) { diagnostics.push(...rendererFailure(error).diagnostics); }
+  const unique = [...new Map(diagnostics.map((entry) => [entry.code + ':' + entry.message, entry])).values()];
+  console.log(JSON.stringify(buildLayoutReport(unique), null, 2));
+  process.exitCode = unique.length ? 1 : 0;
+} else {
+validateEr();
 writeDiagram({
   outPath,
   template,
@@ -1379,3 +1490,5 @@ writeDiagram({
   cards: er.cards,
   sourceEvidence,
 });
+
+}

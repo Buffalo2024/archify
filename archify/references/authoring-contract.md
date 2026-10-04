@@ -234,14 +234,35 @@ semantic authoring choice, not a spacing repair. In workflow v2, let the compile
 allocate its measured mask before applying a diagnosed `labelAt`,
 `labelDx`/`labelDy`, or `labelSegment`. Apply one diagnosed geometry control at
 a time unless several edges share a constrained channel. In that case, plan the smallest coupled change from measured geometry and
-validate it together. Architecture/workflow provide layout evidence through
-`validate <type> <candidate.json> --layout-json`; for other types, use validation
-diagnostics and the rendered SVG geometry.
+validate it together. Architecture, Workflow, ERD, Class, and Dataflow provide
+layout evidence through `validate <type> <candidate.json> --layout-json`; retain
+`--quality` and `--repo-root` from the failed invocation.
 Before adding manual routes, check whether unnecessary agent-added controls
-disable automatic port spread; preserve user-required route intent. Use the
+disable automatic port spread; preserve user-required route intent. Removing a
+route preset while retaining explicit endpoint sides still constrains routing.
+After reflow, recheck all affected sides, waypoints, and label positions against
+the measured nodes and neighboring paths. Add a manual constraint only when its
+measured geometry addresses the diagnosed defect. Use the
 measured clearance rules above rather than guessing coordinates.
 
 ### Repair evidence
+
+For Workflow v2, ERD, Class, and Dataflow, `--layout-json` returns usable
+measurements even when layout validation fails. `geometryStatus` distinguishes
+`complete`, `partial`, and `unavailable`; `ok: false` and exit 1 still mean the
+candidate failed. Partial reports identify blocked or unavailable relationships;
+use only measured coordinates. Schema/input or initialization failures may have
+no geometry. Invalid command arguments retain CLI exit 2 and a structured
+argument diagnostic. Mode-specific budget fields expose supported capacity and text
+projection constraints; use those measured limits together before widening nodes
+or changing the canvas. A larger viewBox alone does not increase node spacing.
+
+Diagnostics may include repair edits and their verification scope in `evidence`.
+Apply them only to the matching candidate and authored intent. Endpoint checks
+prove endpoint alignment; a compiler check does not prove browser acceptance.
+Recheck the connected neighborhood after each edit and complete `finalize`.
+Keep behavior-changing qualifiers on the affected node or edge when shortening
+copy; moving their only occurrence to a card changes the diagram's claim.
 
 For architecture, `validate architecture <input.json> --layout-json` exposes the
 resolved component boxes, boundary frames, connection points, and label positions.
@@ -275,7 +296,7 @@ Compare diagnostics by code, subject, and stage instead of total count alone.
 5. Fix label-to-node, label-to-label, then label-to-route clearance.
 6. Fix labels that leave the canvas: move the label with `labelAt`/`labelDx`/`labelDy`/`labelSegment`, or widen `meta.viewBox`. Suggested `labelDx`/`labelDy` values replace the authored field; they are not added to it.
 
-Run `validate` after every edit. Consume `diagnostics[]` by stable `code`, exact `subject`, measured `evidence`, and `supportedFixes`. If the diagnostic gives `labelAt`, use that point instead of estimating another offset.
+Run the complete `finalize` after every edit; use standalone `validate` for focused diagnosis. Consume `diagnostics[]` by stable `code`, exact `subject`, measured `evidence`, and `supportedFixes`. If the diagnostic gives `labelAt`, use that point instead of estimating another offset.
 
 ## Mode placement
 

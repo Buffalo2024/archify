@@ -69,6 +69,33 @@ without a database node keeps it visual-only.
 
 Route presets for flows: `straight`, `vertical-channel`, `bottom-channel`,
 `top-channel`, explicit `via` points, or the default `auto` (midpoint elbow).
+An unpinned automatic route whose spread ports would create a short interior
+turn may instead use a perpendicular outside channel. The ports and nodes stay
+fixed; authored route, side, channel, and label controls retain their geometry.
+The route still has to pass the existing obstacle, label, and rhythm checks.
+
+Inspect renderer measurements without writing HTML:
+
+```bash
+node archify/renderers/dataflow/render-dataflow.mjs input.dataflow.json unused.html --layout-json
+```
+
+The `archify-dataflow-layout-v1` report includes `ok`, `status`, `diagnostics`,
+and `geometryStatus` (`complete`, `partial`, or `unavailable`). A rejected layout
+still returns JSON with a nonzero exit. Unsupported stage/row indices are
+reported before routing; their nodes and dependent flows have `available: false`
+and a `blockedBy` reason instead of fabricated coordinates. Malformed input or
+schema failures retain the normal input diagnostic boundary.
+
+`budgets` and the measured nodes/flows use the same constants and geometry as
+the SVG: supported row tops, minimum canvas width for the stage count, stage
+center spacing, node area and minimum canvas height, each centered node's width
+limit, and horizontal clear gaps beside relationship label rectangles. Five
+stages need at least 1068px of canvas width. Increasing the canvas width does
+not widen the 215px stage-center gap: two 170px nodes leave only 45px between
+them, and a 170px first-stage node extends beyond the 24px left margin.
+Use these measurements to repair the affected neighborhood while retaining
+responsibilities, relationships, and behavior-changing conditions.
 
 An explicit `meta.viewBox` retains its authored aspect ratio, stage/row geometry,
 and existing desktop Reader scale. The SVG declares

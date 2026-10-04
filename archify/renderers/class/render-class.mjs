@@ -11,7 +11,7 @@ import {
   svgRootAttrs,
   writeDiagram,
 } from '../shared/cli.mjs';
-import { throwDiagnosticProblems } from '../shared/diagnostics.mjs';
+import { rendererFailure, throwDiagnosticProblems } from '../shared/diagnostics.mjs';
 import {
   legendFootprint,
   measureLegend,
@@ -35,7 +35,9 @@ import {
   rectsOverlap,
   roundedPath,
   routePointsValue,
+  routeHonorsEndpointSides,
   segmentIntersectsRect,
+  segmentRectClearance,
   suggestComponentSeparation,
   suggestLabelObstacleFix,
 } from '../shared/geometry.mjs';
@@ -237,9 +239,32 @@ const types = new Map(measuredTypes.map((type) => {
 {
   const unplaced = [...types.values()].filter((type) => !Number.isFinite(type.x) || !Number.isFinite(type.y));
   if (unplaced.length) {
-    throwDiagnosticProblems('Class diagram placement failed',
-      unplaced.map((type) => `Type "${type.id}" needs grid row/col or an absolute pos [x,y].`),
+    const failPlacement = () => throwDiagnosticProblems('Class diagram placement failed',
+      unplaced.map((type) => `Type "${type.id}" needs grid row/col or an absolute pos [x,y] with finite coordinates.`),
       { code: 'layout/constraint', subject: { diagramType: 'class' } });
+    if (layoutJsonMode) {
+      let diagnostics;
+      try { failPlacement(); } catch (error) { diagnostics = rendererFailure(error).diagnostics; }
+      const nodes = [...types.values()].map((type) => finiteBox(type)
+        ? { id: type.id, label: type.label, x: type.x, y: type.y, width: type.width, height: type.height, available: true, geometryStatus: 'complete' }
+        : { id: type.id, label: type.label, available: false, geometryStatus: 'unavailable', reason: 'node position or dimensions are not finite' });
+      const reportJson = JSON.stringify({
+        contract: 'archify-layout-report/v1', schemaVersion: 1, diagram_type: 'class',
+        ok: false, status: 'fail', diagnostics,
+        geometryStatus: nodes.some((node) => node.available) ? 'partial' : 'unavailable',
+        types: nodes, viewBox: cd.meta.viewBox || null,
+        relationships: asArray(cd.relationships).map((r, index) => ({ index, from: r.from, to: r.to, available: false, geometryStatus: 'unavailable', reason: 'routing not initialized because node placement failed' })),
+        legend: { geometryStatus: 'unavailable', reason: 'canvas not initialized' },
+        readerBudget: { scope: 'source-projection', geometryStatus: 'unavailable', validationPassed: false, reason: 'canvas not initialized' },
+      }, null, 2);
+      // This early branch must not continue into routing, but a forced exit
+      // before the pipe drains truncates larger partial reports.
+      await new Promise((resolve, reject) => {
+        process.stdout.write(`${reportJson}\n`, (error) => error ? reject(error) : resolve());
+      });
+      process.exit(1);
+    }
+    failPlacement();
   }
 }
 
@@ -460,7 +485,7 @@ function relationshipLabelWidth(relationship) {
 // A label sits on the segment with the most room unless the author picks one:
 // above a horizontal run, beside a vertical one, so it never covers its own
 // line or lands on the box the relationship leaves.
-function relationshipLabelPoint(relationship) {
+function defaultRelationshipLabelPoint(relationship) {
   if (relationship.labelAt) return relationship.labelAt;
   const points = pathFor(relationship).points;
   const width = relationshipLabelWidth(relationship);
@@ -477,6 +502,53 @@ function relationshipLabelPoint(relationship) {
   const dy = relationship.labelDy || 0;
   if (vertical(index)) return [a[0] + width / 2 + 6 + dx, (a[1] + b[1]) / 2 + 4 + dy];
   return [(a[0] + b[0]) / 2 + dx, a[1] - 6 + dy];
+}
+// Preserve authored label controls and already-clear default placements. Only
+// implicit labels search a bounded deterministic set beside their own route;
+// an unsatisfied search keeps the original point so validation still fails.
+let automaticLabelPoints;
+function relationshipLabelPoint(relationship) {
+  if (!automaticLabelPoints) {
+    automaticLabelPoints = new Map();
+    const labelled = routable.filter((r) => r.label);
+    const authored = (r) => r.labelAt || ['labelSegment', 'labelDx', 'labelDy'].some((key) => Object.hasOwn(r, key));
+    const rectAt = (r, point) => ({ x: point[0] - relationshipLabelWidth(r) / 2, y: point[1] - 10, width: relationshipLabelWidth(r), height: 14 });
+    const reserved = labelled.filter(authored).map((r) => rectAt(r, defaultRelationshipLabelPoint(r)));
+    const routes = routable.map((r) => ({ relation: r, points: pathFor(r).points }));
+    const safe = (r, point) => {
+      const rect = rectAt(r, point);
+      if (rect.x < 0 || rect.y < 0 || rect.x + rect.width > viewBox[0] || rect.y + rect.height > viewBox[1] - layout.legendH) return false;
+      if ([...types.values()].some((box) => rectsOverlap(rect, box, 2))) return false;
+      if (reserved.some((box) => rectsOverlap(rect, box, 2))) return false;
+      return routes.every(({ relation, points }) => relation === r || points.slice(1).every((end, index) => {
+        const clearance = segmentRectClearance({ start: points[index], end }, rect);
+        return clearance == null || clearance >= 4;
+      }));
+    };
+    for (const r of labelled) {
+      const fallback = defaultRelationshipLabelPoint(r);
+      if (authored(r)) { automaticLabelPoints.set(r, fallback); continue; }
+      const points = pathFor(r).points;
+      const width = relationshipLabelWidth(r);
+      const candidates = [fallback];
+      for (let index = 0; index < points.length - 1; index += 1) {
+        const [a, b] = [points[index], points[index + 1]];
+        const vertical = Math.abs(a[0] - b[0]) < Math.abs(a[1] - b[1]);
+        for (const fraction of [0.5, 0.25, 0.75]) {
+          const x = a[0] + (b[0] - a[0]) * fraction;
+          const y = a[1] + (b[1] - a[1]) * fraction;
+          for (const offset of [0, -32, 32, -64, 64, -96, 96]) {
+            if (vertical) candidates.push([x - width / 2 - 6, y + 4 + offset], [x + width / 2 + 6, y + 4 + offset]);
+            else candidates.push([x + offset, y - 6], [x + offset, y + 16]);
+          }
+        }
+      }
+      const selected = candidates.find((point) => safe(r, point)) || fallback;
+      automaticLabelPoints.set(r, selected);
+      reserved.push(rectAt(r, selected));
+    }
+  }
+  return automaticLabelPoints.get(relationship) || defaultRelationshipLabelPoint(relationship);
 }
 function relationshipLabelBox(relationship) {
   const [lx, ly] = relationshipLabelPoint(relationship);
@@ -649,6 +721,7 @@ function validateClassDiagram() {
     ...shared,
     fromSideFor: (relationship) => connectionEndpointSide(relationship, 'source'),
     toSideFor: (relationship) => connectionEndpointSide(relationship, 'target'),
+    repairForIssue: endpointRepair,
     routeHint: 'keep automatic routing, or set truthful fromSide/toSide',
   }));
   problems.push(...cleanFlowProblems({
@@ -687,25 +760,122 @@ function validateClassDiagram() {
   }
 }
 
-function buildLayoutReport() {
+function finitePoint(point) { return Array.isArray(point) && point.length === 2 && point.every(Number.isFinite); }
+function finiteBox(box) { return [box.x, box.y, box.width, box.height, box.x + box.width, box.y + box.height].every(Number.isFinite); }
+
+// Stable archify-layout-report/v1 contract: computed geometry is independent of
+// validation success. Unknown endpoints remain explicit unavailable entries;
+// readerBudget is a source projection, not a browser readability acceptance.
+function buildLayoutReport(diagnostics = []) {
+  let incomplete = types.size !== asArray(cd.types).length;
+  const relationshipGeometry = relationships.map((relationship, index) => {
+    const identity = { index, from: relationship.from, to: relationship.to, label: relationship.label ?? null };
+    if (!renderableRelationship(relationship) || relationship.from === relationship.to) {
+      incomplete = true;
+      return { ...identity, available: false, geometryStatus: 'unavailable', reason: 'unknown or unsupported self endpoint' };
+    }
+    try {
+      const routed = pathFor(relationship);
+      if (!routed.points.length || !routed.points.every(finitePoint)) throw new Error('route coordinates are not finite');
+      const sides = inferredSides(relationship);
+      const actualLabel = relationship.label ? relationshipLabelPoint(relationship) : null;
+      if (actualLabel && (!finitePoint(actualLabel) || !finiteBox(relationshipLabelBox(relationship)))) throw new Error('label coordinates are not finite');
+      return {
+        ...identity, ...relationshipPath(relationship, routed, relationship.labelAt), kind: relationship.kind,
+        available: true, geometryStatus: 'complete',
+        validationStatus: diagnostics.some((d) => d.subject?.collection === 'relationships' && (d.subject?.index === index || d.subject?.id === relationship.id && relationship.id)) ? 'invalid' : 'not-individually-validated',
+        ports: {
+          source: { point: routed.points[0], side: connectionEndpointSide(relationship, 'source'), origin: relationship.fromSide ? 'authored' : 'computed' },
+          target: { point: routed.points.at(-1), side: connectionEndpointSide(relationship, 'target'), origin: relationship.toSide ? 'authored' : 'computed' },
+        },
+        inferredSides: sides,
+        labelGeometry: actualLabel ? { point: actualLabel, rect: relationshipLabelBox(relationship), fontSize: RELATIONSHIP_LABEL_FONT, origin: relationship.labelAt ? 'authored' : 'computed' } : null,
+      };
+    } catch (error) {
+      incomplete = true;
+      return { ...identity, available: false, geometryStatus: 'unavailable', reason: error.message };
+    }
+  });
+  function nodeLabelGeometry(node) {
+    const point = [node.x + node.width / 2, node.y + (STEREOTYPE[node.kind] ? 34 : 22)];
+    const fontSize = layout.nameFont;
+    if (!finitePoint(point) || !Number.isFinite(fontSize)) {
+      incomplete = true;
+      return { available: false, geometryStatus: 'unavailable', reason: 'node label coordinates or font size are not finite' };
+    }
+    return { available: true, geometryStatus: 'complete', point, fontSize, measurement: 'renderer-text-metrics' };
+  }
+  const nodeGeometry = [...types.values()].map((node) => {
+    if (!finiteBox(node)) {
+      incomplete = true;
+      return { id: node.id, label: node.label, available: false, geometryStatus: 'unavailable', reason: 'node position or dimensions are not finite' };
+    }
+    return {
+      id: node.id, label: node.label, x: node.x, y: node.y, width: node.width, height: node.height,
+      ...(Number.isInteger(node.row) ? { row: node.row } : {}),
+      ...(Number.isInteger(node.col) ? { col: node.col } : {}),
+      geometryStatus: 'complete', labelGeometry: nodeLabelGeometry(node), kind: node.kind,
+      available: true,
+    };
+  });
+  const finiteCanvas = finitePoint(viewBox) && viewBox.every((value) => value > 0);
+  if (!finiteCanvas) incomplete = true;
+  let measuredLegend = finiteCanvas ? measureLegend(legendEntries, legendLayout(viewBox[0], viewBox[1], { unfit: 'hide' })) : null;
+  if (measuredLegend && measuredLegend.entries.length && (
+    !Number.isFinite(measuredLegend.titleY) || !Number.isFinite(measuredLegend.fontSize)
+    || !measuredLegend.entries.every((entry) => finiteBox({ x: entry.x, y: entry.baseline - 10, width: entry.width, height: 14 }))
+  )) measuredLegend = null;
+  if (!measuredLegend && legendEntries.length) incomplete = true;
+  const labels = relationshipGeometry.flatMap((r) => r.labelGeometry ? [r.labelGeometry] : []);
+  const projectedLabelTextPx = RELATIONSHIP_LABEL_FONT * Math.min(1, 930 / viewBox[0]);
   return {
-    diagram_type: 'class',
-    viewBox,
-    types: [...types.values()].map((type) => ({
-      id: type.id,
-      label: type.label,
-      kind: type.kind,
-      x: Math.round(type.x),
-      y: Math.round(type.y),
-      width: type.width,
-      height: type.height,
-      ...(Number.isInteger(type.row) ? { row: type.row } : {}),
-      ...(Number.isInteger(type.col) ? { col: type.col } : {}),
-    })),
-    relationships: routable.map((relationship) => ({
-      ...relationshipPath(relationship, pathFor(relationship), relationship.labelAt),
-      kind: relationship.kind,
-    })),
+    contract: 'archify-layout-report/v1', schemaVersion: 1,
+    ok: diagnostics.length === 0, status: diagnostics.length ? 'fail' : 'pass', diagnostics,
+    geometryStatus: incomplete ? (nodeGeometry.some((node) => node.available) || relationshipGeometry.some((r) => r.available) ? 'partial' : 'unavailable') : 'complete',
+    diagram_type: 'class', viewBox: finiteCanvas ? viewBox : null, layout,
+    types: nodeGeometry,
+    relationships: relationshipGeometry,
+    legend: measuredLegend ? {
+      geometryStatus: 'complete', ...measuredLegend,
+      rects: [
+        ...(measuredLegend.titleY == null ? [] : [{ kind: 'title', x: layout.margin, y: measuredLegend.titleY - 10, width: 48, height: 14 }]),
+        ...measuredLegend.entries.map((entry) => ({ kind: entry.kind, x: entry.x, y: entry.baseline - 10, width: entry.width, height: 14 })),
+      ],
+    } : { geometryStatus: 'unavailable', entries: legendEntries, reason: 'legend does not fit the authored canvas' },
+    readerBudget: {
+      scope: 'source-projection', geometryStatus: finiteCanvas ? 'complete' : 'unavailable', diagramWidth: 930, canvasWidth: finiteCanvas ? viewBox[0] : null, canvasHeight: finiteCanvas ? viewBox[1] : null,
+      nodeMemberFontPx: layout.memberFont, legendFontPx: LEGEND_FONT_SIZE,
+      relationshipLabelFontPx: RELATIONSHIP_LABEL_FONT, projectedRelationshipLabelPx: finiteCanvas ? projectedLabelTextPx : null,
+      minimumProjectedTextPx: 6, maxCanvasWidthForRelationshipLabels: 930 * RELATIONSHIP_LABEL_FONT / 6,
+      relationshipLabelCount: labels.length, projectedRelationshipLabelsMeetFloor: finiteCanvas ? (!labels.length || projectedLabelTextPx >= 6) : null,
+      validationPassed: diagnostics.length === 0,
+    },
+  };
+}
+
+// A local waypoint alignment is deliberately verified only at the endpoint.
+// Moving it can affect its next segment, node clearance, labels, or the legend.
+function endpointRepair({ relation, issue }) {
+  if (!Array.isArray(relation.via) || !relation.via.length) return undefined;
+  const index = issue.endpoint === 'source' ? 0 : relation.via.length - 1;
+  const coordinate = issue.expectedAxis === 'horizontal' ? 1 : 0;
+  const endpoint = issue.endpoint === 'source' ? issue.start : issue.end;
+  const adjacent = relation.via[index];
+  const alongCoordinate = 1 - coordinate;
+  const sign = { left: -1, right: 1, top: -1, bottom: 1 }[issue.side];
+  if (!adjacent || (adjacent[alongCoordinate] - endpoint[alongCoordinate]) * sign <= 0) return undefined;
+  if (adjacent[coordinate] === endpoint[coordinate]) return undefined;
+  const repairedVia = relation.via.map((point) => [...point]);
+  repairedVia[index][coordinate] = endpoint[coordinate];
+  const originalPoints = pathFor(relation).points;
+  const candidate = [originalPoints[0], ...repairedVia, originalPoints.at(-1)];
+  const verified = issue.endpoint === 'source'
+    ? routeHonorsEndpointSides(candidate, issue.side, null)
+    : routeHonorsEndpointSides(candidate, null, issue.side);
+  if (!verified) return undefined;
+  return {
+    edits: [{ path: `/relationships/${relationships.indexOf(relation)}/via/${index}/${coordinate}`, value: endpoint[coordinate] }],
+    verification: { scope: 'endpoint', endpoint: issue.endpoint, side: issue.side, expectedAxis: issue.expectedAxis, endpointPoint: endpoint, passed: true, unchecked: ['remaining route segments', 'node and label clearance', 'legend', 'reader budget'] },
   };
 }
 
@@ -883,11 +1053,16 @@ ${renderLegend()}
       </svg>`;
 }
 
-validateClassDiagram();
 if (layoutJsonMode) {
-  console.log(JSON.stringify(buildLayoutReport(), null, 2));
-  process.exit(0);
-}
+  const diagnostics = [];
+  try { validateClassDiagram(); } catch (error) { diagnostics.push(...rendererFailure(error).diagnostics); }
+  // Legend checks happen during SVG rendering too; inspect must report them.
+  try { renderLegend(); } catch (error) { diagnostics.push(...rendererFailure(error).diagnostics); }
+  const unique = [...new Map(diagnostics.map((entry) => [entry.code + ':' + entry.message, entry])).values()];
+  console.log(JSON.stringify(buildLayoutReport(unique), null, 2));
+  process.exitCode = unique.length ? 1 : 0;
+} else {
+validateClassDiagram();
 writeDiagram({
   outPath,
   template,
@@ -897,3 +1072,5 @@ writeDiagram({
   cards: cd.cards,
   sourceEvidence,
 });
+
+}

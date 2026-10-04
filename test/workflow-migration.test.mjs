@@ -654,9 +654,11 @@ test('fallback planning preserves straight-edge rank constraints when mapping ab
   assert.deepEqual(report.newSchemaDiagnostics, []);
 });
 
-for (const { example, expectedEdge } of [
-  { example: 'incident-response.workflow.json', expectedEdge: ['alert', 'page'] },
-  { example: 'release-delivery.workflow.json', expectedEdge: ['pull_request', 'build'] },
+for (const { example, expectedEdges } of [
+  { example: 'incident-response.workflow.json', expectedEdges: [
+    ['alert', 'page', 'drop'], ['contain', 'recover', 'bottom-channel'], ['update', 'escalate', 'drop'],
+  ] },
+  { example: 'release-delivery.workflow.json', expectedEdges: [['pull_request', 'build', 'drop']] },
 ]) {
   test(`workflow migration preserves causal route diagnostics for packaged ${example}`, () => {
     const source = path.join(skillRoot, 'examples', example);
@@ -671,12 +673,10 @@ for (const { example, expectedEdge } of [
     assert.deepEqual(fs.readFileSync(source), sourceBefore);
 
     const failure = parseJsonOutput(result);
-    assert.equal(failure.diagnostics.length, 1, JSON.stringify(failure.diagnostics, null, 2));
+    assert.equal(failure.diagnostics.length, expectedEdges.length, JSON.stringify(failure.diagnostics, null, 2));
     assert.ok(failure.diagnostics.every(({ message }) => !/mainPath step .* no matching edge/.test(message)));
-    const [diagnostic] = failure.diagnostics;
-    assert.equal(diagnostic.code, 'workflow/route-preset-conflict');
-    assert.deepEqual([diagnostic.subject?.from, diagnostic.subject?.to], expectedEdge);
-    assert.equal(diagnostic.subject?.route, 'drop');
+    assert.ok(failure.diagnostics.every(({ code }) => code === 'workflow/route-preset-conflict'));
+    assert.deepEqual(failure.diagnostics.map(({ subject }) => [subject?.from, subject?.to, subject?.route]), expectedEdges);
   });
 }
 

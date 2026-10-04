@@ -234,8 +234,20 @@ const CASES = [
     (d) => { d.groups = [{ id: 'empty', label: 'Empty group', lane: 'ui', fromCol: 3, toCol: 4 }]; }, ['does not contain any nodes']],
   ['workflow: mainPath missing edge', 'workflow',
     (d) => { d.mainPath = ['user', 'planner']; }, ['mainPath step "user" -> "planner" has no matching edge']],
-  ['workflow: mainPath moves backward', 'workflow',
-    (d) => { d.mainPath = ['external', 'trace']; }, ['moves backward from col']],
+  ['workflow: fixed-v1 mainPath moves backward', 'workflow',
+    (d) => {
+      for (const key of Object.keys(d)) delete d[key];
+      Object.assign(d, {
+        schema_version: 1, diagram_type: 'workflow',
+        meta: { title: 'Legacy main path' },
+        lanes: [{ id: 'flow', label: 'Flow' }],
+        nodes: [
+          { id: 'a', lane: 'flow', col: 1, type: 'backend', label: 'Prepare' },
+          { id: 'b', lane: 'flow', col: 0, type: 'backend', label: 'Finish' },
+        ],
+        edges: [{ from: 'a', to: 'b' }], mainPath: ['a', 'b'],
+      });
+    }, ['moves backward from col']],
   ['workflow: phase ranges overlap', 'workflow',
     (d) => { d.phases[2].fromCol = d.phases[1].toCol; }, ['overlaps phase', 'start at col 4 or later']],
 
@@ -365,6 +377,16 @@ for (const [name, mode, mutate, expected] of CASES) {
     }
   });
 }
+
+test('workflow: readable-v2 mainPath may follow a directed edge to an earlier column', () => {
+  const doc = load('workflow');
+  doc.mainPath = ['external', 'trace'];
+  const frozen = JSON.stringify(doc);
+  const { code, stderr, outPath } = render('workflow', doc);
+  assert.equal(code, 0, stderr);
+  assert.ok(fs.existsSync(outPath));
+  assert.equal(JSON.stringify(doc), frozen);
+});
 
 test('workflow: same-lane nodes the solver separated by exactly 8px keep passing (#583)', () => {
   // Redacted reproduction from #583: the neighbour constraint puts column

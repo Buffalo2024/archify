@@ -1,7 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-const DIAGNOSTIC_MODE = process.env.ARCHIFY_DIAGNOSTIC_FORMAT === 'json';
+const DIAGNOSTIC_MODE = process.env.ARCHIFY_DIAGNOSTIC_FORMAT === 'json'
+  || process.argv.includes('--layout-json');
 const recorded = [];
 const recordedMessages = new Set();
 const boundaryKey = Symbol.for('archify.renderer-diagnostic-boundary');

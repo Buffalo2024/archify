@@ -630,7 +630,7 @@ function compilerFailure(contract, diagnostics, error = diagnostics.map(({ messa
     ok: false,
     error,
     diagnostics,
-    receipt: { contract, diagnostics },
+    receipt: { contract, diagnostics, geometryStatus: 'unavailable' },
   };
 }
 
@@ -990,6 +990,30 @@ function createWorkflowStepIndexes(workflow) {
   }
 
   return { mainPathSteps, edgeSteps, nodeStep };
+}
+
+function mainPathMeasurement(workflow, nodes) {
+  const steps = [...asArray(workflow.mainPath)];
+  return {
+    steps,
+    semanticWarnings: [...new Set(steps)].flatMap(id => {
+      const indexes = steps.flatMap((step, index) => step === id ? [index] : []);
+      return indexes.length > 1 ? [{
+        code: 'workflow/main-path-revisit', node: id, stepIndexes: indexes,
+        message: 'This node appears in more than one narrative step; the Viewer node step index uses its last occurrence.',
+      }] : [];
+    }),
+    spatialWarnings: asArray(workflow.mainPath).slice(1).flatMap((toId, index) => {
+      const fromId = workflow.mainPath[index];
+      const from = nodes.get(fromId);
+      const to = nodes.get(toId);
+      return from && to && to.col < from.col ? [{
+        code: 'workflow/main-path-spatial-backtrack', from: fromId, to: toId,
+        fromCol: from.col, toCol: to.col, fromLane: from.lane, toLane: to.lane,
+        message: 'The narrative advances toward a lower column; inspect the reading direction without removing semantic steps.',
+      }] : [];
+    }),
+  };
 }
 
 // Legacy capacity repair: the v1 column-capacity gate and the three fix
@@ -1508,6 +1532,17 @@ function workflowSceneLabelObstacles() {
 
 const { mainPathSteps, edgeSteps, nodeStep } = createWorkflowStepIndexes(workflow);
 const edgeIndexByEdge = new Map(asArray(workflow.edges).map((edge, index) => [edge, index]));
+const verifiedRepairEvidence = new Map();
+
+function rememberVerifiedRepair(message, edits) {
+  const repair = {
+    edits,
+    verification: { scope: 'workflow-compiler', qualityProfile: resolvedQualityProfile || 'standard', outcome: 'pass' },
+    constraintChange: 'authored-routing',
+  };
+  verifiedRepairEvidence.set(message, repair);
+  return repair;
+}
 
   function acceptsFix(mutator) {
     if (!discoverFixes) return false;
@@ -1535,6 +1570,21 @@ function verifiedEdgeFix(edge, message, mutator) {
   const edgeIndex = workflow.edges.indexOf(edge);
   if (edgeIndex < 0) return null;
   const accepted = acceptsFix((document) => mutator(document.edges[edgeIndex], document));
+  if (accepted) {
+    const candidate = cloneWorkflow(workflow);
+    mutator(candidate.edges[edgeIndex], candidate);
+    const after = candidate.edges[edgeIndex];
+    const authoredIndex = sourceIndexes.edges.get(edge);
+    const edits = [...new Set([...Object.keys(edge), ...Object.keys(after)])].flatMap((field) => {
+      if (JSON.stringify(edge[field]) === JSON.stringify(after[field])) return [];
+      return [{
+        op: after[field] === undefined ? 'remove' : edge[field] === undefined ? 'add' : 'replace',
+        path: `/edges/${authoredIndex}/${field}`,
+        ...(after[field] !== undefined ? { value: after[field] } : {}),
+      }];
+    });
+    rememberVerifiedRepair(message, edits);
+  }
   return accepted ? message : null;
 }
 
@@ -1599,9 +1649,11 @@ function verifiedPinRemovalAlternatives(edge, fields, reason) {
     const edgeName = workflowEdgeName(edge);
     return {
       removalSets,
-      supportedFixes: removalSets.map((fieldSet) => (
-        `remove ${fieldSet.join(' and ')} from edge "${edgeName}" ${reason}`
-      )),
+      supportedFixes: removalSets.map((fieldSet) => {
+        const message = `remove ${fieldSet.join(' and ')} from edge "${edgeName}" ${reason}`;
+        rememberVerifiedRepair(message, fieldSet.map(field => ({ op: 'remove', path: `/edges/${sourceIndexes.edges.get(edge)}/${field}` })));
+        return message;
+      }),
     };
   }
   return { removalSets: [], supportedFixes: [] };
@@ -1677,7 +1729,11 @@ function verifiedPinReferenceAlternatives(candidateRefs, reason) {
       const removals = grouped.map(({ edge, fields }) => (
         `remove ${fields.join(' and ')} from edge "${workflowEdgeName(edge)}"`
       ));
-      return { removalSet, message: `${removals.join(' and ')} ${reason}` };
+      const message = `${removals.join(' and ')} ${reason}`;
+      rememberVerifiedRepair(message, removalSet.map(({ edge, field }) => ({
+        op: 'remove', path: `/edges/${sourceIndexes.edges.get(edge)}/${field}`,
+      })));
+      return { removalSet, message };
     });
     return {
       removalSets,
@@ -1757,7 +1813,10 @@ function throwExplicitPinConflict(edge, invariant, evidence, supportedFixes = []
       to: edge.to,
       ...(pinPath ? { path: pinPath } : {}),
     },
-    evidence: { invariant, ...evidence },
+    evidence: {
+      invariant, ...evidence,
+      verifiedRepairs: supportedFixes.flatMap(message => verifiedRepairEvidence.has(message) ? [verifiedRepairEvidence.get(message)] : []),
+    },
     supportedFixes: supportedFixes.filter(Boolean),
   }]);
 }
@@ -2217,6 +2276,46 @@ function routeContainsChannelPin(points, field, value) {
 
 function validateReadablePinnedGeometry() {
   if (workflow.schema_version !== 2) return;
+  // Endpoint/preset feasibility does not depend on the first failed edge.
+  // Collect these independent failures before reserving authored geometry.
+  const presetDiagnostics = [];
+  const failedPresetEdges = new Set();
+  for (const edge of workflow.edges) {
+    if (!edge.route || edge.route === 'auto' || Array.isArray(edge.via)
+      || edge.channelX !== undefined || edge.channelY !== undefined
+      || !edge.fromSide || !edge.toSide
+      || !nodes.has(edge.from) || !nodes.has(edge.to)) continue;
+    const from = nodes.get(edge.from);
+    const to = nodes.get(edge.to);
+    const { fromSide, toSide } = edgeSides(edge);
+    const ports = automaticPorts.get(edge);
+    try {
+      readablePresetVia(edge, from, to, ports?.from || anchor(from, fromSide), ports?.to || anchor(to, toSide), fromSide, toSide);
+    } catch (error) {
+      if (!Array.isArray(error?.archifyDiagnostics)) throw error;
+      presetDiagnostics.push(...error.archifyDiagnostics);
+      failedPresetEdges.add(edge);
+    }
+  }
+  if (presetDiagnostics.length) {
+    if (failedPresetEdges.size > 1 && acceptsFix(document => {
+      for (const edge of failedPresetEdges) {
+        const revised = document.edges[workflow.edges.indexOf(edge)];
+        for (const field of ['route', 'fromSide', 'toSide']) delete revised[field];
+      }
+    })) {
+      const message = 'if the reported routing constraints are optional, release them together; the complete compiler replay passed';
+      const edits = [...failedPresetEdges].flatMap(edge => ['route', 'fromSide', 'toSide']
+        .filter(field => edge[field] !== undefined)
+        .map(field => ({ op: 'remove', path: `/edges/${sourceIndexes.edges.get(edge)}/${field}` })));
+      const repair = rememberVerifiedRepair(message, edits);
+      for (const diagnostic of presetDiagnostics) {
+        diagnostic.supportedFixes.push(message);
+        diagnostic.evidence.verifiedRepairs.push(repair);
+      }
+    }
+    throwDiagnosticError('Workflow route presets have independent feasibility conflicts.', presetDiagnostics);
+  }
   // Reserve absolute geometry at contested nodes before automatic routing,
   // independently of IDs. Unrelated routes retain their diagnostic ordering.
   for (const edge of workflow.edges) {
@@ -2774,7 +2873,7 @@ function validateWorkflow() {
       if (!linked) {
         problems.push(`mainPath step "${fromId}" -> "${toId}" has no matching edge — add the edge or remove the pair from mainPath.`);
       }
-      if (to.col < from.col) {
+      if (workflow.schema_version === 1 && to.col < from.col) {
         problems.push(`mainPath step "${fromId}" -> "${toId}" moves backward from col ${from.col} to ${to.col} — use a return edge outside mainPath for loops.`);
       }
     }
@@ -3861,20 +3960,37 @@ function readablePresetVia(edge, from, to, start, end, fromSide, toSide) {
   }
   const message = `Workflow edge "${workflowEdgeName(edge)}" cannot satisfy route preset "${preset}" under readable-v2 constraints (minimum 8px endpoint stubs, 16px interior turns, and 28px direct clearance).`;
   const edgeIndex = workflow.edges.indexOf(edge);
+  const authoredEdgeIndex = sourceIndexes.edges.get(edge);
   const edgeName = workflowEdgeName(edge);
   const supportedFixes = [];
+  const verifiedRepairs = [];
+  const recordRepair = (message, edits) => {
+    supportedFixes.push(message);
+    verifiedRepairs.push(rememberVerifiedRepair(message, edits));
+  };
   for (const candidatePreset of ['straight', 'drop', 'outside-right', 'return-left', 'bottom-channel', 'up-channel']) {
     if (candidatePreset === preset) continue;
     if (acceptsFix((document) => {
       document.edges[edgeIndex].route = candidatePreset;
     })) {
-      supportedFixes.push(`set edge "${edgeName}" route to verified preset "${candidatePreset}"`);
+      recordRepair(`set edge "${edgeName}" route to verified preset "${candidatePreset}"`, [
+        { op: 'replace', path: `/edges/${authoredEdgeIndex}/route`, value: candidatePreset },
+      ]);
     }
   }
   if (acceptsFix((document) => {
     delete document.edges[edgeIndex].route;
   })) {
-    supportedFixes.push(`remove route from edge "${edgeName}" so readable-v2 can use its verified automatic candidate`);
+    recordRepair(`remove route from edge "${edgeName}" so readable-v2 can use its verified automatic candidate`, [
+      { op: 'remove', path: `/edges/${authoredEdgeIndex}/route` },
+    ]);
+  }
+  const optionalFields = ['route', 'fromSide', 'toSide'].filter(field => edge[field] !== undefined);
+  if (optionalFields.length > 1 && acceptsFix((document) => {
+    for (const field of optionalFields) delete document.edges[edgeIndex][field];
+  })) {
+    recordRepair(`if its endpoint constraints are optional, remove ${optionalFields.join('/')} from edge "${edgeName}"; the complete compiler replay passed`,
+      optionalFields.map(field => ({ op: 'remove', path: `/edges/${authoredEdgeIndex}/${field}` })));
   }
   throwDiagnosticError(message, [{
     code: 'workflow/route-preset-conflict',
@@ -3895,6 +4011,8 @@ function readablePresetVia(edge, from, to, start, end, fromSide, toSide) {
       requiredEndpointStubPx: 8,
       requiredInteriorSegmentPx: 16,
       requiredDirectClearancePx: 28,
+      endpointDirectionsHonored: routeHonorsEndpointSides(points, fromSide, toSide),
+      verifiedRepairs,
     },
     supportedFixes,
   }]);
@@ -4802,9 +4920,11 @@ ${renderLegend()}
     const svg = renderSvg();
     const receipt = {
       contract: layout.contract,
+      geometryStatus: 'complete',
       viewBox: [...viewBox],
       requiredViewBox: [...requiredViewBox],
       columns: [...layout.colXs],
+      mainPath: mainPathMeasurement(workflow, nodes),
       nodes: [...nodes.values()].map((node) => ({
         id: node.id,
         lane: node.lane,
@@ -4831,7 +4951,21 @@ ${renderLegend()}
   } catch (error) {
     if (!Array.isArray(error?.archifyDiagnostics)) throw error;
     const diagnostics = error.archifyDiagnostics.map((diagnostic) => ({ ...diagnostic }));
-    return compilerFailure(layout.contract, diagnostics, error.message);
+    const failed = compilerFailure(layout.contract, diagnostics, error.message);
+    failed.receipt = {
+      ...failed.receipt,
+      measurementStatus: 'partial-invalid',
+      geometryStatus: 'partial',
+      viewBox: [...viewBox], requiredViewBox: [...requiredViewBox], columns: [...layout.colXs],
+      nodes: [...nodes.values()].map(({ id, lane, col, x, y, width, height }) => ({ id, lane, col, x, y, width, height })),
+      mainPath: mainPathMeasurement(workflow, nodes),
+      edges: workflow.edges.map((edge) => ({
+        id: edge.id ?? null, from: edge.from, to: edge.to,
+        status: pathCache.has(edge) ? 'measured-invalid' : 'blocked',
+        ...(pathCache.has(edge) ? { points: pathCache.get(edge).points.map((point) => [...point]) } : {}),
+      })),
+    };
+    return failed;
   }
 }
 

@@ -2,7 +2,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { esc, renderDefinitions, renderSemanticSigil, textUnits } from '../shared/utils.mjs';
 import { animateAttr, focusEdgeAttrs, focusNodeAttrs, focusNodeTitle, loadDiagramWithBrandMarks, writeDiagram, svgAccessibleText, svgRootAttrs } from '../shared/cli.mjs';
-import { throwDiagnosticProblems } from '../shared/diagnostics.mjs';
+import { rendererFailure, throwDiagnosticProblems } from '../shared/diagnostics.mjs';
 import { resolveLegend, renderLegend as renderResolvedLegend } from '../shared/legend.mjs';
 import { availableNodeTextWidth, fittedNodeFontSize, minimumNodeTextWidth, nodeLabelLayout } from '../shared/text-fit.mjs';
 import { brandLabelFitWidth, brandMarkFor, brandMetadataFor, brandTopRailProblem, renderBrandMark } from '../shared/brand-marks.mjs';
@@ -23,6 +23,8 @@ import {
   suggestLabelPairFix,
   anchor,
   automaticPortSpread,
+  automaticPortRhythmBridge,
+  segmentIntersectsRect,
   legacyDefaultFromSide as defaultFromSide,
   legacyDefaultToSide as defaultToSide,
   chosenSide,
@@ -44,10 +46,12 @@ const nodeTextFit = {
 };
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const layoutJsonMode = process.argv.includes('--layout-json');
 const { diagram: dataflow, template, outPath, sourceEvidence } = await loadDiagramWithBrandMarks({
   rendererDir: __dirname,
   diagramType: 'dataflow',
-  defaultExample: 'product-analytics.dataflow.json'
+  defaultExample: 'product-analytics.dataflow.json',
+  argv: process.argv.filter(arg => arg !== '--layout-json'),
 });
 
 const viewBox = dataflow.meta?.viewBox || [940, 720];
@@ -95,13 +99,13 @@ function measureNode(node) {
   const width = node.width || layout.nodeW;
   const height = node.height || layout.nodeH;
   const cx = stageX(node.stage);
-  const y = layout.rowYs[node.row] + (node.yOffset || 0);
+  const y = layout.rowYs[node.row] === undefined ? null : layout.rowYs[node.row] + (node.yOffset || 0);
   return {
     ...node,
     width,
     height,
     cx,
-    cy: y + height / 2,
+    cy: y === null ? null : y + height / 2,
     x: cx - width / 2,
     y
   };
@@ -119,16 +123,14 @@ for (const [index, node] of asArray(dataflow.nodes).entries()) {
 
 function validateDataflow() {
   const problems = [];
+  const details = [];
+  const capacity = capacityDiagnostics();
+  if (capacity.length) {
+    throwDiagnosticProblems('Data-flow layout validation failed', capacity.map(d => d.message), { diagnostics: capacity });
+  }
   if (nodes.size !== asArray(dataflow.nodes).length) problems.push('Node ids must be unique.');
 
-  const stageCount = asArray(dataflow.stages).length;
   for (const node of nodes.values()) {
-    if (typeof node.stage !== 'number' || node.stage < 0 || node.stage >= stageCount) {
-      problems.push(`Node "${node.id}" uses invalid stage ${node.stage} — valid stages are 0..${stageCount - 1}.`);
-    }
-    if (typeof node.row !== 'number' || node.row < 0 || node.row >= layout.rowYs.length) {
-      problems.push(`Node "${node.id}" uses invalid row ${node.row} — valid rows are 0..${layout.rowYs.length - 1}.`);
-    }
     if (!isFinitePoint(node.x, node.y, node.cx, node.cy)) {
       problems.push(`Node "${node.id}" produced non-finite coordinates — check stage, row, width, height, and yOffset are numbers.`);
       continue;
@@ -254,7 +256,7 @@ function validateDataflow() {
   const labelRects = [];
   for (const [flowIndex, flow] of asArray(dataflow.flows).entries()) {
     if (!flow.label || !nodes.has(flow.from) || !nodes.has(flow.to)) continue;
-    const [lx, ly] = labelPoint(flow, pathFor(flow).points);
+    const [lx, ly] = flowLabelPoint(flow, pathFor(flow));
     const { width, height } = flowLabelSize(flow);
     labelRects.push({ relation: flow, relationIndex: flowIndex, label: flow.label, x: lx - width / 2, y: ly - 11, width, height, lx, ly });
   }
@@ -292,14 +294,42 @@ function validateDataflow() {
 
   const lastStageX = stageX(asArray(dataflow.stages).length - 1);
   if (lastStageX + layout.stageW / 2 > viewBox[0] - 24) {
-    problems.push(`Stages exceed viewBox width — set meta.viewBox[0] to at least ${Math.ceil(lastStageX + layout.stageW / 2 + 24)}.`);
+    const message = `Stages exceed viewBox width — set meta.viewBox[0] to at least ${minimumStageCanvasWidth()}.`;
+    problems.unshift(message);
+    details.push({ code: 'layout/dataflow-canvas-capacity', message,
+      subject: { diagramType: 'dataflow', field: 'meta.viewBox', collection: 'stages' },
+      evidence: { viewBox, stageCount: dataflow.stages.length, minimumWidth: minimumStageCanvasWidth(), stageCenterGap: layout.colGap, stageWidth: layout.stageW },
+      supportedFixes: [`increase meta.viewBox[0] to at least ${minimumStageCanvasWidth()} while preserving stage order, node responsibilities and relationships; a wider canvas does not widen the ${layout.colGap}px stage-center spacing`],
+    });
   }
 
   if (problems.length) {
     throwDiagnosticProblems('Data-flow layout validation failed', problems, {
       subject: { diagramType: 'dataflow' },
+      diagnostics: details,
     });
   }
+}
+
+function minimumStageCanvasWidth() {
+  return Math.ceil(stageX(dataflow.stages.length - 1) + layout.stageW / 2 + 24);
+}
+
+function capacityDiagnostics() {
+  return asArray(dataflow.nodes).flatMap((node, index) => {
+    const issues = [];
+    for (const [field, maximum] of [['stage', dataflow.stages.length - 1], ['row', layout.rowYs.length - 1]]) {
+      if (Number.isInteger(node[field]) && node[field] >= 0 && node[field] <= maximum) continue;
+      issues.push({
+        code: `layout/dataflow-${field}-capacity`, severity: 'error',
+        message: `Node "${node.id}" uses invalid ${field} ${node[field]} — valid ${field}s are 0..${maximum}; increasing meta.viewBox does not add ${field}s.`,
+        subject: { diagramType: 'dataflow', collection: 'nodes', index, nodeId: node.id, field },
+        evidence: { requested: node[field], minimum: 0, maximum, minimumStageCanvasWidth: minimumStageCanvasWidth(), ...(field === 'row' ? { rowTops: layout.rowYs } : {}) },
+        supportedFixes: [`place node "${node.id}" in a supported ${field} (0..${maximum}) while preserving its responsibility and relationships; use yOffset with a sufficient canvas height for additional vertical spacing`],
+      });
+    }
+    return issues;
+  });
 }
 
 function routeVia(flow, from, to, start, end) {
@@ -355,7 +385,50 @@ function pathFor(flow) {
   // auto-route never emits a zero-length final segment — SVG derives
   // marker-end orientation from the last segment, and a degenerate segment
   // leaves the arrowhead angle undefined (see #169).
-  const rawPoints = [start, ...routeVia(flow, from, to, start, end), end];
+  let rawPoints = [start, ...routeVia(flow, from, to, start, end), end];
+  let automaticLabelSegment;
+  const unpinned = (!flow.route || flow.route === 'auto')
+    && ['via', 'fromSide', 'toSide', 'channelX', 'channelY', 'labelAt', 'labelDx', 'labelDy', 'labelSegment'].every(key => flow[key] === undefined);
+  if (unpinned && ['left', 'right'].includes(fromSide) && ['left', 'right'].includes(toSide)
+      && Math.abs(start[1] - end[1]) >= 4 && Math.abs(start[1] - end[1]) < 16) {
+    const bridge = automaticPortRhythmBridge(start, end, fromSide, toSide, {
+      accept(points) {
+        if (points.some(([x, y]) => x < 0 || y < 0 || x > viewBox[0] || y > viewBox[1])) return false;
+        for (let i = 0; i < points.length - 1; i += 1) {
+          const segment = { start: points[i], end: points[i + 1] };
+          for (const node of nodes.values()) {
+            if (node.id === flow.from && i === 0) continue;
+            if (node.id === flow.to && i === points.length - 2) continue;
+            if (segmentIntersectsRect(segment, node, node.id === flow.from || node.id === flow.to ? 0 : 2)) return false;
+          }
+        }
+        const [lx, ly] = labelPoint({ ...flow, labelSegment: 2 }, points);
+        const size = flowLabelSize(flow);
+        const rect = { x: lx - size.width / 2, y: ly - 11, ...size };
+        if (!(rect.x >= 0 && rect.y >= 0 && rect.x + rect.width <= viewBox[0] && rect.y + rect.height <= viewBox[1]
+          && [...nodes.values()].every(node => !rectsOverlap(rect, node, -2)))) return false;
+        // Try the alternate channel when a new label would obscure another
+        // relationship. Unresolved peers retain their established auto route;
+        // validation still checks the complete final scene afterwards.
+        for (const other of asArray(dataflow.flows)) {
+          if (other === flow || !nodes.has(other.from) || !nodes.has(other.to)) continue;
+          const otherFrom = nodes.get(other.from), otherTo = nodes.get(other.to);
+          const sides = flowSides(other), ports = automaticPorts.get(other);
+          const a = ports?.from || anchor(otherFrom, sides.fromSide);
+          const b = ports?.to || anchor(otherTo, sides.toSide);
+          const peer = pathCache.get(other)?.points || [a, ...routeVia(other, otherFrom, otherTo, a, b), b];
+          for (let i = 0; i < peer.length - 1; i += 1) {
+            if (segmentIntersectsRect({ start: peer[i], end: peer[i + 1] }, rect, 4)) return false;
+          }
+        }
+        return true;
+      },
+    });
+    if (bridge) {
+      rawPoints = bridge;
+      automaticLabelSegment = 2;
+    }
+  }
   const points = [];
   for (const p of rawPoints) {
     const prev = points.at(-1);
@@ -366,9 +439,13 @@ function pathFor(flow) {
   // Guard against an all-degenerate route (e.g. start === end): keep both
   // endpoints so the path is still well-formed even if the marker is hidden.
   if (points.length < 2) points.push(end);
-  const routed = { d: polylinePath(points), points };
+  const routed = { d: polylinePath(points), points, automaticLabelSegment };
   pathCache.set(flow, routed);
   return routed;
+}
+
+function flowLabelPoint(flow, routed) {
+  return labelPoint(routed.automaticLabelSegment === undefined ? flow : { ...flow, labelSegment: routed.automaticLabelSegment }, routed.points);
 }
 
 // Header measurement follows 276970789's #257, including the ordinal.
@@ -460,7 +537,7 @@ function renderFlowPath(flow, index) {
 
 function renderFlowLabel(flow, index) {
   const routed = pathFor(flow);
-  const [lx, ly] = labelPoint(flow, routed.points);
+  const [lx, ly] = flowLabelPoint(flow, routed);
   const { width: labelW, height: labelH } = flowLabelSize(flow);
   const classification = flow.classification
     ? `\n        <text data-detail="fine" x="${lx}" y="${ly + 11}" class="t-dim" font-size="7" text-anchor="middle">${esc(flow.classification)}</text>`
@@ -534,13 +611,57 @@ ${renderLegend()}
       </svg>`;
 }
 
-validateDataflow();
-writeDiagram({
-  outPath,
-  template,
-  diagramType: 'dataflow',
-  meta: dataflow.meta,
-  svg: renderSvg(),
-  cards: dataflow.cards,
-  sourceEvidence,
-});
+function buildLayoutReport(diagnostics = []) {
+  const capacity = capacityDiagnostics();
+  const measuredNodes = [...nodes.values()].map(node => {
+    const blockedBy = capacity.filter(d => d.subject.nodeId === node.id).map(d => d.code);
+    const available = blockedBy.length === 0 && isFinitePoint(node.x, node.y, node.cx, node.cy);
+    return {
+      id: node.id, stage: node.stage, row: node.row, available, blockedBy,
+      ...(available ? { x: node.x, y: node.y, width: node.width, height: node.height, center: [node.cx, node.cy], maximumCenteredWidth: Math.max(0, 2 * Math.min(node.cx - 24, viewBox[0] - 24 - node.cx)) } : {}),
+    };
+  });
+  const measuredIds = new Set(measuredNodes.filter(node => node.available).map(node => node.id));
+  const flows = asArray(dataflow.flows).map((flow, index) => {
+    const available = measuredIds.has(flow.from) && measuredIds.has(flow.to);
+    if (!available) return { id: flow.id || `flow-${index}`, from: flow.from, to: flow.to, available: false, blockedBy: ['endpoint-geometry-unavailable'] };
+    const routed = pathFor(flow);
+    const [lx, ly] = flowLabelPoint(flow, routed);
+    const size = flowLabelSize(flow);
+    const from = nodes.get(flow.from), to = nodes.get(flow.to);
+    return { id: flow.id || `flow-${index}`, from: flow.from, to: flow.to, available: true, blockedBy: [], points: routed.points,
+      label: { text: flow.label, x: lx - size.width / 2, y: ly - 11, ...size, anchor: [lx, ly] },
+      ...(from.row === to.row && from.stage !== to.stage ? { horizontalClearGap: Math.abs(to.cx - from.cx) - (from.width + to.width) / 2 } : {}),
+    };
+  });
+  const unavailable = measuredNodes.some(node => !node.available) || flows.some(flow => !flow.available);
+  return {
+    schemaVersion: 1, contract: 'archify-dataflow-layout-v1', diagramType: 'dataflow',
+    ok: diagnostics.length === 0, status: diagnostics.length ? 'fail' : 'pass',
+    geometryStatus: unavailable ? (measuredIds.size ? 'partial' : 'unavailable') : 'complete',
+    blockedBy: [...new Set(diagnostics.map(d => d.code))], diagnostics, viewBox,
+    budgets: {
+      supportedRows: { minimum: 0, maximum: layout.rowYs.length - 1, tops: layout.rowYs },
+      stageCount: dataflow.stages.length, minimumStageCanvasWidth: minimumStageCanvasWidth(),
+      stageCenterGap: layout.colGap, stageWidth: layout.stageW,
+      nodeArea: { left: 24, right: viewBox[0] - 24, top: layout.stageY + layout.stageH + 22, bottom: viewBox[1] - layout.stageBottomPad },
+      minimumNodeCanvasHeight: Math.max(0, ...measuredNodes.filter(node => node.available).map(node => node.y + node.height + layout.stageBottomPad)),
+    },
+    stages: compositionFrames.map(frame => ({ ...frame, available: true, blockedBy: [] })),
+    nodes: measuredNodes, flows,
+  };
+}
+
+if (layoutJsonMode) {
+  try {
+    validateDataflow();
+    console.log(JSON.stringify(buildLayoutReport(), null, 2));
+  } catch (error) {
+    if (!error.archifyDiagnostics?.length) throw error;
+    console.log(JSON.stringify(buildLayoutReport(rendererFailure(error).diagnostics), null, 2));
+    process.exitCode = 1;
+  }
+} else {
+  validateDataflow();
+  writeDiagram({ outPath, template, diagramType: 'dataflow', meta: dataflow.meta, svg: renderSvg(), cards: dataflow.cards, sourceEvidence });
+}
