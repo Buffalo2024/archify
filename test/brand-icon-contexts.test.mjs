@@ -36,7 +36,7 @@ function run(args) {
   });
 }
 
-async function fixture(t, markup, { byteChunks = false, contentType = 'text/html; charset=utf-8' } = {}) {
+async function fixture(t, markup, { byteChunks = false, contentType = 'text/html; charset=utf-8', fallbackIcon = icon } = {}) {
   const data = { markup, requests: [] };
   const server = http.createServer(async (request, response) => {
     data.requests.push(request.url);
@@ -53,9 +53,12 @@ async function fixture(t, markup, { byteChunks = false, contentType = 'text/html
         response.write(html);
       }
       response.end();
-    } else if (['/active.png', '/active.png?a=1&b=2', '/favicon.ico'].includes(request.url)) {
+    } else if (['/active.png', '/active.png?a=1&b=2'].includes(request.url)) {
       response.writeHead(200, { 'content-type': 'image/png' });
       response.end(icon);
+    } else if (request.url === '/favicon.ico' && fallbackIcon) {
+      response.writeHead(200, { 'content-type': 'image/png' });
+      response.end(fallbackIcon);
     } else if (request.url === '/inactive.png') {
       response.writeHead(200, { 'content-type': 'image/png' });
       response.end(inactiveIcon);
@@ -121,6 +124,38 @@ for (const contentType of ['application/xhtml+xml', 'Application/XHTML+XML; char
   });
 }
 
+for (const [name, prefix] of [
+  ['script', '<script src="/app.js" />'],
+  ['template', '<template />'],
+]) {
+  for (const [fallback, fallbackIcon] of [['different', inactiveIcon], ['missing', null]]) {
+    test(`capture reads icons after an empty XHTML ${name} with a ${fallback} favicon`, async (t) => {
+      const markup = prefix + '<link rel="icon" href="/active.png" />';
+      await capture(await fixture(t, markup, { contentType: 'application/xhtml+xml', fallbackIcon }));
+    });
+  }
+
+  test(`empty-element syntax does not close an HTML ${name}`, async (t) => {
+    const markup = prefix + activeLink;
+    await capture(await fixture(t, markup, { fallbackIcon: inactiveIcon }), ['/favicon.ico'], inactiveDigest);
+  });
+
+  test(`an empty XHTML ${name} survives one-byte response chunks`, { timeout: 20000 }, async (t) => {
+    const markup = prefix + '<link rel="icon" href="/active.png" />';
+    await capture(await fixture(t, markup, {
+      byteChunks: true,
+      contentType: 'Application/XHTML+XML; charset=utf-8; profile="text/html"',
+      fallbackIcon: inactiveIcon,
+    }));
+  });
+}
+
+test('an empty XHTML template does not change the enclosing template depth', async (t) => {
+  const markup = '<template><template /><link rel="icon" href="/inactive.png" /></template>'
+    + '<link rel="icon" href="/active.png" />';
+  await capture(await fixture(t, markup, { contentType: 'application/xhtml+xml', fallbackIcon: inactiveIcon }));
+});
+
 for (const [name, markup] of [
   ['ordinary icon', activeLink],
   ['quoted greater-than', '<link title="size > zero" rel="icon" href="/active.png">'],
@@ -135,6 +170,34 @@ for (const [name, markup] of [
     await capture(await fixture(t, markup));
   });
 }
+
+test('old noscript pins fail closed until explicitly recaptured', { timeout: 45000 }, async (t) => {
+  const temporary = fs.mkdtempSync(path.join(os.tmpdir(), 'archify-brand-recapture-'));
+  t.after(() => fs.rmSync(temporary, { recursive: true, force: true }));
+  const data = await fixture(t, noscriptLink + activeLink);
+  const diagram = JSON.parse(fs.readFileSync(path.join(skillRoot, 'examples/web-app.architecture.json'), 'utf8'));
+  diagram.components[0].brand = { url: data.url, sha256: inactiveDigest };
+  const input = path.join(temporary, 'diagram.json');
+  const original = JSON.stringify(diagram);
+  fs.writeFileSync(input, original);
+
+  const outdated = await run(['validate', 'architecture', input, '--json']);
+  assert.notEqual(outdated.status, 0, outdated.stderr || outdated.stdout);
+  assert.ok(JSON.parse(outdated.stdout).diagnostics.some((entry) => entry.code === 'brand/digest-mismatch'));
+  assert.deepEqual(data.requests, ['/studio', '/active.png']);
+  assert.equal(fs.readFileSync(input, 'utf8'), original, 'validation must not rewrite an existing pin');
+
+  data.requests.length = 0;
+  const recaptured = await capture(data);
+  assert.equal(fs.readFileSync(input, 'utf8'), original, 'capture must not rewrite authored diagrams');
+  diagram.components[0].brand = recaptured;
+  fs.writeFileSync(input, JSON.stringify(diagram));
+  data.requests.length = 0;
+  const updated = await run(['validate', 'architecture', input, '--json']);
+  assert.equal(updated.status, 0, updated.stderr || updated.stdout);
+  assert.equal(JSON.parse(updated.stdout).ok, true);
+  assert.deepEqual(data.requests, ['/studio', '/active.png']);
+});
 
 test('inactive declarations do not consume the five icon candidate slots', async (t) => {
   const removed = Array.from({ length: 5 }, (_, index) => `<link rel="icon" href="/missing-${index}.png">`).join('');

@@ -64,13 +64,22 @@ cannot supply icon declarations; quoted `>` characters stay within their tags.
 For `text/html`, discovery treats `noscript` contents as raw text, matching
 scripting-enabled HTML parsing; capture does not execute scripts. This exclusion
 does not apply to `application/xhtml+xml`, where `noscript` links remain
-discoverable.
+discoverable. XHTML empty elements such as `<script />` and `<template />` do not
+hide following links; the same trailing slash does not close those elements in
+`text/html`.
 Unknown URL capture accepts only bounded raster image formats, blocks
 credentials, nonstandard public ports, and private or link-local destinations,
 uses bounded concurrency and one total deadline, and returns the captured
 content digest. Later render and validate operations require that exact digest;
 blocked, unavailable, changed, oversized, or unsafe content fails closed instead
 of silently changing the artifact.
+
+After upgrading from a version that captured inactive HTML markup (including
+`noscript`), an existing URL pin may fail with `brand/digest-mismatch` because
+discovery now selects a different icon. Inspect the intended icon, rerun the
+capture command above for the same URL, and explicitly replace the authored
+`brand` value with the returned pin. Existing pins are not rewritten
+automatically, and digest verification remains enforced.
 
 For ICO captures, every directory entry must reference a non-empty image range
 after the complete directory and within the downloaded file. This bounds check
