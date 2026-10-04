@@ -4,11 +4,11 @@ Community DeepSeek Harness integration for [Archify](https://github.com/tt-a1i/a
 
 The currently published npm package is **v0.1.0**, with experimental compatibility for developer-preview **`@deepseek-ai/dsh@0.1.0-rc.6`** on Node.js **`^22.19.0 || >=24.0.0`**. It bundles Archify Skill **2.14.0**. It is not a stable cross-version guarantee.
 
-The pending **v0.2.0** release is prepared for experimental compatibility with developer-preview **`@deepseek-ai/dsh@0.1.2-rc.1`**. It is not published or available as an npm install yet. It is a Skill-only bundle: it inserts one filesystem Skill provider named `archify-plugin` and exposes **Archify 3.0.1**, pinned to stable `main` commit `7158026e852f3aa6578c741e673b46d7878c92c1`. This snapshot includes the Skill installation fix from [#704](https://github.com/tt-a1i/archify/pull/704), which landed after the `v3.0.1` tag; it is not a byte-for-byte copy of that tag. The packaged `package.json` and `skill-release.json` both declare 3.0.1. Compared with the published plugin 0.1.0, it includes the Archify 3.x authoring and delivery flow, authored brand marks, Workflow schema v2, Viewer localization, and update awareness.
+The pending **v1.0.0** release candidate is prepared for the explicitly supported developer-preview **`@deepseek-ai/dsh@0.1.2-rc.1`**. It is not published or available as an npm install yet. The 1.0 adapter contract covers this exact DSH host version; it does not make the host stable or guarantee compatibility with other DSH versions. It is a Skill-only bundle: it inserts one filesystem Skill provider named `archify-plugin` and exposes **Archify 3.0.1**, pinned to stable `main` commit `7158026e852f3aa6578c741e673b46d7878c92c1`. This snapshot includes the Skill installation fix from [#704](https://github.com/tt-a1i/archify/pull/704), which landed after the `v3.0.1` tag; it is not a byte-for-byte copy of that tag. The packaged `package.json` and `skill-release.json` both declare 3.0.1. Compared with the published plugin 0.1.0, it includes the Archify 3.x authoring and delivery flow, authored brand marks, Workflow schema v2, Viewer localization, and update awareness.
 
 `release.json` records the immutable Skill source commit, Skill version, and DSH version used by acceptance. Packaging uses the canonical clean-Skill stager against that commit, preserving license notices and excluding development files. Adapter version 0.1.0 and its `archify-dsh-v0.1.0` tag remain unchanged; reproduce that old release by checking out its tag first.
 
-The adapter registers no native render/validate/deliver tools, custom Web client, Produced Files chips, telemetry, credentials handling, background services, or install hooks. The pending v0.2.0 Skill includes an optional, notification-only stable Archify update checker; it never upgrades the plugin. Authored remote brand assets may also use the Skill's bounded network path. The adapter itself makes no network requests.
+The adapter registers no native render/validate/deliver tools, custom Web client, Produced Files chips, telemetry, credentials handling, background services, or install hooks. The pending v1.0.0 Skill includes an optional, notification-only stable Archify update checker; it never upgrades the plugin. Authored remote brand assets may also use the Skill's bounded network path. The adapter itself makes no network requests.
 
 ## Patch execution boundary
 
@@ -26,6 +26,8 @@ dsh plugin --profile web add @tt-a1i/archify-dsh@0.1.0
 
 ## Upgrade
 
+The 1.0.0 release gate covers both a clean installation and upgrading the published plugin 0.1.0 to the candidate in the same isolated profile on `@deepseek-ai/dsh@0.1.2-rc.1`. The older host `0.1.0-rc.6` is not a supported 1.0 target: update the host separately before upgrading the plugin. The Node requirement remains `^22.19.0 || >=24.0.0`; the three-platform release gate runs on Node 22. See the [adapter changelog](CHANGELOG.md) for the bundled Archify change.
+
 Run the same exact-version install command above in each profile that uses Archify. Updating DSH itself or the Archify repository does not update an already installed plugin.
 
 Do **not** use `dsh plugin add tt-a1i/archify`: the repository root is not a DSH package and has no bundle metadata (see [#341](https://github.com/tt-a1i/archify/issues/341)). For an npm download problem, a locally downloaded, integrity-verified `.tgz` can be passed to `dsh plugin --profile web add /absolute/path/to/package.tgz`.
@@ -38,7 +40,7 @@ The bundle's `cordis.patch.yml` contains a `!!js` expression that DSH evaluates 
 
 Every Archify release records a sync or deferral decision in the [DSH synchronization checklist](../../CONTRIBUTING.md#release-checklist-dsh-synchronization). Plugin and Archify versions are independent.
 
-On a release branch, bump `package.json`, update `release.json` with the full source commit and matching Skill/DSH versions, and prepare the package README. The pack command reads adapter files and release metadata from the current adapter Git HEAD blob: commit those changes before packing; working-tree edits are not package inputs. Run:
+On a release branch, bump `package.json`, update `release.json` with the full source commit and matching Skill/DSH versions, and prepare `PACKAGE_README.md`, which is staged as the npm package’s `README.md`. This repository README tracks publication status separately. The pack command reads adapter files and release metadata from the current adapter Git HEAD blob: commit those changes before packing; working-tree edits are not package inputs. Run:
 
 ```bash
 node --test integrations/deepseek-harness/test/*.test.mjs
@@ -46,7 +48,7 @@ node integrations/deepseek-harness/scripts/distribution-acceptance.mjs
 node integrations/deepseek-harness/scripts/pack.mjs --out /tmp/archify-dsh.tgz --json
 ```
 
-Distribution acceptance requires Node 22 for the canonical ZIP regression check and pnpm 10. It installs the real pinned DSH runtime and tarball in temporary profiles, checks discovery and loading, runs `doctor` and `demo` through the installed CLI, and checks uninstall. The full source-version package smoke runs on a temporary copy of the installed Skill because it rewrites bundled examples; the copy preserves pnpm store hard links in the actual installation. Release CI runs this on Linux, macOS, and Windows. Publish only the tested tarball as a new version; tag the corresponding adapter commit as `archify-dsh-v<version>`. After v0.2.0 is published and publicly verified, switch the public install examples to `@0.2.0`. Rebuilding a released adapter uses its tag and recorded Skill commit, not a moving branch.
+Distribution acceptance requires Node 22 for the canonical ZIP regression check and pnpm 10. It installs the real pinned DSH runtime and tarball in temporary profiles, checks discovery and loading, runs `doctor` and `demo` through the installed CLI, and checks uninstall. It also installs an integrity-pinned published 0.1.0 tarball, upgrades that same profile to the candidate, checks both Skill identities and loading, exercises the upgraded CLI, and verifies removal preserves the base profile. The full source-version package smoke runs on a temporary copy of the installed Skill because it rewrites bundled examples; the copy preserves pnpm store hard links in the actual installation. Release CI runs this on Linux, macOS, and Windows. Publish only the tested tarball as a new version; tag the corresponding adapter commit as `archify-dsh-v<version>`. After v1.0.0 is published and publicly verified, switch the public install examples to `@1.0.0`. Rebuilding a released adapter uses its tag and recorded Skill commit, not a moving branch.
 
 ## Invoke
 

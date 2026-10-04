@@ -115,3 +115,15 @@ test('Skills CLI, Cursor, Codex, Claude Code, OpenCode, and Raven remain the def
   const quickStartIndex = english.indexOf('## Quick start');
   assert.ok(dshEnglishIndex > quickStartIndex, 'DSH docs must not precede the default quick start');
 });
+
+test('npm README describes the packaged version independently of publication status', () => {
+  const packaged = read('integrations/deepseek-harness/PACKAGE_README.md');
+  assert.ok(packaged.includes(`@tt-a1i/archify-dsh@${candidate.adapterVersion}`));
+  assert.ok(packaged.includes(`Archify ${candidate.skillVersion}`));
+  assert.ok(packaged.includes(`@deepseek-ai/dsh@${candidate.dshVersion}`));
+  assert.ok(packaged.includes(candidate.sourceCommit));
+  assert.ok(packaged.includes(manifest.engines.node));
+  assert.doesNotMatch(packaged, /currently published npm package|not published or available as an npm install yet/);
+  assert.match(packaged, /After this version is available in the npm registry/);
+  assert.match(packaged, /outside the agent sandbox/);
+});
