@@ -1,0 +1,10 @@
+{
+  "templateVersion": 1,
+  "repository": "tt-a1i/archify",
+  "number": 718,
+  "author": "tt-a1i",
+  "title": "docs(dsh): backport migration review and evidence checklist to main",
+  "mergedAt": "2026-10-05T11:41:44Z",
+  "mergeCommit": "73aaa0696e8f72c232ea710e6fa94fd953f3e773",
+  "url": "https://github.com/tt-a1i/archify/pull/718"
+}
