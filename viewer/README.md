@@ -179,6 +179,9 @@ provider is part of Focus ownership, not a second initialization step.
   Focus owns displaying or hiding evidence and building the existing safe links.
   Relationship rows are grouped out/in/loop, retaining authored order within each
   group and deduplicating keys. Up/Down/Home/End clamp within the resulting rows.
+  A diagram-container ResizeObserver requests the existing placement frame while
+  Passport is visible, so manual positions are reclamped after Reader layout
+  settles. Active dragging retains its existing placement guard.
 - Relationship intent priority is pin, then focus, then hover. Clearing one intent
   may restore another. Pointer transitions within the same row/hit target do not
   reset intent; touch and non-fine-pointer hover retain their filters. Direct hover
@@ -565,15 +568,20 @@ The source split narrows maintenance scope while preserving runtime dependencies
   navigation reserve and `whenStable` while probing layout. The browser
   visual checker also uses `window.Archify.readerLayout.whenStable`.
 - Reader owns the outer width (`html`'s `--archify-reader-width`) and temporary
-  `data-reader-layout` / `data-reader-overflow` attributes. Ineligible measures
-  clear them and reset the recorded width. CSS consumes the width on `.container`.
+  `data-reader-layout` / `data-reader-overflow` attributes. Automatic canvases
+  whose enlargement cap binds also use `data-reader-area` and
+  `--archify-diagram-min-height` to keep a normal viewport-sized reading area.
+  Uncapped and ineligible measures clear these values
+  and reset the recorded width. CSS consumes the width on `.container`.
   Reader never writes canonical SVG geometry, viewBox or semantic IDs.
 - Automatic (`intrinsic-height`) Sequence and Waterfall canvases use the
   available desktop reading width and retain authored vertical page scroll;
   overflow settling must not shrink them back to fit the viewport height.
   Other diagram families retain height fitting. All automatic canvases cap
-  enlargement at 1.5 times the authored SVG width, independently of the 960px
-  shell floor used by the header and controls. An explicit viewBox retains
+  enlargement at 1.5 times the authored SVG width without reducing the outer
+  reading area. Capped SVGs are centered inside that area; uncapped diagrams
+  retain their existing natural flow. The 960px shell floor still serves the header and
+  controls. An explicit viewBox retains
   its existing fixed-canvas fit. Present still provides the full overview;
   camera 100% is relative to the fitted reading size, not intrinsic SVG pixels.
 - Initial wide-diagram classification sets `data-wide-diagram` on the diagram

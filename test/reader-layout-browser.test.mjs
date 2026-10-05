@@ -40,6 +40,9 @@ test('Reader Layout preserves final-artifact behavior across its ownership bound
     }
     artifacts[mode] = output;
   }
+  const compactErd = path.join(scratch, 'compact-table.html');
+  execFileSync(process.execPath, [path.join(skillRoot, 'renderers/erd/render-erd.mjs'),
+    path.resolve(skillRoot, '../test/fixtures/reader-readability/compact-table.erd.json'), compactErd]);
   const browser = new ChromeVisualBrowser(chromePath);
   const records = [];
   try {
@@ -84,6 +87,8 @@ test('Reader Layout preserves final-artifact behavior across its ownership bound
           layout: html.getAttribute('data-reader-layout'), overflow: html.getAttribute('data-reader-overflow'),
           wide: diagram.getAttribute('data-wide-diagram'), shape: html.getAttribute('data-diagram-shape'),
           readerFit: svg.getAttribute('data-reader-fit'),
+          readerArea: html.getAttribute('data-reader-area'),
+          minimumAreaHeight: html.style.getPropertyValue('--archify-diagram-min-height'),
           geometry: ['viewBox', 'width', 'height'].map(function (name) { return svg.getAttribute(name); }),
           shellWidth: document.querySelector('.container').getBoundingClientRect().width,
           scrollHeight: Math.max(html.scrollHeight, document.body.scrollHeight),
@@ -129,6 +134,8 @@ test('Reader Layout preserves final-artifact behavior across its ownership bound
       assert.equal(state.layout, null);
       assert.equal(state.overflow, null);
       assert.equal(state.receipt.width, 0);
+      assert.equal(state.readerArea, null);
+      assert.equal(state.minimumAreaHeight, '');
       assert.equal(state.wide, wide ? 'true' : null);
       assert.equal(state.shape, wide ? 'wide' : null);
     }
@@ -201,6 +208,135 @@ test('Reader Layout preserves final-artifact behavior across its ownership bound
     });
 
     const wide = variant('wide', { ratio: 3, undeclaredFit: true });
+    await t.test('compact real ERD keeps the normal canvas while SVG enlargement remains capped', async () => {
+      const original = fs.readFileSync(compactErd, 'utf8');
+      const uncapped = path.join(scratch, 'compact-table-uncapped-control.html');
+      // Keep identical automatic eligibility and authored geometry; only remove
+      // the SVG enlargement cap to establish the normal outer reader area.
+      assert.ok(original.includes('var MAX_AUTOMATIC_SCALE = 1.5;'));
+      fs.writeFileSync(uncapped, original.replace('var MAX_AUTOMATIC_SCALE = 1.5;',
+        'var MAX_AUTOMATIC_SCALE = Infinity;'));
+      async function area() {
+        return evaluate(`(function () {
+          var budget = Archify.readerLayout.measure();
+          var diagram = document.querySelector('.diagram-container');
+          var svg = diagram.querySelector(':scope > svg');
+          var rect = diagram.getBoundingClientRect();
+          var svgRect = svg.getBoundingClientRect();
+          var style = getComputedStyle(diagram);
+          var left = rect.left + parseFloat(style.borderLeftWidth) + parseFloat(style.paddingLeft);
+          var right = rect.right - parseFloat(style.borderRightWidth) - parseFloat(style.paddingRight);
+          var top = rect.top + parseFloat(style.borderTopWidth) + parseFloat(style.paddingTop);
+          var bottom = rect.bottom - parseFloat(style.borderBottomWidth) - parseFloat(style.paddingBottom);
+          var bodyStyle = getComputedStyle(document.body);
+          return { width: rect.width, height: rect.height, svgWidth: svg.clientWidth,
+            intrinsicWidth: svg.viewBox.baseVal.width, budget,
+            chromeX: rect.width - (right - left),
+            chromeY: rect.height - (bottom - top),
+            viewportWidth: innerWidth,
+            bodyX: parseFloat(bodyStyle.paddingLeft) + parseFloat(bodyStyle.paddingRight),
+            readerArea: document.documentElement.getAttribute('data-reader-area'),
+            minimumAreaHeight: document.documentElement.style.getPropertyValue('--archify-diagram-min-height'),
+            stageRail: document.documentElement.getAttribute('data-nav-stage-rail'),
+            navReserve: style.getPropertyValue('--archify-nav-reserve'),
+            centerX: (svgRect.left + svgRect.right - left - right) / 2,
+            centerY: (svgRect.top + svgRect.bottom - top - bottom) / 2 };
+        })()`);
+      }
+      for (const [width, height] of [[1440, 900], [1600, 1000], [1920, 1080], [2048, 1320]]) {
+        await load(uncapped, { width, height });
+        const normal = await area();
+        await load(compactErd, { width, height });
+        const fitted = await area();
+        records.push({ label: `compact-table-${width}-canvas`, normal, fitted });
+        assert.equal(normal.readerArea, null, 'uncapped automatic canvas retains ordinary document flow');
+        assert.equal(normal.minimumAreaHeight, '');
+        assert.equal(fitted.readerArea, 'true', 'a binding cap keeps its normal outer reader area');
+        // Navigation may switch between an external rail and in-canvas controls
+        // when the SVG shrinks. Both regions must keep their own normal viewport
+        // budget; the enlargement cap must affect only the SVG.
+        for (const region of [normal, fitted]) {
+          const desiredWidth = region.budget.availableSvgHeight * region.budget.ratio + region.chromeX;
+          const expectedWidth = Math.max(960, Math.min(1920, region.viewportWidth - region.bodyX, desiredWidth));
+          assert.ok(Math.abs(region.width - Math.round(expectedWidth)) <= 1, JSON.stringify(region));
+          assert.ok(Math.abs(region.height - region.budget.availableSvgHeight - region.chromeY) <= 1, JSON.stringify(region));
+        }
+        assert.ok(fitted.width > 960 && fitted.height > height * 0.75, JSON.stringify(fitted));
+        assert.ok(fitted.svgWidth <= fitted.intrinsicWidth * 1.5 + 1, JSON.stringify(fitted));
+        assert.ok(Math.abs(fitted.centerX) <= 1 && Math.abs(fitted.centerY) <= 1, JSON.stringify(fitted));
+        const geometry = (await snapshot(`compact-table-${width}`)).geometry;
+        await evaluate('Archify.view.zoomOut()');
+        await stable();
+        const zoomed = await area();
+        records.push({ label: `compact-table-${width}-zoomed-canvas`, zoomed });
+        assert.ok(Math.abs(zoomed.centerX) <= 1 && Math.abs(zoomed.centerY) <= 1, JSON.stringify(zoomed));
+        assert.ok(Math.abs(zoomed.height - fitted.height) <= 1 && Math.abs(zoomed.width - fitted.width) <= 1);
+        await evaluate('Archify.view.reset()');
+        await stable();
+        assert.deepEqual((await snapshot(`compact-table-${width}-reset`)).geometry, geometry);
+      }
+    });
+
+    await t.test('automatic compact ERD clears its reader area in specialized modes and restores it on return', async () => {
+      await load(compactErd);
+      async function restored(label) {
+        const state = await snapshot(label);
+        assert.equal(state.active, true);
+        assert.equal(state.readerArea, 'true');
+        assert.match(state.minimumAreaHeight, /^[\d.]+px$/);
+      }
+      await restored('compact-area-initial');
+      await evaluate("document.documentElement.setAttribute('data-embed', 'true')");
+      await stable();
+      inactive(await snapshot('compact-area-embed'), false);
+      await evaluate("document.documentElement.removeAttribute('data-embed')");
+      await stable();
+      await restored('compact-area-after-embed');
+      await evaluate('Archify.presentation.enter()');
+      await stable();
+      inactive(await snapshot('compact-area-presentation'), false);
+      await evaluate('Archify.presentation.exit()');
+      await stable();
+      await restored('compact-area-after-presentation');
+      await media('dark', false, true);
+      await stable();
+      inactive(await snapshot('compact-area-print'), false);
+      await media('dark');
+      await stable();
+      await restored('compact-area-after-print');
+    });
+
+    await t.test('compact ERD resize clears and restores its area across desktop eligibility and binding cap boundaries', async () => {
+      await load(compactErd);
+      const initial = await snapshot('compact-resize-initial');
+      assert.equal(initial.readerArea, 'true');
+      await viewport(1023, 900);
+      await stable();
+      const narrow = await snapshot('compact-resize-ineligible');
+      inactive(narrow, false);
+      assert.deepEqual(narrow.geometry, initial.geometry);
+      await viewport(1440, 900);
+      await stable();
+      const desktop = await snapshot('compact-resize-eligible');
+      assert.equal(desktop.readerArea, 'true');
+      assert.deepEqual(desktop.geometry, initial.geometry);
+      // The same desktop width at a short viewport height already fits this
+      // graph below its enlargement cap; that ordinary flow needs no area floor.
+      await viewport(1440, 360);
+      await stable();
+      const uncapped = await snapshot('compact-resize-nonbinding');
+      assert.equal(uncapped.active, true);
+      assert.equal(uncapped.readerArea, null);
+      assert.equal(uncapped.minimumAreaHeight, '');
+      assert.deepEqual(uncapped.geometry, initial.geometry);
+      await viewport(1440, 900);
+      await stable();
+      const capped = await snapshot('compact-resize-binding');
+      assert.equal(capped.readerArea, 'true');
+      assert.match(capped.minimumAreaHeight, /^[\d.]+px$/);
+      assert.deepEqual(capped.geometry, initial.geometry);
+    });
+
     await t.test('long automatic sequences and waterfalls favor reading width while small canvases cap enlargement', async () => {
       function readerFixture(name, width, height, attributes) {
         const original = fs.readFileSync(artifacts.architecture, 'utf8');
@@ -233,7 +369,13 @@ test('Reader Layout preserves final-artifact behavior across its ownership bound
           const before = await snapshot(`${name}-${viewportWidth}`);
           const dimensions = await evaluate(`(function () {
             var svg = document.querySelector('.diagram-container > svg');
+            var diagram = svg.parentElement;
+            var style = getComputedStyle(diagram);
+            var startY = diagram.getBoundingClientRect().top + parseFloat(style.paddingTop) + parseFloat(style.borderTopWidth);
             return { width: svg.clientWidth, height: svg.clientHeight,
+              startOffsetY: svg.getBoundingClientRect().top - startY,
+              readerArea: document.documentElement.getAttribute('data-reader-area'),
+              minimumAreaHeight: document.documentElement.style.getPropertyValue('--archify-diagram-min-height'),
               primaryPx: 14 * svg.clientWidth / svg.viewBox.baseVal.width,
               overflowX: Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) > innerWidth + 1 };
           })()`);
@@ -244,6 +386,10 @@ test('Reader Layout preserves final-artifact behavior across its ownership bound
           }
           assert.equal(dimensions.overflowX, false, JSON.stringify(dimensions));
           assert.ok(dimensions.width <= width * 1.5 + 1, JSON.stringify(dimensions));
+          if (dimensions.width < width * 1.5 - 1) {
+            assert.equal(dimensions.readerArea, null, 'nonbinding automatic cap preserves natural document flow');
+            assert.equal(dimensions.minimumAreaHeight, '');
+          }
           if (name === 'small-erd') {
             assert.ok(dimensions.width >= 456, JSON.stringify(dimensions));
             assert.ok(before.shellWidth >= 960, JSON.stringify(before));
@@ -251,6 +397,7 @@ test('Reader Layout preserves final-artifact behavior across its ownership bound
             assert.ok(dimensions.width >= 1250, JSON.stringify(dimensions));
             assert.ok(dimensions.primaryPx >= 14, JSON.stringify(dimensions));
             assert.ok(before.scrollHeight > before.innerHeight);
+            assert.ok(Math.abs(dimensions.startOffsetY) <= 1, 'long content begins at the normal canvas top: ' + JSON.stringify(dimensions));
             assert.equal(before.overflow, 'authored');
           }
           await evaluate('Archify.view.zoomIn(); Archify.view.reset()');

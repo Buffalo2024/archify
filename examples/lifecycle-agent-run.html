@@ -608,6 +608,12 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       max-width: var(--archify-reader-width, 1440px);
       margin: 0 auto;
     }
+    html[data-reader-area="true"] .diagram-container {
+      min-height: var(--archify-diagram-min-height);
+      display: flex;
+      align-items: center;
+    }
+    html[data-reader-area="true"] .diagram-container > svg { flex-shrink: 0; }
     html[data-reader-narrow="true"]:not([data-present="true"]) .diagram-container > svg {
       min-width: 0;
       max-width: var(--archify-diagram-max-width);
@@ -9228,6 +9234,13 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       window.addEventListener('scroll', requestLensPlacement, { passive: true });
       window.addEventListener('resize', requestLensPlacement);
       container.addEventListener('scroll', requestLensPlacement, { passive: true });
+      // Reader and Chrome may finish resizing the stage after window resize.
+      // The absolute Passport does not resize its container when reclamped.
+      if (typeof ResizeObserver === 'function') {
+        new ResizeObserver(function () {
+          if (!chip.hidden) requestLensPlacement();
+        }).observe(container);
+      }
       document.addEventListener('visibilitychange', function () {
         if (document.hidden) removeRelationshipPulse();
       });
@@ -9578,6 +9591,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       var frame = 0;
       var settleFrame = 0;
       var lastWidth = 0;
+      var automaticAreaHeight = 0;
       // Widest reader the overflow settle has accepted for this viewport (0 =
       // uncapped). Card copy rewraps as the reader narrows, so recomputing
       // from fixed heights alone would widen again and oscillate; only a
@@ -9699,11 +9713,14 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       function clear() {
         html.style.removeProperty('--archify-reader-width');
         html.style.removeProperty('--archify-diagram-max-width');
+        html.style.removeProperty('--archify-diagram-min-height');
+        html.removeAttribute('data-reader-area');
         html.removeAttribute('data-reader-narrow');
         html.removeAttribute('data-reader-layout');
         html.removeAttribute('data-reader-overflow');
         setRail(false);
         lastWidth = 0;
+        automaticAreaHeight = 0;
         settledCap = 0;
       }
       // Rail modes: "true" docks beside the diagram, "collapsed" leaves only the
@@ -9770,11 +9787,24 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         lastWidth = rounded;
         var shellFloor = Math.min(MIN_READER_WIDTH, Math.max(0, window.innerWidth - chromeMetrics().bodyX));
         html.style.setProperty('--archify-reader-width', Math.max(rounded, shellFloor) + 'px');
-        if (rounded < shellFloor) {
-          // `rounded` already includes a docked rail and its gap; the SVG cap
-          // is only the diagram's share, not the space beside it.
-          var railShare = html.getAttribute('data-reader-rail') === 'true' ? RAIL_WIDTH + RAIL_GAP : 0;
-          html.style.setProperty('--archify-diagram-max-width', Math.max(1, rounded - railShare - chromeMetrics().diagramX) + 'px');
+        var railShare = html.getAttribute('data-reader-rail') === 'true' ? RAIL_WIDTH + RAIL_GAP : 0;
+        var diagramWidth = Math.max(1, rounded - railShare - chromeMetrics().diagramX);
+        // Content fitting and automatic enlargement never reduce the outer
+        // reader region. The SVG alone takes the narrower reading width.
+        var automaticWidthCap = measuredHeightFit && viewBox && viewBox.width > 0
+          ? viewBox.width * MAX_AUTOMATIC_SCALE : 0;
+        if (automaticWidthCap && diagramWidth > automaticWidthCap) {
+          diagramWidth = automaticWidthCap;
+          html.style.setProperty('--archify-diagram-min-height', automaticAreaHeight + 'px');
+          html.setAttribute('data-reader-area', 'true');
+        } else {
+          // Ordinary automatic diagrams retain their existing document flow.
+          // Settling can also stop binding the cap without a new measure.
+          html.style.removeProperty('--archify-diagram-min-height');
+          html.removeAttribute('data-reader-area');
+        }
+        if (diagramWidth < Math.max(rounded, shellFloor) - railShare - chromeMetrics().diagramX) {
+          html.style.setProperty('--archify-diagram-max-width', diagramWidth + 'px');
           html.setAttribute('data-reader-narrow', 'true');
         } else {
           html.style.removeProperty('--archify-diagram-max-width');
@@ -9862,15 +9892,9 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         // ordinary page scrolling keeps their text and row spacing readable.
         // Other diagram families retain the existing height-fit strategy.
         if (widthFirstReading) desiredWidth = maxWidth;
-        // An automatic canvas can enlarge modestly, but a short diagram must
-        // not grow several times merely to fill a tall monitor. This caps the
-        // SVG share; applyWidth still keeps the header and controls at the
-        // desktop shell floor. Explicit canvases retain their existing fit.
-        if (measuredHeightFit && viewBox && viewBox.width > 0) {
-          var naturalWidthCap = viewBox.width * MAX_AUTOMATIC_SCALE + chrome.diagramX + (docked ? railExtra : 0);
-          desiredWidth = Math.min(desiredWidth, naturalWidthCap);
-          minWidth = Math.min(minWidth, naturalWidthCap);
-        }
+        // Only a binding enlargement cap needs a separate normal reader area.
+        // Uncapped diagrams keep their existing natural height and Chrome fit.
+        automaticAreaHeight = availableSvgHeight + chrome.diagramY;
         var width = Math.max(minWidth, Math.min(maxWidth, desiredWidth, settledCap || desiredWidth));
         applyWidth(width, minWidth);
         settleOverflow(minWidth);

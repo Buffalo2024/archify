@@ -439,6 +439,12 @@ html[data-present="true"]:not([data-embed="true"]) #btn-present {
   max-width: var(--archify-reader-width, 1440px);
   margin: 0 auto;
 }
+html[data-reader-area="true"] .diagram-container {
+  min-height: var(--archify-diagram-min-height);
+  display: flex;
+  align-items: center;
+}
+html[data-reader-area="true"] .diagram-container > svg { flex-shrink: 0; }
 html[data-reader-narrow="true"]:not([data-present="true"]) .diagram-container > svg {
   min-width: 0;
   max-width: var(--archify-diagram-max-width);
