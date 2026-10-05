@@ -6802,9 +6802,12 @@ async function commandValidate(args) {
     return;
   }
 
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'archify-validate-'));
+  const { createOwnedTempDirectory } = await import('../renderers/shared/owned-temp-directory.mjs');
+  const temporary = createOwnedTempDirectory('archify-validate-');
+  const tmp = temporary.path;
   const out = path.join(tmp, `${type}.html`);
   let exitCode = 0;
+  let report = () => {};
 
   try {
     const snapshot = path.join(tmp, 'specification.snapshot.json');
@@ -6815,7 +6818,7 @@ async function commandValidate(args) {
     });
     if (render.status !== 0) {
       const failure = rendererFailure(render);
-      reportValidateFailure({
+      report = () => reportValidateFailure({
         json,
         stage: failure.diagnostics.some((entry) => entry.code.startsWith('input/')) ? 'input' : 'render',
         type,
@@ -6836,7 +6839,7 @@ async function commandValidate(args) {
         } catch {
           checker = { ok: false, diagnostic: 'Artifact checker failed without a parseable receipt.' };
         }
-        reportValidateFailure({
+        report = () => reportValidateFailure({
           json,
           stage: 'check',
           type,
@@ -6857,7 +6860,7 @@ async function commandValidate(args) {
           };
           const resolvedQuality = quality || result.composition.profile || 'standard';
           const localeWarnings = await specificationLocaleDiagnostics(type, specification);
-          console.log(JSON.stringify({
+          const receipt = {
             schemaVersion: 1,
             ok: true,
             command: 'validate',
@@ -6883,19 +6886,41 @@ async function commandValidate(args) {
             composition: result.composition,
             ...(engineeringProfile ? { engineeringProfile } : {}),
             ...(localeWarnings.length ? { diagnostics: localeWarnings } : {}),
-          }, null, 2));
+          };
+          report = () => console.log(JSON.stringify(receipt, null, 2));
         } else {
           const engineering = engineeringProfile
             ? `; engineering ${engineeringProfile}: pass`
             : '';
-          console.log(`ok ${type} ${path.resolve(input)} (${result.checks.length} artifact checks; composition ${result.composition.profile}: ${result.composition.summary.errors} errors, ${result.composition.summary.warnings} warnings${engineering})`);
+          report = () => console.log(`ok ${type} ${path.resolve(input)} (${result.checks.length} artifact checks; composition ${result.composition.profile}: ${result.composition.summary.errors} errors, ${result.composition.summary.warnings} warnings${engineering})`);
         }
       }
     }
   } finally {
-    fs.rmSync(tmp, { recursive: true, force: true });
+    try {
+      await temporary.cleanup();
+    } catch (error) {
+      exitCode = 1;
+      report = () => reportValidateFailure({
+        json,
+        stage: 'cleanup',
+        type,
+        input: path.resolve(input),
+        error: error.message,
+        diagnostics: [{
+          code: 'validate/temp-cleanup-incomplete',
+          severity: 'error',
+          message: error.message,
+          subject: { directory: tmp },
+          evidence: { reason: error.cause?.code || error.code },
+          supportedFixes: ['resolve the reported filesystem error and inspect the retained temporary directory before retrying'],
+        }],
+        status: 1,
+      });
+    }
   }
 
+  report();
   if (exitCode !== 0) process.exitCode = exitCode;
 }
 
