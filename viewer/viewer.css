@@ -445,6 +445,14 @@ html[data-reader-area="true"] .diagram-container {
   align-items: center;
 }
 html[data-reader-area="true"] .diagram-container > svg { flex-shrink: 0; }
+/* The original SVG legend can use the spare outer reader canvas while the
+   capped diagram stays centered. The container still clips all outer paint. */
+.diagram-container:has([data-reader-legend-corner]) > svg { overflow: visible; }
+.diagram-container [data-reader-legend-corner] {
+  transform-origin: 0 0;
+  transform-box: view-box;
+  transform: var(--archify-reader-legend-transform);
+}
 html[data-reader-narrow="true"]:not([data-present="true"]) .diagram-container > svg {
   min-width: 0;
   max-width: var(--archify-diagram-max-width);

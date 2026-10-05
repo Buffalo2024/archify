@@ -564,7 +564,9 @@ The source split narrows maintenance scope while preserving runtime dependencies
   It captures `.container`, `.diagram-container` and its direct child SVG,
   optional header/card elements, and the initial viewBox ratio.
 - The public Interface remains `measure`, `schedule`, `whenStable`, `active`,
-  and `receipt`. Viewer Chrome Layout calls `schedule` after changing the
+  `receipt`, and `syncLegend`. Camera calls `syncLegend` while sampling its
+  rendered transform so a corner legend stays fixed through zoom transitions.
+  Viewer Chrome Layout calls `schedule` after changing the
   navigation reserve and `whenStable` while probing layout. The browser
   visual checker also uses `window.Archify.readerLayout.whenStable`.
 - Reader owns the outer width (`html`'s `--archify-reader-width`) and temporary
@@ -580,7 +582,15 @@ The source split narrows maintenance scope while preserving runtime dependencies
   Other diagram families retain height fitting. All automatic canvases cap
   enlargement at 1.5 times the authored SVG width without reducing the outer
   reading area. Capped SVGs are centered inside that area; uncapped diagrams
-  retain their existing natural flow. The 960px shell floor still serves the header and
+  retain their existing natural flow. In a capped reader area, the original
+  SVG legend uses a temporary CSS transform to sit at the outer canvas's
+  bottom-left content corner, at its normal reading size through 25–100%
+  camera zoom. The group stays in the same SVG for hover/focus and export.
+  A legend that cannot fit clear of the navigation dock keeps its original
+  position. Camera zoom above 100%, a nonbinding cap, small screens, Embed,
+  Present and print restore ordinary in-SVG legend placement; canonical
+  exports remove the corner marker and transform without changing authored
+  coordinates or transforms. The 960px shell floor still serves the header and
   controls. An explicit viewBox retains
   its existing fixed-canvas fit. Present still provides the full overview;
   camera 100% is relative to the fitted reading size, not intrinsic SVG pixels.

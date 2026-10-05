@@ -139,6 +139,7 @@
           clipFrame = 0;
           var rendered = sampleRenderedState();
           clipToViewport(rendered);
+          if (Archify.readerLayout && typeof Archify.readerLayout.syncLegend === 'function') Archify.readerLayout.syncLegend();
           if (!cameraSettled(rendered)) clipFrame = requestAnimationFrame(sample);
         }
         sample();
@@ -146,12 +147,12 @@
       function apply() {
         clamp();
         svg.style.transform = 'translate(' + state.x + 'px,' + state.y + 'px) scale(' + state.scale + ')';
+        svg.setAttribute('data-view-scale', String(state.scale));
         syncViewportClip();
         renderControls();
         outBtn.disabled = state.scale <= minimumZoom;
         inBtn.disabled = state.scale >= maximumZoom;
         container.classList.toggle('is-pannable', state.scale > 1);
-        svg.setAttribute('data-view-scale', String(state.scale));
         if (Archify.radar && typeof Archify.radar.sync === 'function') Archify.radar.sync();
         if (Archify.viewerChromeLayout && typeof Archify.viewerChromeLayout.schedule === 'function') {
           Archify.viewerChromeLayout.schedule();

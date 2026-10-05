@@ -4,6 +4,7 @@
       var shell = document.querySelector('.container');
       var diagram = document.querySelector('.diagram-container');
       var svg = diagram && diagram.querySelector(':scope > svg');
+      var legend = svg && svg.querySelector('[data-legend]');
       var header = shell && shell.querySelector('.header');
       var cards = shell && shell.querySelector('.cards');
       var viewBox = svg && svg.viewBox && svg.viewBox.baseVal;
@@ -145,6 +146,51 @@
         lastWidth = 0;
         automaticAreaHeight = 0;
         settledCap = 0;
+        clearLegend();
+      }
+      function clearLegend() {
+        if (!legend || !legend.hasAttribute('data-reader-legend-corner')) return;
+        legend.removeAttribute('data-reader-legend-corner');
+        legend.style.removeProperty('--archify-reader-legend-transform');
+      }
+      // Keep the original legend in its SVG: renderer hover/focus selectors and
+      // canonical export still own that same group. Only ordinary capped
+      // reading at 25–100% borrows the spare outer canvas for its legend.
+      function syncLegend() {
+        var cameraScale = Number(svg && svg.getAttribute('data-view-scale')) || 1;
+        if (!legend || !eligible() || html.getAttribute('data-reader-area') !== 'true' || cameraScale > 1.001) {
+          clearLegend();
+          return;
+        }
+        var box = legend.getBBox();
+        var parentMatrix = legend.parentNode.getScreenCTM();
+        if (!parentMatrix || !box.width || !box.height) {
+          clearLegend();
+          return;
+        }
+        var rect = diagram.getBoundingClientRect();
+        var style = window.getComputedStyle(diagram);
+        var scale = Math.min(svg.clientWidth / viewBox.width, svg.clientHeight / viewBox.height);
+        var left = rect.left + number(style.borderLeftWidth) + number(style.paddingLeft);
+        var right = rect.right - number(style.borderRightWidth) - number(style.paddingRight);
+        var bottom = rect.bottom - number(style.borderBottomWidth) - number(style.paddingBottom);
+        var top = bottom - box.height * scale;
+        var nav = diagram.querySelector('.diagram-nav');
+        var navRect = visible(nav) ? nav.getBoundingClientRect() : null;
+        // Long or multi-row legends retain their canonical position if the
+        // spare corner cannot hold them clear of the dock and content area.
+        if (left + box.width * scale > right || top < rect.top + number(style.paddingTop) + number(style.borderTopWidth) ||
+            (navRect && left < navRect.right + 10 && left + box.width * scale > navRect.left - 10 &&
+              top < navRect.bottom + 10 && bottom > navRect.top - 10)) {
+          clearLegend();
+          return;
+        }
+        var matrix = parentMatrix.inverse().translate(left, top).scale(scale).translate(-box.x, -box.y);
+        var value = 'matrix(' + [matrix.a, matrix.b, matrix.c, matrix.d, matrix.e, matrix.f].join(',') + ')';
+        if (legend.style.getPropertyValue('--archify-reader-legend-transform') !== value) {
+          legend.style.setProperty('--archify-reader-legend-transform', value);
+        }
+        if (!legend.hasAttribute('data-reader-legend-corner')) legend.setAttribute('data-reader-legend-corner', '');
       }
       // Rail modes: "true" docks beside the diagram, "collapsed" leaves only the
       // reveal control, "overlay" opens a drawer when docking would break the
@@ -234,6 +280,7 @@
           html.removeAttribute('data-reader-narrow');
         }
         html.setAttribute('data-reader-layout', 'adaptive');
+        syncLegend();
         return changed;
       }
       function settleOverflow(minWidth) {
@@ -346,7 +393,8 @@
           Math.round(shellRect.width * 100) / 100,
           Math.round(shellRect.height * 100) / 100,
           Math.round(diagramRect.width * 100) / 100,
-          Math.round(diagramRect.height * 100) / 100
+          Math.round(diagramRect.height * 100) / 100,
+          legend && legend.hasAttribute('data-reader-legend-corner') ? legend.style.getPropertyValue('--archify-reader-legend-transform') : ''
         ].join('|');
       }
       function layoutPending() { return Boolean(frame || settleFrame); }
@@ -365,6 +413,8 @@
         schedule();
       }, { passive: true });
       window.addEventListener('load', schedule, { once: true });
+      window.addEventListener('beforeprint', clearLegend);
+      window.addEventListener('afterprint', schedule);
       if (document.fonts && document.fonts.ready) document.fonts.ready.then(schedule).catch(function () {});
       if (typeof ResizeObserver === 'function') {
         var resizeObserver = new ResizeObserver(schedule);
@@ -407,6 +457,7 @@
         measure: measure,
         schedule: schedule,
         whenStable: whenStable,
+        syncLegend: syncLegend,
         active: function () { return html.getAttribute('data-reader-layout') === 'adaptive'; },
         receipt: function () { return { ratio: ratio, width: lastWidth }; }
       };

@@ -89,6 +89,8 @@ test('Reader Layout preserves final-artifact behavior across its ownership bound
           readerFit: svg.getAttribute('data-reader-fit'),
           readerArea: html.getAttribute('data-reader-area'),
           minimumAreaHeight: html.style.getPropertyValue('--archify-diagram-min-height'),
+          legendCorner: Boolean(svg.querySelector('[data-reader-legend-corner]')),
+          legendTransformRuntime: svg.querySelector('[data-legend]')?.style.getPropertyValue('--archify-reader-legend-transform') || '',
           geometry: ['viewBox', 'width', 'height'].map(function (name) { return svg.getAttribute(name); }),
           shellWidth: document.querySelector('.container').getBoundingClientRect().width,
           scrollHeight: Math.max(html.scrollHeight, document.body.scrollHeight),
@@ -136,6 +138,8 @@ test('Reader Layout preserves final-artifact behavior across its ownership bound
       assert.equal(state.receipt.width, 0);
       assert.equal(state.readerArea, null);
       assert.equal(state.minimumAreaHeight, '');
+      assert.equal(state.legendCorner, false);
+      assert.equal(state.legendTransformRuntime, '');
       assert.equal(state.wide, wide ? 'true' : null);
       assert.equal(state.shape, wide ? 'wide' : null);
     }
@@ -208,6 +212,146 @@ test('Reader Layout preserves final-artifact behavior across its ownership bound
     });
 
     const wide = variant('wide', { ratio: 3, undeclaredFit: true });
+    await t.test('capped canvas keeps its original legend in the outer corner through camera, input and canonical export', async () => {
+      async function corner(label) {
+        const state = await evaluate(`(function () {
+          var diagram = document.querySelector('.diagram-container');
+          var svg = diagram.querySelector(':scope > svg');
+          var legend = svg.querySelector('[data-legend]');
+          var rect = diagram.getBoundingClientRect();
+          var style = getComputedStyle(diagram);
+          var legendRect = legend.getBoundingClientRect();
+          var nodeRect = svg.querySelector('[data-node-id]').getBoundingClientRect();
+          var navRect = diagram.querySelector('.diagram-nav').getBoundingClientRect();
+          var left = rect.left + parseFloat(style.borderLeftWidth) + parseFloat(style.paddingLeft);
+          var bottom = rect.bottom - parseFloat(style.borderBottomWidth) - parseFloat(style.paddingBottom);
+          return { corner: legend.hasAttribute('data-reader-legend-corner'),
+            scale: Archify.view.state().scale, svgCount: diagram.querySelectorAll(':scope > svg').length,
+            originalSvg: legend.ownerSVGElement === svg,
+            left: legendRect.left, bottom: legendRect.bottom, width: legendRect.width, height: legendRect.height,
+            leftGap: legendRect.left - left, bottomGap: bottom - legendRect.bottom,
+            nodeWidth: nodeRect.width, nodeHeight: nodeRect.height,
+            navOverlap: Math.max(0, Math.min(navRect.right, legendRect.right) - Math.max(navRect.left, legendRect.left)) *
+              Math.max(0, Math.min(navRect.bottom, legendRect.bottom) - Math.max(navRect.top, legendRect.top)) };
+        })()`);
+        records.push({ label, ...state });
+        assert.equal(state.corner, true, JSON.stringify(state));
+        assert.equal(state.svgCount, 1, 'Legend stays in the original root SVG');
+        assert.equal(state.originalSvg, true);
+        assert.ok(Math.abs(state.leftGap) <= 1 && Math.abs(state.bottomGap) <= 1, JSON.stringify(state));
+        assert.equal(state.navOverlap, 0, JSON.stringify(state));
+        if (evidence) {
+          const capture = await send('Page.captureScreenshot', { format: 'png' });
+          fs.writeFileSync(path.join(evidence, `${label}.png`), Buffer.from(capture.data, 'base64'));
+        }
+        return state;
+      }
+      async function exportLegend(label) {
+        const value = await evaluate(`(async function () {
+          var svg = document.querySelector('.diagram-container > svg');
+          var before = svg.outerHTML;
+          var original = URL.createObjectURL;
+          var captured;
+          URL.createObjectURL = function (blob) {
+            if (blob.type.indexOf('image/svg+xml') === 0) captured = blob;
+            return original.call(URL, blob);
+          };
+          try {
+            await Archify.exportMenu.run('svg');
+            var text = await captured.text();
+            var clone = new DOMParser().parseFromString(text, 'image/svg+xml').documentElement;
+            var legend = clone.querySelector('[data-legend]');
+            return { text: text, liveUnchanged: before === svg.outerHTML,
+              legendMarkup: legend.outerHTML, legendCount: clone.querySelectorAll('[data-legend]').length,
+              runtime: clone.hasAttribute('data-view-scale') || Boolean(clone.querySelector('[data-reader-legend-corner]')) ||
+                text.includes('--archify-reader-legend-transform'),
+              viewBox: clone.getAttribute('viewBox') };
+          } finally { URL.createObjectURL = original; }
+        })()`, true);
+        assert.equal(value.liveUnchanged, true);
+        assert.equal(value.legendCount, 1);
+        assert.equal(value.runtime, false, 'Export restores canonical legend placement without runtime CSS');
+        if (evidence) fs.writeFileSync(path.join(evidence, `${label}.svg`), value.text);
+        return value;
+      }
+      // Capture canonical placement in the ordinary uncapped reading mode,
+      // then compare the exact exported group at every capped camera size.
+      await load(compactErd, { width: 1440, height: 360 });
+      const canonical = await exportLegend('compact-legend-canonical');
+      for (const [width, height] of [[1440, 900], [1600, 1000], [1920, 1080], [2048, 1320]]) {
+        await load(compactErd, { width, height });
+        const baseline = await corner(`compact-legend-${width}-100`);
+        for (const [scale, steps] of [[0.75, 1], [0.25, 2]]) {
+          await evaluate(`for (var i = 0; i < ${steps}; i += 1) Archify.view.zoomOut();`);
+          await stable();
+          const zoomed = await corner(`compact-legend-${width}-${Math.round(scale * 100)}`);
+          assert.equal(zoomed.scale, scale);
+          assert.ok(Math.abs(zoomed.width - baseline.width) <= 1 && Math.abs(zoomed.height - baseline.height) <= 1);
+          assert.ok(Math.abs(zoomed.nodeWidth - baseline.nodeWidth * scale) <= 1);
+          assert.ok(Math.abs(zoomed.nodeHeight - baseline.nodeHeight * scale) <= 1);
+          const exported = await exportLegend(`compact-legend-export-${width}-${Math.round(scale * 100)}`);
+          assert.equal(exported.legendMarkup.replace(' style=""', ''), canonical.legendMarkup);
+          assert.equal(exported.viewBox, canonical.viewBox);
+        }
+        await evaluate('Archify.view.reset()');
+        await stable();
+        const reset = await corner(`compact-legend-${width}-reset`);
+        assert.ok(Math.abs(reset.nodeWidth - baseline.nodeWidth) <= 1);
+        await evaluate('Archify.view.zoomIn()');
+        await stable();
+        assert.equal((await snapshot(`compact-legend-${width}-125`)).legendCorner, false,
+          'Camera enlargement restores existing in-SVG positioning and clipping');
+        await evaluate('Archify.view.reset()');
+        await stable();
+        await corner(`compact-legend-${width}-after-enlarge`);
+      }
+      await load(compactErd);
+      const hit = await evaluate(`(function () {
+        var rect = document.querySelector('[data-legend] .er-legend-hit').getBoundingClientRect();
+        return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+      })()`);
+      async function keyHighlighted(highlighted = true) {
+        return evaluate(`(async function () {
+          var row = document.querySelector('[data-er-row]:not(:has([data-er-badge="pk"]))');
+          // Input changes the existing opacity transition; observe its result
+          // after animation frames rather than expecting an immediate repaint.
+          for (var i = 0; i < 30; i += 1) {
+            var opacity = Number(getComputedStyle(row).opacity);
+            if (${highlighted ? 'opacity < 0.3' : 'opacity >= 0.99'}) return true;
+            await new Promise(function (resolve) { requestAnimationFrame(resolve); });
+          }
+          return false;
+        })()`, true);
+      }
+      await send('Input.dispatchMouseEvent', { type: 'mouseMoved', ...hit });
+      assert.ok(await keyHighlighted(),
+        'Hovering the relocated real ERD legend highlights matching key rows');
+      await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: 0, y: 0 });
+      assert.ok(await keyHighlighted(false), 'Moving away restores ordinary row paint');
+      await evaluate("document.querySelector('[data-legend] .er-legend-hit').focus({ preventScroll: true })");
+      assert.ok(await keyHighlighted(),
+        'Keyboard focus retains same-SVG ERD key highlighting');
+      await evaluate('document.activeElement.blur()');
+      await evaluate(`document.querySelector('[data-legend]').setAttribute('transform', 'translate(3 4)');
+        Archify.view.zoomOut(); Archify.view.zoomOut(); Archify.view.zoomOut();`);
+      await stable();
+      await corner('compact-legend-authored-transform');
+      assert.match((await exportLegend('compact-legend-export-authored-transform')).legendMarkup,
+        /transform="translate\(3 4\)"/, 'Canonical export preserves an authored group transform');
+      const marker = '<g data-legend="">';
+      const original = fs.readFileSync(compactErd, 'utf8');
+      assert.ok(original.includes(marker));
+      const longLegend = path.join(scratch, 'compact-long-legend.html');
+      // A wider, multi-row legend must use its existing position when the
+      // available bottom corner would overlap the navigation dock.
+      fs.writeFileSync(longLegend, original.replace(marker,
+        marker + '<rect x="30" y="220" width="600" height="50" fill="none" stroke="none"/>'));
+      await load(longLegend);
+      const constrained = await snapshot('compact-long-legend-fallback');
+      assert.equal(constrained.readerArea, 'true');
+      assert.equal(constrained.legendCorner, false);
+      assert.equal(constrained.legendTransformRuntime, '');
+    });
     await t.test('compact real ERD keeps the normal canvas while SVG enlargement remains capped', async () => {
       const original = fs.readFileSync(compactErd, 'utf8');
       const uncapped = path.join(scratch, 'compact-table-uncapped-control.html');
