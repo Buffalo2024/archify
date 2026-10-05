@@ -418,6 +418,8 @@ Connect with other users and developers, share ideas, request features, report b
 
 ## Contributing
 
+Building a standalone package on Archify? [Submit it to the community catalog](community/README.md#submitting-a-package); the guide includes a collapsible example and complete Chinese steps.
+
 Issues, pull requests, and real-world diagrams are welcome. Start with the [contribution guide](CONTRIBUTING.md), use the reproducible bug form for failures, or submit a validated diagram through the [community showcase form](https://github.com/tt-a1i/archify/issues/new?template=showcase.yml).&nbsp;·&nbsp;[LINUX&nbsp;DO](https://linux.do)
 
 ## Support Archify
