@@ -6834,14 +6834,16 @@ async function commandValidate(args) {
   });
   const renderer = rendererPath(type);
 
+  // Load only for inspection so doctor can diagnose incomplete installations.
   const layoutTypes = layoutJson
     ? (await import('../renderers/shared/layout-capabilities.mjs')).LAYOUT_TYPES
     : null;
   if (layoutJson && !layoutTypes.has(type)) {
-    rejectCliArgument('--layout-json is currently supported for architecture and workflow diagrams only.', {
+    const supportedTypes = [...layoutTypes];
+    rejectCliArgument(`--layout-json is currently supported for ${supportedTypes.join(' and ')} diagrams only.`, {
       code: 'cli/unsupported-option',
       subject: { option: '--layout-json', type },
-      supportedFixes: ['remove --layout-json or use an architecture or workflow diagram'],
+      supportedFixes: [`remove --layout-json or use an ${supportedTypes.join(' or ')} diagram`],
     });
   }
 

@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
+import { LAYOUT_TYPES } from '../archify/renderers/shared/layout-capabilities.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const cli = path.join(root, 'archify/bin/archify.mjs');
@@ -35,6 +36,11 @@ test('layout inspection keeps invalid argument failures machine readable without
     assert.equal(report.ok, false);
     assert.equal(report.stage, 'arguments');
     assert.ok(report.diagnostics.every(d => d.code.startsWith('cli/')));
+    if (report.diagnostics[0].code === 'cli/unsupported-option') {
+      const supportedTypes = [...LAYOUT_TYPES];
+      assert.equal(report.error, `--layout-json is currently supported for ${supportedTypes.join(' and ')} diagrams only.`);
+      assert.deepEqual(report.diagnostics[0].supportedFixes, [`remove --layout-json or use an ${supportedTypes.join(' or ')} diagram`]);
+    }
   }
   assert.deepEqual(fs.readdirSync(dir), []);
 });
