@@ -267,6 +267,9 @@ test('self-managed GitLab links require an explicit provider and keep endpoint i
   }
   for (const [repository, remote, code] of [
     [{ url }, url, 'repository-evidence/links-unsupported'],
+    // Inherited object keys are not forge hosts.
+    [{ url: 'https://constructor/Platform/evidence-repo' }, 'https://constructor/Platform/evidence-repo', 'repository-evidence/links-unsupported'],
+    [{ url: 'https://__proto__/Platform/evidence-repo' }, 'https://__proto__/Platform/evidence-repo', 'repository-evidence/links-unsupported'],
     [{ url: 'https://github.com/example/evidence-repo', provider: 'gitlab' }, 'https://github.com/example/evidence-repo', 'repository-evidence/provider-invalid'],
     [{ url: 'http://git.example.internal/Platform/evidence-repo', provider: 'gitlab' }, 'http://git.example.internal/Platform/evidence-repo', 'repository-evidence/links-unsupported'],
     [{ url, provider: 'gitlab' }, 'ssh://git@git.example.internal:2222/Platform/Services/evidence-repo.git', 'repository-evidence/origin-mismatch'],

@@ -29,7 +29,7 @@ export function parseRepositoryRemote(value, { authored = false, provider: provi
   if (authored && protocol !== 'ssh:' && (url.username || url.password)) return null;
   const hostname = url.hostname.toLowerCase();
   if (!hostname) return null;
-  const provider = PROVIDER_HOSTS[hostname] || (providerHint === 'gitlab' ? 'gitlab' : null);
+  const provider = Object.hasOwn(PROVIDER_HOSTS, hostname) ? PROVIDER_HOSTS[hostname] : providerHint === 'gitlab' ? 'gitlab' : null;
   const last = segments.length - 1;
   if (provider) segments[last] = segments[last].replace(provider === 'github' ? /\.git$/i : /\.git$/, '');
   if (!segments[last] || segments[last] === '.' || segments[last] === '..') return null;
