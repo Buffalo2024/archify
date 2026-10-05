@@ -4192,41 +4192,6 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       filter: drop-shadow(0 0 7px var(--frontend-stroke));
       outline: none;
     }
-    /* Verified Source Beacons are installed at runtime only for nodes whose
-       repository evidence passed the local revision/blob/line checks. They
-       live inside the owning node so every focus, route, story, and guided
-       view keeps one coherent opacity state. Export serialization removes
-       them before producing the canonical SVG or any derived visual. */
-    .source-evidence-beacon {
-      pointer-events: none;
-      opacity: 1;
-      transition: filter 160ms ease;
-    }
-    .source-evidence-beacon rect {
-      fill: color-mix(in srgb, var(--mask) 92%, var(--backend-stroke));
-      stroke: color-mix(in srgb, var(--backend-stroke) 82%, var(--panel-border));
-      stroke-width: 1;
-      vector-effect: non-scaling-stroke;
-    }
-    .source-evidence-beacon text {
-      fill: var(--backend-stroke);
-      font-size: 7px;
-      font-weight: 700;
-      letter-spacing: 0.06em;
-      text-anchor: middle;
-      text-transform: uppercase;
-    }
-    svg [data-node-id]:hover .source-evidence-beacon,
-    svg [data-node-id]:focus-visible .source-evidence-beacon,
-    svg [data-node-id][data-focus-selected] .source-evidence-beacon {
-      opacity: 1;
-      filter: drop-shadow(0 0 4px color-mix(in srgb, var(--backend-stroke) 72%, transparent));
-    }
-    svg[data-preset="signal-flow"] .source-evidence-beacon { opacity: 0.9; }
-    svg[data-preset="blueprint"] .source-evidence-beacon rect {
-      rx: 0.8px;
-      filter: none;
-    }
     svg [data-legend-kind][role="button"] { cursor: pointer; }
     svg [data-legend-kind]:focus { outline: none; }
     svg [data-legend-hit] {
@@ -4885,7 +4850,6 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         filter: none;
       }
       .relationship-pulse-overlay { display: none !important; }
-      .source-evidence-beacon,
       svg [data-node-id], svg [data-edge-from], svg [data-detail], svg [data-detail-anchor], svg [data-legend-hit], svg { transition: none !important; }
     }
   </style>
@@ -7432,83 +7396,23 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     Archify.sourceEvidence = (function () {
       var element = document.getElementById('archify-source-evidence-data');
       var payload = null;
-      var svgNamespace = 'http://www.w3.org/2000/svg';
       if (element) {
         try {
           var parsed = JSON.parse(element.textContent || 'null');
           if (parsed && parsed.verified === true && parsed.repository && parsed.nodes) payload = parsed;
         } catch (_) {}
       }
-      function installBeacons() {
-        if (!payload) return 0;
-        var svg = document.querySelector('.diagram-container svg');
-        if (!svg) return 0;
-        var installed = 0;
-        Array.prototype.forEach.call(svg.querySelectorAll('[data-node-id]'), function (node) {
-          var id = node.getAttribute('data-node-id');
-          var sources = payload.nodes[id];
-          if (!Array.isArray(sources) || !sources.length || node.querySelector('[data-source-evidence-beacon]')) return;
-          var shape = node.querySelector('[data-animate="node"]') || node.querySelector('[class*="c-"]');
-          var box;
-          try { box = (shape || node).getBBox(); } catch (_) { return; }
-          if (!box || !Number.isFinite(box.x) || !Number.isFinite(box.y) || !Number.isFinite(box.width) || box.width < 36) return;
-
-          var count = sources.length;
-          var label = viewerCount('viewer.passport.beacon', count);
-          var beacon = document.createElementNS(svgNamespace, 'g');
-          beacon.classList.add('source-evidence-beacon');
-          beacon.setAttribute('data-source-evidence-beacon', '');
-          beacon.setAttribute('aria-hidden', 'true');
-          var brandOffset = node.hasAttribute('data-node-brand') ? 22 : 0;
-          var title = document.createElementNS(svgNamespace, 'title');
-          title.textContent = label;
-          var plate = document.createElementNS(svgNamespace, 'rect');
-          plate.setAttribute('height', '13');
-          plate.setAttribute('rx', '6.5');
-          var text = document.createElementNS(svgNamespace, 'text');
-          text.setAttribute('y', '9.4');
-          text.textContent = viewerText('viewer.passport.sourceMarker') + ' ' + count;
-          beacon.appendChild(title);
-          beacon.appendChild(plate);
-          beacon.appendChild(text);
-          node.appendChild(beacon);
-
-          // Measure the real glyph advance, then clamp the plate between 24
-          // and 36px; a still-wider label is squeezed with textLength so the
-          // badge never overlaps the neighbouring brand mark or sigil.
-          var textWidth = 16;
-          try {
-            var measured = text.getComputedTextLength();
-            if (Number.isFinite(measured) && measured > 0) textWidth = measured;
-          } catch (_) {}
-          var plateWidth = Math.min(36, Math.max(24, textWidth + 8));
-          if (textWidth > plateWidth - 8) {
-            text.setAttribute('textLength', String(plateWidth - 8));
-            text.setAttribute('lengthAdjust', 'spacingAndGlyphs');
-          }
-          plate.setAttribute('width', String(plateWidth));
-          text.setAttribute('x', String(plateWidth / 2));
-          beacon.setAttribute('transform', 'translate(' + (box.x + box.width - 6 - brandOffset - plateWidth) + ' ' + (box.y + 4.5) + ')');
-
-          var originalLabel = node.getAttribute('aria-label') || '';
-          node.setAttribute('data-source-evidence-count', String(count));
-          node.setAttribute('data-source-evidence-original-label', originalLabel);
-          node.setAttribute('aria-label', (originalLabel ? originalLabel + ', ' : '') + viewerCount('viewer.passport.sourceCount', count));
-          installed += 1;
-        });
-        return installed;
-      }
       return {
         available: function () { return Boolean(payload); },
         repository: function () { return payload ? payload.repository : null; },
+        // Compatibility only: sources are shown in the Focus card.
+        installBeacons: function () { return 0; },
         node: function (id) {
           var sources = payload && payload.nodes ? payload.nodes[id] : null;
           return Array.isArray(sources) ? sources.slice() : [];
-        },
-        installBeacons: installBeacons
+        }
       };
     })();
-    Archify.sourceEvidence.installBeacons();
 
     /* ============================================================
        Tree Branches — expand/collapse for hierarchy diagrams. The renderer

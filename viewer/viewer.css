@@ -4023,41 +4023,6 @@ svg [data-node-id]:focus-visible {
   filter: drop-shadow(0 0 7px var(--frontend-stroke));
   outline: none;
 }
-/* Verified Source Beacons are installed at runtime only for nodes whose
-   repository evidence passed the local revision/blob/line checks. They
-   live inside the owning node so every focus, route, story, and guided
-   view keeps one coherent opacity state. Export serialization removes
-   them before producing the canonical SVG or any derived visual. */
-.source-evidence-beacon {
-  pointer-events: none;
-  opacity: 1;
-  transition: filter 160ms ease;
-}
-.source-evidence-beacon rect {
-  fill: color-mix(in srgb, var(--mask) 92%, var(--backend-stroke));
-  stroke: color-mix(in srgb, var(--backend-stroke) 82%, var(--panel-border));
-  stroke-width: 1;
-  vector-effect: non-scaling-stroke;
-}
-.source-evidence-beacon text {
-  fill: var(--backend-stroke);
-  font-size: 7px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-anchor: middle;
-  text-transform: uppercase;
-}
-svg [data-node-id]:hover .source-evidence-beacon,
-svg [data-node-id]:focus-visible .source-evidence-beacon,
-svg [data-node-id][data-focus-selected] .source-evidence-beacon {
-  opacity: 1;
-  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--backend-stroke) 72%, transparent));
-}
-svg[data-preset="signal-flow"] .source-evidence-beacon { opacity: 0.9; }
-svg[data-preset="blueprint"] .source-evidence-beacon rect {
-  rx: 0.8px;
-  filter: none;
-}
 svg [data-legend-kind][role="button"] { cursor: pointer; }
 svg [data-legend-kind]:focus { outline: none; }
 svg [data-legend-hit] {
@@ -4716,6 +4681,5 @@ html[data-share-playback="true"] svg[data-animation="trace"] [data-graph-role="a
     filter: none;
   }
   .relationship-pulse-overlay { display: none !important; }
-  .source-evidence-beacon,
   svg [data-node-id], svg [data-edge-from], svg [data-detail], svg [data-detail-anchor], svg [data-legend-hit], svg { transition: none !important; }
 }

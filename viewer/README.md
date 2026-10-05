@@ -144,7 +144,7 @@ and candidate; encoding bytes/timing are not a deterministic oracle for video.
 
 ## Focus / Semantic Explorer contract
 
-The complete IIFE initializes once after Source Evidence and installBeacons(),
+The complete IIFE initializes once after Source Evidence,
 before Intent Trace. Reader/Chrome Layout, Camera, Finder, Route
 and Lens keep their later positions. Required diagram SVG, Passport controls and
 relationship list remain required DOM. Shared viewerText/viewerCount/viewerKindLabel
@@ -175,7 +175,7 @@ provider is part of Focus ownership, not a second initialization step.
   record or null; reachability returns copied node/edge arrays. Snapshot results
   are constructed from current authored nodes, edges and validated Reach state.
 - Passport uses existing label/kind/detail/context/tag/brand/source metadata. The
-  Source Evidence provider owns repository/node lookup and beacon installation;
+  Source Evidence provider owns repository/node lookup; Finder searches source paths.
   Focus owns displaying or hiding evidence and building the existing safe links.
   Relationship rows are grouped out/in/loop, retaining authored order within each
   group and deduplicating keys. Up/Down/Home/End clamp within the resulting rows.
