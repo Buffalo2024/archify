@@ -132,19 +132,22 @@ function wrapNoteText(text, width) {
   return lines;
 }
 
-// The widest gap the message spans; equal gaps resolve toward the sender.
+// The widest gap the message spans; equal gaps resolve to the left-most one,
+// where a note has always started, so notes keep their original position.
 function noteGapIndex(fromIndex, toIndex) {
   const low = Math.min(fromIndex, toIndex);
   const high = Math.max(fromIndex, toIndex);
   let best = null;
   for (let gap = low; gap < high; gap += 1) {
     const width = participantX(gap + 1) - participantX(gap);
-    const senderDistance = Math.abs((fromIndex < toIndex ? gap : gap + 1) - fromIndex);
-    if (!best || width > best.width || (width === best.width && senderDistance < best.senderDistance)) {
-      best = { gap, width, senderDistance };
-    }
+    if (!best || width > best.width) best = { gap, width };
   }
   return best?.gap ?? null;
+}
+
+function noteRect(message) {
+  const note = noteLayout(message);
+  return note && { x: note.x, y: note.top, width: note.width, height: note.bottom - note.top };
 }
 
 function noteLayout(message) {
@@ -273,7 +276,7 @@ function messageRouteBox(message) {
 function segmentLabelBox(segment) {
   const labelW = Math.max(42, textUnits(segment.label) * 5.2 + 14);
   const occupied = asArray(sequence.messages)
-    .flatMap((message) => [messageLabelBox(message), messageRouteBox(message)])
+    .flatMap((message) => [messageLabelBox(message), messageRouteBox(message), noteRect(message)])
     .filter(Boolean);
   const label = { x: 56, y: segment.from - 22, width: labelW, height: 18 };
   for (let attempt = 0; attempt < 4; attempt += 1) {
@@ -442,31 +445,33 @@ function validateSequence() {
   }));
 
   // A wrapped note keeps every character (#676), so a note that still reaches a
-  // later message needs that message moved; authored y values stay as written.
-  // Showcase only, so standard keeps accepting existing diagrams.
+  // later message or the canvas bottom needs the diagram changed; authored y
+  // values and viewBox stay as written. Showcase only, so standard keeps
+  // accepting existing diagrams.
   if (readableMessages) {
     const messages = asArray(sequence.messages);
+    const noteFloor = layout.lifelineBottom + 20;
     messages.forEach((message, messageIndex) => {
       const note = noteLayout(message);
       if (!note) return;
-      const noteRect = { x: note.x, y: note.top, width: note.width, height: note.bottom - note.top };
+      const lines = note.lines.length === 1 ? '1 line' : `${note.lines.length} lines`;
+      const bottom = Math.ceil(note.bottom);
+      if (note.bottom > noteFloor) {
+        const requiredHeight = Math.ceil(viewBox[1] + note.bottom - noteFloor);
+        problems.push(`Note on message "${message.label}" wraps to ${lines} and ends at y=${bottom}, below the canvas content limit y=${noteFloor} — set meta.viewBox[1] to at least ${requiredHeight}, move the message up, or shorten the note.`);
+      }
+      const ownRect = noteRect(message);
       const blocker = messages
         .map((other, otherIndex) => {
           if (otherIndex === messageIndex || typeof other.y !== 'number' || other.y <= message.y) return null;
-          const otherNote = noteLayout(other);
-          const rects = [
-            messageLabelBox(other),
-            messageRouteBox(other),
-            otherNote && { x: otherNote.x, y: otherNote.top, width: otherNote.width, height: otherNote.bottom - otherNote.top },
-          ].filter(Boolean);
-          return rects.some((rect) => rectsOverlap(noteRect, rect, 2)) ? other : null;
+          const rects = [messageLabelBox(other), messageRouteBox(other), noteRect(other)].filter(Boolean);
+          return rects.some((rect) => rectsOverlap(ownRect, rect, 2)) ? other : null;
         })
         .filter(Boolean)
         .sort((a, b) => a.y - b.y)[0];
       if (!blocker) return;
-      const lines = note.lines.length === 1 ? '1 line' : `${note.lines.length} lines`;
       const requiredY = Math.ceil(note.bottom + 22);
-      problems.push(`Note on message "${message.label}" wraps to ${lines} (down to y=${Math.ceil(note.bottom)}) and reaches message "${blocker.label}" at y=${blocker.y} — move "${blocker.label}" and later messages down so it sits at y=${requiredY} or below, or shorten the note.`);
+      problems.push(`Note on message "${message.label}" wraps to ${lines} (down to y=${bottom}) and reaches message "${blocker.label}" at y=${blocker.y} — move "${blocker.label}" and later messages down so it sits at y=${requiredY} or below, or shorten the note.`);
     });
   }
 
@@ -482,6 +487,17 @@ function validateSequence() {
     if (labelBox.x + labelBox.width > viewBox[0] - 48) {
       const requiredWidth = Math.ceil(labelBox.x + labelBox.width + 48);
       problems.push(`Segment "${segment.label}" label (~${Math.round(labelBox.width)}px) exceeds the segment frame's available width (${availableWidth}px) — shorten the label or increase meta.viewBox[0] to at least ${requiredWidth}.`);
+    }
+    // Segment labels are drawn above notes and step up to stay clear of them;
+    // in showcase, a label with no clear position would hide note text.
+    if (readableMessages) {
+      const covered = asArray(sequence.messages).find((message) => {
+        const rect = noteRect(message);
+        return rect && rectsOverlap(labelBox, rect, 2);
+      });
+      if (covered) {
+        problems.push(`Segment "${segment.label}" label would cover the note on message "${covered.label}" — move the segment start (from: ${segment.from}) or that message so they are further apart, or shorten the note.`);
+      }
     }
   }
 

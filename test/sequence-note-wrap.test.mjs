@@ -120,17 +120,69 @@ test('a short note keeps its original single-line markup', (t) => {
   assert.doesNotMatch(html, /<tspan/);
 });
 
-test('a note on a message that skips participants uses the gap beside the sender', (t) => {
-  const forward = render(t, sequence({ messages: [{ from: 'client', to: 'db', y: 200, label: 'lookup', note: LONG_NOTE }] }));
-  const [client, api, db] = lifelines(forward);
-  const [forwardNote] = notes(forward);
-  assert.equal(forwardNote.x, client + 19);
-  for (const line of forwardNote.lines) assert.ok(forwardNote.x + minimumNodeTextWidth(line, 7) <= api - 11, 'clear of the skipped API lifeline');
+test('a note on a message that skips participants stays in the left-most gap, in either direction', (t) => {
+  for (const [from, to] of [['client', 'db'], ['db', 'client']]) {
+    const html = render(t, sequence({ messages: [{ from, to, y: 200, label: 'lookup', note: LONG_NOTE }] }));
+    const [client, api] = lifelines(html);
+    const [note] = notes(html);
+    assert.equal(note.x, client + 19, `${from} → ${to} starts where notes always started`);
+    for (const line of note.lines) {
+      assert.ok(note.x + minimumNodeTextWidth(line, 7) <= api - 11, `${from} → ${to}: "${line}" stays clear of the skipped API lifeline`);
+    }
+  }
+});
 
-  const backward = render(t, sequence({ messages: [{ from: 'db', to: 'client', y: 200, label: 'result', note: LONG_NOTE }] }));
-  const [backwardNote] = notes(backward);
-  assert.equal(backwardNote.x, api + 19, 'the gap between API and DB sits beside the sender');
-  for (const line of backwardNote.lines) assert.ok(backwardNote.x + minimumNodeTextWidth(line, 7) <= db - 11);
+test('a short note on a reverse message that skips a participant keeps its original position', (t) => {
+  const html = render(t, sequence({ messages: [{ from: 'db', to: 'client', y: 200, label: 'result', note: 'from replica' }] }));
+  const [client] = lifelines(html);
+  assert.match(html, new RegExp(`<text data-detail="fine" x="${client + 19}" y="218" class="t-dim" font-size="7">from replica</text>`));
+});
+
+// Fixed columns keep the first note beside the segment label column at x=56.
+test('a segment label steps up clear of a wrapped note', (t) => {
+  const spec = sequence({
+    messages: [{ from: 'client', to: 'api', y: 200, label: 'request', note: 'retries with backoff when the cache misses' }],
+  });
+  spec.meta.column_fit = 'fixed';
+  spec.segments = [{ label: 'Fallback', from: 260, to: 360 }];
+  const { result } = run(t, 'validate', spec);
+  assert.equal(result.status, 0, result.stdout);
+  const html = render(t, spec);
+  const [note] = notes(html);
+  const labelY = Number(html.match(/<rect x="56" y="(-?[\d.]+)" width="[\d.]+" height="18"/)[1]);
+  const noteTop = note.y - 7;
+  assert.ok(labelY + 18 + 2 <= noteTop || labelY >= note.y + (note.lines.length - 1) * 11 + 4,
+    `segment label at y=${labelY} clears the note from ${noteTop}`);
+});
+
+test('a segment label with no clear position names the note it would cover', (t) => {
+  const spec = sequence({
+    messages: [
+      { from: 'client', to: 'api', y: 160, label: 'open' },
+      { from: 'client', to: 'api', y: 200, label: 'request', note: LONG_NOTE.repeat(3) },
+    ],
+  });
+  spec.meta.column_fit = 'fixed';
+  spec.segments = [{ label: 'Fallback', from: 360, to: 400 }];
+  const { result } = run(t, 'validate', spec);
+  assert.notEqual(result.status, 0);
+  assert.match(result.stdout, /Segment \\"Fallback\\" label would cover the note on message \\"request\\"/);
+});
+
+test('a wrapped note below an authored canvas reports the height it needs', (t) => {
+  const spec = (height) => ({
+    ...sequence({ messages: [{ id: 'late', from: 'client', to: 'api', y: 660, label: 'late', note: LONG_NOTE.repeat(3) }] }),
+    meta: { title: 'Fixed canvas', output: 'note.html', quality_profile: 'showcase', column_fit: 'spread', viewBox: [920, height], legend: { mode: 'hidden' } },
+  });
+  const failed = run(t, 'validate', spec(760)).result;
+  assert.notEqual(failed.status, 0);
+  const required = Number(failed.stdout.match(/set meta\.viewBox\[1\] to at least (\d+)/)?.[1]);
+  assert.ok(required > 760, failed.stdout);
+  const repaired = run(t, 'validate', spec(required)).result;
+  assert.equal(repaired.status, 0, repaired.stdout);
+  const standard = spec(760);
+  standard.meta.quality_profile = 'standard';
+  assert.equal(run(t, 'validate', standard).result.status, 0, 'standard keeps accepting the authored canvas');
 });
 
 test('a wrapped note that reaches the next message names the message and the y it needs', (t) => {
