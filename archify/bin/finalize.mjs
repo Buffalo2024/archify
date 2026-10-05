@@ -386,25 +386,42 @@ function consolidateDiagnostics(diagnostics) {
     seen.add(key);
     result.push(diagnostic);
   }
+  const slimEvidence = (evidence) => {
+    if (!evidence || typeof evidence !== 'object') return evidence;
+    const { innerWidth: _w, innerHeight: _h, readerLayout: _l, readerOverflow: _o, readerFit: _f, ...rest } = evidence;
+    return rest;
+  };
   if (overflow.length > 1) {
     const first = overflow[0];
+    const tightest = overflow
+      .map((entry) => entry.subject?.viewport)
+      .filter(Boolean)
+      .sort((a, b) => a.width * a.height - b.width * b.height)[0];
+    const fixes = tightest
+      ? [`contain the rendered layout within ${tightest.width}x${tightest.height} (smallest reported viewport), then rerun browser-check`]
+      : [...new Set(overflow.flatMap((entry) => entry.supportedFixes || []))];
     result.splice(overflowIndex, 0, {
       ...first,
       message: `The rendered artifact overflows ${overflow.length} viewport/theme combinations.`,
       subject: { diagramType: first.subject?.diagramType },
-      supportedFixes: [...new Set(overflow.flatMap((entry) => entry.supportedFixes || []))],
+      supportedFixes: fixes,
       evidence: {
-        overflows: overflow.map((entry) => ({
-          // Predicted validate-stage overflow carries estimatedTextWidthPx;
-          // the browser-check measurement carries scroll* geometry instead.
-          detection: entry.evidence?.estimatedTextWidthPx != null ? 'validate-prediction' : 'browser-measurement',
-          subject: entry.subject,
-          evidence: entry.evidence,
-        })),
+        overflows: overflow.map((entry) => {
+          const { artifact: _artifact, ...subject } = entry.subject || {};
+          return {
+            // Predicted validate-stage overflow carries estimatedTextWidthPx;
+            // the browser-check measurement carries scroll* geometry instead.
+            detection: entry.evidence?.estimatedTextWidthPx != null ? 'validate-prediction' : 'browser-measurement',
+            subject,
+            evidence: slimEvidence(entry.evidence),
+          };
+        }),
       },
     });
   } else if (overflow.length === 1) {
-    result.splice(overflowIndex, 0, overflow[0]);
+    const [entry] = overflow;
+    const { artifact: _artifact, ...subject } = entry.subject || {};
+    result.splice(overflowIndex, 0, { ...entry, subject, evidence: slimEvidence(entry.evidence) });
   }
   return result;
 }
@@ -591,7 +608,10 @@ export function compactFinalizeReceipt(receipt) {
       truncated: allDiagnostics.length > selectedDiagnostics.length,
     },
     evidence: receipt.evidence,
-    ...(receipt.update ? { update: receipt.update } : {}),
+    ...(receipt.update ? {
+      update: Object.fromEntries(Object.entries(receipt.update)
+        .filter(([, value]) => value != null && value !== false)),
+    } : {}),
     visualReview: receipt.visualReview || 'not-requested',
     durationMs: receipt.durationMs,
   };
