@@ -17,6 +17,9 @@ function withDiagnosticInstallation(inspect) {
       fs.mkdirSync(path.join(skill, directory), { recursive: true });
     }
     fs.copyFileSync(cli, path.join(skill, 'bin/archify.mjs'));
+    for (const module of ['owned-temp-directory.mjs', 'path-semantics.mjs']) {
+      fs.copyFileSync(path.join(root, 'archify/renderers/shared', module), path.join(skill, 'renderers/shared', module));
+    }
     fs.writeFileSync(path.join(skill, 'renderers/shared/output-path.mjs'), 'export function validateAuthoredOutputPath() {}\n');
     fs.writeFileSync(path.join(skill, 'renderers/shared/validator.mjs'), 'export function validateSchema() {}\n');
     for (const type of ['workflow', 'architecture']) {

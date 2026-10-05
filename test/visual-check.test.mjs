@@ -3191,3 +3191,27 @@ test('authored Architecture scroll requires readable unclipped document flow and
     assert.equal(viewport.readerLayout, null, 'the fixed canvas does not acquire adaptive scaling');
   }
 });
+
+
+test('browser cleanup failure publishes a failed receipt instead of successful evidence', async () => {
+  const input = artifact('chrome-cleanup-failure.html');
+  const browser = fakeBrowser();
+  browser.close = async () => {
+    const error = new Error('Temporary directory cleanup failed: locked');
+    error.code = 'ARCHIFY_TEMP_CLEANUP';
+    error.directory = '/retained/profile';
+    throw error;
+  };
+  const result = await runVisualCheck({
+    artifactPath: input,
+    chromePath: '/fake/chrome',
+    browserFactory: () => browser,
+  });
+  assert.equal(result.exitCode, 1);
+  assert.equal(result.receipt.ok, false);
+  assert.equal(result.receipt.diagnostics[0].code, 'viewer/temp-cleanup-incomplete');
+  assert.equal(result.receipt.diagnostics[0].evidence.retainedDirectory, '/retained/profile');
+  const saved = JSON.parse(fs.readFileSync(sidecarPaths(input).receipt, 'utf8'));
+  assert.equal(saved.ok, false);
+  assert.deepEqual(saved.captures.screenshots, []);
+});
