@@ -558,6 +558,7 @@ const portabilitySuites = [
   'test/cli.test.mjs',
   'test/preview.test.mjs',
   'test/visual-check.test.mjs',
+  'test/temp-cleanup.test.mjs',
   'test/update-notifier.test.mjs',
 ];
 
