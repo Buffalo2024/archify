@@ -27,8 +27,9 @@
 
 <p align="center">
   <a href="https://github.com/tt-a1i/archify/stargazers"><img src="https://img.shields.io/github/stars/tt-a1i/archify?style=flat-square&amp;color=E5B650&amp;logo=github&amp;label=Stars" alt="GitHub stars" /></a>
+  <a href="https://skills.sh/tt-a1i/archify/archify"><img src="https://img.shields.io/badge/installs-130K%2B-0EA5E9?style=flat-square" alt="130K+ installs on skills.sh" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-22c55e?style=flat-square" alt="MIT License" /></a>
-  <a href="archify/SKILL.md"><img src="https://img.shields.io/badge/Agent-Skill-7C3AED?style=flat-square" alt="Agent Skill" /></a>
+  <a href="#安装方式"><img src="https://img.shields.io/badge/works_with-Claude_Code_%7C_Codex_%7C_Cursor_%7C_OpenCode-7C3AED?style=flat-square" alt="Works with Claude Code, Codex, Cursor, and OpenCode" /></a>
   <a href="CHANGELOG.md#unreleased"><img src="https://img.shields.io/badge/version-3.0.2--dev.1-0891b2?style=flat-square" alt="Development version 3.0.2-dev.1" /></a>
 </p>
 
@@ -420,6 +421,8 @@ node bin/archify.mjs deliver workflow examples/agent-tool-call.workflow.json /tm
 [MIT](LICENSE) —— 可以自由使用、修改和分发。
 
 ## 参与贡献
+
+基于 Archify 做了独立包？[提交到社区目录](community/README.md#中文摘要)。详细步骤和 JSON 示例默认折叠，按需展开即可。
 
 欢迎提交 Issue、Pull Request 和真实场景图。请先阅读[贡献指南](CONTRIBUTING.md)；遇到问题时使用可复现 Bug 表单，也可以通过[社区 Showcase 表单](https://github.com/tt-a1i/archify/issues/new?template=showcase.yml)提交已验证成品。
 

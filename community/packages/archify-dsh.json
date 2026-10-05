@@ -2,8 +2,8 @@
   "name": "archify-dsh",
   "type": "wrapper",
   "summary": {
-    "en": "Published DSH skill bundle @tt-a1i/archify-dsh 0.1.0 includes Archify 2.14.0. Experimental DSH 0.1.0-rc.6 support; the 0.2.0 bundle remains unpublished.",
-    "zh": "已发布的 DSH 技能包 @tt-a1i/archify-dsh 0.1.0 内含 Archify 2.14.0，实验支持 DSH 0.1.0-rc.6；0.2.0 包尚未发布。"
+    "en": "Published DSH bundle 0.1.0 contains Archify 2.14.0 (DSH 0.1.0-rc.6, experimental). Pending 1.0.0 contains Archify 3.0.1 and is not published.",
+    "zh": "已发布的 DSH 技能包 @tt-a1i/archify-dsh 0.1.0 内含 Archify 2.14.0，实验支持 DSH 0.1.0-rc.6；内含 Archify 3.0.1 的 1.0.0 包尚未发布。"
   },
   "author": {
     "name": "tt-a1i",
