@@ -73,6 +73,7 @@ muted text color.
 | Message `y` range | `[160, height − 83]` |
 | Message spacing | ≥28px vertical between messages that share horizontal space |
 | Arrow span | ≥60px horizontal between the two participants |
+| Message notes | 7px fine-detail text under the arrow, wrapped at 11px line spacing inside one gap between neighbouring lifelines (the widest gap the message spans, nearest the sender on a tie), clear of activation bars; long unbroken text breaks after `/ . - ? & = # _`, otherwise at any character, so the full note is kept in every export. In `showcase`, a note that reaches a later message fails with the `y` that message needs |
 | Segments | y pixel ranges with `to > from`, inside `[72, lifeline bottom + 20]` |
 | Legend | last row baseline at height − 54; extra rows wrap upward and stay 12px below the timeline content |
 
