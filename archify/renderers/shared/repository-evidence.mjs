@@ -129,6 +129,11 @@ const EVIDENCE_NODE_COLLECTIONS = {
   sequence: 'participants',
   dataflow: 'nodes',
   lifecycle: 'states',
+  erd: 'entities',
+  tree: 'nodes',
+  class: 'types',
+  timeline: 'events',
+  waterfall: 'spans',
 };
 
 function evidenceNodes(diagramType, diagram) {

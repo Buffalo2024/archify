@@ -17,6 +17,7 @@ For a disproportionate sublabel, keep its exact role or protocol concise and pla
 Read both the mode schema and `schemas/common.schema.json`. The mode schemas use `$ref`, so the common file is where shared enums live.
 
 - `componentType`: `frontend`, `backend`, `database`, `cloud`, `security`, `messagebus`, `external`
+- Entity-relationship documents use `entities` and `relationships`; `key` accepts `pk`, `fk`, or `uk`, and `fromCardinality`/`toCardinality` accept `one` or `many`.
 - `variant`: `default`, `emphasis`, `security`, `dashed`
 - Relationship IDs use the shared identifier pattern and must be unique in their collection.
 
@@ -48,10 +49,13 @@ both. `visible: true` may show an unused supported convention, while
 A label override changes reader wording only. Never infer a kind from prose or
 use the legend to compensate for missing nodes, states, messages, or flows.
 Long labels are measured and wrap into deterministic rows. Architecture's
-implicit automatic viewBox grows from that same measured footprint. For
-backwards compatibility, a legacy document with no `meta.legend` may omit an
-implicit auto legend that cannot fit its explicit viewBox; this never changes
-its typed topology. Adding `meta.legend` makes the presentation intentional and
+implicit automatic viewBox grows from that same measured footprint, and an
+automatic ERD canvas is sized the same way so its default legend is always in
+the generated content. For backwards compatibility, a legacy document with no
+`meta.legend` may omit an implicit auto legend that cannot fit its explicit
+viewBox; this never changes its typed topology. An ERD that authors a
+`meta.viewBox` keeps that fixed area and reports the capacity instead of
+dropping the legend. Adding `meta.legend` makes the presentation intentional and
 strict: if its resolved labels cannot fit the authored viewBox, shorten or hide
 them, or widen the viewBox using the emitted diagnostic.
 
@@ -75,24 +79,34 @@ legend label overrides, and cards. A bilingual diagram still
 chooses one primary locale for the Viewer; follow an explicit primary-language
 request, then prompt order or conversation dominance.
 
-`en` and `zh-CN` are built-in Viewer catalogs and need nothing further. For
-every other `meta.locale`, also set `meta.translations`: an object mapping the
-renderer's canonical message keys (`catalogKeys()` in
-`renderers/shared/i18n.mjs`) to translated strings whose `{placeholder}` tokens
-match the English source exactly. Reuse suitable translations from `examples/locales/` or a previously reviewed
-catalog; Spanish uses `examples/locales/es.json`. Translate missing keys or adapt terminology when the diagram needs it;
-use the English source to check keys and placeholders. Example catalogs may
-lag new Viewer keys; validation reports those gaps and uses English for them. A key that is missing, unrecognized, or has mismatched
-placeholders falls back to its English string — `validate`/`render`/`deliver`
-report the resulting coverage to stderr — rather than breaking the render or
-silently shipping an untranslated string as if it were translated.
+Bundled Viewer catalogs are enrolled in `locales/manifest.json`: currently
+`en`, `zh-CN`, `es`, and `ko`. For these, `meta.locale` alone selects the full
+catalog. Tags match case-insensitively (`zh-cn` selects `zh-CN`), but region
+and script variants are distinct: `zh-Hant`, `es-MX`, or `ko-KR` select no
+bundled catalog.
 
-For older dev inputs using only `meta.locale: "es"`, copy the Spanish catalog
-into `meta.translations` before rendering again. Existing standalone HTML
-keeps its embedded translations.
+`meta.translations` is an optional per-key override: an object mapping the
+renderer's canonical message keys (`locales/en.json`, or `catalogKeys()` in
+`renderers/shared/i18n.mjs`) to translated strings whose `{placeholder}` tokens
+match the English source exactly. Each message resolves as: valid
+`meta.translations` value → the selected bundled catalog → English. For a
+bundled locale, supply only the keys whose wording the diagram needs to change;
+the rest of the language is kept. Omitting the field or supplying `{}` means no
+override. For a language without a bundled catalog, supply the catalog here.
+Reuse suitable translations from `examples/locales/` or a previously reviewed
+catalog, translate missing keys, and use the English source to check keys and
+placeholders.
+
+An unknown key or a value with mismatched placeholders is rejected and keeps
+the lower-priority message; it is reported as `i18n/invalid-translation` on
+stderr and as a warning in the `validate --json`, `deliver`, and `finalize`
+receipt `diagnostics[]`. Keys that still resolve to English in a
+non-English locale are reported as `i18n/translation-coverage`, with the missing
+keys and their English source text; add exactly those keys to repair the gap.
+Coverage describes the final resolved catalog, not the size of the override.
 
 For a requested language you cannot supply `meta.translations` for, do not
-write a `meta.locale` with no built-in catalog and no translations. Keep every
+write a `meta.locale` with no bundled catalog and no translations. Keep every
 reader-facing authored string in the requested language, omit `meta.locale` so
 the renderer safely uses English, and explicitly tell the user that fixed
 Viewer UI and `<html lang>` remain English and the artifact is not fully localized.
@@ -307,6 +321,155 @@ Participants are ordered by conversation role. Messages own their vertical order
 ### Dataflow
 
 Stages express transformation or custody. Rows separate parallel streams. Label only data contracts, classifications, or cross-boundary movement that is not obvious.
+
+### ERD
+
+Treat a schema ERD as a table catalogue as well as a relationship map. If the
+schema has more than 8 tables or 50 fields, it is a dense full-schema map: start
+with `meta.quality_profile: "standard"` so complete field visibility is not
+traded away for repeated showcase route repairs. Include every physical column in
+`attributes`, keep the source SQL type, and preserve the
+field's Chinese comment in the type string as `SQL_TYPE｜中文备注` because the
+schema has no separate comment property. The default viewer shows these rows at
+the `read` level; do not rely on hover/focus or cards to reveal physical fields.
+Cards may explain constraints, inferred relationships, or domain rules, but never
+replace a field list.
+
+Before placing boxes, classify tables into functional domains using verified table
+names, comments, module paths, and foreign-key meaning. Put the domain name in
+`tag` and give each domain one solid block of grid cells: a single row, a single
+column, or a full block, with every cell of the block holding one of its tables.
+All tables with the same tag stay together; do not interleave unrelated tables
+between members. A domain that fills one such block is drawn as a labelled band
+behind its tables, so the
+grouping is visible without reading every box;
+a tag whose tables do not fill one block earns no band, and because the band is
+the only place a domain name is drawn the renderer reports `erd/domain-not-drawn`
+rather than publishing a diagram that cannot name the domain. Absolute
+coordinates have no grid cells at all, so a tagged table always needs `row`/`col`.
+Order parent/core tables
+toward the shared boundary and
+place their direct children beside or beneath them. Columns read left to right and
+rows read top to bottom, so a relationship between neighbouring columns is one
+straight corridor. Never place an unrelated entity between two aligned anchors;
+the router can detour around it, but the clear corridor is shorter and reads
+better. Use `row`/`col` for this normal grouped layout, and only use explicit
+`pos`/`via` after a diagnostic identifies a concrete geometry problem.
+
+State every key role a column carries in `key`, and the real references in
+`references`. A column is often more than one at once — a junction table's
+`tenant_id` is both part of the primary key and a foreign key to `tenant.id` — so
+`key` takes a role or a list (`["pk", "fk"]`), and dropping a role claims less
+than the schema does.
+A many-to-many pair is a real fact about the model, so state it and identify the join
+table when one exists. A relationship has two ends and each one declares its own
+maximum, so a `many`-to-`one` foreign key needs both `fromCardinality` and
+`toCardinality`; `fromOptional`/`toOptional` only lowers that same end's minimum
+from one to zero (an optional `one` end reads zero-or-one, an optional `many` end
+reads zero-or-many), and `identifying: false` draws the non-identifying dashed
+line and owns that dash — the schema rejects a `variant` that would draw the
+relationship solid beside it. The foot opens toward the entity it describes, so the
+drawn glyph states the end's maximum, not a direction of travel.
+
+A table side only has room for so many ends: the ports spread at most `(side
+extent - 32) / (ends - 1)` apart, and a cardinality glyph is 14 units tall. More
+relationship ends than that room allows is `layout/marker-capacity`, which names
+the table, the side, and the ways out — add fields so the side is taller, spread
+the relationships, or reduce the fan-in. Never fix it by hiding the cardinality.
+
+Give the domains a column each when the model has to read completely inside a
+laptop viewport. The Reader scales a wide canvas up to the reader width and
+narrows a tall one until the whole page fits, so the same eleven tables cost text
+size when they are stacked as four horizontal domains instead of four vertical
+ones. Leave a whole tile of the grid free where a long relationship has to cross
+a domain: a run that crosses an occupied cell forces a jog, and a jog below the
+interior floor is a `composition/short-interior-segment` failure.
+
+An automatic canvas is sized so the default legend is always in the generated
+content, and a canvas the author fixes with `meta.viewBox` reports its legend
+capacity instead of dropping the key; see
+[`../renderers/erd/README.md`](../renderers/erd/README.md) for the band, port, and
+reader contract.
+
+### Tree
+
+A tree answers "how is this decomposed?": one root, and every other node names
+exactly one `parent`. Links mean containment only; do not use a tree for calls,
+data movement, or cross-branch dependencies. Nothing is inferred: a missing
+parent (`tree/missing-parent`), zero or several roots (`tree/root-count`), a
+parent cycle (`tree/cycle`, which also covers every node stranded beneath it),
+and duplicate ids are refused. Children read in declaration order.
+
+Use `layout.direction: "down"` (default) for a shallow, balanced breakdown and
+`"right"` for a deep or leaf-heavy tree such as a repository layout; a rightward
+tree aligns each parent with its first child and scrolls vertically in the
+reader. Labels wrap between words. `collapsed: true` makes a branch start
+collapsed in the Viewer; it never removes content from the artifact, and every
+export is the complete tree. For a real codebase, ground each node in the
+observed path and attach `sources`. See
+[`../renderers/tree/README.md`](../renderers/tree/README.md).
+
+### Class
+
+A class diagram explains the contracts inside one module: which types exist,
+which members matter to the explanation, and how the types relate. Choose the
+members the question needs; a type may show none. Each type states its `kind`
+(`class`, `abstract`, `interface`, `enum`, `record`); every kind except `class`
+draws its UML keyword, so an interface never reads as an empty class. For a real
+codebase, ground every type, member, and relationship in repository evidence and
+attach `sources`.
+
+Every relationship reads `from` -> `to` and its `kind` owns the notation:
+`dependency` (`from` uses `to`, dashed open arrow), `association` (`from` holds a
+`to`, solid open arrow), `inheritance` (`from` extends `to`, solid hollow
+triangle), `realization` (`from` implements interface `to`, dashed hollow
+triangle), `composition` and `aggregation` (`from` is the whole, filled or
+hollow diamond at `from`). Realization must target an interface from a
+non-interface; inheritance must not cross the interface boundary; an
+inheritance cycle is rejected.
+
+Place types on the `row`/`col` grid with supertypes above their subtypes. Two
+or more automatic generalizations into one supertype draw as one hierarchy bus
+with a single triangle. Members never truncate: a type grows to its widest
+member up to `layout.typeMaxW` and longer members wrap at parameter boundaries.
+See [`../renderers/class/README.md`](../renderers/class/README.md).
+
+### Timeline
+
+A timeline answers "when did what happen, and how far apart?". Every event
+needs an ISO 8601 `at` with an explicit `Z` or `±HH:MM` offset; a timestamp
+without one is rejected rather than guessed. `meta.timezone` (IANA, default
+`UTC`) is the display clock for ticks and labels, and the axis caption states
+it. `meta.evidence` is required: `observed` for recorded events (logs, git
+history, pager records) and `illustrative` for explanatory input. Never mark
+invented or approximate times as observed, and never fill gaps with events the
+input does not contain.
+
+Use `lanes` for sources or categories (release, monitoring, response); every
+event then names one. `kind` (`change`, `alert`, `action`, `recovery`) only
+colours the card. Events are drawn in time order whatever the authored order;
+simultaneous and close events stack. By default a quiet period longer than 8×
+the median gap and 10% of the span is drawn as a fixed-width break labelled
+with the omitted duration; `layout.breaks: "none"` keeps one proportional axis.
+See [`../renderers/timeline/README.md`](../renderers/timeline/README.md).
+
+### Waterfall
+
+A waterfall answers "where did the time go?" for one request, job, or agent
+run. Each span has `id`, `name`, `start`, and `end` or `duration` in
+`meta.unit` (`us`, `ms`, `s`; default `ms`), plus optional `parent`, `status`,
+`service`, and `detail`. Bar position and length come only from these numbers.
+`meta.evidence` is required: `measured` only for recorded timing (trace export,
+logs, profiler, timed run); otherwise `illustrative`. Never infer a duration
+from code structure, and never present estimated numbers as measured.
+
+A span with no recorded end must be `status: "incomplete"`; it is drawn as an
+open lower bound to the last recorded instant. Contradictory end/duration,
+an end before the start, a missing parent, or a parent cycle is refused.
+Percentages are always "of the wall-clock total"; parent and child durations
+are inclusive and never summed. Do not mark a critical path or waiting time
+unless the input states the dependency. See
+[`../renderers/waterfall/README.md`](../renderers/waterfall/README.md).
 
 ### Lifecycle
 

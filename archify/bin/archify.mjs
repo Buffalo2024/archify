@@ -9,7 +9,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const skillRoot = path.resolve(__dirname, '..');
 
-const TYPES = new Set(['architecture', 'workflow', 'sequence', 'dataflow', 'lifecycle']);
+const TYPES = new Set(['architecture', 'workflow', 'sequence', 'dataflow', 'lifecycle', 'erd', 'tree', 'class', 'timeline', 'waterfall']);
 const DELIVERY_SIDECAR_SUFFIXES = Object.freeze([
   '.delivery.json',
   '.delivery-pending.json',
@@ -1871,6 +1871,21 @@ function recordDeliveryFailure(options) {
   return recorded;
 }
 
+// Locale warnings for a successfully rendered candidate. The renderer prints
+// them to stderr; receipts carry the same diagnostics from the same pure
+// resolver so an agent can repair a translation gap from structured output.
+async function specificationLocaleDiagnostics(type, specification) {
+  let meta;
+  try {
+    meta = JSON.parse(String(specification)).meta;
+  } catch {
+    return [];
+  }
+  if (!meta?.locale) return [];
+  const { localeDiagnostics } = await import('../renderers/shared/i18n.mjs');
+  return localeDiagnostics(type, meta);
+}
+
 function deliverySuccessProvenance(receipt) {
   return {
     schemaVersion: 1,
@@ -2194,7 +2209,7 @@ function usage() {
   archify demo [output-directory]
 
 Types:
-  architecture, workflow, sequence, dataflow, lifecycle
+  architecture, workflow, sequence, dataflow, lifecycle, erd, tree, class, timeline, waterfall
 `;
 }
 
@@ -2632,6 +2647,16 @@ function checkerDiagnostics(checker) {
   }
   for (const check of checker?.checks || []) {
     if (check.ok || COMPOSITION_CHECKS.has(check.name)) continue;
+    if (check.name === 'svg_path_data') {
+      const pathDiagnostics = (checker.diagnostics || []).filter(item => (
+        item?.severity === 'error'
+        && ['artifact/svg-path-malformed', 'artifact/svg-path-unsupported'].includes(item.code)
+      ));
+      if (pathDiagnostics.length) {
+        diagnostics.push(...pathDiagnostics.map(item => diagnostic(item)));
+        continue;
+      }
+    }
     diagnostics.push(diagnostic({
       code: `artifact/${check.name.replaceAll('_', '-')}`,
       message: (check.details || []).find(Boolean) || `Final artifact failed ${check.name}.`,
@@ -4850,6 +4875,7 @@ async function commandDeliver(args) {
       return;
     }
     const engineeringProfile = engineeringProfileFromArtifact(artifact);
+    const localeWarnings = await specificationLocaleDiagnostics(type, specification);
     const receipt = {
       schemaVersion: 1,
       receiptId,
@@ -4887,6 +4913,7 @@ async function commandDeliver(args) {
           ...(sourceEvidence.repository.linkMode ? { linkMode: sourceEvidence.repository.linkMode } : {}),
         },
       } : {}),
+      ...(localeWarnings.length ? { diagnostics: localeWarnings } : {}),
     };
 
     const provenanceBytes = Buffer.from(`${JSON.stringify(deliverySuccessProvenance(receipt), null, 2)}\n`);
@@ -5733,6 +5760,9 @@ async function commandFinalize(rawArgs) {
     console.log(`gates ${Object.entries(result.summary.gates).map(([stage, status]) => `${stage}:${status}`).join(' ')}`);
     console.log(`receipt ${result.summary.evidence.receipt}`);
     console.log(`perceptual visual review ${result.summary.visualReview}`);
+    for (const entry of result.summary.diagnostics || []) {
+      if (entry.severity === 'warning') console.error(`warning [${entry.code}] ${entry.message}`);
+    }
     if (result.summary.update?.noticeRequired) console.log(result.summary.update.noticeText);
   }
   process.exitCode = result.exitCode;
@@ -5885,6 +5915,11 @@ async function commandDoctor(args) {
     sequence: 'cache-miss-request.sequence.json',
     dataflow: 'product-analytics.dataflow.json',
     lifecycle: 'agent-run.lifecycle.json',
+    erd: 'orders.erd.json',
+    tree: 'payment-platform.tree.json',
+    class: 'payments.class.json',
+    timeline: 'payment-incident.timeline.json',
+    waterfall: 'checkout-request.waterfall.json',
   };
 
   for (const type of TYPES) {
@@ -6821,6 +6856,7 @@ async function commandValidate(args) {
             ...artifactIdentity(specification),
           };
           const resolvedQuality = quality || result.composition.profile || 'standard';
+          const localeWarnings = await specificationLocaleDiagnostics(type, specification);
           console.log(JSON.stringify({
             schemaVersion: 1,
             ok: true,
@@ -6846,6 +6882,7 @@ async function commandValidate(args) {
             checks: result.checks,
             composition: result.composition,
             ...(engineeringProfile ? { engineeringProfile } : {}),
+            ...(localeWarnings.length ? { diagnostics: localeWarnings } : {}),
           }, null, 2));
         } else {
           const engineering = engineeringProfile
