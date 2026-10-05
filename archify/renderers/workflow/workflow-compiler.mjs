@@ -1,3 +1,5 @@
+import { placeAutomaticLabels } from '../architecture/labels.mjs';
+import { WORKFLOW_NODE_TEXT_FIT_PROFILE } from './workflow-text-profile.mjs';
 import { createSpatialGrid } from '../shared/spatial-grid.mjs';
 import { esc, renderDefinitions, renderSemanticSigil, textUnits } from '../shared/utils.mjs';
 import {
@@ -960,14 +962,7 @@ function measureWorkflowNodes(workflow, layout, laneGeometry) {
   }
 
   // Font sizes for this renderer's node text; the fitting geometry is shared.
-  const nodeTextFit = {
-    labelPreferred: 11,
-    labelMinimum: 9,
-    sublabelPreferred: 8,
-    sublabelMinimum: 6,
-    tagPreferred: 7,
-    tagMinimum: 6,
-  };
+  const nodeTextFit = WORKFLOW_NODE_TEXT_FIT_PROFILE;
 
   const nodes = new Map(asArray(workflow.nodes).map((node) => [node.id, measureNode(node)]));
 
@@ -1325,6 +1320,7 @@ function compileWorkflowInternal({
   layoutFeedback = {},
   routePlanningOrder,
   portReservationRecovery = false,
+  labelPlacementRecovery,
 } = {}) {
   if (!inputWorkflow || typeof inputWorkflow !== 'object' || Array.isArray(inputWorkflow)) {
     const diagnostics = [{
@@ -1456,6 +1452,12 @@ let rightmostRoutedEdge = Number.NEGATIVE_INFINITY;
 // Routed endpoints per node, so the port search reads only the routes that touch
 // the node instead of walking every routed path.
 const nodeRoutes = new Map();
+// Failure-only planning reserves paths before solving labels against the complete
+// scene. Authored controls remain fixed unless this is an explicit repair draft.
+let deferredLabels = Boolean(labelPlacementRecovery);
+const recoveredLabelPoints = new Map();
+const recoveredLabelEdits = [];
+
 
 function workflowCompositionFrames() {
   const frames = [];
@@ -2351,7 +2353,7 @@ function validateReadablePinnedGeometry() {
     validateReadableRouteControls(edge);
     const edgeName = workflowEdgeName(edge);
     const edgeIndex = sourceIndexes.edges.get(edge);
-    if (Array.isArray(edge.labelAt)) {
+    if (Array.isArray(edge.labelAt) && !deferredLabels) {
       const rect = labelRectFor(edge, workflow.edges.indexOf(edge));
       if (rect && (rect.x < 0 || rect.y < 0)) {
         throwExplicitPinConflict(edge, 'viewBox-origin containment', {
@@ -2570,7 +2572,7 @@ function validateReadablePinnedGeometry() {
       }
     }
 
-    if (edge.labelAt) {
+    if (edge.labelAt && !deferredLabels) {
       const rect = labelRectFor(edge, workflow.edges.indexOf(edge));
       const obstacle = rect && [...nodes.values()].find((node) => rectsOverlap(rect, node, -2));
       if (obstacle) {
@@ -2617,6 +2619,7 @@ function validateReadablePinnedGeometry() {
       }
     }
   }
+  if (deferredLabels) resolveDeferredWorkflowLabels();
   validateReadablePairwisePinConflicts();
 }
 
@@ -3368,6 +3371,7 @@ function routeMeetsHardRhythm(points) {
 }
 
 function routeLabelClearsNodes(edge, points) {
+  if (deferredLabels) return true;
   if (!edge.label || edge.labelAt) return true;
   const [lx, ly] = workflowEdgeLabelPoint(edge, points);
   const width = workflowLabelWidth(edge.label);
@@ -3386,6 +3390,7 @@ function routeLabelClearsNodes(edge, points) {
 }
 
 function candidateLabelRect(edge, points) {
+  if (deferredLabels) return null;
   if (!edge.label) return null;
   const [lx, ly] = workflowEdgeLabelPoint(edge, points);
   const width = workflowLabelWidth(edge.label);
@@ -4119,6 +4124,7 @@ function routeVia(
 }
 
 function workflowEdgeLabelPoint(edge, points) {
+  if (recoveredLabelPoints.has(edge)) return recoveredLabelPoints.get(edge);
   if (workflow.schema_version === 1) {
     if (edge.labelAt || Number.isInteger(edge.labelSegment) || points.length !== 3) {
       return labelPoint(edge, points);
@@ -4579,7 +4585,7 @@ function registerRouted(edge, routed) {
     byEdge.set(edge, routed);
   }
   const index = edgeIndexByEdge.get(edge);
-  const label = index === undefined ? null : labelRectFor(edge, index);
+  const label = deferredLabels || index === undefined ? null : labelRectFor(edge, index);
   if (label) {
     obstacleGrid.insert(rectToBounds(label), { kind: 'label', edge, rect: label, sequence });
     rightmostRoutedEdge = Math.max(rightmostRoutedEdge, label.x + label.width);
@@ -4661,6 +4667,92 @@ function labelRectFor(edge, relationIndex) {
   };
   LABEL_RECT_CACHE.set(routed, rect);
   return rect;
+}
+
+function resolveDeferredWorkflowLabels() {
+  const routes = workflow.edges.map((edge, relationIndex) => ({ relationIndex, points: pathFor(edge).points }));
+  deferredLabels = false;
+  const labels = workflow.edges.map((edge, relationIndex) => {
+    if (!edge.label) return null;
+    const [lx, ly] = workflowEdgeLabelPoint(edge, pathFor(edge).points);
+    const width = workflowLabelWidth(edge.label);
+    return { relation: labelPlacementRecovery === 'repair' ? {} : edge, relationIndex, lx, ly, x: lx - width / 2, y: ly - 10, width, height: 14 };
+  }).filter(Boolean);
+  const placementCanvas = workflow.meta?.viewBox || [
+    Math.max(viewBox[0], ...routes.flatMap(route => route.points.map(point => point[0] + 16))),
+    Math.max(viewBox[1], ...routes.flatMap(route => route.points.map(point => point[1] + 16))),
+  ];
+  const placed = placeAutomaticLabels({
+    labels, routes, components: [...nodes.values()],
+    titles: [...workflowSceneLabelObstacles(), ...workflowLegendRects()],
+    viewBox: placementCanvas, keepFallbackNearRoute: true,
+  });
+  // Nearby projected obstacle boundaries handle small clearance deficits that
+  // the existing fixed route-adjacent positions cannot express. Candidate count
+  // is capped per label; no route, node or authored control moves in implicit mode.
+  const allSegments = routes.flatMap(route => route.points.slice(1).map((end, index) => ({
+    relationIndex: route.relationIndex, start: route.points[index], end,
+  })));
+  const obstacles = [...nodes.values(), ...workflowSceneLabelObstacles(), ...workflowLegendRects()];
+  const at = (label, lx, ly) => ({ ...label, lx, ly, x: lx - label.width / 2, y: ly - 10 });
+  const clear = (label, index) => label.x >= 0 && label.y >= 0
+    && label.x + label.width <= placementCanvas[0] && label.y + label.height <= placementCanvas[1]
+    && !obstacles.some(rect => rectsOverlap(label, rect, 2))
+    && !placed.some((other, otherIndex) => otherIndex !== index && rectsOverlap(label, other, 2))
+    && !allSegments.some(segment => segment.relationIndex !== label.relationIndex
+      && segmentRectClearance(segment, label) + 0.0001 < 4);
+  for (const [index, label] of placed.entries()) {
+    if (clear(label, index) || ['labelAt', 'labelDx', 'labelDy', 'labelSegment'].some(field => label.relation[field] !== undefined)) continue;
+    const candidates = [];
+    for (const segment of allSegments) {
+      if (segment.relationIndex === label.relationIndex) continue;
+      if (segment.start[0] === segment.end[0]) {
+        for (const sign of [-1, 1]) candidates.push(at(label, segment.start[0] + sign * (label.width / 2 + 4), label.ly));
+      } else if (segment.start[1] === segment.end[1]) {
+        candidates.push(at(label, label.lx, segment.start[1] - 8), at(label, label.lx, segment.start[1] + 14));
+      }
+    }
+    for (const rect of [...obstacles, ...placed.filter((other, otherIndex) => otherIndex !== index)]) {
+      candidates.push(at(label, rect.x - label.width / 2 - 2, label.ly),
+        at(label, rect.x + rect.width + label.width / 2 + 2, label.ly),
+        at(label, label.lx, rect.y - 6), at(label, label.lx, rect.y + rect.height + 12));
+    }
+    const nearby = (values, origin) => [...new Set(values)].sort((left, right) => Math.abs(left - origin) - Math.abs(right - origin) || left - right).slice(0, 8);
+    const own = allSegments.filter(segment => segment.relationIndex === label.relationIndex);
+    const xs = nearby([label.lx, ...candidates.map(candidate => candidate.lx), ...own.map(segment => (segment.start[0] + segment.end[0]) / 2)], label.lx);
+    const ys = nearby([label.ly, ...candidates.map(candidate => candidate.ly), ...own.map(segment => (segment.start[1] + segment.end[1]) / 2)], label.ly);
+    for (const x of xs) for (const y of ys) candidates.push(at(label, x, y));
+    candidates.sort((left, right) => Math.hypot(left.lx - label.lx, left.ly - label.ly) - Math.hypot(right.lx - label.lx, right.ly - label.ly)
+      || left.lx - right.lx || left.ly - right.ly);
+    const unique = [...new Map(candidates.map(candidate => [`${candidate.lx}:${candidate.ly}`, candidate])).values()];
+    const replacement = unique.slice(0, 64).find(candidate => clear(candidate, index)
+      && allSegments.some(segment => segment.relationIndex === label.relationIndex
+        && segmentRectClearance(segment, candidate) <= label.height * 2));
+    if (replacement) placed[index] = replacement;
+  }
+  for (const label of placed) {
+    const edge = workflow.edges[label.relationIndex];
+    const before = workflowEdgeLabelPoint(edge, pathFor(edge).points);
+    const after = [label.lx, label.ly];
+    if (labelPlacementRecovery === 'repair' && JSON.stringify(before) !== JSON.stringify(after)) {
+      recoveredLabelEdits.push({
+        op: edge.labelAt === undefined ? 'add' : 'replace',
+        path: `/edges/${sourceIndexes.edges.get(edge)}/labelAt`, value: after,
+      });
+    }
+    recoveredLabelPoints.set(edge, after);
+    LABEL_RECT_CACHE.delete(pathFor(edge));
+    if (label.x < 0 || label.y < 0
+      || (workflow.meta?.viewBox && (label.x + label.width > viewBox[0] || label.y + label.height > viewBox[1]))
+      || [...nodes.values()].some(node => rectsOverlap(label, node, -2))
+      || [...workflowSceneLabelObstacles(), ...workflowLegendRects()].some(rect => rectsOverlap(label, rect))) {
+      throwDiagnosticError('Workflow label recovery cannot clear scene labels.', [{
+        code: 'workflow/label-recovery-conflict', severity: 'error',
+        message: 'Workflow label recovery cannot clear scene labels.',
+        subject: { diagramType: 'workflow', edge: edge.id ?? null }, evidence: {}, supportedFixes: [],
+      }]);
+    }
+  }
 }
 
 function measuredContentBounds() {
@@ -4989,7 +5081,7 @@ ${renderLegend()}
       }),
       diagnostics: workflowDiagnostics,
     };
-    return { ok: true, svg, receipt };
+    return { ok: true, svg, receipt, ...(labelPlacementRecovery === 'repair' ? { recoveredLabelEdits } : {}) };
   } catch (error) {
     if (!Array.isArray(error?.archifyDiagnostics)) throw error;
     const diagnostics = error.archifyDiagnostics.map((diagnostic) => ({ ...diagnostic }));
@@ -5032,7 +5124,7 @@ function feedbackFailure(request) {
   return compilerFailure('readable-v2', diagnostics, message);
 }
 
-function compileWorkflowLayoutFeedback({ workflow, qualityProfile, sourceEvidence, discoverFixes = true, routePlanningOrder, portReservationRecovery } = {}) {
+function compileWorkflowLayoutFeedback({ workflow, qualityProfile, sourceEvidence, discoverFixes = true, routePlanningOrder, portReservationRecovery, labelPlacementRecovery } = {}) {
   let layoutFeedback = {};
   for (let attempt = 0; attempt <= MAX_READABLE_LAYOUT_FEEDBACK_ROUNDS; attempt += 1) {
     try {
@@ -5044,6 +5136,7 @@ function compileWorkflowLayoutFeedback({ workflow, qualityProfile, sourceEvidenc
         layoutFeedback,
         routePlanningOrder,
         portReservationRecovery,
+        labelPlacementRecovery,
       });
     } catch (error) {
       if (!(error instanceof WorkflowLayoutFeedback)) throw error;
@@ -5091,8 +5184,122 @@ function compileWorkflowLayoutFeedback({ workflow, qualityProfile, sourceEvidenc
   throw new Error('unreachable readable-v2 layout feedback state');
 }
 
+// Endpoint projection/clearance changes are only a repair draft. At most two
+// connected waypoints per endpoint change; every authored side, preset, channel
+// and remaining interior turn still has to pass ordinary complete replay.
+function draftEndpointAlignedVia(workflow, receipt) {
+  const candidate = cloneWorkflow(workflow);
+  const canonicalEdges = canonicalReadableWorkflow(workflow).edges;
+  const edits = [];
+  for (const [index, edge] of canonicalEdges.entries()) {
+    if (!Array.isArray(edge.via) || !edge.via.length) continue;
+    const from = receipt?.nodes?.find(node => node.id === edge.from);
+    const to = receipt?.nodes?.find(node => node.id === edge.to);
+    const points = receipt?.edges?.[index]?.points
+      || (from && to && ['left', 'right', 'top', 'bottom'].includes(edge.fromSide)
+        && ['left', 'right', 'top', 'bottom'].includes(edge.toSide)
+        ? [anchor({ ...from, cx: from.x + from.width / 2, cy: from.y + from.height / 2 }, edge.fromSide),
+          ...edge.via, anchor({ ...to, cx: to.x + to.width / 2, cy: to.y + to.height / 2 }, edge.toSide)] : null);
+    if (!points || points.length !== edge.via.length + 2) continue;
+    const via = edge.via.map(point => [...point]);
+    for (const [side, endpoint, adjacentIndex] of [
+      [edge.fromSide, points[0], 0], [edge.toSide, points.at(-1), via.length - 1],
+    ]) {
+      if (!['left', 'right', 'top', 'bottom'].includes(side)) continue;
+      const adjacent = via[adjacentIndex];
+      const across = side === 'left' || side === 'right' ? 1 : 0;
+      const along = 1 - across;
+      const sign = side === 'left' || side === 'top' ? -1 : 1;
+      adjacent[across] = endpoint[across];
+      const blockedStub = receipt.nodes.some(node => node.id !== edge.from && node.id !== edge.to
+        && segmentIntersectsRect({ start: endpoint, end: adjacent }, node));
+      if ((adjacent[along] - endpoint[along]) * sign < 8 - 0.0001 || blockedStub) {
+        const old = adjacent[along];
+        const next = endpoint[along] + sign * 16;
+        const direction = adjacentIndex === 0 ? 1 : -1;
+        for (let run = adjacentIndex, moved = 0; run >= 0 && run < via.length && moved < 2; run += direction, moved += 1) {
+          if (Math.abs(via[run][along] - old) > 0.0001) break;
+          via[run][along] = next;
+        }
+      }
+    }
+    const aligned = [points[0], ...via, points.at(-1)];
+    if (JSON.stringify(via) === JSON.stringify(edge.via)
+      || !orthogonalPoints(aligned)) continue;
+    const authoredIndex = workflow.edges.indexOf(edge);
+    if (authoredIndex < 0) continue;
+    candidate.edges[authoredIndex].via = via;
+    edits.push({ op: 'replace', path: `/edges/${authoredIndex}/via`, value: via });
+  }
+  return { candidate, edits };
+}
+
+function orthogonalPoints(points) {
+  return points.slice(1).every((end, index) => {
+    const start = points[index];
+    return (Math.abs(start[0] - end[0]) <= 0.0001) !== (Math.abs(start[1] - end[1]) <= 0.0001);
+  });
+}
+
+function hasLabelRecoveryTrigger(original) {
+  return original.diagnostics?.some(diagnostic => diagnostic.severity === 'error'
+    && ['workflow/route-preset-conflict', 'workflow/solver-budget-exhausted',
+      'workflow/explicit-pin-conflict', 'clean-flow/label-node-overlap',
+      'composition/label-label-overlap', 'composition/label-route-clearance'].includes(diagnostic.code));
+}
+
+function recoverWorkflowLabels(options, original) {
+  const { workflow } = options;
+  if (original.ok || options.discoverFixes === false || workflow?.schema_version !== 2
+    || !workflow.edges.some(edge => edge.label) || !hasLabelRecoveryTrigger(original)) return original;
+  const implicit = compileWorkflowLayoutFeedback({ ...options, discoverFixes: false, labelPlacementRecovery: 'implicit' });
+  if (implicit.ok) {
+    const canonicalEdges = canonicalReadableWorkflow(workflow).edges;
+    const preserved = JSON.stringify(original.receipt?.nodes) === JSON.stringify(implicit.receipt.nodes)
+      && canonicalEdges.every((edge, index) => {
+        if (!(edge.via || edge.channelX !== undefined || edge.channelY !== undefined
+          || (edge.route && edge.route !== 'auto')
+          || ['labelAt', 'labelDx', 'labelDy', 'labelSegment'].some(field => edge[field] !== undefined))) return true;
+        const before = original.receipt?.edges?.[index]?.points
+          || original.diagnostics.find(diagnostic => diagnostic.subject?.edge === edge.id && Array.isArray(diagnostic.evidence?.points))?.evidence.points;
+        if (before) return JSON.stringify(before) === JSON.stringify(implicit.receipt.edges[index].points);
+        // A rejected preset has no cached path yet; its family and authored
+        // sides are still checked by the complete recovered compiler.
+        return !edge.via && edge.channelX === undefined && edge.channelY === undefined
+          && !['labelAt', 'labelDx', 'labelDy', 'labelSegment'].some(field => edge[field] !== undefined);
+      });
+    if (preserved) return implicit;
+  }
+  // Prefer an existing complete verified repair over another broad proposal.
+  if (original.diagnostics.some(diagnostic => diagnostic.evidence?.verifiedRepairs?.length)) return original;
+  const { candidate, edits } = draftEndpointAlignedVia(workflow, original.receipt);
+  const proposed = compileWorkflowLayoutFeedback({ ...options, workflow: candidate, discoverFixes: false, labelPlacementRecovery: 'repair' });
+  if (!proposed.ok) return original;
+  for (const edit of proposed.recoveredLabelEdits) {
+    const index = Number(edit.path.split('/')[2]);
+    candidate.edges[index].labelAt = [...edit.value];
+    edits.push(edit);
+  }
+  if (!edits.length) return original;
+  const verified = compileWorkflowLayoutFeedback({ ...options, workflow: candidate, discoverFixes: false });
+  if (!verified.ok) return original;
+  const repair = {
+    edits, constraintChange: 'authored-routing',
+    verification: { scope: 'workflow-compiler', qualityProfile: options.qualityProfile || workflow.meta?.quality_profile || 'standard', outcome: 'pass' },
+  };
+  const changedEdges = [...new Set(edits.map(edit => workflow.edges[Number(edit.path.split('/')[2])]))];
+  const message = `apply the measured labelAt/via edits together on ${changedEdges.map(edge => `edge "${edge.id || `${edge.from}->${edge.to}`}"`).join(' and ')}; the complete compiler replay passed without changing topology or text`;
+  const firstError = original.diagnostics.findIndex(diagnostic => diagnostic.severity === 'error');
+  const diagnostics = original.diagnostics.map((diagnostic, index) => index !== firstError ? diagnostic : ({
+    ...diagnostic, evidence: { ...diagnostic.evidence, verifiedRepairs: [...(diagnostic.evidence?.verifiedRepairs || []), repair] },
+    supportedFixes: [...diagnostic.supportedFixes, message],
+  }));
+  return { ...original, diagnostics, receipt: { ...original.receipt, diagnostics } };
+}
+
 function compileWorkflowWithFeedback(options = {}) {
-  const original = compileWorkflowLayoutFeedback(options);
+  const initial = compileWorkflowLayoutFeedback(options);
+  const original = recoverWorkflowLabels(options, initial);
   const { workflow, discoverFixes = true } = options;
   // Repair verification already replays the compiler with discoverFixes=false.
   // Keep those nested calls single-plan, and never multiply fallback attempts.

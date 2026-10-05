@@ -1,0 +1,326 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Measured workflow text",
+    "output": "candidate.html",
+    "quality_profile": "showcase"
+  },
+  "lanes": [
+    {
+      "id": "lane0",
+      "label": "Phase",
+      "variant": "exception"
+    },
+    {
+      "id": "lane1",
+      "label": "Phase"
+    },
+    {
+      "id": "lane2",
+      "label": "Phase"
+    },
+    {
+      "id": "lane3",
+      "label": "Phase"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "n0",
+      "lane": "lane1",
+      "col": 0,
+      "type": "frontend",
+      "label": "Step",
+      "sublabel": "xxxxxxxxxxxxxxxxxxxxx",
+      "width": 168
+    },
+    {
+      "id": "n1",
+      "lane": "lane1",
+      "col": 1,
+      "type": "database",
+      "label": "Step",
+      "sublabel": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "width": 168
+    },
+    {
+      "id": "n2",
+      "lane": "lane1",
+      "col": 2,
+      "type": "backend",
+      "label": "Step",
+      "sublabel": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "width": 168
+    },
+    {
+      "id": "n3",
+      "lane": "lane1",
+      "col": 3,
+      "type": "backend",
+      "label": "Step",
+      "sublabel": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "width": 168
+    },
+    {
+      "id": "n4",
+      "lane": "lane1",
+      "col": 4,
+      "type": "backend",
+      "label": "Step",
+      "sublabel": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "width": 168
+    },
+    {
+      "id": "n5",
+      "lane": "lane2",
+      "col": 4,
+      "type": "frontend",
+      "label": "Step",
+      "sublabel": "xxxxxxxxxxxxxxxxxxxxxxxx",
+      "width": 168
+    },
+    {
+      "id": "n6",
+      "lane": "lane2",
+      "col": 3,
+      "type": "frontend",
+      "label": "Step",
+      "sublabel": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "width": 168
+    },
+    {
+      "id": "n7",
+      "lane": "lane2",
+      "col": 2,
+      "type": "frontend",
+      "label": "Step",
+      "sublabel": "xxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "width": 168
+    },
+    {
+      "id": "n8",
+      "lane": "lane2",
+      "col": 1,
+      "type": "backend",
+      "label": "Step",
+      "sublabel": "xxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "width": 168
+    },
+    {
+      "id": "n9",
+      "lane": "lane0",
+      "col": 2,
+      "type": "security",
+      "label": "Step",
+      "sublabel": "xxxxxxxxxxxxxxxxxxxxxxxx",
+      "width": 168
+    },
+    {
+      "id": "n10",
+      "lane": "lane0",
+      "col": 3,
+      "type": "security",
+      "label": "Step",
+      "sublabel": "xxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "width": 168
+    },
+    {
+      "id": "n11",
+      "lane": "lane0",
+      "col": 4,
+      "type": "security",
+      "label": "Step",
+      "sublabel": "xxxxxxxxxxxxxxxxxxxxx",
+      "width": 168
+    },
+    {
+      "id": "n12",
+      "lane": "lane3",
+      "col": 3,
+      "type": "backend",
+      "label": "Step",
+      "sublabel": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "width": 168
+    },
+    {
+      "id": "n13",
+      "lane": "lane3",
+      "col": 2,
+      "type": "backend",
+      "label": "Step",
+      "sublabel": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "width": 168
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge0",
+      "from": "n0",
+      "to": "n1",
+      "role": "main",
+      "label": "xxxxxxxx",
+      "fromSide": "right",
+      "toSide": "left",
+      "route": "straight"
+    },
+    {
+      "id": "edge1",
+      "from": "n1",
+      "to": "n2",
+      "role": "main",
+      "label": "xxxx",
+      "fromSide": "right",
+      "toSide": "left",
+      "route": "straight"
+    },
+    {
+      "id": "edge2",
+      "from": "n2",
+      "to": "n3",
+      "role": "main",
+      "label": "xxxx",
+      "fromSide": "right",
+      "toSide": "left",
+      "route": "straight"
+    },
+    {
+      "id": "edge3",
+      "from": "n3",
+      "to": "n4",
+      "role": "main",
+      "label": "xxxx",
+      "fromSide": "right",
+      "toSide": "left",
+      "route": "straight"
+    },
+    {
+      "id": "edge4",
+      "from": "n4",
+      "to": "n5",
+      "role": "main",
+      "label": "xxxxxxxx",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "route": "straight"
+    },
+    {
+      "id": "edge5",
+      "from": "n5",
+      "to": "n6",
+      "role": "main",
+      "label": "xxxxxxxx",
+      "fromSide": "left",
+      "toSide": "right",
+      "route": "straight"
+    },
+    {
+      "id": "edge6",
+      "from": "n6",
+      "to": "n7",
+      "role": "main",
+      "label": "xxxxxxxx",
+      "fromSide": "left",
+      "toSide": "right",
+      "route": "straight"
+    },
+    {
+      "id": "edge7",
+      "from": "n7",
+      "to": "n8",
+      "role": "main",
+      "label": "xxxx",
+      "fromSide": "left",
+      "toSide": "right",
+      "route": "straight"
+    },
+    {
+      "id": "edge8",
+      "from": "n2",
+      "to": "n9",
+      "role": "error",
+      "label": "xxxx",
+      "variant": "security",
+      "fromSide": "top",
+      "toSide": "bottom",
+      "route": "straight"
+    },
+    {
+      "id": "edge9",
+      "from": "n3",
+      "to": "n10",
+      "role": "error",
+      "label": "xxxx",
+      "variant": "security",
+      "fromSide": "top",
+      "toSide": "bottom",
+      "route": "straight"
+    },
+    {
+      "id": "edge10",
+      "from": "n4",
+      "to": "n11",
+      "role": "error",
+      "label": "xxxx",
+      "variant": "security",
+      "fromSide": "top",
+      "toSide": "bottom",
+      "route": "straight"
+    },
+    {
+      "id": "edge11",
+      "from": "n5",
+      "to": "n4",
+      "role": "return",
+      "label": "xxxxxxxx",
+      "variant": "dashed",
+      "fromSide": "right",
+      "toSide": "right",
+      "route": "outside-right"
+    },
+    {
+      "id": "edge12",
+      "from": "n6",
+      "to": "n12",
+      "role": "branch",
+      "label": "xxxxxxxxxxxx",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "route": "straight"
+    },
+    {
+      "id": "edge13",
+      "from": "n12",
+      "to": "n13",
+      "role": "branch",
+      "label": "xxxxxxxxxx",
+      "variant": "dashed",
+      "fromSide": "left",
+      "toSide": "right",
+      "route": "straight"
+    },
+    {
+      "id": "edge14",
+      "from": "n13",
+      "to": "n7",
+      "role": "branch",
+      "label": "xxxxxxxx",
+      "variant": "dashed",
+      "fromSide": "top",
+      "toSide": "bottom",
+      "route": "straight"
+    }
+  ],
+  "mainPath": [
+    "n0",
+    "n1",
+    "n2",
+    "n3",
+    "n4",
+    "n5",
+    "n6",
+    "n7",
+    "n8"
+  ]
+}

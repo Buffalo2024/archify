@@ -213,6 +213,22 @@ stay unchanged; if no nearby position is clear, validation reports the original
 collision. Inspect resolved labels with `--layout-json` before adding controls.
 Standard placement retains its existing behavior.
 
+Workflow v2 also keeps successful default scenes unchanged. After a failed
+label/route plan, it may place implicit labels against the complete scene once,
+within two label heights of their own routes. All explicit label controls
+(including zero), route coordinates, presets and endpoint sides remain
+authoritative. A failed recovery retains the original diagnostic.
+
+When several label constraints or outdated endpoint waypoints block one scene,
+a diagnostic may offer one coordinated `verifiedRepairs[].edits` batch. Apply
+that exact batch together: it can add or replace `labelAt`, or align/shorten
+the first or last connected `via` run using measured ports (at most two
+waypoints per endpoint). These changes are proposals and never silently
+rewrite authored controls. Existing `labelAt` precedence over offsets and
+`labelSegment` still applies. Verification scope `workflow-compiler` confirms
+ordinary complete compilation of those exact edits; run complete `finalize`
+to establish artifact and browser acceptance.
+
 Spacing recommendations mean clear gap between boxes, not center distance. A 200px center distance between 165px-wide nodes leaves only 35px of clear gap.
 
 For a relationship label, require:

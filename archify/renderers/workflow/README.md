@@ -225,11 +225,40 @@ a feasible side; an authored side restricts that endpoint to the named port.
   instead of deleting meaning.
 - Use labels for decisions, approvals, protocols, async traces, return paths,
   and any other relationship meaning not fully implied by its endpoints.
-- Prefer route presets — `drop` (bend between lanes; `bias` 0–1 picks where),
-  `outside-right`, `return-left`, `bottom-channel`, and `up-channel` — before
-  using raw `via` points. `straight` and the default `auto` cover the rest.
+- Start with automatic routes and sides. For supplied intent or a measured
+  need, choose a route preset before raw `via` points: `drop` (bend between
+  lanes; `bias` 0–1 picks where), `outside-right`, `return-left`,
+  `bottom-channel`, or `up-channel`. A preset restricts the route family;
+  `straight` and the default `auto` cover the rest.
 - Keep workflow examples compact enough to render well in narrow chat/browser
   previews.
+
+### Node text budget
+
+Labels, sublabels, and tags render as single lines. The renderer-owned
+[font profile](workflow-text-profile.mjs) uses preferred/minimum sizes of
+11/9px for labels, 8/6px for sublabels, and 7/6px for tags. The shared
+[text fitter](../shared/text-fit.mjs) counts CJK glyphs as two text units,
+reserves 8px horizontal padding, and rounds fitted fonts down to tenths.
+For an undecorated context row, retaining its preferred font needs a width of
+at least `ceil(8 + textUnits × 0.6 × preferredFontPx)`. Budget each node's
+complete text separately; a title may need additional icon, brand, or source
+badge clearance. This context formula does not replace those checks.
+
+Readability also depends on the complete scene: a source font projects to
+`sourceFontPx × min(1, actualDiagramBudgetPx / viewBoxWidth)`. Keep the
+minimum projected semantic font at least 6px. A canvas-width bound is valid
+only while the source fonts remain unchanged. Narrowing every node to reach
+that bound can shrink one long sublabel and create a tighter bound. Compact
+unused gaps and safely oversized boxes while retaining long-text widths;
+growing one font-limited box can help more than the resulting canvas growth.
+After any geometry edit, rerun complete `finalize` with all text, conditions,
+source references, and mainPath preserved. A conditional width advisory is
+not a verified whole-scene or browser repair.
+
+Place exception nodes near the steps that produce them when their
+responsibility permits; an exception lane need not be the final lane. Repair
+the connected neighborhood rather than pinning each conflict in isolation.
 
 ### Optional semantic checks
 
