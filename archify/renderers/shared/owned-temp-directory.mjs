@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
+import { sameEntry } from './path-semantics.mjs';
 
 const retryable = new Set(['EBUSY', 'EPERM', 'EACCES', 'ENOTEMPTY']);
 
@@ -31,7 +32,11 @@ export function createOwnedTempDirectory(prefix, { parent = os.tmpdir() } = {}) 
   const ancestors = [];
   for (let current = canonicalParent; ; current = path.dirname(current)) {
     ancestors.push(directoryIdentity(current));
-    if (path.dirname(current) === current) break;
+    const parentRelation = sameEntry(current, path.dirname(current));
+    if (parentRelation.status === 'match') break;
+    if (parentRelation.status !== 'different') {
+      throw new Error(`Temporary directory ancestor identity is unavailable: ${current}`);
+    }
   }
   const verifyAncestors = () => {
     // Check from the filesystem root down, before traversing a replaced parent.
