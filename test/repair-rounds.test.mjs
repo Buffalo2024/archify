@@ -184,6 +184,31 @@ test('a staged second defect surfaces only after the first is repaired', () => {
   assert.equal(label.firstSeenRound, 2);
 });
 
+test('advertised fixes repoint every reference verification rewrote', () => {
+  const file = miniManifest('workflow-shared-ghost', 'workflow', [{ class: 'endpoint-shared-ghost' }]);
+  const result = run(['run', '--manifest', file, '--command', 'validate']);
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  const receipt = JSON.parse(result.stdout.split('\n')[0]);
+  assert.equal(receipt.passed, true);
+  assert.equal(receipt.totals.rounds, 2);
+  const diagnostic = receipt.rounds[0].diagnostics
+    .find((d) => d.code === 'workflow/unknown-edge-endpoint');
+  assert.ok(diagnostic, 'expected an unknown-edge-endpoint diagnostic');
+  const fixes = diagnostic.supportedFixes
+    .map((entry) => entry.match(/set (\S+) to verified node id "([^"]+)"/))
+    .filter(Boolean);
+  assert.ok(fixes.length > 0, 'expected advertised repoint fixes');
+  const byTarget = new Map();
+  for (const [, pointer, target] of fixes) {
+    byTarget.set(target, [...(byTarget.get(target) || []), pointer]);
+  }
+  for (const [target, pointers] of byTarget) {
+    assert.deepEqual([...pointers].sort(), ['/edges/0/from', '/mainPath/0'],
+      `candidate "${target}" must advertise every reference to the unknown id`);
+  }
+  assert.equal(receipt.rounds[0].repairs.applied[0].detail.includes('/mainPath/0'), true);
+});
+
 test('diagnostics the rules cannot map are counted as unactionable and stall the loop', () => {
   const file = miniManifest('arch-duplicate-id', 'architecture', [{ class: 'node-duplicate-id' }]);
   const result = run(['run', '--manifest', file, '--command', 'validate']);
