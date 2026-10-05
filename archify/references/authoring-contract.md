@@ -236,12 +236,23 @@ allocate its measured mask before applying a diagnosed `labelAt`,
 a time unless several edges share a constrained channel. In that case, plan the smallest coupled change from measured geometry and
 validate it together. Architecture/workflow provide layout evidence through
 `validate <type> <candidate.json> --layout-json`; for other types, use validation
-diagnostics and the rendered SVG geometry.
+diagnostics and the rendered SVG geometry. Retain `--quality` and `--repo-root`
+from the failed invocation when inspecting measurements.
 Before adding manual routes, check whether unnecessary agent-added controls
 disable automatic port spread; preserve user-required route intent. Use the
 measured clearance rules above rather than guessing coordinates.
 
 ### Repair evidence
+
+Workflow layout receipts expose `geometryStatus: "complete"`, `"partial"`, or
+`"unavailable"`. A partial receipt retains the failure diagnostics and cached
+geometry; unavailable node boxes and routes omit coordinates, and unavailable
+canvas dimensions or columns are marked explicitly. Input or schema failures can
+prevent geometry entirely. Inspection writes no artifact and is not acceptance.
+For route-preset label blockers, use `evidence.feasibilityFailures` to locate the
+label box, neighboring segment, authored paths, and measured clearance. These
+measurements add no search or automatic repair; rerun complete `finalize` after
+editing the candidate.
 
 For architecture, `validate architecture <input.json> --layout-json` exposes the
 resolved component boxes, boundary frames, connection points, and label positions.

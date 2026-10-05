@@ -1,3 +1,4 @@
+import { WORKFLOW_NODE_TEXT_FIT_PROFILE } from './workflow-text-profile.mjs';
 import { createSpatialGrid } from '../shared/spatial-grid.mjs';
 import { esc, renderDefinitions, renderSemanticSigil, textUnits } from '../shared/utils.mjs';
 import {
@@ -629,7 +630,53 @@ function compilerFailure(contract, diagnostics, error = diagnostics.map(({ messa
     ok: false,
     error,
     diagnostics,
-    receipt: { contract, diagnostics },
+    receipt: { contract, diagnostics, geometryStatus: 'unavailable' },
+  };
+}
+
+
+// Failure evidence reads only geometry already measured by this compilation.
+function failedWorkflowMeasurements({ layout, viewBox, requiredViewBox, nodes, edges, pathCache }) {
+  const finiteCanvas = value => Array.isArray(value) && value.length === 2
+    && [value[0], value[1]].every(number => Number.isFinite(number) && number > 0);
+  const finitePoints = value => Array.isArray(value) && value.length >= 2
+    && Array.from(value).every(point => Array.isArray(point) && point.length === 2
+      && Number.isFinite(point[0]) && Number.isFinite(point[1]));
+  const measuredNodes = [...nodes.values()].map(node => {
+    const columnAvailable = Number.isInteger(node.col) && node.col >= 0
+      && node.col < layout.colXs.length && Number.isFinite(layout.colXs[node.col]);
+    const boxAvailable = columnAvailable
+      && [node.x, node.y, node.width, node.height, node.x + node.width, node.y + node.height].every(Number.isFinite)
+      && node.width > 0 && node.height > 0;
+    return {
+      id: node.id, lane: node.lane,
+      ...(columnAvailable ? { col: node.col } : {}),
+      status: boxAvailable ? 'measured-invalid' : 'unavailable',
+      ...(boxAvailable ? { x: node.x, y: node.y, width: node.width, height: node.height } : {}),
+    };
+  });
+  const measuredEdges = edges.map(edge => {
+    const cached = pathCache.get(edge);
+    const routeAvailable = finitePoints(cached?.points);
+    return {
+      id: edge.id ?? null, from: edge.from, to: edge.to,
+      status: routeAvailable ? 'measured-invalid' : cached ? 'unavailable' : 'blocked',
+      ...(routeAvailable ? { points: cached.points.map(point => [...point]) } : {}),
+    };
+  });
+  const canvasAvailable = finiteCanvas(viewBox);
+  const requiredCanvasAvailable = finiteCanvas(requiredViewBox);
+  const columnsAvailable = layout.colXs.length > 0 && Array.from(layout.colXs).every(Number.isFinite);
+  const geometryAvailable = canvasAvailable || requiredCanvasAvailable || columnsAvailable
+    || measuredNodes.some(node => node.status === 'measured-invalid')
+    || measuredEdges.some(edge => edge.status === 'measured-invalid');
+  return {
+    geometryStatus: geometryAvailable ? 'partial' : 'unavailable',
+    measurementStatus: geometryAvailable ? 'partial-invalid' : 'unavailable',
+    ...(canvasAvailable ? { viewBox: [...viewBox] } : { viewBoxStatus: 'unavailable' }),
+    ...(requiredCanvasAvailable ? { requiredViewBox: [...requiredViewBox] } : { requiredViewBoxStatus: 'unavailable' }),
+    ...(columnsAvailable ? { columns: [...layout.colXs] } : { columnsStatus: 'unavailable' }),
+    nodes: measuredNodes, edges: measuredEdges,
   };
 }
 
@@ -959,14 +1006,7 @@ function measureWorkflowNodes(workflow, layout, laneGeometry) {
   }
 
   // Font sizes for this renderer's node text; the fitting geometry is shared.
-  const nodeTextFit = {
-    labelPreferred: 11,
-    labelMinimum: 9,
-    sublabelPreferred: 8,
-    sublabelMinimum: 6,
-    tagPreferred: 7,
-    tagMinimum: 6,
-  };
+  const nodeTextFit = WORKFLOW_NODE_TEXT_FIT_PROFILE;
 
   const nodes = new Map(asArray(workflow.nodes).map((node) => [node.id, measureNode(node)]));
 
@@ -3315,7 +3355,19 @@ function labelRouteClearanceDeficit(edge, points, threshold = 8) {
   return deficit;
 }
 
-function routeClearsPlacedLabels(edge, points) {
+function routeClearsPlacedLabels(edge, points, failures) {
+  const reject = (kind, labelEdge, routeEdge, labelRect, segment, segmentIndex, clearancePx) => {
+    if (failures && segment) failures.push({
+      predicate: 'routeClearsPlacedLabels', kind,
+      labelEdge: labelEdge.id ?? null, routeEdge: routeEdge?.id ?? null,
+      blockingEdge: (labelEdge === edge ? routeEdge : labelEdge)?.id ?? null,
+      labelPath: `/edges/${sourceIndexes.edges.get(labelEdge)}/label`,
+      ...(routeEdge ? { routePath: `/edges/${sourceIndexes.edges.get(routeEdge)}/route` } : {}),
+      labelRect: { ...labelRect },
+      ...(segment ? { segment: segment.map(point => [...point]), segmentIndex, clearancePx, minimumClearancePx: 4 } : {}),
+    });
+    return false;
+  };
   const candidateLabel = candidateLabelRect(edge, points);
   const candidateExtent = routeBounds(points);
   const queryBox = {
@@ -3331,7 +3383,7 @@ function routeClearsPlacedLabels(edge, points) {
   for (const item of obstacleGrid.query(queryBox)) {
     // A label may sit far from the route it annotates, so both boxes are queried.
     if (item.kind === 'label') {
-      if (candidateLabel && rectsOverlap(candidateLabel, item.rect, -2)) return false;
+      if (candidateLabel && rectsOverlap(candidateLabel, item.rect, -2)) return reject('label-label-overlap', edge, null, candidateLabel);
       const rect = item.rect;
       // Either axis further than the minimum clearance means no segment can reach it.
       if (Math.max(rect.x - candidateExtent.maxX, candidateExtent.minX - (rect.x + rect.width)) >= 4
@@ -3341,7 +3393,7 @@ function routeClearsPlacedLabels(edge, points) {
           start: points[index],
           end: points[index + 1],
         }, rect);
-        if (clearance != null && clearance + 0.0001 < 4) return false;
+        if (clearance != null && clearance + 0.0001 < 4) return reject('route-near-placed-label', item.edge, edge, rect, [points[index], points[index + 1]], index, clearance);
       }
     } else if (item.kind === 'route' && candidateLabel) {
       const otherBounds = item.bounds;
@@ -3353,7 +3405,7 @@ function routeClearsPlacedLabels(edge, points) {
           start: otherPoints[index],
           end: otherPoints[index + 1],
         }, candidateLabel);
-        if (clearance != null && clearance + 0.0001 < 4) return false;
+        if (clearance != null && clearance + 0.0001 < 4) return reject('label-near-placed-route', edge, item.edge, candidateLabel, [otherPoints[index], otherPoints[index + 1]], index, clearance);
       }
     }
   }
@@ -3447,7 +3499,7 @@ function routeFitsCanvasOrigin(edge, points) {
 // Predicates are pure, so their order does not change the result; they are
 // ordered by "cheap and selective first" so the expensive clearance work runs
 // on fewer candidates.
-function readableCandidateIsFeasible(edge, points, from, to, fromSide, toSide) {
+function readableCandidateIsFeasible(edge, points, from, to, fromSide, toSide, failures) {
   return points.length >= 2
     && orthogonalRoute(points)
     && routeMeetsHardRhythm(points)
@@ -3456,7 +3508,7 @@ function readableCandidateIsFeasible(edge, points, from, to, fromSide, toSide) {
     && routeLabelClearsNodes(edge, points)
     && routeClearsSceneLabelObstacles(edge, points)
     && routeClearsUnrelatedNodes(edge, points)
-    && routeClearsPlacedLabels(edge, points)
+    && routeClearsPlacedLabels(edge, points, failures)
     && routeFitsCanvasOrigin(edge, points)
     && routeClearsFrameBorders(points)
     && routeClearsLegend(edge, points);
@@ -3854,7 +3906,8 @@ function readablePresetVia(edge, from, to, start, end, fromSide, toSide) {
       return readableAutomaticVia(edge, from, to, start, end, fromSide, toSide);
   }
   const points = joinRoutePoints(start, via, end);
-  if (readableCandidateIsFeasible(edge, points, from, to, fromSide, toSide)
+  const feasibilityFailures = [];
+  if (readableCandidateIsFeasible(edge, points, from, to, fromSide, toSide, feasibilityFailures)
     && routeMatchesPresetFamily(preset, points, from, to)) {
     return points.slice(1, -1);
   }
@@ -3862,6 +3915,10 @@ function readablePresetVia(edge, from, to, start, end, fromSide, toSide) {
   const edgeIndex = workflow.edges.indexOf(edge);
   const edgeName = workflowEdgeName(edge);
   const supportedFixes = [];
+  for (const failure of feasibilityFailures) {
+    if (!failure.segment) continue;
+    supportedFixes.push(`Edge "${failure.labelEdge}" label (${failure.labelPath}) has ${failure.clearancePx}px clearance from edge "${failure.routeEdge}" segment ${failure.segmentIndex}; at least ${failure.minimumClearancePx}px is required. If those controls are optional, adjust the label's labelAt, or labelDx/labelDy when labelAt is absent (labelAt takes precedence), or the measured route's via/channel geometry to separate them, then replay the complete compiler and final artifact checks. This geometric suggestion is not a verified repair.`);
+  }
   for (const candidatePreset of ['straight', 'drop', 'outside-right', 'return-left', 'bottom-channel', 'up-channel']) {
     if (candidatePreset === preset) continue;
     if (acceptsFix((document) => {
@@ -3888,12 +3945,14 @@ function readablePresetVia(edge, from, to, start, end, fromSide, toSide) {
     },
     evidence: {
       attemptedCandidateFamily: preset,
+      ...(feasibilityFailures.length ? { feasibilityFailures } : {}),
       points,
       fromSide,
       toSide,
       requiredEndpointStubPx: 8,
       requiredInteriorSegmentPx: 16,
       requiredDirectClearancePx: 28,
+      endpointDirectionsHonored: routeHonorsEndpointSides(points, fromSide, toSide),
     },
     supportedFixes,
   }]);
@@ -4797,6 +4856,7 @@ ${renderLegend()}
     const svg = renderSvg();
     const receipt = {
       contract: layout.contract,
+      geometryStatus: 'complete',
       viewBox: [...viewBox],
       requiredViewBox: [...requiredViewBox],
       columns: [...layout.colXs],
@@ -4826,7 +4886,12 @@ ${renderLegend()}
   } catch (error) {
     if (!Array.isArray(error?.archifyDiagnostics)) throw error;
     const diagnostics = error.archifyDiagnostics.map((diagnostic) => ({ ...diagnostic }));
-    return compilerFailure(layout.contract, diagnostics, error.message);
+    const failed = compilerFailure(layout.contract, diagnostics, error.message);
+    failed.receipt = {
+      ...failed.receipt,
+      ...failedWorkflowMeasurements({ layout, viewBox, requiredViewBox, nodes, edges: workflow.edges, pathCache }),
+    };
+    return failed;
   }
 }
 

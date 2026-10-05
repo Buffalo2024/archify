@@ -1,0 +1,53 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Measured context text",
+    "output": "candidate.html",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1240,
+      300
+    ]
+  },
+  "lanes": [
+    {
+      "id": "work",
+      "label": "Work"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "start",
+      "lane": "work",
+      "col": 0,
+      "type": "backend",
+      "label": "Start",
+      "width": 168
+    },
+    {
+      "id": "finish",
+      "lane": "work",
+      "col": 1,
+      "type": "backend",
+      "label": "Finish",
+      "sublabel": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "width": 168
+    }
+  ],
+  "edges": [
+    {
+      "id": "next",
+      "from": "start",
+      "to": "finish",
+      "role": "main",
+      "route": "straight",
+      "fromSide": "right",
+      "toSide": "left"
+    }
+  ],
+  "mainPath": [
+    "start",
+    "finish"
+  ]
+}

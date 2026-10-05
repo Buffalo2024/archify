@@ -201,6 +201,88 @@ test('Reader Layout preserves final-artifact behavior across its ownership bound
     });
 
     const wide = variant('wide', { ratio: 3, undeclaredFit: true });
+    await t.test('long automatic sequences and waterfalls favor reading width while small canvases cap enlargement', async () => {
+      function readerFixture(name, width, height, attributes) {
+        const original = fs.readFileSync(artifacts.architecture, 'utf8');
+        const svgStart = original.indexOf('<svg');
+        const svgEnd = original.indexOf('</svg>', svgStart) + '</svg>'.length;
+        assert.ok(svgStart >= 0 && svgEnd > svgStart);
+        const rows = height > 1000 ? 48 : 4;
+        const rowMarkup = Array.from({ length: rows }, (_, index) => {
+          const y = 20 + index * (height - 60) / rows;
+          return `<g data-node-id="reader-row-${index}">
+            <rect x="20" y="${y}" width="${width - 40}" height="36" fill="var(--backend-fill)" stroke="var(--backend-stroke)"/>
+            <text data-node-label="" x="30" y="${y + 24}" class="t-primary" font-size="14">Reader row ${index + 1}</text>
+          </g>`;
+        }).join('\n');
+        const svg = `<svg viewBox="0 0 ${width} ${height}" ${attributes}>${rowMarkup}</svg>`;
+        const file = path.join(scratch, `${name}.html`);
+        fs.writeFileSync(file, original.slice(0, svgStart) + svg + original.slice(svgEnd));
+        return file;
+      }
+      const samples = [
+        ['sequence', 1100, 2400, 'data-sequence-column-fit="fixed"'],
+        ['waterfall', 1100, 2400, 'data-waterfall-ui=""'],
+        ['small-erd', 456, 270, ''],
+      ];
+      for (const [name, width, height, marker] of samples) {
+        const file = readerFixture(name, width, height,
+          `data-reader-fit="intrinsic-height" data-reader-min-text="7.5" ${marker}`);
+        for (const [viewportWidth, viewportHeight] of [[1440, 900], [1600, 1000], [1920, 1080], [2048, 1320]]) {
+          await load(file, { width: viewportWidth, height: viewportHeight });
+          const before = await snapshot(`${name}-${viewportWidth}`);
+          const dimensions = await evaluate(`(function () {
+            var svg = document.querySelector('.diagram-container > svg');
+            return { width: svg.clientWidth, height: svg.clientHeight,
+              primaryPx: 14 * svg.clientWidth / svg.viewBox.baseVal.width,
+              overflowX: Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) > innerWidth + 1 };
+          })()`);
+          assert.equal(before.active, true);
+          if (evidence && (viewportWidth === 1440 || viewportWidth === 2048)) {
+            const capture = await send('Page.captureScreenshot', { format: 'png' });
+            fs.writeFileSync(path.join(evidence, `${name}-${viewportWidth}-reading.png`), Buffer.from(capture.data, 'base64'));
+          }
+          assert.equal(dimensions.overflowX, false, JSON.stringify(dimensions));
+          assert.ok(dimensions.width <= width * 1.5 + 1, JSON.stringify(dimensions));
+          if (name === 'small-erd') {
+            assert.ok(dimensions.width >= 456, JSON.stringify(dimensions));
+            assert.ok(before.shellWidth >= 960, JSON.stringify(before));
+          } else {
+            assert.ok(dimensions.width >= 1250, JSON.stringify(dimensions));
+            assert.ok(dimensions.primaryPx >= 14, JSON.stringify(dimensions));
+            assert.ok(before.scrollHeight > before.innerHeight);
+            assert.equal(before.overflow, 'authored');
+          }
+          await evaluate('Archify.view.zoomIn(); Archify.view.reset()');
+          await stable();
+          assert.deepEqual((await snapshot(`${name}-${viewportWidth}-reset`)).geometry, before.geometry);
+          await evaluate('Archify.presentation.enter()');
+          await stable();
+          const presentation = await snapshot(`${name}-${viewportWidth}-presentation`);
+          inactive(presentation, width / height >= 1.55);
+          const stage = await evaluate(`(function () {
+            var rect = document.querySelector('.diagram-container > svg').getBoundingClientRect();
+            return { top: rect.top, bottom: rect.bottom, height: innerHeight };
+          })()`);
+          assert.ok(stage.top >= 0 && stage.bottom <= stage.height + 1, JSON.stringify(stage));
+          if (evidence && viewportWidth === 1440) {
+            const capture = await send('Page.captureScreenshot', { format: 'png' });
+            fs.writeFileSync(path.join(evidence, `${name}-${viewportWidth}-presentation.png`), Buffer.from(capture.data, 'base64'));
+          }
+          await evaluate('Archify.presentation.exit()');
+          await stable();
+          assert.deepEqual((await snapshot(`${name}-${viewportWidth}-return`)).geometry, before.geometry);
+        }
+      }
+      // A sequence marker alone must not override an authored canvas's fit.
+      const authored = readerFixture('authored-sequence', 1100, 2400, 'data-sequence-column-fit="fixed"');
+      await load(authored);
+      inactive(await snapshot('authored-sequence'), false);
+      const authoredSmall = readerFixture('authored-small', 456, 270, '');
+      await load(authoredSmall, { width: 2048, height: 1320 });
+      assert.ok(await evaluate("document.querySelector('.diagram-container > svg').clientWidth > 456 * 1.5"),
+        'an authored canvas retains its previous enlargement behavior');
+    });
     await t.test('desktop budgets, extreme content and limited horizontal space preserve geometry', async () => {
       for (const [width, height] of [[1440, 900], [1600, 1000], [1920, 1080], [2048, 1320]]) {
         await load(wide, { width, height });

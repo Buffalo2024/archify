@@ -100,7 +100,20 @@ node archify/bin/archify.mjs validate workflow input.workflow.json --layout-json
 
 The receipt reports the selected contract, measured `viewBox` and
 `requiredViewBox`, solved columns, nodes, edges, labels, and causal diagnostics.
-It deliberately omits solver iterations and candidate scores.
+It deliberately omits solver iterations and candidate scores. `geometryStatus` is
+`complete` for successful compilation, `partial` for a measured rejected plan,
+and `unavailable` when input or initialization prevents measurement. Partial
+receipts include finite measured nodes and cached routes; unavailable nodes omit
+box coordinates, and blocked or unavailable edges have no points. Unavailable
+canvas dimensions and columns are marked explicitly.
+They retain the original diagnostics and non-zero exit. Inspection writes no
+artifact and does not establish finalization.
+
+A route-preset conflict caused by a neighboring label or route includes
+`evidence.feasibilityFailures`: the predicate, authored JSON paths, label box,
+blocking segment, and measured versus required clearance. It records the existing
+feasibility check without another layout search. Geometric suggestions remain
+unverified; rerun complete `finalize` after editing.
 
 ## Legend
 
@@ -216,6 +229,29 @@ a feasible side; an authored side restricts that endpoint to the named port.
   using raw `via` points. `straight` and the default `auto` cover the rest.
 - Keep workflow examples compact enough to render well in narrow chat/browser
   previews.
+
+### Node text budget
+
+Labels, sublabels, and tags render as single lines. The renderer-owned
+[font profile](workflow-text-profile.mjs) uses preferred/minimum sizes of
+11/9px for labels, 8/6px for sublabels, and 7/6px for tags. The shared
+[text fitter](../shared/text-fit.mjs) counts CJK glyphs as two text units,
+reserves 8px horizontal padding, and rounds fitted fonts down to tenths.
+For an undecorated context row, retaining its preferred font needs a width of
+at least `ceil(8 + textUnits × 0.6 × preferredFontPx)`. Budget each node's
+complete text separately; a title may need additional icon, brand, or source
+badge clearance. This context formula does not replace those checks.
+
+Readability also depends on the complete scene: a source font projects to
+`sourceFontPx × min(1, actualDiagramBudgetPx / viewBoxWidth)`. Keep the
+minimum projected semantic font at least 6px. A canvas-width bound is valid
+only while the source fonts remain unchanged. Narrowing every node to reach
+that bound can shrink one long sublabel and create a tighter bound. Compact
+unused gaps and safely oversized boxes while retaining long-text widths;
+growing one font-limited box can help more than the resulting canvas growth.
+After any geometry edit, rerun complete `finalize` with all text, conditions,
+source references, and mainPath preserved. A conditional width advisory is
+not a verified whole-scene or browser repair.
 
 ### Optional semantic checks
 

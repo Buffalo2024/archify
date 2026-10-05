@@ -4,7 +4,7 @@
 
 `finalize` stops at the first non-passing gate. Use compact stdout or `evidence.summaryReceipt`; read its full sidecar only when the summary lacks evidence needed for a coherent repair. A receipt with four artifact checks is basic validation, not showcase acceptance: require all nine checks, zero composition errors, and zero warnings. Fix `meta.quality_profile` and schema errors before geometry. A dense full-schema ERD may keep `standard` for its first complete-field pass: require zero structural errors, no edge-through-node failures, complete field rows, and a readable grouped grid, and record composition warnings instead of spending unbounded time on them.
 
-For a validation failure, edit the existing JSON in the connected neighborhood named by diagnostics before rerunning a command. Preserve requested semantics, meaningful labels, source evidence, and fixed or agreed topology. Several routes sharing nodes call for one placement repair; read [Architecture layout repair](architecture-layout-repair.md) for that case. Reflow a blocked main path rather than nudging unrelated labels. Keep unrelated geometry when its composition already reads clearly. Use `--layout-json` before editing only when compact evidence lacks needed measurements. Workflow v2 uses its stable compiler receipt, not solver internals, as authoring evidence.
+For a validation failure, use `diagnosticGroups` to see the total, shown, and omitted counts per diagnostic code, then edit the existing JSON in the connected neighborhood named by diagnostics before rerunning a command. Preserve requested semantics, meaningful labels, source evidence, and fixed or agreed topology. Several routes sharing nodes call for one placement repair; read [Architecture layout repair](architecture-layout-repair.md) for that case. Reflow a blocked main path rather than nudging unrelated labels. Keep unrelated geometry when its composition already reads clearly. Use `--layout-json` before editing only when compact evidence lacks needed measurements. Use `nextAction.measurement.arguments` when supplied to retain the failed invocation's quality and repository context. Workflow v2 uses its stable compiler receipt, not solver internals, as authoring evidence; [Repair evidence](authoring-contract.md#repair-evidence) defines its measurement statuses.
 
 After the edit, rerun the complete `finalize` command with `--quality showcase` and, for repository-backed work, `--repo-root <repo-root>`. If the output path already has browser evidence from another candidate, use a fresh `--out-dir <output-stem>.review-<revision>` for both the new `finalize` and any `visual-check`. Omit an earlier `--candidate-sha256` after editing because it binds the previous candidate. Compare diagnostics by code, subject, stage, and evidence, never by declining error count alone. If an issue survives two focused repairs, inspect measured geometry or the relevant contract; after one evidence-based retry, report the concrete gap.
 
@@ -263,7 +263,11 @@ validation result, then runs strict `check --require-provenance` and
 `browser-check --require-provenance`. It stops at the first failed or skipped stage
 and preserves that stage's full receipt. Its stdout is one compact JSON
 object with gate statuses, bounded actionable diagnostics, artifact identity,
-and evidence paths. The same compact object is written atomically to
+and evidence paths. Failed summaries include `diagnosticGroups` with total,
+shown, and omitted counts per code. A validation failure for Architecture or
+Workflow may also provide `nextAction.measurement` arguments when input is
+measurable; inspection writes no artifact and does not establish acceptance.
+The same compact object is written atomically to
 `<output-stem>.finalize-summary.json`; use that file for normal failure repair.
 Complete stage receipts and timings remain available for auditing in
 `<output-stem>.finalize.json`. With `--out-dir`, both files are written there;
@@ -469,7 +473,7 @@ A passing `finalize` may report `layoutReviewRecommendation.action: "inspect-seq
 
 A passing `validate --json`, `deliver`, or `finalize` receipt may carry `diagnostics[]` entries with `severity: "warning"` for Viewer locale fallbacks (`i18n/*`). They fail no gate. When the artifact should be fully localized, repair the listed keys from their `evidence` and rerun `finalize`.
 
-For a newly authored candidate with omitted `meta.column_fit` and no user-fixed column geometry, save the candidate, set only `meta.column_fit` to `"spread"`, and rerun the complete `finalize` once with `--out-dir <folder>/width-review`. Keep participant order, messages and their y positions, labels, notes, sources and canvas dimensions. If that attempt fails, restore the candidate and finalize it with `--out-dir <folder>/width-restore`; report the remaining layout suggestion rather than iterating. Preserve an explicitly fixed layout or a supplied legacy candidate and disclose the suggestion without changing it. This review is about horizontal composition; a passing receipt still does not claim perceptual approval.
+New automatic Sequence canvases with omitted `meta.column_fit` and `meta.viewBox` use `spread`. Explicit `meta.column_fit: "fixed"`, or an omitted fit on a supplied `meta.viewBox`, preserves fixed columns. For a newly authored candidate whose width suggestion remains and whose geometry is not user-fixed, save the candidate, set only `meta.column_fit` to `"spread"`, and rerun the complete `finalize` once with `--out-dir <folder>/width-review`. Keep participant order, messages and their y positions, labels, notes, sources and canvas dimensions. If that attempt fails, restore the candidate and finalize it with `--out-dir <folder>/width-restore`; report the remaining layout suggestion rather than iterating. Preserve an explicitly fixed layout or a supplied legacy candidate and disclose the suggestion without changing it. This review is about horizontal composition; a passing receipt still does not claim perceptual approval.
 
 ## Optional capture evidence
 

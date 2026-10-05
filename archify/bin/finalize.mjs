@@ -16,6 +16,7 @@ import {
   findChrome,
   VISUAL_CHECK_VIEWPORTS,
 } from './visual-check.mjs';
+import { LAYOUT_TYPES } from '../renderers/shared/layout-capabilities.mjs';
 import { startDeliveryUpdateCheck } from './delivery-update.mjs';
 
 export const FINALIZE_STAGES = Object.freeze(['validate', 'deliver', 'check', 'browser-check']);
@@ -556,6 +557,19 @@ export function compactFinalizeReceipt(receipt) {
     visualReview: receipt.visualReview || 'not-requested',
     durationMs: receipt.durationMs,
   };
+  if (!receipt.ok && allDiagnostics.length) {
+    const groups = new Map();
+    for (const entry of allDiagnostics) {
+      const group = groups.get(entry.code) || { code: entry.code, total: 0, shown: 0 };
+      group.total += 1;
+      groups.set(entry.code, group);
+    }
+    for (const entry of selectedDiagnostics) groups.get(entry.code).shown += 1;
+    compact.diagnosticGroups = [...groups.values()].map((group) => ({
+      ...group,
+      omitted: group.total - group.shown,
+    }));
+  }
   const metrics = receipt.stages?.check?.receipt?.composition?.metrics;
   const reviewSignals = Object.fromEntries([
     'resolvedCrossovers', 'routesOverSuggestedBends', 'routesOverSuggestedStretch',
@@ -598,6 +612,11 @@ export function compactFinalizeReceipt(receipt) {
     };
   }
   if (!receipt.ok && receipt.status === 'fail' && receipt.failedStage === 'validate') {
+    const stageCommand = receipt.stages?.validate?.command || [];
+    const rootIndex = stageCommand.indexOf('--repo-root');
+    const repoRoot = rootIndex >= 0 ? stageCommand[rootIndex + 1] : undefined;
+    const canInspect = LAYOUT_TYPES.has(receipt.type) && receipt.specification?.path
+      && !allDiagnostics.some(({ code }) => /^(input|schema|output)\//.test(code));
     compact.nextAction = {
       action: 'edit-in-place',
       candidate: receipt.specification?.path,
@@ -605,6 +624,17 @@ export function compactFinalizeReceipt(receipt) {
         ? 'Preserve all semantics and user-fixed geometry. Use references/architecture-layout-repair.md to choose a local repair or connected-scene reflow; edit the existing candidate.'
         : 'Preserve unaffected semantics and geometry; do not replace the whole candidate.',
       then: 'finalize-once',
+      ...(canInspect ? {
+        measurement: {
+          command: 'validate',
+          arguments: [receipt.type, receipt.specification.path, '--layout-json',
+            ...(receipt.quality ? ['--quality', receipt.quality] : []),
+            ...(repoRoot ? ['--repo-root', repoRoot] : [])],
+          candidateSha256: receipt.specification.sha256,
+          acceptance: false,
+          when: 'Inspect before editing when the diagnostics lack the coordinates or neighboring obstacles needed for a coherent repair. Partial geometry and locally verified repairs do not establish full finalization.',
+        },
+      } : {}),
     };
   }
   return compact;

@@ -230,12 +230,15 @@ test('finalize stops at the failed gate and persists actionable failure evidence
     supportedFixes: ['move the diagnosed route'],
   }]);
   assert.deepEqual(finalized.summary.diagnosticSummary, { total: 1, shown: 1, truncated: false });
-  assert.deepEqual(finalized.summary.nextAction, {
+  const { measurement, ...repairAction } = finalized.summary.nextAction;
+  assert.deepEqual(repairAction, {
     action: 'edit-in-place',
     candidate: input,
     constraint: 'Preserve unaffected semantics and geometry; do not replace the whole candidate.',
     then: 'finalize-once',
   });
+  assert.deepEqual(measurement.arguments, ['workflow', input, '--layout-json', '--quality', 'showcase']);
+  assert.equal(measurement.acceptance, false);
   assert.equal(finalized.receipt.diagnostics[0].evidence.intersection[1], 40);
   assert.equal(JSON.parse(fs.readFileSync(finalized.summary.evidence.receipt)).status, 'fail');
   const persistedSummary = JSON.parse(fs.readFileSync(finalized.summary.evidence.summaryReceipt));
@@ -373,11 +376,33 @@ test('compact failure receipts retain diverse actionable subjects without embedd
   assert.equal(compact.diagnostics.length, 8);
   assert.equal(new Set(compact.diagnostics.map(({ subject }) => subject.id)).size, 8);
   assert.deepEqual(compact.diagnosticSummary, { total: 20, shown: 8, truncated: true });
+  assert.deepEqual(compact.diagnosticGroups, [{ code: 'composition/proper-crossing', total: 20, shown: 8, omitted: 12 }]);
+  assert.deepEqual(compact.nextAction.measurement.arguments, ['architecture', '/tmp/spec.json', '--layout-json', '--quality', 'showcase']);
+  assert.equal(compact.nextAction.measurement.acceptance, false);
   assert.equal(compact.nextAction.action, 'edit-in-place');
   assert.match(compact.nextAction.constraint, /Preserve all semantics and user-fixed geometry/);
   assert.match(compact.nextAction.constraint, /local repair or connected-scene reflow/);
   assert.equal('stages' in compact, false);
   assert.ok(JSON.stringify(compact).length < JSON.stringify(receipt).length / 4);
+});
+
+test('failed finalize measurement guidance preserves repository context and excludes invalid inputs', () => {
+  const receipt = {
+    ok: false, status: 'fail', failedStage: 'validate', type: 'workflow', quality: 'showcase',
+    specification: { path: '/tmp/workflow spec.json', sha256: 'frozen' },
+    stages: { validate: { status: 'fail', command: ['node', 'archify.mjs', 'deliver', 'workflow', '/tmp/workflow spec.json', '--repo-root', '/tmp/source repo'] } },
+    diagnostics: [{ code: 'layout/constraint', message: 'Label intersects route', subject: { id: 'a-b' } }],
+  };
+  const compact = compactFinalizeReceipt(receipt);
+  assert.deepEqual(compact.nextAction.measurement.arguments, ['workflow', '/tmp/workflow spec.json', '--layout-json', '--quality', 'showcase', '--repo-root', '/tmp/source repo']);
+  assert.equal(compact.nextAction.measurement.candidateSha256, 'frozen');
+  assert.equal(compact.gates.deliver, 'not-run');
+  for (const type of ['erd', 'class', 'dataflow', 'sequence']) {
+    assert.equal('measurement' in compactFinalizeReceipt({ ...receipt, type }).nextAction, false);
+  }
+  for (const code of ['input/json-parse', 'schema/invalid', 'output/invalid-path']) {
+    assert.equal('measurement' in compactFinalizeReceipt({ ...receipt, diagnostics: [{ code }] }).nextAction, false);
+  }
 });
 
 test('finalize refuses a receipt path that aliases a gate sidecar', async t => {

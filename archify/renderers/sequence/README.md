@@ -81,8 +81,10 @@ participant ids; activations also require `to > from`.
 
 ### Column fit
 
-Sequence diagrams use `meta.column_fit: "fixed"` by default so existing
-documents keep their historical coordinates. Use `"spread"` when a wide
+Sequence diagrams with automatic canvases default to `meta.column_fit: "spread"`.
+Explicit `"fixed"` preserves the historical 86px boxes and 108px column gap.
+Documents with an explicit `meta.viewBox` and no `column_fit` also keep their
+historical fixed coordinates. Use `"spread"` when a wide
 viewBox would otherwise leave empty space on the right or when meaningful
 participant labels do not fit the fixed 86px boxes. Spread derives box width
 and column distance from the viewBox while preserving participant order,

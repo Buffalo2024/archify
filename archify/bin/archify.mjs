@@ -2631,18 +2631,95 @@ const COMPOSITION_FIXES = {
   'composition/short-interior-segment': ['if authored via/route/channelX/channelY controls exist and are not required by the user, remove them to let the renderer re-plan; otherwise preserve that intent and move the route/channel/via point so every interior turn has at least 16px'],
 };
 
-function checkerDiagnostics(checker) {
+function workflowTextBudget(issue, context, runtime) {
+  if (!runtime || context?.type !== 'workflow' || !context.specification
+    || issue.code !== 'composition/desktop-readability' || issue.detail !== 'context'
+    || issue.owner?.kind !== 'node') return null;
+  let document;
+  try { document = JSON.parse(context.specification.toString('utf8')); } catch { return null; }
+  const matches = (document.nodes || []).map((node, index) => ({ node, index }))
+    .filter(({ node }) => node.id === issue.owner.id);
+  if (matches.length !== 1) return null;
+  const { node, index } = matches[0];
+  // Primary labels have decoration-specific fit widths. Restrict this advice
+  // to an exact context-row match with an explicit, authoritative box width.
+  if (typeof node.sublabel !== 'string' || node.sublabel !== issue.text || node.tag === issue.text
+    || !Number.isFinite(node.width) || node.width <= 0) return null;
+  const { fittedNodeFontSize, nodeTextFit, textUnits, WORKFLOW_NODE_TEXT_FIT_PROFILE } = runtime;
+  const { sublabelPreferred: preferred, sublabelMinimum: minimum } = WORKFLOW_NODE_TEXT_FIT_PROFILE;
+  const sourceFontPx = fittedNodeFontSize(node.sublabel, node.width, preferred, minimum);
+  if (sourceFontPx !== issue.sourceFontPx) return null;
+  const scale = Number(issue.scale);
+  const floor = Number(issue.minimumProjectedFontPx);
+  const budget = Number(issue.availableDiagramWidth);
+  if (![scale, floor, budget].every(Number.isFinite) || scale <= 0 || scale > 1
+    || floor <= 0 || budget <= 0) return null;
+  const requiredFontPx = floor / scale;
+  const targetFontPx = Math.ceil(requiredFontPx * 10) / 10;
+  const result = {
+    sourcePath: `/nodes/${index}/sublabel`,
+    widthPath: `/nodes/${index}/width`,
+    authoredWidthPx: node.width,
+    textUnits: textUnits(node.sublabel),
+    preferredFontPx: preferred,
+    fittedFontPx: sourceFontPx,
+    sceneRequiredSourceFontPx: requiredFontPx,
+    targetSourceFontPx: targetFontPx,
+    verification: 'unverified',
+  };
+  if (targetFontPx > preferred) return { ...result, status: 'preferred-font-insufficient' };
+  let minimumWidthPx = Math.ceil(nodeTextFit.horizontalPadding
+    + Math.max(1, result.textUnits) * nodeTextFit.widthFactor * targetFontPx);
+  // Flooring and binary rounding can make a formula-only inverse optimistic.
+  // Check it with the renderer's canonical fitter before offering the edit.
+  if (fittedNodeFontSize(node.sublabel, minimumWidthPx, preferred, minimum) < targetFontPx) {
+    minimumWidthPx += 1;
+  }
+  if (fittedNodeFontSize(node.sublabel, minimumWidthPx, preferred, minimum) < targetFontPx) return null;
+  return {
+    ...result,
+    status: 'conditional-width-candidate',
+    minimumWidthPx,
+    conditionalMaximumViewBoxWidth: Math.floor(targetFontPx * budget / floor),
+  };
+}
+
+async function contextualCheckerDiagnostics(checker, context) {
+  let runtime;
+  if (context?.type === 'workflow' && context.specification
+    && (checker?.composition?.issues || []).some(issue => (
+      issue.severity === 'error' && issue.code === 'composition/desktop-readability'
+      && issue.detail === 'context' && issue.owner?.kind === 'node'
+    ))) {
+    const [textFit, utils, profile] = await Promise.all([
+      import('../renderers/shared/text-fit.mjs'),
+      import('../renderers/shared/utils.mjs'),
+      import('../renderers/workflow/workflow-text-profile.mjs'),
+    ]);
+    runtime = {
+      fittedNodeFontSize: textFit.fittedNodeFontSize,
+      nodeTextFit: textFit.nodeTextFit,
+      textUnits: utils.textUnits,
+      WORKFLOW_NODE_TEXT_FIT_PROFILE: profile.WORKFLOW_NODE_TEXT_FIT_PROFILE,
+    };
+  }
+  return checkerDiagnostics(checker, context, runtime);
+}
+
+function checkerDiagnostics(checker, context, runtime) {
   const diagnostics = [];
   for (const issue of checker?.composition?.issues || []) {
     if (issue.severity !== 'error') continue;
     const { severity, code, relationship, nodeId, ...evidence } = issue;
+    const nodeTextBudget = workflowTextBudget(issue, context, runtime);
+    if (nodeTextBudget) evidence.nodeTextBudget = nodeTextBudget;
     diagnostics.push(diagnostic({
       code,
       severity,
       message: `Final artifact failed ${code}.`,
       subject: relationship ? { relationship } : { check: 'composition', ...(nodeId ? { nodeId } : {}) },
       evidence,
-      supportedFixes: compositionFixes(issue),
+      supportedFixes: compositionFixes({ ...issue, nodeTextBudget }),
     }));
   }
   for (const check of checker?.checks || []) {
@@ -2691,8 +2768,14 @@ function compositionFixes(issue) {
   if (sourceFontPx < hardFloorPx) {
     return [`${preserveIntent} The diagnosed ${sourceFontPx}px source text is below the ${hardFloorPx}px hard floor even at scale 1, so use a renderer-supported semantic text-size setting or renderer-level fix. Position-only label controls cannot repair its projection.${readerCap}`];
   }
+  const nodeBudget = issue.nodeTextBudget;
+  const measuredAdvice = nodeBudget?.status === 'conditional-width-candidate'
+    ? ` Conditional, unverified local candidate: set ${nodeBudget.widthPath} to at least ${nodeBudget.minimumWidthPx}px (current ${nodeBudget.authoredWidthPx}px) to fit ${nodeBudget.targetSourceFontPx}px source text at ${nodeBudget.sourcePath}. At that font, the complete canvas must remain at most ${nodeBudget.conditionalMaximumViewBoxWidth}px. Growing the box may also grow the canvas or change routes; preserve all other intent and rerun complete finalize before claiming repair.`
+    : nodeBudget?.status === 'preferred-font-insufficient'
+      ? ` The current scene needs ${nodeBudget.targetSourceFontPx}px source text, above this context row's ${nodeBudget.preferredFontPx}px preferred font. Increasing node width alone cannot satisfy that bound; compact the complete scene while preserving meaning.`
+      : '';
   const maximumViewBoxWidth = Math.floor((sourceFontPx * actualBudgetPx) / hardFloorPx);
-  return [`${preserveIntent} Compactly reflow automatic spacing and empty corridors so the complete viewBox width is at most ${maximumViewBoxWidth}px (current ${viewBoxWidth}px; ${sourceFontPx}px source text at ${actualBudgetPx}px desktop budget). If supplied geometry fixes that width, use a renderer-supported semantic text-size setting or renderer-level fix instead. Position-only label controls cannot repair its projection.${readerCap}`];
+  return [`${preserveIntent} Compactly reflow automatic spacing and empty corridors so the complete viewBox width is at most ${maximumViewBoxWidth}px (current ${viewBoxWidth}px; ${sourceFontPx}px source text at ${actualBudgetPx}px desktop budget). This bound assumes source font sizes stay unchanged: narrowing node boxes can shrink automatically fitted text, so remeasure all semantic text after width changes. If supplied geometry fixes that width, use a renderer-supported semantic text-size setting or renderer-level fix instead. Position-only label controls cannot repair its projection.${readerCap}${measuredAdvice}`];
 }
 
 function formatDiagnostics(error, diagnostics = []) {
@@ -4269,6 +4352,23 @@ function reportValidateFailure(options) {
   reportArtifactFailure({ ...options, command: 'validate' });
 }
 
+function reportLayoutFailure({ type, input, stage, error, diagnostics, status = 1 }) {
+  console.log(JSON.stringify({
+    contract: 'archify-layout-report/v1',
+    schemaVersion: 1,
+    ok: false,
+    status: 'fail',
+    command: 'validate',
+    type,
+    input,
+    stage,
+    geometryStatus: 'unavailable',
+    error,
+    diagnostics,
+  }, null, 2));
+  process.exitCode = status;
+}
+
 function reportArtifactArgumentFailure(command, error) {
   const details = error.archifyArgument || {};
   reportArtifactFailure({
@@ -4804,7 +4904,7 @@ async function commandDeliver(args) {
         input: inputPath,
         output: outputPath,
         error: 'Final artifact check failed; the previous artifact was preserved.',
-        diagnostics: checkerDiagnostics(checker),
+        diagnostics: await contextualCheckerDiagnostics(checker, { type, specification }),
         status: check.status ?? 1,
         checker,
       });
@@ -6724,8 +6824,8 @@ async function commandValidate(args) {
     subject: { option: unknown[0] },
     supportedFixes: ['remove the unknown option and retry'],
   });
-  const json = args.includes('--json');
   const layoutJson = args.includes('--layout-json');
+  const json = args.includes('--json') || layoutJson;
   const rest = args.filter((arg) => !knownOptions.has(arg));
   const [type, input] = rest;
   if (!type || !input || rest.length !== 2) rejectCliArgument(usage(), {
@@ -6734,7 +6834,10 @@ async function commandValidate(args) {
   });
   const renderer = rendererPath(type);
 
-  if (layoutJson && !['architecture', 'workflow'].includes(type)) {
+  const layoutTypes = layoutJson
+    ? (await import('../renderers/shared/layout-capabilities.mjs')).LAYOUT_TYPES
+    : null;
+  if (layoutJson && !layoutTypes.has(type)) {
     rejectCliArgument('--layout-json is currently supported for architecture and workflow diagrams only.', {
       code: 'cli/unsupported-option',
       subject: { option: '--layout-json', type },
@@ -6755,7 +6858,7 @@ async function commandValidate(args) {
     else validateAuthoredOutputPath(document.meta.output);
   } catch (error) {
     const diagnostics = error.archifyDiagnostics || [inputDiagnostic(error, inputPath)];
-    reportValidateFailure({
+    (layoutJson ? reportLayoutFailure : reportValidateFailure)({
       json,
       stage: diagnostics.some((entry) => entry.code.startsWith('input/')) ? 'input' : 'render',
       type,
@@ -6787,11 +6890,10 @@ async function commandValidate(args) {
         // receipt was produced (for example, input JSON could not be read).
       }
       const failure = rendererFailure(result);
-      reportValidateFailure({
-        json,
+      reportLayoutFailure({
         stage: failure.diagnostics.some((entry) => entry.code.startsWith('input/')) ? 'input' : 'render',
         type,
-        input: path.resolve(input),
+        input: inputPath,
         error: failure.error,
         diagnostics: failure.diagnostics,
         status: result.status ?? 1,
@@ -6842,7 +6944,7 @@ async function commandValidate(args) {
           type,
           input: path.resolve(input),
           error: 'Final artifact check failed.',
-          diagnostics: checkerDiagnostics(checker),
+          diagnostics: await contextualCheckerDiagnostics(checker, { type, specification }),
           checker,
           status: check.status ?? 1,
         });
@@ -6965,7 +7067,8 @@ try {
   }
 } catch (error) {
   if (!error.archifyArgument) throw error;
-  if (['validate', 'deliver', 'finalize'].includes(command) && args.includes('--json')) {
+  if ((['validate', 'deliver', 'finalize'].includes(command) && args.includes('--json'))
+    || (command === 'validate' && args.includes('--layout-json'))) {
     reportArtifactArgumentFailure(command, error);
   } else {
     fail(error.message);

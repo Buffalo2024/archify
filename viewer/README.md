@@ -568,6 +568,14 @@ The source split narrows maintenance scope while preserving runtime dependencies
   `data-reader-layout` / `data-reader-overflow` attributes. Ineligible measures
   clear them and reset the recorded width. CSS consumes the width on `.container`.
   Reader never writes canonical SVG geometry, viewBox or semantic IDs.
+- Automatic (`intrinsic-height`) Sequence and Waterfall canvases use the
+  available desktop reading width and retain authored vertical page scroll;
+  overflow settling must not shrink them back to fit the viewport height.
+  Other diagram families retain height fitting. All automatic canvases cap
+  enlargement at 1.5 times the authored SVG width, independently of the 960px
+  shell floor used by the header and controls. An explicit viewBox retains
+  its existing fixed-canvas fit. Present still provides the full overview;
+  camera 100% is relative to the fitted reading size, not intrinsic SVG pixels.
 - Initial wide-diagram classification sets `data-wide-diagram` on the diagram
   container and `data-diagram-shape` on `html`. These survive eligibility changes;
   CSS and camera/radar behavior still depend on the wide-diagram flag on narrow
@@ -577,8 +585,8 @@ The source split narrows maintenance scope while preserving runtime dependencies
   the page lifetime. `schedule` coalesces requests; deferred overflow settling
   rechecks eligibility. Leaving adaptive layout clears its state without
   unmounting the module or clearing another module's state.
-- Width eligibility, overflow fallback and optional-observer behavior are
-  unchanged. Shared `waitForStableLayout` waits for fonts, pending work and
+- Desktop eligibility and optional-observer behavior are unchanged. Shared
+  `waitForStableLayout` waits for fonts, pending work and
   consecutive stable dimensions; its default 240-frame sampling limit starts
   after font readiness. It is not a wall-clock timeout for stalled fonts or
   background pages. Keep this helper shared with Viewer Chrome Layout.
@@ -642,6 +650,16 @@ the modes are overview, manual and semantic. Zoom and Reset return undefined;
 `centerAt` returns a boolean, `logicalViewport` can return null, and `sync`
 delegates to `reveal` or returns false. Manual Reset interrupts callers, whereas
 `reset({ automatic: true })` stops camera motion without the manual takeover path.
+
+Manual zoom uses 25 percentage point steps from 25% through 300%, relative to
+the Reader's fitted size. Below 100%, the diagram centers within the visible
+horizontal scroll viewport; diagrams taller than the viewport stay top-aligned.
+Manual zoom adjusts page scrolling for those long diagrams to preserve the
+visible reading region, or reveal the whole diagram when it fits onscreen.
+Map detail and no camera dragging apply; wide mobile layouts retain
+their contained horizontal scroll. Reset restores 100% overview. Semantic reveal
+and Radar centering retain their existing minimum of 100%. Canonical exports
+retain the original geometry regardless of the manual zoom.
 
 `reveal` returns a transaction or false, with branch-specific side effects.
 Desktop empty/unknown targets can return before changing the camera. At widths

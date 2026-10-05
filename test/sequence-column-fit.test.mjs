@@ -86,7 +86,7 @@ test('spread column fit uses the viewBox width and stays inside it', () => {
     'last lane stays inside the viewBox with the reserved margin');
 });
 
-test('spread column fit is opt-in, so an unset value renders like fixed', () => {
+test('an authored viewBox with unset column fit renders like explicit fixed', () => {
   assert.equal(render(wideSequence()), render(wideSequence('fixed')));
 });
 
@@ -125,7 +125,7 @@ test('the sublabel diagnostic reports the width in force, not the historical con
   assert.doesNotMatch(stderr, /boxes are a fixed/, 'spread must not quote the fixed layout');
 });
 
-test('the fast authoring path explains when to opt into spread', () => {
+test('the authoring contract explains automatic spread and explicit geometry compatibility', () => {
   const schema = JSON.parse(fs.readFileSync(path.join(skillRoot, 'schemas/sequence.schema.json'), 'utf8'));
   const description = schema.properties.meta.properties.column_fit.description;
   const skill = fs.readFileSync(path.join(skillRoot, 'references/authoring-defaults.md'), 'utf8');
@@ -133,8 +133,12 @@ test('the fast authoring path explains when to opt into spread', () => {
 
   assert.match(description, /wide viewBox/);
   assert.match(description, /meaningful participant labels/);
+  assert.match(description, /Automatic canvases default to spread/);
+  assert.match(description, /explicit meta\.viewBox with this field omitted preserves/);
+  assert.match(description, /Explicit fixed always keeps that geometry/);
   assert.match(skill, /use `spread` when a wide viewBox leaves unused horizontal space or meaningful labels need width/);
   assert.match(rendererReadme, /Use `"spread"` when a wide/);
+  assert.match(rendererReadme, /automatic canvases default to `meta\.column_fit: "spread"`/);
   assert.match(rendererReadme, /try `meta\.column_fit: "spread"` before shortening/);
 });
 

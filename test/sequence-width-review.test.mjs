@@ -84,6 +84,33 @@ test('the suggested one-field spread edit clears the advice and retains message 
   assert.ok(repaired.html.includes(' L 965.5 200'));
 });
 
+test('an automatic six-column canvas spreads by default while explicit fixed keeps its geometry', t => {
+  const spec = sequence();
+  delete spec.meta.viewBox;
+  const automatic = render(t, spec);
+  const automaticCheck = check(automatic.output);
+  assert.equal(automaticCheck.exitCode, 0);
+  const space = automaticCheck.report.composition.sequenceColumnSpace;
+  assert.equal(space.columnFit, 'spread');
+  assert.equal(space.participantCount, 6);
+  assert.equal(space.canvasWidth, 920);
+  assert.equal(space.occupiedRight, 880);
+  assert.equal(space.emptyRightPx, 40);
+  assert.equal(space.reviewSuggested, false);
+  spec.meta.column_fit = 'spread';
+  assert.equal(render(t, spec).html, automatic.html, 'automatic default matches explicit spread');
+  spec.meta.column_fit = 'fixed';
+  const fixed = render(t, spec);
+  const fixedCheck = check(fixed.output);
+  assert.equal(fixedCheck.exitCode, 0);
+  assert.equal(fixedCheck.report.composition.sequenceColumnSpace.occupiedRight, 645);
+  assert.equal(fixedCheck.report.composition.sequenceColumnSpace.emptyRightPx, 275);
+  assert.equal(fixedCheck.report.composition.sequenceColumnSpace.reviewSuggested, true);
+  const nodes = html => [...html.matchAll(/<g id="node-([^"]+)"/g)].map(x => x[1]);
+  assert.deepEqual(nodes(automatic.html), nodes(fixed.html));
+  assert.ok(automatic.html.includes('>请求结果</text>'));
+});
+
 test('explicit fixed remains byte-identical to the legacy default and advice preserves authored intent', t => {
   const spec = sequence();
   const original = render(t, spec);
