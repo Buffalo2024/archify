@@ -82,3 +82,18 @@ test('workflow budget: ambiguous text roles and source-free standalone check do 
     assert.doesNotMatch(checked.stdout, /nodeTextBudget|Conditional, unverified/);
   });
 });
+
+test('workflow budget: deliver preserves the prior artifact and reports the same contextual candidate as validate', () => {
+  withScene(() => {}, ({ input, receipt, run, tmp }) => {
+    const output = path.join(tmp, 'delivery.html');
+    const previous = '<!doctype html><title>previous artifact</title>';
+    fs.writeFileSync(output, previous);
+    const delivered = run(['deliver', 'workflow', input, output, '--quality', 'showcase', '--json']);
+    assert.equal(delivered.status, 1, delivered.stdout + delivered.stderr);
+    const deliveryReceipt = JSON.parse(delivered.stdout);
+    assert.equal(deliveryReceipt.stage, 'check');
+    assert.deepEqual(issue(deliveryReceipt).evidence.nodeTextBudget, issue(receipt).evidence.nodeTextBudget);
+    assert.deepEqual(issue(deliveryReceipt).supportedFixes, issue(receipt).supportedFixes);
+    assert.equal(fs.readFileSync(output, 'utf8'), previous);
+  });
+});

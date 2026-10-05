@@ -6,9 +6,6 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { fittedNodeFontSize, nodeTextFit } from '../renderers/shared/text-fit.mjs';
-import { textUnits } from '../renderers/shared/utils.mjs';
-import { WORKFLOW_NODE_TEXT_FIT_PROFILE } from '../renderers/workflow/workflow-text-profile.mjs';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const skillRoot = path.resolve(__dirname, '..');
 
@@ -2635,8 +2632,8 @@ const COMPOSITION_FIXES = {
   'composition/short-interior-segment': ['if authored via/route/channelX/channelY controls exist and are not required by the user, remove them to let the renderer re-plan; otherwise preserve that intent and move the route/channel/via point so every interior turn has at least 16px'],
 };
 
-function workflowTextBudget(issue, context) {
-  if (context?.type !== 'workflow' || !context.specification
+function workflowTextBudget(issue, context, runtime) {
+  if (!runtime || context?.type !== 'workflow' || !context.specification
     || issue.code !== 'composition/desktop-readability' || issue.detail !== 'context'
     || issue.owner?.kind !== 'node') return null;
   let document;
@@ -2649,6 +2646,7 @@ function workflowTextBudget(issue, context) {
   // to an exact context-row match with an explicit, authoritative box width.
   if (typeof node.sublabel !== 'string' || node.sublabel !== issue.text || node.tag === issue.text
     || !Number.isFinite(node.width) || node.width <= 0) return null;
+  const { fittedNodeFontSize, nodeTextFit, textUnits, WORKFLOW_NODE_TEXT_FIT_PROFILE } = runtime;
   const { sublabelPreferred: preferred, sublabelMinimum: minimum } = WORKFLOW_NODE_TEXT_FIT_PROFILE;
   const sourceFontPx = fittedNodeFontSize(node.sublabel, node.width, preferred, minimum);
   if (sourceFontPx !== issue.sourceFontPx) return null;
@@ -2687,12 +2685,34 @@ function workflowTextBudget(issue, context) {
   };
 }
 
-function checkerDiagnostics(checker, context) {
+async function contextualCheckerDiagnostics(checker, context) {
+  let runtime;
+  if (context?.type === 'workflow' && context.specification
+    && (checker?.composition?.issues || []).some(issue => (
+      issue.severity === 'error' && issue.code === 'composition/desktop-readability'
+      && issue.detail === 'context' && issue.owner?.kind === 'node'
+    ))) {
+    const [textFit, utils, profile] = await Promise.all([
+      import('../renderers/shared/text-fit.mjs'),
+      import('../renderers/shared/utils.mjs'),
+      import('../renderers/workflow/workflow-text-profile.mjs'),
+    ]);
+    runtime = {
+      fittedNodeFontSize: textFit.fittedNodeFontSize,
+      nodeTextFit: textFit.nodeTextFit,
+      textUnits: utils.textUnits,
+      WORKFLOW_NODE_TEXT_FIT_PROFILE: profile.WORKFLOW_NODE_TEXT_FIT_PROFILE,
+    };
+  }
+  return checkerDiagnostics(checker, context, runtime);
+}
+
+function checkerDiagnostics(checker, context, runtime) {
   const diagnostics = [];
   for (const issue of checker?.composition?.issues || []) {
     if (issue.severity !== 'error') continue;
     const { severity, code, relationship, nodeId, ...evidence } = issue;
-    const nodeTextBudget = workflowTextBudget(issue, context);
+    const nodeTextBudget = workflowTextBudget(issue, context, runtime);
     if (nodeTextBudget) evidence.nodeTextBudget = nodeTextBudget;
     diagnostics.push(diagnostic({
       code,
@@ -4885,7 +4905,7 @@ async function commandDeliver(args) {
         input: inputPath,
         output: outputPath,
         error: 'Final artifact check failed; the previous artifact was preserved.',
-        diagnostics: checkerDiagnostics(checker, { type, specification }),
+        diagnostics: await contextualCheckerDiagnostics(checker, { type, specification }),
         status: check.status ?? 1,
         checker,
       });
@@ -6922,7 +6942,7 @@ async function commandValidate(args) {
           type,
           input: path.resolve(input),
           error: 'Final artifact check failed.',
-          diagnostics: checkerDiagnostics(checker, { type, specification }),
+          diagnostics: await contextualCheckerDiagnostics(checker, { type, specification }),
           checker,
           status: check.status ?? 1,
         });
