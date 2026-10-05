@@ -80,6 +80,9 @@ test('rules repair converges a schema defect reported with a path and evidence',
   assert.equal(receipt.rounds[0].diagnostics[0].hasSubjectDetail, true);
   assert.equal(receipt.rounds[0].diagnostics[0].hasEvidence, true);
   assert.equal(receipt.rounds[0].diagnostics[0].hasSupportedFixes, true);
+  assert.equal(receipt.rounds[0].diagnostics[0].subject.path, '/meta');
+  assert.ok(receipt.rounds[0].diagnostics[0].evidenceKeys.includes('missingProperty'));
+  assert.match(receipt.rounds[0].diagnostics[0].supportedFixes.join(' '), /output/);
   assert.equal(receipt.rounds[0].repairs.applied.length, 1);
   assert.equal(receipt.totals.tokens.context > 0, true);
   assert.equal(receipt.totals.tokens.receipts > 0, true);
@@ -114,6 +117,52 @@ test('keeps a valid boundary label visible to the repair-rounds suite', () => {
   assert.equal(receipt.passed, true);
   assert.equal(receipt.rounds[0].ok, true);
   assert.deepEqual(receipt.defects, []);
+});
+
+test('keeps a valid narrow-glyph header and wrapping subtitle visible', () => {
+  const fixture = writeJson('valid-header-boundary.architecture.json', {
+    schema_version: 1,
+    diagram_type: 'architecture',
+    meta: {
+      title: 'i'.repeat(205),
+      subtitle: 'A deliberately long subtitle made of ordinary words that wraps across lines inside the header instead of overflowing the viewport',
+      output: 'header-boundary.html',
+      quality_profile: 'showcase',
+      viewBox: [1600, 300],
+    },
+    components: [{
+      id: 'api',
+      type: 'backend',
+      label: 'API',
+      pos: [80, 100],
+      size: [200, 60],
+    }],
+    boundaries: [],
+    connections: [],
+    cards: [],
+  });
+  const file = miniManifest('architecture-valid-header', 'architecture', [], fixture);
+  const result = run(['run', '--manifest', file, '--command', 'validate']);
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  const receipt = JSON.parse(result.stdout.split('\n')[0]);
+  assert.equal(receipt.passed, true);
+  assert.equal(receipt.rounds[0].ok, true);
+  assert.deepEqual(receipt.defects, []);
+});
+
+test('reports diagnostics the manifest cannot attribute to an injected defect', () => {
+  const file = miniManifest('arch-duplicate-id-unattributed', 'architecture', [{ class: 'node-duplicate-id' }]);
+  const result = run(['run', '--manifest', file, '--command', 'validate']);
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  const receipt = JSON.parse(result.stdout.split('\n')[0]);
+  assert.ok(receipt.rounds[0].unattributed.length >= 1);
+  assert.equal(receipt.rounds[0].unattributed[0].code, 'layout/constraint');
+  const resultsFile = path.join(tmp, 'unattributed-results.jsonl');
+  fs.writeFileSync(resultsFile, `${JSON.stringify(receipt)}\n`);
+  const report = run(['report', '--results', resultsFile]);
+  assert.equal(report.status, 0, report.stderr || report.stdout);
+  const summary = JSON.parse(report.stdout);
+  assert.equal(summary.overall.diagnostics.unattributed, receipt.rounds[0].unattributed.length);
 });
 
 test('a staged second defect surfaces only after the first is repaired', () => {
