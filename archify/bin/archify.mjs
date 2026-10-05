@@ -9,7 +9,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const skillRoot = path.resolve(__dirname, '..');
 
-const TYPES = new Set(['architecture', 'workflow', 'sequence', 'dataflow', 'lifecycle', 'erd']);
+const TYPES = new Set(['architecture', 'workflow', 'sequence', 'dataflow', 'lifecycle', 'erd', 'tree', 'class', 'timeline', 'waterfall']);
 const DELIVERY_SIDECAR_SUFFIXES = Object.freeze([
   '.delivery.json',
   '.delivery-pending.json',
@@ -2209,7 +2209,7 @@ function usage() {
   archify demo [output-directory]
 
 Types:
-  architecture, workflow, sequence, dataflow, lifecycle, erd
+  architecture, workflow, sequence, dataflow, lifecycle, erd, tree, class, timeline, waterfall
 `;
 }
 
@@ -2647,6 +2647,16 @@ function checkerDiagnostics(checker) {
   }
   for (const check of checker?.checks || []) {
     if (check.ok || COMPOSITION_CHECKS.has(check.name)) continue;
+    if (check.name === 'svg_path_data') {
+      const pathDiagnostics = (checker.diagnostics || []).filter(item => (
+        item?.severity === 'error'
+        && ['artifact/svg-path-malformed', 'artifact/svg-path-unsupported'].includes(item.code)
+      ));
+      if (pathDiagnostics.length) {
+        diagnostics.push(...pathDiagnostics.map(item => diagnostic(item)));
+        continue;
+      }
+    }
     diagnostics.push(diagnostic({
       code: `artifact/${check.name.replaceAll('_', '-')}`,
       message: (check.details || []).find(Boolean) || `Final artifact failed ${check.name}.`,
@@ -5906,6 +5916,10 @@ async function commandDoctor(args) {
     dataflow: 'product-analytics.dataflow.json',
     lifecycle: 'agent-run.lifecycle.json',
     erd: 'orders.erd.json',
+    tree: 'payment-platform.tree.json',
+    class: 'payments.class.json',
+    timeline: 'payment-incident.timeline.json',
+    waterfall: 'checkout-request.waterfall.json',
   };
 
   for (const type of TYPES) {
