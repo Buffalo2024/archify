@@ -431,7 +431,7 @@ test('real Chrome preserves language through entry, navigation, selection, refre
     assert.equal(await evaluate(browser, sessionId, 'document.querySelector(".nav-logo-path").textContent'), '/ 验证作品集');
     assert.deepEqual(await evaluate(browser, sessionId, `Array.from(document.querySelectorAll('[data-filter]')).map(function (button) {
       return button.textContent;
-    })`), ['全部配方 / 12', '架构图', '工作流', '时序图', '数据流', '生命周期', '实体关系图']);
+    })`), ['全部配方 / 13', '架构图', '工作流', '时序图', '数据流', '生命周期', '实体关系图']);
 
     await evaluate(browser, sessionId, 'document.querySelector(\'[data-filter="architecture"]\').click()');
     state = await evaluate(browser, sessionId, `({
@@ -444,7 +444,7 @@ test('real Chrome preserves language through entry, navigation, selection, refre
       })
     })`);
     assert.deepEqual(state, {
-      language: 'zh-CN', selected: 'true', typeQuery: 'architecture', visibleCount: 2, onlyArchitecture: true,
+      language: 'zh-CN', selected: 'true', typeQuery: 'architecture', visibleCount: 3, onlyArchitecture: true,
     });
 
     let loaded = browser.cdp.waitFor('Page.loadEventFired', sessionId);
@@ -454,14 +454,14 @@ test('real Chrome preserves language through entry, navigation, selection, refre
       language: document.documentElement.lang,
       selected: document.querySelector('[data-filter="architecture"]').getAttribute('aria-pressed'),
       visibleCount: document.querySelectorAll('.showcase-card:not([hidden])').length
-    })`), { language: 'zh-CN', selected: 'true', visibleCount: 2 });
+    })`), { language: 'zh-CN', selected: 'true', visibleCount: 3 });
 
     await evaluate(browser, sessionId, 'document.getElementById("language").click()');
     assert.equal(await evaluate(browser, sessionId, 'document.documentElement.lang'), 'en');
     assert.equal(await evaluate(browser, sessionId, 'document.querySelector(".nav-logo-path").textContent'), '/ proof lab');
     assert.deepEqual(await evaluate(browser, sessionId, `Array.from(document.querySelectorAll('[data-filter]')).map(function (button) {
       return button.textContent;
-    })`), ['All / 12', 'Architecture', 'Workflow', 'Sequence', 'Data flow', 'Lifecycle', 'Entity-relationship']);
+    })`), ['All / 13', 'Architecture', 'Workflow', 'Sequence', 'Data flow', 'Lifecycle', 'Entity-relationship']);
 
     loaded = browser.cdp.waitFor('Page.loadEventFired', sessionId);
     await browser.cdp.send('Page.reload', {}, sessionId);
