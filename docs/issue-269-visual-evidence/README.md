@@ -8,7 +8,8 @@ Open [the online Transformer example](https://puuuuup.github.io/archify/gallery/
 
 1. Select **Transformer Layer** in the main graph and open its internals from Semantic Passport.
 2. Inspect a child component; use **Back to model**, Close, or Escape to return.
-3. Open the child again. In Export, select **Current subarchitecture**, then export SVG or PNG. The default target is the main architecture.
+3. Open the child again. In Export, select **Current subarchitecture**, then export SVG or PNG. The file contains only the child graph.
+4. Select **Main architecture** in the same menu to export the parent graph separately. This remains the default target.
 
 ## Visual evidence
 
@@ -19,6 +20,8 @@ Screenshots use light theme, Classic preset, device scale 1, and still motion. T
 | ![Main architecture](1366x768-main.png) | ![Complete child architecture](1366x768-child.png) |
 
 [Child at 1280 × 720](1280x720-child.png), [independent child PNG](transformer-child.png), and [independent child SVG](transformer-child.svg) are also included. The PNG and SVG contain the child graph without the drawer, Passport, or parent graph. The laptop screenshots were visually inspected for complete topology and readable primary labels; automated bounds/text-size checks are separate evidence.
+
+[Export target menu](1366x768-export-target.png) shows the separate main and child options. Their labels and hints use separate lines so both remain readable on laptop and narrow screens. The regression checks their rendered bounds in light and dark themes and switches between the targets to verify isolated SVG downloads.
 
 ## Compatibility and automated evidence
 

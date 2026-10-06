@@ -3580,7 +3580,7 @@ html[data-preset="editorial"] .node-finder {
 .export-menu-section[hidden] { display: none; }
 .export-target-selector {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.3rem;
   margin-bottom: 0.42rem;
   padding-bottom: 0.52rem;
@@ -3670,6 +3670,17 @@ html[data-preset="editorial"] .node-finder {
   color: var(--text-faint);
   font-size: 0.6875rem;
   font-weight: 450;
+}
+.export-target-selector .export-item-copy {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+}
+.export-target-selector .export-item-copy strong,
+.export-target-selector .export-item-copy small {
+  flex: none;
+  max-width: 100%;
+  white-space: normal;
 }
 .toolbar .export-menu button::before {
   position: static;

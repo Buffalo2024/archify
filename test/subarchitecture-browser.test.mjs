@@ -453,6 +453,56 @@ test('local hover reuses the parent Intent Trace animation, colors, and one-hop 
   }
 });
 
+test('main and child export targets have readable labels on laptop and narrow screens', {
+  skip: chromePath ? false : 'Set ARCHIFY_CHROME to run the real browser regression.',
+}, async () => {
+  const browser = new ChromeVisualBrowser(chromePath);
+  try {
+    const artifact = renderFixture();
+    for (const [width, height] of [[1366, 768], [1280, 720], [390, 720]]) {
+      const sessionId = await load(browser, artifact, { width, height });
+      for (const theme of ['light', 'dark']) {
+        const targets = await evaluate(browser, sessionId, `(async function () {
+          document.documentElement.setAttribute('data-theme', '${theme}');
+          Archify.subarchitecture.open('transformer', { updateUrl: false });
+          await new Promise(function (resolve) {
+            requestAnimationFrame(function () { requestAnimationFrame(resolve); });
+          });
+          document.getElementById('btn-export').click();
+          return Array.from(document.querySelectorAll('#export-target-selector button')).map(function (button) {
+            var label = button.querySelector('strong');
+            var hint = button.querySelector('small');
+            var labelRect = label.getBoundingClientRect();
+            var hintRect = hint.getBoundingClientRect();
+            return {
+              target: button.getAttribute('data-export-target'),
+              text: label.textContent,
+              width: labelRect.width,
+              height: labelRect.height,
+              textFits: label.scrollWidth <= label.clientWidth + 1,
+              separateLines: hintRect.top >= labelRect.bottom,
+              visible: !button.hidden && labelRect.top >= 0 && labelRect.bottom <= innerHeight
+                && labelRect.left >= 0 && labelRect.right <= innerWidth
+            };
+          });
+        })()`);
+        assert.deepEqual(targets.map((target) => target.target), ['main', 'subarchitecture']);
+        assert.deepEqual(targets.map((target) => target.text), ['Main architecture', 'Current subarchitecture']);
+        for (const target of targets) {
+          const context = `${width}x${height} ${theme} ${target.target}`;
+          assert.ok(target.width > 80 && target.height > 10, context);
+          assert.equal(target.textFits, true, context);
+          assert.equal(target.separateLines, true, context);
+          assert.equal(target.visible, true, context);
+        }
+        await evaluate(browser, sessionId, `Archify.exportMenu.close(false)`);
+      }
+    }
+  } finally {
+    await browser.close();
+  }
+});
+
 test('export target downloads only the open subarchitecture and strips local viewer state', {
   skip: chromePath ? false : 'Set ARCHIFY_CHROME to run the real browser regression.',
 }, async () => {
@@ -490,7 +540,8 @@ test('export target downloads only the open subarchitecture and strips local vie
         localChecked: localTarget.getAttribute('aria-checked'),
         webmDisabled: document.querySelector('#export-menu [data-format="webm"]').disabled
       };
-      var selected = Archify.exportMenu.selectTarget('subarchitecture');
+      localTarget.click();
+      var selected = Archify.exportMenu.target() === 'subarchitecture';
       var selectedState = {
         target: Archify.exportMenu.target(),
         mainChecked: mainTarget.getAttribute('aria-checked'),
@@ -563,6 +614,18 @@ test('export target downloads only the open subarchitecture and strips local vie
         size: shareSize
       };
 
+      mainTarget.click();
+      await Archify.exportMenu.run('svg');
+      var mainBlob = blobs.filter(function (blob) { return blob.type.indexOf('image/svg+xml') === 0; }).slice(-1)[0];
+      var mainSvg = new DOMParser().parseFromString(await mainBlob.text(), 'image/svg+xml').documentElement;
+      var mainState = {
+        filename: filenames.slice(-1)[0] || '',
+        target: document.documentElement.getAttribute('data-last-export-target'),
+        hasParentTransformer: !!mainSvg.querySelector('[data-node-id="transformer"]'),
+        hasChildAttention: !!mainSvg.querySelector('[data-node-id="attention"]'),
+        childStillOpen: Archify.subarchitecture.active() === 'transformer'
+      };
+
       Archify.subarchitecture.close({ updateUrl: false, restoreFocus: false });
       var afterClose = {
         selectorHidden: selector.hidden,
@@ -577,6 +640,7 @@ test('export target downloads only the open subarchitecture and strips local vie
         svg: svgState,
         png: pngState,
         share: shareState,
+        main: mainState,
         afterClose: afterClose,
         alerts: alerts
       };
@@ -618,6 +682,13 @@ test('export target downloads only the open subarchitecture and strips local vie
     assert.equal(receipt.share.canonical, 'true');
     assert.equal(receipt.share.format, 'share-card');
     assert.deepEqual(receipt.share.size, { width: 1200, height: 630 });
+    assert.deepEqual(receipt.main, {
+      filename: 'transformer-model-overview.svg',
+      target: 'main',
+      hasParentTransformer: true,
+      hasChildAttention: false,
+      childStillOpen: true,
+    });
     assert.deepEqual(receipt.afterClose, {
       selectorHidden: true,
       target: 'main',
