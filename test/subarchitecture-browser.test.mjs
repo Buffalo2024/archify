@@ -200,7 +200,7 @@ test('a closed subarchitecture is layout-transparent to the complete parent View
   }
 });
 
-test('the representative child fits laptop screens and returns without moving the parent', {
+test('the representative child expands below the parent and restores laptop reading position', {
   skip: chromePath ? false : 'Set ARCHIFY_CHROME to run the real browser regression.',
 }, async () => {
   const browser = new ChromeVisualBrowser(chromePath);
@@ -212,9 +212,18 @@ test('the representative child fits laptop screens and returns without moving th
       const sessionId = await load(browser, artifact, { width, height });
       const receipt = await evaluate(browser, sessionId, `(async function () {
         var parent = document.querySelector('.diagram-container > svg');
-        var before = { viewBox: parent.getAttribute('viewBox'), transform: parent.style.transform, scroll: [scrollX, scrollY] };
         Archify.focus.set('transformer', { toggle: false, updateUrl: false });
+        await Archify.readerLayout.whenStable();
+        window.scrollTo({ top: 48, behavior: 'instant' });
+        await new Promise(function (resolve) { requestAnimationFrame(function () { requestAnimationFrame(resolve); }); });
+        function parentState() {
+          var rect = parent.getBoundingClientRect();
+          return { viewBox: parent.getAttribute('viewBox'), transform: parent.style.transform, scroll: [scrollX, scrollY],
+            width: rect.width, height: rect.height, documentTop: rect.top + scrollY };
+        }
+        var before = parentState();
         document.getElementById('btn-focus-internals').click();
+        await Archify.readerLayout.whenStable();
         await new Promise(function (resolve) { requestAnimationFrame(function () { requestAnimationFrame(resolve); }); });
         var svg = document.querySelector('#subarchitecture-mount > svg');
         var stage = document.querySelector('.subarchitecture-stage').getBoundingClientRect();
@@ -228,16 +237,68 @@ test('the representative child fits laptop screens and returns without moving th
         });
         var back = document.getElementById('subarchitecture-back').getBoundingClientRect();
         var backVisible = back.top >= 0 && back.bottom <= innerHeight && back.left >= 0 && back.right <= innerWidth;
+        var exportButton = document.getElementById('btn-export').getBoundingClientRect();
+        var exportVisible = exportButton.top >= 0 && exportButton.bottom <= innerHeight && exportButton.left >= 0 && exportButton.right <= innerWidth;
+        var drawer = document.getElementById('subarchitecture-drawer');
+        var inline = getComputedStyle(drawer).position !== 'fixed' &&
+          drawer.getBoundingClientRect().top >= document.querySelector('.diagram-container').getBoundingClientRect().bottom;
+        var entryScrolled = scrollY > before.scroll[1];
+        var openParent = parentState();
+        Archify.subarchitecture.focus('attention', { updateUrl: false });
+        await new Promise(function (resolve) { requestAnimationFrame(function () { requestAnimationFrame(resolve); }); });
+        var selectedRect = svg.getBoundingClientRect();
+        var graphSizeStable = selectedRect.width === rect.width && selectedRect.height === rect.height;
         document.getElementById('subarchitecture-back').click();
-        return { contained: contained, primary: primary, backVisible: backVisible, closed: Archify.subarchitecture.active() === null,
-          before: before, after: { viewBox: parent.getAttribute('viewBox'), transform: parent.style.transform, scroll: [scrollX, scrollY] } };
+        await Archify.readerLayout.whenStable();
+        await new Promise(function (resolve) { requestAnimationFrame(function () { requestAnimationFrame(resolve); }); });
+        return { contained: contained, primary: primary, backVisible: backVisible, exportVisible: exportVisible, closed: Archify.subarchitecture.active() === null,
+          inline: inline, entryScrolled: entryScrolled, graphSizeStable: graphSizeStable,
+          openParent: openParent, before: before, after: parentState() };
       })()`);
       assert.equal(receipt.contained, true, `${width}x${height}: every child node fits`);
       assert.ok(receipt.primary >= 10, `${width}x${height}: primary labels are ${receipt.primary}px`);
       assert.equal(receipt.backVisible, true);
+      assert.equal(receipt.exportVisible, true);
       assert.equal(receipt.closed, true);
+      assert.equal(receipt.inline, true);
+      assert.equal(receipt.entryScrolled, true);
+      assert.equal(receipt.graphSizeStable, true);
+      assert.deepEqual({ ...receipt.openParent, scroll: receipt.before.scroll }, receipt.before);
       assert.deepEqual(receipt.after, receipt.before);
     }
+  } finally { await browser.close(); }
+});
+
+test('narrow inline children scroll inside their stage and Escape restores the parent', {
+  skip: chromePath ? false : 'Set ARCHIFY_CHROME to run the real browser regression.',
+}, async () => {
+  const browser = new ChromeVisualBrowser(chromePath);
+  try {
+    const sessionId = await load(browser, renderFixture(), { width: 720, height: 900 });
+    const receipt = await evaluate(browser, sessionId, `(async function () {
+      Archify.focus.set('transformer', { toggle: false, updateUrl: false });
+      await Archify.readerLayout.whenStable();
+      var before = [scrollX, scrollY];
+      document.getElementById('btn-focus-internals').click();
+      await Archify.readerLayout.whenStable();
+      await new Promise(function (resolve) { requestAnimationFrame(function () { requestAnimationFrame(resolve); }); });
+      var stage = document.querySelector('.subarchitecture-stage');
+      stage.scrollLeft = stage.scrollWidth;
+      var overflowIsLocal = stage.scrollWidth > stage.clientWidth && stage.scrollLeft > 0 && document.documentElement.scrollWidth <= innerWidth;
+      window.scrollBy({ top: 160, behavior: 'instant' });
+      var back = document.getElementById('subarchitecture-back').getBoundingClientRect();
+      var backVisible = back.top >= 0 && back.bottom <= innerHeight;
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      await Archify.readerLayout.whenStable();
+      await new Promise(function (resolve) { requestAnimationFrame(function () { requestAnimationFrame(resolve); }); });
+      return { before: before, after: [scrollX, scrollY], overflowIsLocal: overflowIsLocal, backVisible: backVisible,
+        closed: Archify.subarchitecture.active() === null, focus: document.activeElement.id };
+    })()`);
+    assert.equal(receipt.overflowIsLocal, true);
+    assert.equal(receipt.backVisible, true);
+    assert.equal(receipt.closed, true);
+    assert.equal(receipt.focus, 'btn-focus-internals');
+    assert.deepEqual(receipt.after, receipt.before);
   } finally { await browser.close(); }
 });
 

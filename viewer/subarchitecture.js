@@ -24,6 +24,7 @@
       var intentFocusedNode = null;
       var intentEnterTimer = null;
       var drawerFrame = 0;
+      var returnScroll = null;
       var listeners = [];
       var destroyed = false;
 
@@ -451,7 +452,9 @@
         })) return false;
         nextSvg.setAttribute('data-preset', html.getAttribute('data-preset') || 'classic');
         nextSvg.setAttribute('data-theme', html.getAttribute('data-theme') || 'dark');
+        var previousScroll = returnScroll || { x: window.scrollX, y: window.scrollY };
         if (activeParentId && activeParentId !== parentId) close({ updateUrl: false, restoreFocus: false });
+        returnScroll = previousScroll;
         clearLocalIntentTrace({ announce: false });
         intentHoveredNode = null;
         intentFocusedNode = null;
@@ -479,6 +482,7 @@
         drawerFrame = requestAnimationFrame(function () {
           drawerFrame = requestAnimationFrame(function () {
             drawerFrame = 0;
+            drawer.scrollIntoView({ block: 'start', behavior: 'instant' });
             try { backBtn.focus({ preventScroll: true }); } catch (_) {}
           });
         });
@@ -488,6 +492,8 @@
         options = options || {};
         if (!activeParentId) return false;
         var parentId = activeParentId;
+        var previousScroll = returnScroll;
+        returnScroll = null;
         if (drawerFrame) {
           cancelAnimationFrame(drawerFrame);
           drawerFrame = 0;
@@ -517,6 +523,15 @@
           var focusTarget = !trigger.hidden && !trigger.disabled ? trigger : parentNode;
           if (focusTarget) {
             try { focusTarget.focus({ preventScroll: true }); } catch (_) { try { focusTarget.focus(); } catch (_) {} }
+          }
+          if (previousScroll) {
+            window.scrollTo({ left: previousScroll.x, top: previousScroll.y, behavior: 'instant' });
+            drawerFrame = requestAnimationFrame(function () {
+              drawerFrame = requestAnimationFrame(function () {
+                drawerFrame = 0;
+                window.scrollTo({ left: previousScroll.x, top: previousScroll.y, behavior: 'instant' });
+              });
+            });
           }
         }
         return true;

@@ -14,6 +14,8 @@ Read this only when the user asks for a reader-facing capability. Ordinary gener
 - Direct Relationship Pin makes a unique compiled relationship operable while preserving the authored line and stable relationship identity. It must fail closed on conflicting source/target/label/ID metadata.
 - Route Probe resolves exactly two endpoints over authored directed relationships. It never infers a route from geometry.
 
+Authored subarchitectures expand below the main graph in the same page. Opening internals scrolls to that section and focuses its return control. Back, Close, and Escape restore the previous page position and parent focus. The parent keeps its reading layout while the child is open. Child SVGs retain their natural aspect ratio; a narrow stage scrolls horizontally, and component details do not shrink the graph.
+
 ## Motion and presentation
 
 `meta.animation: "trace"` enables a finite reader-controlled Live/Still trace. Static is the default. Still, reduced motion, page hiding, print, and canonical export preserve complete static meaning. Presentation Stage changes viewer chrome and framing, never authored geometry. This is not a mobile product feature; narrow layouts get containment only.

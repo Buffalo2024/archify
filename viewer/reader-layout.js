@@ -126,7 +126,6 @@
           window.innerWidth >= MIN_DESKTOP_WIDTH &&
           html.getAttribute('data-embed') !== 'true' &&
           html.getAttribute('data-present') !== 'true' &&
-          html.getAttribute('data-subarchitecture-open') !== 'true' &&
           (!window.matchMedia || !window.matchMedia('print').matches)
         );
       }
@@ -221,7 +220,7 @@
         if (settleFrame) cancelAnimationFrame(settleFrame);
         settleFrame = requestAnimationFrame(function () {
           settleFrame = 0;
-          if (!eligible() || !lastWidth) return;
+          if (!eligible() || !lastWidth || html.getAttribute('data-subarchitecture-open') === 'true') return;
           fitDockedRail();
           var overflow = Math.max(
             document.documentElement.scrollHeight,
@@ -240,6 +239,9 @@
       }
       function measure() {
         frame = 0;
+        // Inline internals add page height, but do not spend the parent graph's
+        // reading budget. Keep its layout while readers explore the child.
+        if (html.getAttribute('data-subarchitecture-open') === 'true') return null;
         if (!eligible()) {
           clear();
           return null;

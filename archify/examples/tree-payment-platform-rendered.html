@@ -2037,12 +2037,10 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     }
     #btn-focus-internals[hidden] { display: none; }
     .subarchitecture-drawer {
-      position: fixed;
-      inset: 4.2rem 2rem 0.75rem;
-      z-index: 220;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
+      grid-column: 1 / -1;
+      min-width: 0;
+      margin-top: 1rem;
+      scroll-margin-top: 4.5rem;
       border: 1px solid color-mix(in srgb, var(--backend-stroke) 52%, var(--panel-border));
       border-radius: 1rem;
       background: var(--panel);
@@ -2050,14 +2048,19 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     }
     .subarchitecture-drawer[hidden],
     html[data-embed="true"] .subarchitecture-drawer { display: none !important; }
+    html[data-subarchitecture-open="true"] .toolbar { position: fixed; }
     .subarchitecture-drawer-head {
+      position: sticky;
+      top: 4.2rem;
+      z-index: 1;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 1rem;
       padding: 0.85rem 1rem;
       border-bottom: 1px solid var(--panel-border);
-      background: linear-gradient(120deg, color-mix(in srgb, var(--backend-fill) 48%, transparent), transparent 68%);
+      border-radius: 1rem 1rem 0 0;
+      background: linear-gradient(120deg, color-mix(in srgb, var(--backend-fill) 48%, transparent), transparent 68%), var(--panel);
     }
     .subarchitecture-eyebrow {
       display: block;
@@ -2110,8 +2113,6 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       grid-template-columns: minmax(0, 1fr) minmax(18rem, 22rem);
       gap: 0.9rem;
       min-height: 0;
-      flex: 1;
-      overflow: auto;
       padding: 0.9rem;
     }
     .subarchitecture-stage,
@@ -2122,18 +2123,17 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       background: color-mix(in srgb, var(--panel) 82%, var(--bg));
     }
     .subarchitecture-stage {
-      min-height: 0;
+      min-height: 22rem;
       overflow: auto;
     }
     .subarchitecture-mount {
-      min-width: 0;
-      height: 100%;
+      min-width: 64rem;
       padding: 0.7rem;
     }
     .subarchitecture-mount svg {
       display: block;
       width: 100%;
-      height: 100%;
+      height: auto;
     }
     .subarchitecture-passport {
       align-self: stretch;
@@ -2167,18 +2167,14 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     @media (max-width: 1440px) {
       .subarchitecture-drawer-content {
         grid-template-columns: 1fr;
-        grid-template-rows: minmax(0, 1fr) auto;
       }
       .subarchitecture-passport { max-height: 10rem; }
     }
     @media (max-width: 720px) {
-      .subarchitecture-drawer { inset: 4.2rem 0.75rem 0.75rem; }
       .subarchitecture-drawer-head { align-items: flex-start; }
       .subarchitecture-drawer-actions { align-items: stretch; flex-direction: column-reverse; }
       #subarchitecture-close { align-self: flex-end; }
       .subarchitecture-drawer-content { grid-template-columns: 1fr; }
-      .subarchitecture-stage { min-height: 22rem; }
-      .subarchitecture-mount { min-width: 58rem; min-height: 22rem; }
     }
     .relationship-lens-list {
       max-height: min(18rem, 46vh);
@@ -9743,6 +9739,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       var intentFocusedNode = null;
       var intentEnterTimer = null;
       var drawerFrame = 0;
+      var returnScroll = null;
       var listeners = [];
       var destroyed = false;
 
@@ -10170,7 +10167,9 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         })) return false;
         nextSvg.setAttribute('data-preset', html.getAttribute('data-preset') || 'classic');
         nextSvg.setAttribute('data-theme', html.getAttribute('data-theme') || 'dark');
+        var previousScroll = returnScroll || { x: window.scrollX, y: window.scrollY };
         if (activeParentId && activeParentId !== parentId) close({ updateUrl: false, restoreFocus: false });
+        returnScroll = previousScroll;
         clearLocalIntentTrace({ announce: false });
         intentHoveredNode = null;
         intentFocusedNode = null;
@@ -10198,6 +10197,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         drawerFrame = requestAnimationFrame(function () {
           drawerFrame = requestAnimationFrame(function () {
             drawerFrame = 0;
+            drawer.scrollIntoView({ block: 'start', behavior: 'instant' });
             try { backBtn.focus({ preventScroll: true }); } catch (_) {}
           });
         });
@@ -10207,6 +10207,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         options = options || {};
         if (!activeParentId) return false;
         var parentId = activeParentId;
+        var previousScroll = returnScroll;
+        returnScroll = null;
         if (drawerFrame) {
           cancelAnimationFrame(drawerFrame);
           drawerFrame = 0;
@@ -10236,6 +10238,15 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           var focusTarget = !trigger.hidden && !trigger.disabled ? trigger : parentNode;
           if (focusTarget) {
             try { focusTarget.focus({ preventScroll: true }); } catch (_) { try { focusTarget.focus(); } catch (_) {} }
+          }
+          if (previousScroll) {
+            window.scrollTo({ left: previousScroll.x, top: previousScroll.y, behavior: 'instant' });
+            drawerFrame = requestAnimationFrame(function () {
+              drawerFrame = requestAnimationFrame(function () {
+                drawerFrame = 0;
+                window.scrollTo({ left: previousScroll.x, top: previousScroll.y, behavior: 'instant' });
+              });
+            });
           }
         }
         return true;
@@ -10773,7 +10784,6 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           window.innerWidth >= MIN_DESKTOP_WIDTH &&
           html.getAttribute('data-embed') !== 'true' &&
           html.getAttribute('data-present') !== 'true' &&
-          html.getAttribute('data-subarchitecture-open') !== 'true' &&
           (!window.matchMedia || !window.matchMedia('print').matches)
         );
       }
@@ -10868,7 +10878,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         if (settleFrame) cancelAnimationFrame(settleFrame);
         settleFrame = requestAnimationFrame(function () {
           settleFrame = 0;
-          if (!eligible() || !lastWidth) return;
+          if (!eligible() || !lastWidth || html.getAttribute('data-subarchitecture-open') === 'true') return;
           fitDockedRail();
           var overflow = Math.max(
             document.documentElement.scrollHeight,
@@ -10887,6 +10897,9 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       }
       function measure() {
         frame = 0;
+        // Inline internals add page height, but do not spend the parent graph's
+        // reading budget. Keep its layout while readers explore the child.
+        if (html.getAttribute('data-subarchitecture-open') === 'true') return null;
         if (!eligible()) {
           clear();
           return null;

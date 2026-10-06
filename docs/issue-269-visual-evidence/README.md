@@ -4,7 +4,7 @@ Comparison base: `68b77b73eaf12297356d122968d9b7b8767be278` (`dev`). The candida
 
 ## Try the interactive example
 
-Download [the self-contained Transformer artifact](../gallery/artifacts/transformer-layer.architecture.html) and open it locally in Chrome. Its [typed source](../../archify/examples/transformer-layer.architecture.json) is included.
+Open [the online Transformer example](https://puuuuup.github.io/archify/gallery/artifacts/transformer-layer.architecture.html), or download [the self-contained artifact](../gallery/artifacts/transformer-layer.architecture.html) and open it locally in Chrome. Its [typed source](../../archify/examples/transformer-layer.architecture.json) is included.
 
 1. Select **Transformer Layer** in the main graph and open its internals from Semantic Passport.
 2. Inspect a child component; use **Back to model**, Close, or Escape to return.
@@ -12,7 +12,7 @@ Download [the self-contained Transformer artifact](../gallery/artifacts/transfor
 
 ## Visual evidence
 
-Screenshots use light theme, Classic preset, device scale 1, and still motion. The child graph occupies the available width; Semantic Passport moves below it on laptop screens. The back control stays visible. Narrower screens retain horizontal scrolling for the graph.
+Screenshots use light theme, Classic preset, device scale 1, and still motion. The child expands below the main graph in the same page, as in the original PR. Opening it scrolls to the section. The graph keeps its natural aspect ratio, and Semantic Passport sits below it on laptop screens. The return control and Export remain available while scrolling. Narrower screens retain horizontal scrolling inside the graph stage.
 
 | Main, 1366 × 768 | Child, 1366 × 768 |
 | --- | --- |
@@ -34,12 +34,12 @@ node test/golden.mjs
 node --test test/gallery.test.mjs test/guide.test.mjs test/guide-page.test.mjs test/readme-showcase.test.mjs
 ```
 
-The browser regression covers pointer/keyboard entry, Escape, deep links, parent layout/camera/scroll preservation, local focus and motion, themes/presets, child export isolation, and rejected tampered export roots. The representative example additionally checks 1366 × 768 and 1280 × 720 viewports.
+The browser regression covers pointer/keyboard entry, Escape, deep links, parent layout/camera preservation, restored page position on return, local focus and motion, themes/presets, child export isolation, and rejected tampered export roots. The representative example additionally checks 1366 × 768 and 1280 × 720 viewports. It verifies that the child is below the main graph, entry scrolls to it, and selecting a child component does not shrink the graph. A narrow-screen regression checks local horizontal scrolling and a visible return control.
 
 ## Practical limits
 
 Children remain one level deep, with 1–12 local components and no cross-scope connections. Print, Embed, Route, Reachability, and WebM retain their main-graph behavior. Child SVG/raster/clipboard exports and its optional Share Card are supported. At narrow viewport widths the child uses scrolling rather than compressing an arbitrarily large graph.
 
-In this example, child primary labels measure approximately 12.6 px at 1366 × 768 and 11.4 px at 1280 × 720. Opening a populated Passport spends some of the graph's height budget; the latter viewport then measures approximately 9.7 px. This is a practical limit of fitting the entire graph and its selected-component details into a short laptop viewport. Exported graph dimensions remain independent of that viewport.
+In this example, child primary labels measure approximately 11.7 px at 1366 × 768 and 10.8 px at 1280 × 720. The sizes stay the same after selecting a child component. Details use their own scrolling area. Longer child graphs or details can require ordinary page scrolling; the graph is not compressed to fit both into one screen. Exported graph dimensions remain independent of the viewport.
 
-Remote engineering CI on the updated head is required before integration. Windows full-suite failures are recorded in the PR description; local focused checks are not a substitute for that remote result.
+The PR description links engineering CI for the updated head and records the local checks separately.
