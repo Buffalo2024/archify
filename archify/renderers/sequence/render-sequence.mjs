@@ -242,7 +242,7 @@ function validateSequence() {
           to: message.to,
         },
         evidence: { endpoint, unknownNodeId: message[field], availableNodeIds: candidates },
-        supportedFixes: candidates.map((id) => `set /messages/${messageIndex}/${field} to verified node id "${id}"`),
+        supportedFixes: candidates.slice(0, 3).map((id) => `set /messages/${messageIndex}/${field} to verified node id "${id}"`),
       });
       problems.push(problem);
     }

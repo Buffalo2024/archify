@@ -2805,11 +2805,10 @@ function validateWorkflow() {
             availableNodeIds: candidates,
             fixVerification: 'each candidate was verified by applying every listed repoint together and recompiling',
           },
-          supportedFixes: candidates.flatMap((nodeId) => (
-            acceptsFix((document) => repointReferences(document, id, nodeId))
-              ? unknownIdReferenceFixes(id, nodeId)
-              : []
-          )),
+          supportedFixes: candidates
+            .filter((nodeId) => acceptsFix((document) => repointReferences(document, id, nodeId)))
+            .slice(0, 3)
+            .flatMap((nodeId) => unknownIdReferenceFixes(id, nodeId)),
         });
       }
     }
@@ -2962,11 +2961,10 @@ function validateReadableInputsBeforeRouting() {
     for (const [field, endpoint] of [['from', 'source'], ['to', 'target']]) {
       if (nodes.has(edge[field])) continue;
       const message = `Workflow edge "${workflowEdgeName(edge)}" references unknown ${endpoint} "${edge[field]}".`;
-      const supportedFixes = availableNodeIds.flatMap((nodeId) => (
-        acceptsFix((document) => repointReferences(document, edge[field], nodeId))
-          ? unknownIdReferenceFixes(edge[field], nodeId)
-          : []
-      ));
+      const supportedFixes = availableNodeIds
+        .filter((nodeId) => acceptsFix((document) => repointReferences(document, edge[field], nodeId)))
+        .slice(0, 3)
+        .flatMap((nodeId) => unknownIdReferenceFixes(edge[field], nodeId));
       fail({
         code: 'workflow/unknown-edge-endpoint',
         severity: 'error',

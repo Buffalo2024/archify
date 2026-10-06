@@ -625,6 +625,16 @@ function validateArchitecture() {
     for (const [field, endpoint] of [['from', 'source'], ['to', 'target']]) {
       if (components.has(conn[field])) continue;
       const message = `Connection "${conn.label || conn[field]}" references unknown ${endpoint} "${conn[field]}".`;
+      const otherId = conn[field === 'from' ? 'to' : 'from'];
+      const neighbors = new Set();
+      for (const edge of connectionList) {
+        if (edge === conn) continue;
+        if (edge.from === otherId) neighbors.add(edge.to);
+        if (edge.to === otherId) neighbors.add(edge.from);
+      }
+      const candidates = knownComponentIds
+        .filter((id) => id !== otherId)
+        .sort((a, b) => (neighbors.has(b) - neighbors.has(a)) || a.localeCompare(b));
       diagnostics.push({
         code: 'architecture/unknown-endpoint', severity: 'error', message,
         subject: {
@@ -635,7 +645,7 @@ function validateArchitecture() {
           to: conn.to,
         },
         evidence: { endpoint, unknownNodeId: conn[field], availableNodeIds: knownComponentIds },
-        supportedFixes: knownComponentIds.map((id) => `set /connections/${connIndex}/${field} to verified node id "${id}"`),
+        supportedFixes: candidates.slice(0, 3).map((id) => `set /connections/${connIndex}/${field} to verified node id "${id}"`),
       });
       problems.push(message);
       problems.push(`Connection "${conn.label || conn[field]}" endpoint "${conn[field]}" does not name a declared component.`);

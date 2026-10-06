@@ -204,7 +204,7 @@ function validateDataflow() {
           to: flow.to,
         },
         evidence: { endpoint, unknownNodeId: flow[field], availableNodeIds: candidates },
-        supportedFixes: candidates.map((id) => `set /flows/${flowIndex}/${field} to verified node id "${id}"`),
+        supportedFixes: candidates.slice(0, 3).map((id) => `set /flows/${flowIndex}/${field} to verified node id "${id}"`),
       });
       problems.push(problem);
     }

@@ -449,7 +449,7 @@ function validateLifecycle() {
           to: transition.to,
         },
         evidence: { endpoint, unknownNodeId: transition[field], availableNodeIds: knownStateIds },
-        supportedFixes: knownStateIds.map((id) => `set /transitions/${transitionIndex}/${field} to verified node id "${id}"`),
+        supportedFixes: knownStateIds.slice(0, 3).map((id) => `set /transitions/${transitionIndex}/${field} to verified node id "${id}"`),
       });
       problems.push(problem);
     }
