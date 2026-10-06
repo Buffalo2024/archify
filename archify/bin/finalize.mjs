@@ -608,7 +608,7 @@ export function compactFinalizeReceipt(receipt) {
       truncated: allDiagnostics.length > selectedDiagnostics.length,
     },
     evidence: receipt.evidence,
-    ...(receipt.update ? {
+    ...(receipt.update && receipt.update.status !== 'unavailable' ? {
       update: Object.fromEntries(Object.entries(receipt.update)
         .filter(([, value]) => value != null && value !== false)),
     } : {}),
