@@ -532,7 +532,7 @@ test('export target downloads only the open subarchitecture and strips local vie
       Archify.focus.set('transformer', { toggle: false, updateUrl: false });
       Archify.subarchitecture.open('transformer', { updateUrl: false });
       Archify.subarchitecture.focus('attention', { updateUrl: false });
-      Archify.exportMenu.open();
+      document.getElementById('btn-export').click();
       var afterOpen = {
         selectorHidden: selector.hidden,
         target: Archify.exportMenu.target(),
@@ -614,6 +614,7 @@ test('export target downloads only the open subarchitecture and strips local vie
         size: shareSize
       };
 
+      document.getElementById('btn-export').click();
       mainTarget.click();
       await Archify.exportMenu.run('svg');
       var mainBlob = blobs.filter(function (blob) { return blob.type.indexOf('image/svg+xml') === 0; }).slice(-1)[0];
@@ -623,14 +624,16 @@ test('export target downloads only the open subarchitecture and strips local vie
         target: document.documentElement.getAttribute('data-last-export-target'),
         hasParentTransformer: !!mainSvg.querySelector('[data-node-id="transformer"]'),
         hasChildAttention: !!mainSvg.querySelector('[data-node-id="attention"]'),
-        childStillOpen: Archify.subarchitecture.active() === 'transformer'
+        childStillOpen: Archify.subarchitecture.active() === 'transformer',
+        parentFocus: Archify.focus.active()
       };
 
       Archify.subarchitecture.close({ updateUrl: false, restoreFocus: false });
       var afterClose = {
         selectorHidden: selector.hidden,
         target: Archify.exportMenu.target(),
-        localHidden: localTarget.hidden
+        localHidden: localTarget.hidden,
+        parentFocus: Archify.focus.active()
       };
       return {
         beforeOpen: beforeOpen,
@@ -688,11 +691,13 @@ test('export target downloads only the open subarchitecture and strips local vie
       hasParentTransformer: true,
       hasChildAttention: false,
       childStillOpen: true,
+      parentFocus: 'transformer',
     });
     assert.deepEqual(receipt.afterClose, {
       selectorHidden: true,
       target: 'main',
       localHidden: true,
+      parentFocus: 'transformer',
     });
     assert.deepEqual(receipt.alerts, []);
   } finally {

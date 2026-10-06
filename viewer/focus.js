@@ -1588,6 +1588,8 @@
         if (chip.hidden || !target || typeof target.closest !== 'function' || chip.contains(target)) return;
         if (container.getAttribute('data-just-panned') === 'true') return;
         if (target.closest('.subarchitecture-drawer')) return;
+        if (document.documentElement.getAttribute('data-subarchitecture-open') === 'true' &&
+            target.closest('.toolbar')) return;
         if (target.closest('[data-node-id], [data-relationship-hit-key], .overview-map')) return;
         clear();
       }, true);

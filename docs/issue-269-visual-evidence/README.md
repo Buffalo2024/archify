@@ -21,7 +21,7 @@ Screenshots use light theme, Classic preset, device scale 1, and still motion. T
 
 [Child at 1280 × 720](1280x720-child.png), [independent child PNG](transformer-child.png), and [independent child SVG](transformer-child.svg) are also included. The PNG and SVG contain the child graph without the drawer, Passport, or parent graph. The laptop screenshots were visually inspected for complete topology and readable primary labels; automated bounds/text-size checks are separate evidence.
 
-[Export target menu](1366x768-export-target.png) shows the separate main and child options. Their labels and hints use separate lines so both remain readable on laptop and narrow screens. The regression checks their rendered bounds in light and dark themes and switches between the targets to verify isolated SVG downloads.
+[Export target menu](1366x768-export-target.png) shows the separate main and child options. Their labels and hints use separate lines so both remain readable on laptop and narrow screens. The regression checks their rendered bounds in light and dark themes and switches between the targets to verify isolated SVG downloads. Using the toolbar while a child is open preserves the parent selection, including after export and return.
 
 ## Compatibility and automated evidence
 
