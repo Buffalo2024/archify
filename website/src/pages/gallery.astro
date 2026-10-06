@@ -32,7 +32,7 @@ import pageScript from '../scripts/gallery.js?raw';
     <section class="controls" aria-label="Gallery controls">
       <div class="shell controls-inner">
         <div class="filter-group" role="group" aria-label="Filter diagrams by type">
-          <button class="filter-button" type="button" data-filter="all" aria-pressed="true" data-en="All / 12" data-zh="全部配方 / 12">All / 12</button>
+          <button class="filter-button" type="button" data-filter="all" aria-pressed="true" data-en={`All / ${gallery.entryCount}`} data-zh={`全部配方 / ${gallery.entryCount}`}>All / {gallery.entryCount}</button>
           <button class="filter-button" type="button" data-filter="architecture" aria-pressed="false" data-en="Architecture" data-zh="架构图">Architecture</button>
           <button class="filter-button" type="button" data-filter="workflow" aria-pressed="false" data-en="Workflow" data-zh="工作流">Workflow</button>
           <button class="filter-button" type="button" data-filter="sequence" aria-pressed="false" data-en="Sequence" data-zh="时序图">Sequence</button>
@@ -50,7 +50,7 @@ import pageScript from '../scripts/gallery.js?raw';
     <section class="gallery-section" id="gallery">
       <div class="shell">
         <div class="section-intro">
-          <h2 data-en="Six lenses. Twelve real stories." data-zh="六种视角，十二个真实故事。">Six lenses. Twelve real stories.</h2>
+          <h2 data-en={`Six lenses. ${gallery.entryCount} real stories.`} data-zh={`六种视角，${gallery.entryCount}个真实故事。`}>Six lenses. {gallery.entryCount} real stories.</h2>
           <p data-en="Every scenario has focus, reach, and path exploration, shareable links, dark/light rendering, self-contained export, and a machine-readable quality receipt." data-zh="每个场景都支持聚焦、上下游与路径探索、可分享链接、深浅主题、自包含导出和机器可读质量凭证。">Every scenario has focus, reach, and path exploration, shareable links, dark/light rendering, self-contained export, and a machine-readable quality receipt.</p>
         </div>
         <div class="gallery-grid" id="gallery-grid">
