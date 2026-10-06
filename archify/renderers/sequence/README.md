@@ -90,8 +90,10 @@ viewBox would otherwise leave empty space on the right or when meaningful
 participant labels do not fit the fixed 86px boxes. Spread derives box width
 and column distance from the viewBox while preserving participant order,
 lifelines, and message semantics. Participant cards retain at least a 16px
-gutter; frames too narrow for that minimum fail rather than enlarge the
-authored viewBox.
+gutter. Narrow canvases that can fit those cards may reduce the left margin
+from 62px down to 40px; ordinary canvases keep 62px and the right margin
+remains 40px. Frames too narrow for those margins and gutters fail rather than
+enlarge the authored viewBox.
 
 The artifact checker reports `composition.sequenceColumnSpace` from the rendered
 participants, routes and text. A large unused right-hand region in a fixed layout

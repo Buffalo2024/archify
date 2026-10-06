@@ -17,10 +17,10 @@ test('authored sequence canvases default to spread and keep real browser labels 
   const browser = new ChromeVisualBrowser(chrome);
   try {
     const session = await browser.sessionPromise;
-    // The narrow seven-participant canvas used to fail capacity validation
-    // with spread's old 108px minimum gap. Keep the labels public and short so
-    // this regression tests column capacity rather than label authoring.
-    for (const [canvasWidth, count] of [[1320, 5], [820, 7]]) {
+    // The narrow canvases exercise both the old 108px minimum gap and
+    // capacity formerly available with fixed columns. Keep labels public and
+    // short so this tests column capacity rather than label authoring.
+    for (const [canvasWidth, count] of [[1320, 5], [820, 7], [480, 4], [794, 7]]) {
       const spec = {
         schema_version: 1, diagram_type: 'sequence',
         meta: { title: 'Request path', viewBox: [canvasWidth, 620], quality_profile: 'standard', output: 'diagram.html' },

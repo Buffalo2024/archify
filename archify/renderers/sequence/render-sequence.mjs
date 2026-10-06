@@ -69,10 +69,16 @@ const viewBox = sequence.meta?.viewBox || [920, Math.max(760, legendRequiredHeig
 // and authored canvases; explicit fixed retains historical coordinates.
 const columnFit = sequence.meta?.column_fit || 'spread';
 const participantCount = Math.max(1, asArray(sequence.participants).length);
-const sideMargin = 62;
+const preferredSideMargin = 62;
 const participantW = columnFit === 'spread'
-  ? Math.max(86, Math.min(190, Math.round((viewBox[0] - sideMargin * 2) / participantCount) - 24))
+  ? Math.max(86, Math.min(190, Math.round((viewBox[0] - preferredSideMargin * 2) / participantCount) - 24))
   : 86;
+// Narrow feasible frames can reduce the left margin, while ordinary frames
+// keep 62px. Compute card width first so this does not change its sizing rule.
+const minimumParticipantSpan = participantCount * participantW + (participantCount - 1) * 16;
+const sideMargin = columnFit === 'spread'
+  ? Math.max(40, Math.min(preferredSideMargin, viewBox[0] - 40 - minimumParticipantSpan))
+  : preferredSideMargin;
 // Fit the authored width when feasible, preserving a real 16px card gutter.
 // Infeasible frames retain that minimum and fail the capacity check below.
 const colGap = columnFit === 'spread' && participantCount > 1

@@ -10,7 +10,7 @@ import { textUnits } from '../archify/renderers/shared/utils.mjs';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const skillRoot = path.resolve(__dirname, '..', 'archify');
 
-function renderOutcome(doc) {
+function renderOutcome(doc, publicCli = false) {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'archify-column-fit-'));
   const input = path.join(tmp, 'input.json');
   const output = path.join(tmp, 'output.html');
@@ -18,11 +18,9 @@ function renderOutcome(doc) {
   renderDoc.meta = { ...renderDoc.meta, output: 'sequence-column-fit.html' };
   fs.writeFileSync(input, JSON.stringify(renderDoc));
   try {
-    execFileSync('node', [
-      path.join(skillRoot, 'renderers/sequence/render-sequence.mjs'),
-      input,
-      output,
-    ], { stdio: ['ignore', 'ignore', 'pipe'] });
+    execFileSync('node', publicCli
+      ? [path.join(skillRoot, 'bin/archify.mjs'), 'render', 'sequence', input, output]
+      : [path.join(skillRoot, 'renderers/sequence/render-sequence.mjs'), input, output], { stdio: ['ignore', 'ignore', 'pipe'] });
     return { code: 0, stderr: '', html: fs.readFileSync(output, 'utf8') };
   } catch (err) {
     return { code: err.status ?? 1, stderr: String(err.stderr || ''), html: '' };
@@ -31,8 +29,8 @@ function renderOutcome(doc) {
   }
 }
 
-function render(doc) {
-  const outcome = renderOutcome(doc);
+function render(doc, publicCli = false) {
+  const outcome = renderOutcome(doc, publicCli);
   assert.equal(outcome.code, 0, outcome.stderr);
   return outcome.html;
 }
@@ -207,4 +205,25 @@ test('spread capacity still rejects an infeasible frame and unrescuable particip
   const long = renderOutcome(doc);
   assert.notEqual(long.code, 0);
   assert.match(long.stderr, /wider than the 86px participant box/);
+});
+
+
+test('narrow authored canvases reduce only the spread left margin to retain feasible capacity', () => {
+  for (const [width, height, count, expectedLeft] of [[480, 620, 4, 48], [794, 920, 7, 56]]) {
+    const doc = wideSequence();
+    doc.meta.viewBox = [width, height];
+    doc.participants = Array.from({ length: count }, (_, index) => ({ id: `p${index}`, type: 'backend', label: `P${index}` }));
+    doc.messages = [{ from: 'p0', to: `p${count - 1}`, y: 200, label: 'request' }];
+    const html = render(doc, true);
+    const boxes = participantBoxes(html);
+    assert.equal(boxes.length, count);
+    assert.equal(boxes[0].x, expectedLeft);
+    assert.equal(boxes[0].width, 86);
+    assert.equal(boxes.at(-1).x + boxes.at(-1).width, width - 40);
+    for (let i = 1; i < boxes.length; i++) assert.ok(boxes[i].x - boxes[i - 1].x - boxes[i - 1].width >= 16);
+    assert.match(html, new RegExp(`viewBox="0 0 ${width} ${height}"`));
+    assert.equal(html, render({ ...doc, meta: { ...doc.meta, column_fit: 'spread' } }, true));
+    const fixedBoxes = participantBoxes(render({ ...doc, meta: { ...doc.meta, column_fit: 'fixed' } }, true));
+    assert.deepEqual(fixedBoxes, Array.from({ length: count }, (_, index) => ({ x: 19 + index * 108, width: 86 })));
+  }
 });
