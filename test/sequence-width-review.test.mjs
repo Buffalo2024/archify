@@ -44,7 +44,9 @@ function summary(report, type = 'sequence', ok = true) {
 }
 
 test('six fixed columns on a 1080px canvas disclose unused width without failing or rewriting the artifact', t => {
-  const original = render(t, sequence());
+  const spec = sequence();
+  spec.meta.column_fit = 'fixed';
+  const original = render(t, spec);
   const { report, exitCode } = check(original.output);
   const space = report.composition.sequenceColumnSpace;
   assert.equal(exitCode, 0);
@@ -69,6 +71,7 @@ test('six fixed columns on a 1080px canvas disclose unused width without failing
 
 test('the suggested one-field spread edit clears the advice and retains message wording and order', t => {
   const spec = sequence();
+  spec.meta.column_fit = 'fixed';
   const original = render(t, spec);
   spec.meta.column_fit = 'spread';
   const repaired = render(t, spec);
@@ -111,19 +114,20 @@ test('an automatic six-column canvas spreads by default while explicit fixed kee
   assert.ok(automatic.html.includes('>请求结果</text>'));
 });
 
-test('explicit fixed remains byte-identical to the legacy default and advice preserves authored intent', t => {
+test('explicit fixed retains historical coordinates and advice preserves authored intent', t => {
   const spec = sequence();
-  const original = render(t, spec);
   spec.meta.column_fit = 'fixed';
   const explicit = render(t, spec);
-  assert.equal(explicit.html, original.html);
+  assert.match(explicit.html, /<rect x="19" y="72" width="86"/);
+  assert.equal(check(explicit.output).report.composition.sequenceColumnSpace.occupiedRight, 645);
   const compact = summary(check(explicit.output).report);
-  assert.match(compact.layoutReviewRecommendation.repair, /Retain explicit fixed layouts and legacy inputs/);
+  assert.match(compact.layoutReviewRecommendation.repair, /Retain intentional fixed layouts/);
   assert.equal(JSON.parse(fs.readFileSync(explicit.input)).meta.column_fit, 'fixed');
 });
 
 test('participant brand marks retain width advice while unrelated transforms remain unmeasured', t => {
   const spec = sequence();
+  spec.meta.column_fit = 'fixed';
   spec.participants[0].brand = 'github';
   const { output, html } = render(t, spec);
   assert.match(html, /data-brand-mark="github"/);
@@ -157,12 +161,14 @@ test('small conversations and a compact fixed canvas are not advised to stretch'
   }
   const compact = sequence();
   compact.meta.viewBox = [700, 690];
+  compact.meta.column_fit = 'fixed';
   assert.equal(check(render(t, compact).output).report.composition.sequenceColumnSpace.reviewSuggested, false);
 });
 
 test('meaningful CJK message labels and notes occupy the right-hand region', t => {
   for (const field of ['label', 'note']) {
     const spec = sequence();
+    spec.meta.column_fit = 'fixed';
     spec.messages = [{ from: 'p4', to: 'p5', y: 200, label: '结果', [field]: '这是需要保留的中文说明'.repeat(field === 'label' ? 4 : 3) }];
     const { report } = check(render(t, spec).output);
     const space = report.composition.sequenceColumnSpace;
@@ -174,21 +180,39 @@ test('meaningful CJK message labels and notes occupy the right-hand region', t =
 
 test('segment frames are structural but their text still reserves width', t => {
   const spec = sequence();
+  spec.meta.column_fit = 'fixed';
   spec.segments = [{ label: 'Worker phase', from: 170, to: 260 }];
   const { report } = check(render(t, spec).output);
   assert.equal(report.composition.sequenceColumnSpace.reviewSuggested, true);
 });
 
 test('unknown, transformed and unmarked artifacts do not invite a column repair', t => {
-  const { output, html } = render(t, sequence());
+  const spec = sequence();
+  spec.meta.column_fit = 'fixed';
+  const { output, html } = render(t, spec);
   for (const changed of [
     html.replace(' data-sequence-column-fit="fixed"', ''),
     html.replace('data-sequence-column-fit="fixed"', 'data-sequence-column-fit="unknown"'),
     html.replace('<svg viewBox=', '<svg transform="translate(12 0)" viewBox='),
     html.replace('<g id="node-p5"', '<g transform="translate(300 0)" id="node-p5"'),
   ]) {
+    assert.notEqual(changed, html, 'the unsupported marker or transform must be present');
     fs.writeFileSync(output, changed);
     const space = check(output).report.composition.sequenceColumnSpace;
     assert.notEqual(space?.reviewSuggested, true);
   }
+});
+
+
+test('an authored six-column canvas spreads by default without a width repair', t => {
+  const spec = sequence();
+  const original = render(t, spec);
+  const { report, exitCode } = check(original.output);
+  assert.equal(exitCode, 0);
+  assert.equal(report.composition.sequenceColumnSpace.columnFit, 'spread');
+  assert.equal(report.composition.sequenceColumnSpace.occupiedRight, 1040);
+  assert.equal(report.composition.sequenceColumnSpace.reviewSuggested, false);
+  assert.equal(summary(report).layoutReviewRecommendation, undefined);
+  spec.meta.column_fit = 'spread';
+  assert.equal(render(t, spec).html, original.html);
 });

@@ -49,10 +49,10 @@ report rejected entries and the final resolved coverage to stderr.
 motion-forward presentation), `blueprint` (high-contrast engineering review),
 or `editorial` (warm publication-style design review and documentation).
 Presets change only viewer styling; they do not alter semantic IDs or geometry.
-Sequence `meta` additionally accepts `column_fit`. The default `fixed` keeps
-the historical 108px column gap and 86px participant boxes, so an authored
-diagram renders at the same coordinates no matter how wide its viewBox is.
-`spread` derives the gap and box width from the viewBox instead, which turns a
+Sequence `meta` additionally accepts `column_fit`. The default `spread` applies whether or not `meta.viewBox` is supplied.
+Explicit `fixed` keeps the historical 108px column gap and 86px participant
+boxes. `spread` derives column distance and box width from the viewBox, with
+at least a 16px gutter between participant cards, which turns a
 wide canvas into column distance and label room rather than empty space on the
 right. Lane order, IDs, and message semantics are unchanged either way.
 

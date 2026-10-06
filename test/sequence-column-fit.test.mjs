@@ -68,9 +68,9 @@ function wideSequence(columnFit) {
 }
 
 test('fixed column fit keeps the historical 108px gap regardless of viewBox width', () => {
-  const boxes = participantBoxes(render(wideSequence()));
+  const boxes = participantBoxes(render(wideSequence('fixed')));
   assert.equal(boxes.length, 5);
-  assert.equal(boxes[0].width, 86);
+  assert.deepEqual(boxes, [19, 127, 235, 343, 451].map(x => ({ x, width: 86 })));
   assert.equal(boxes[1].x - boxes[0].x, 108);
   assert.equal(boxes.at(-1).x + boxes.at(-1).width < 600, true,
     'fixed lanes stay packed on the left, leaving the wide canvas unused');
@@ -86,8 +86,8 @@ test('spread column fit uses the viewBox width and stays inside it', () => {
     'last lane stays inside the viewBox with the reserved margin');
 });
 
-test('an authored viewBox with unset column fit renders like explicit fixed', () => {
-  assert.equal(render(wideSequence()), render(wideSequence('fixed')));
+test('an authored viewBox with unset column fit renders like explicit spread', () => {
+  assert.equal(render(wideSequence()), render(wideSequence('spread')));
 });
 
 const wideLabel = 'Payment Gateway Service';
@@ -102,7 +102,7 @@ test('a label the fixed box rejects fits the spread box on the same viewBox', ()
   const estimatedLabelW = textUnits(wideLabel) * 6.8;
   assert.ok(estimatedLabelW > 86 + 6, 'the fixture label must actually exceed the fixed box');
 
-  const fixed = renderOutcome(labelledSequence());
+  const fixed = renderOutcome(labelledSequence('fixed'));
   assert.notEqual(fixed.code, 0, 'the fixed box still rejects a label it cannot hold');
   assert.ok(fixed.stderr.includes(`Label "${wideLabel}"`), `expected the label in stderr:\n${fixed.stderr}`);
   assert.ok(fixed.stderr.includes('86px participant box'), `expected the fixed box width in stderr:\n${fixed.stderr}`);
@@ -133,12 +133,11 @@ test('the authoring contract explains automatic spread and explicit geometry com
 
   assert.match(description, /wide viewBox/);
   assert.match(description, /meaningful participant labels/);
-  assert.match(description, /Automatic canvases default to spread/);
-  assert.match(description, /explicit meta\.viewBox with this field omitted preserves/);
-  assert.match(description, /Explicit fixed always keeps that geometry/);
+  assert.match(description, /Defaults to spread whether or not meta\.viewBox is supplied/);
+  assert.match(description, /Explicit fixed preserves the historical 86px boxes and 108px column gap/);
   assert.match(skill, /use `spread` when a wide viewBox leaves unused horizontal space or meaningful labels need width/);
   assert.match(rendererReadme, /Use `"spread"` when a wide/);
-  assert.match(rendererReadme, /automatic canvases default to `meta\.column_fit: "spread"`/);
+  assert.match(rendererReadme, /default to `meta\.column_fit: "spread"`, whether or not\s+`meta\.viewBox` is supplied/);
   assert.match(rendererReadme, /try `meta\.column_fit: "spread"` before shortening/);
 });
 
@@ -169,4 +168,43 @@ test('standard retains acceptance for parallel schema-v1 labels with legacy spac
   assert.equal(Number(plate[1]), textUnits(doc.messages[0].label) * 5.2 + 12);
   assert.equal(Number(plate[2]), 16);
   assert.equal(Number(plate[3]), 9);
+});
+
+
+test('seven participants fit an authored 820px frame with real card gutters', () => {
+  const doc = JSON.parse(fs.readFileSync(path.join(skillRoot, 'examples/async-job-roundtrip.sequence.json'), 'utf8'));
+  assert.equal(doc.meta.column_fit, undefined);
+  const original = structuredClone(doc);
+  const html = render(doc);
+  const boxes = participantBoxes(html);
+  assert.equal(boxes.length, 7);
+  assert.equal(boxes[0].x, 62);
+  assert.equal(boxes.at(-1).x + boxes.at(-1).width, 780);
+  for (let i = 1; i < boxes.length; i++) {
+    const gap = boxes[i].x - boxes[i - 1].x;
+    assert.ok(gap < 108 && gap >= boxes[i - 1].width + 16);
+  }
+  assert.match(html, /viewBox="0 0 820 920"/);
+  assert.deepEqual(doc, original, 'rendering never rewrites the authored input');
+  assert.equal(html, render({ ...doc, meta: { ...doc.meta, column_fit: 'spread' } }));
+  const nodes = [...html.matchAll(/<g id="node-([^"]+)"/g)].map(match => match[1]);
+  assert.deepEqual(nodes, doc.participants.map(participant => participant.id));
+  const paths = [...html.matchAll(/data-composition-edge-from="([^"]+)" data-composition-edge-to="([^"]+)"[^>]* d="M ([\d.]+) ([\d.]+) L ([\d.]+) ([\d.]+)"/g)];
+  assert.deepEqual(paths.map(match => [match[1], match[2], Number(match[4]), Number(match[6])]),
+    doc.messages.map(message => [message.from, message.to, message.y, message.y]));
+  for (const match of paths) assert.ok(Math.abs(Number(match[5]) - Number(match[3])) >= 60);
+  for (const message of doc.messages) assert.ok(html.includes(`>${message.label}</text>`));
+});
+
+test('spread capacity still rejects an infeasible frame and unrescuable participant label', () => {
+  const doc = JSON.parse(fs.readFileSync(path.join(skillRoot, 'examples/async-job-roundtrip.sequence.json'), 'utf8'));
+  doc.meta.viewBox[0] = 740;
+  const narrow = renderOutcome(doc);
+  assert.notEqual(narrow.code, 0);
+  assert.match(narrow.stderr, /Participants exceed viewBox width/);
+  doc.meta.viewBox[0] = 820;
+  doc.participants[0].label = 'A participant label far beyond the available frame capacity';
+  const long = renderOutcome(doc);
+  assert.notEqual(long.code, 0);
+  assert.match(long.stderr, /wider than the 86px participant box/);
 });
