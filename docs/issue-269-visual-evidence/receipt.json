@@ -1,0 +1,239 @@
+{
+  "comparisonBase": "68b77b7",
+  "source": "archify/examples/transformer-layer.architecture.json",
+  "theme": "light",
+  "preset": "classic",
+  "motion": "still",
+  "zoom": 1,
+  "laptop": [
+    {
+      "state": "main",
+      "width": 1366,
+      "height": 768,
+      "svg": {
+        "x": 88.5,
+        "y": 67,
+        "width": 1189,
+        "height": 613.765625
+      },
+      "primaryTextPx": 17.673879253926703,
+      "drawer": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0
+      },
+      "scrollWidth": 1366,
+      "open": null
+    },
+    {
+      "state": "child",
+      "width": 1366,
+      "height": 768,
+      "svg": {
+        "x": 59.578125,
+        "y": 157.828125,
+        "width": 1246.84375,
+        "height": 457.359375
+      },
+      "primaryTextPx": 12.582826834862384,
+      "drawer": {
+        "x": 32,
+        "y": 67.1875,
+        "width": 1302,
+        "height": 688.8125
+      },
+      "scrollWidth": 1366,
+      "open": "transformer"
+    },
+    {
+      "state": "passport",
+      "width": 1366,
+      "height": 768,
+      "svg": {
+        "x": 59.578125,
+        "y": 157.828125,
+        "width": 1246.84375,
+        "height": 396.203125
+      },
+      "primaryTextPx": 11.00564236111111,
+      "drawer": {
+        "x": 32,
+        "y": 67.1875,
+        "width": 1302,
+        "height": 688.8125
+      },
+      "scrollWidth": 1366,
+      "open": "transformer"
+    },
+    {
+      "state": "main",
+      "width": 1280,
+      "height": 720,
+      "svg": {
+        "x": 92,
+        "y": 67,
+        "width": 1096,
+        "height": 565.765625
+      },
+      "primaryTextPx": 16.29168030104712,
+      "drawer": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0
+      },
+      "scrollWidth": 1280,
+      "open": null
+    },
+    {
+      "state": "child",
+      "width": 1280,
+      "height": 720,
+      "svg": {
+        "x": 59.578125,
+        "y": 157.828125,
+        "width": 1160.84375,
+        "height": 409.359375
+      },
+      "primaryTextPx": 11.37109375,
+      "drawer": {
+        "x": 32,
+        "y": 67.1875,
+        "width": 1216,
+        "height": 640.8125
+      },
+      "scrollWidth": 1280,
+      "open": "transformer"
+    },
+    {
+      "state": "passport",
+      "width": 1280,
+      "height": 720,
+      "svg": {
+        "x": 59.578125,
+        "y": 157.828125,
+        "width": 1160.84375,
+        "height": 348.203125
+      },
+      "primaryTextPx": 9.672309027777779,
+      "drawer": {
+        "x": 32,
+        "y": 67.1875,
+        "width": 1216,
+        "height": 640.8125
+      },
+      "scrollWidth": 1280,
+      "open": "transformer"
+    },
+    {
+      "state": "main",
+      "width": 1440,
+      "height": 900,
+      "svg": {
+        "x": 47,
+        "y": 67,
+        "width": 1346,
+        "height": 694.8125
+      },
+      "primaryTextPx": 20.007689790575917,
+      "drawer": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0
+      },
+      "scrollWidth": 1440,
+      "open": null
+    },
+    {
+      "state": "child",
+      "width": 1440,
+      "height": 900,
+      "svg": {
+        "x": 59.578125,
+        "y": 157.828125,
+        "width": 1320.84375,
+        "height": 589.359375
+      },
+      "primaryTextPx": 13.329615825688073,
+      "drawer": {
+        "x": 32,
+        "y": 67.1875,
+        "width": 1376,
+        "height": 820.8125
+      },
+      "scrollWidth": 1440,
+      "open": "transformer"
+    },
+    {
+      "state": "passport",
+      "width": 1440,
+      "height": 900,
+      "svg": {
+        "x": 59.578125,
+        "y": 157.828125,
+        "width": 1320.84375,
+        "height": 528.203125
+      },
+      "primaryTextPx": 13.329615825688073,
+      "drawer": {
+        "x": 32,
+        "y": 67.1875,
+        "width": 1376,
+        "height": 820.8125
+      },
+      "scrollWidth": 1440,
+      "open": "transformer"
+    }
+  ],
+  "parentCompatibility": [
+    {
+      "input": "web-app.architecture.json",
+      "mode": "architecture",
+      "canonicalSvg": "byte-identical",
+      "svgThemes": "same graph and attributes",
+      "rasterPixels": "identical"
+    },
+    {
+      "input": "production-deployment.architecture.json",
+      "mode": "architecture",
+      "canonicalSvg": "byte-identical",
+      "svgThemes": "same graph and attributes",
+      "rasterPixels": "identical"
+    },
+    {
+      "input": "agent-tool-call.workflow.json",
+      "mode": "workflow",
+      "canonicalSvg": "byte-identical",
+      "svgThemes": "same graph and attributes",
+      "rasterPixels": "identical"
+    },
+    {
+      "input": "cache-miss-request.sequence.json",
+      "mode": "sequence",
+      "canonicalSvg": "byte-identical",
+      "svgThemes": "same graph and attributes",
+      "rasterPixels": "identical"
+    },
+    {
+      "input": "orders.erd.json",
+      "mode": "erd",
+      "canonicalSvg": "byte-identical",
+      "svgThemes": "same graph and attributes",
+      "rasterPixels": "identical"
+    }
+  ],
+  "childExports": [
+    {
+      "format": "svg",
+      "type": "image/svg+xml;charset=utf-8",
+      "bytes": 149211
+    },
+    {
+      "format": "png",
+      "type": "image/png",
+      "bytes": 270167
+    }
+  ]
+}

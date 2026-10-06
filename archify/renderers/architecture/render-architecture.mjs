@@ -2,6 +2,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadDiagramWithBrandMarks, writeDiagram } from '../shared/cli.mjs';
 import { esc } from '../shared/utils.mjs';
+import { rendererFailure } from '../shared/diagnostics.mjs';
 import { compileArchitectureGraph } from './architecture-compiler.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -14,10 +15,16 @@ const { diagram: arch, template, outPath, sourceEvidence } = await loadDiagramWi
   argv: cliArgs,
 });
 
-const compiled = compileArchitectureGraph(arch, { sourceEvidence });
+let compiled;
+try { compiled = compileArchitectureGraph(arch, { sourceEvidence, tolerateInvalid: layoutJsonMode }); }
+catch (error) {
+  if (!layoutJsonMode) throw error;
+  console.log(JSON.stringify({ ...rendererFailure(error), contract: 'archify-architecture-layout-v1' }, null, 2));
+  process.exit(1);
+}
 if (layoutJsonMode) {
   console.log(JSON.stringify(compiled.layoutReport, null, 2));
-  process.exit(0);
+  process.exit(compiled.layoutReport.ok === false ? 1 : 0);
 }
 
 const inheritedMeta = Object.fromEntries([
