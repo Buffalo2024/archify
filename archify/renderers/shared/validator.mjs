@@ -25,6 +25,18 @@ function annotatePath(instancePath, data) {
     : annotated.path;
 }
 
+// Schema composition uses unevaluatedProperties internally. Keep the existing
+// additionalProperties diagnostic and human-readable error contract.
+function publicSchemaError(error) {
+  if (error.keyword !== 'unevaluatedProperties') return error;
+  return {
+    ...error,
+    keyword: 'additionalProperties',
+    message: 'must NOT have additional properties',
+    params: { additionalProperty: error.params?.unevaluatedProperty },
+  };
+}
+
 function formatErrors(errors, data) {
   return errors.map((e) => {
     const where = annotatePath(e.instancePath, data);
@@ -41,7 +53,8 @@ export function validateSchema(diagramType, data) {
     throw new Error(`validateSchema: unknown diagram type "${diagramType}"`);
   }
   if (!validate(data)) {
-    const diagnostics = validate.errors.map((error) => {
+    const errors = validate.errors.map(publicSchemaError);
+    const diagnostics = errors.map((error) => {
       const annotated = annotatedPath(error.instancePath, data);
       const diagnosticKeyword = error.keyword === 'unevaluatedProperties'
         ? 'additionalProperties'
@@ -85,7 +98,7 @@ export function validateSchema(diagramType, data) {
       };
     });
     throwDiagnosticError(
-      `${diagramType} schema validation failed:\n${formatErrors(validate.errors, data)}`,
+      `${diagramType} schema validation failed:\n${formatErrors(errors, data)}`,
       diagnostics,
     );
   }

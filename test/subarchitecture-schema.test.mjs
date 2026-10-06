@@ -211,9 +211,27 @@ test('subarchitecture schema rejects unsupported local component fields at the c
         identity: 'unexpected_child',
       });
       assert.deepEqual(diagnostic.supportedFixes, ['remove unsupported property "unsupported"']);
+      assert.match(diagnostic.message, /must NOT have additional properties/);
+      assert.match(error.message, /must NOT have additional properties/);
+      assert.doesNotMatch(error.message, /unevaluated/);
       return true;
     },
   );
+});
+
+test('parent component errors retain the existing additional-properties message and evidence', () => {
+  const component = parent('strict_parent');
+  component.unexpected = true;
+  assert.throws(() => validateSchema('architecture', documentWith(component)), (error) => {
+    assert.match(error.message, /\/components\/0.*additional properties/i);
+    assert.doesNotMatch(error.message, /unevaluated/);
+    const diagnostic = error.archifyDiagnostics.find(entry => entry.code === 'schema/additionalProperties');
+    assert.equal(diagnostic.subject.path, '/components/0');
+    assert.equal(diagnostic.subject.identity, 'strict_parent');
+    assert.equal(diagnostic.evidence.additionalProperty, 'unexpected');
+    assert.deepEqual(diagnostic.supportedFixes, ['remove unsupported property "unexpected"']);
+    return true;
+  });
 });
 
 test('subarchitecture schema makes second-level nesting structurally impossible', () => {

@@ -7,6 +7,7 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { ChromeVisualBrowser, findChrome } from '../archify/bin/visual-check.mjs';
+import { desktopBrowser, desktopPointerCheck } from './helpers/desktop-browser.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..');
@@ -296,9 +297,11 @@ test('local Semantic Passport reuses parent relationship colors and row styling'
 test('local hover reuses the parent Intent Trace animation, colors, and one-hop directions', {
   skip: chromePath ? false : 'Set ARCHIFY_CHROME to run the real browser regression.',
 }, async () => {
-  const browser = new ChromeVisualBrowser(chromePath);
+  const browser = desktopBrowser(chromePath);
   try {
+    const checkPointer = await desktopPointerCheck(browser, await browser.sessionPromise);
     const sessionId = await load(browser, renderFixture(), { width: 1440, height: 900 });
+    await checkPointer();
     const receipt = await evaluate(browser, sessionId, `(async function () {
       document.documentElement.removeAttribute('data-motion');
 
@@ -335,7 +338,15 @@ test('local hover reuses the parent Intent Trace animation, colors, and one-hop 
         bubbles: true,
         pointerType: 'mouse'
       }));
-      await new Promise(function (resolve) { setTimeout(resolve, 130); });
+      await new Promise(function (resolve, reject) {
+        var start = performance.now();
+        function sample() {
+          if (localSvg.getAttribute('data-intent-trace-active') === 'attention') return resolve();
+          if (performance.now() - start > 5000) return reject(new Error('Child hover did not activate Intent Trace'));
+          requestAnimationFrame(sample);
+        }
+        requestAnimationFrame(sample);
+      });
 
       var local = {
         active: localSvg.getAttribute('data-intent-trace-active'),
