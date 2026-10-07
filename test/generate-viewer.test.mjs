@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { generateViewer } from '../scripts/generate-viewer.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -30,6 +30,8 @@ function fixture(t) {
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   fs.mkdirSync(path.join(root, 'scripts'));
   fs.mkdirSync(path.join(root, 'archify/assets'), { recursive: true });
+  fs.mkdirSync(path.join(root, 'archify/renderers/shared'), { recursive: true });
+  fs.copyFileSync(path.join(repoRoot, 'archify/renderers/shared/path-semantics.mjs'), path.join(root, 'archify/renderers/shared/path-semantics.mjs'));
   fs.cpSync(path.join(repoRoot, 'viewer'), path.join(root, 'viewer'), { recursive: true });
   fs.copyFileSync(path.join(repoRoot, 'scripts/generate-viewer.mjs'), path.join(root, 'scripts/generate-viewer.mjs'));
   const output = path.join(root, 'archify/assets/template.html');
@@ -70,6 +72,43 @@ test('the committed Viewer rebuilds deterministically outside the repository wor
   const checked = f.run('--check');
   assert.equal(checked.status, 0, checked.stderr);
   assert.equal(fs.statSync(f.output).mtimeMs, beforeCheck, '--check must not rewrite output');
+});
+
+test('Viewer generation runs through a preserved symlink entry', (t) => {
+  const f = fixture(t);
+  const script = path.join(f.root, 'scripts/generate-viewer.mjs');
+  const alias = path.join(f.root, 'scripts/generate-viewer-alias.mjs');
+  try {
+    fs.symlinkSync(script, alias);
+  } catch (error) {
+    if (['EPERM', 'EACCES', 'ENOTSUP'].includes(error?.code)) {
+      t.skip(`symlinks unavailable: ${error.code}`);
+      return;
+    }
+    throw error;
+  }
+  const previous = fs.readFileSync(f.output);
+  fs.unlinkSync(f.output);
+  const result = spawnSync(process.execPath, ['--preserve-symlinks-main', alias], {
+    cwd: os.tmpdir(), encoding: 'utf8',
+  });
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.stdout.trim(), 'generated archify/assets/template.html');
+  assert.deepEqual(fs.readFileSync(f.output), previous);
+});
+
+test('importing the generator with an unavailable entry path does not run or throw', (t) => {
+  const f = fixture(t);
+  const previous = fs.readFileSync(f.output);
+  const moduleUrl = pathToFileURL(path.join(f.root, 'scripts/generate-viewer.mjs')).href;
+  const missingEntry = path.join(f.root, 'scripts/missing-entry.mjs');
+  const result = spawnSync(process.execPath, ['--input-type=module', '-e',
+    `process.argv[1] = ${JSON.stringify(missingEntry)}; await import(${JSON.stringify(moduleUrl)}); console.log('imported');`], {
+    cwd: os.tmpdir(), encoding: 'utf8',
+  });
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.stdout.trim(), 'imported');
+  assert.deepEqual(fs.readFileSync(f.output), previous);
 });
 
 test('editing any authoritative source requires explicit regeneration', (t) => {

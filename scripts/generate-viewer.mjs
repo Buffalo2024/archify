@@ -3,6 +3,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { sameEntry } from '../archify/renderers/shared/path-semantics.mjs';
 
 const defaultRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 // Each fragment maps a marker in `viewer/template.source.html` to a file in
@@ -78,7 +79,7 @@ export function generateViewer({ root = defaultRoot, check = false } = {}) {
   }
 }
 
-if (process.argv[1] && fs.realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (process.argv[1] && sameEntry(process.argv[1], fileURLToPath(import.meta.url)).status === 'match') {
   try {
     const args = process.argv.slice(2);
     if (args.length > 1 || (args.length === 1 && args[0] !== '--check')) {
