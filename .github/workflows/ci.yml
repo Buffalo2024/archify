@@ -17,9 +17,18 @@ jobs:
       scope: ${{ steps.classify.outputs.scope }}
       website: ${{ steps.classify.outputs.website }}
     steps:
+      # Classification compares two trees, not their shared history.
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
-          fetch-depth: 0
+          fetch-depth: 1
+      - name: Fetch PR comparison base
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          CI_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          [[ "$CI_BASE_SHA" =~ ^[0-9a-f]{40}$ ]] || exit 1
+          git fetch --no-tags --depth=1 origin "$CI_BASE_SHA"
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version: 22
