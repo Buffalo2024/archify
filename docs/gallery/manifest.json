@@ -1180,16 +1180,16 @@
       "input": "gallery/sources/agent-run.lifecycle.json",
       "artifact": "gallery/artifacts/agent-run.lifecycle.html",
       "focus": "approval",
-      "schemaVersion": 1,
+      "schemaVersion": 3,
       "visualPreset": "classic",
       "animation": "trace",
       "engineeringProfile": null,
       "nodeCount": 10,
-      "edgeCount": 6,
-      "artifactBytes": 774711,
-      "artifactSha256": "743fe24a07e115db5b86d3c36be1ee95e079d519932ccd89a1559313ceee3616",
-      "sourceBytes": 3405,
-      "sourceSha256": "230242a7557663877766c43a9fe7cffe8b4fb66e4866457dccd24c63175b4917",
+      "edgeCount": 12,
+      "artifactBytes": 784490,
+      "artifactSha256": "7963901ba300e8c7dec6376fd02a456ea8260cb98240620b38b55dc78e3bcd7d",
+      "sourceBytes": 3260,
+      "sourceSha256": "5ba36f5ce91ed428cb48b599e275424916d82b619b9a3231cbd1bbc3966fc54b",
       "checks": [
         {
           "name": "single_svg",
@@ -1244,187 +1244,16 @@
           "containerBorderRuns": 0,
           "labelRouteClearanceIssues": 0,
           "labelCanvasOverflowIssues": 0,
-          "minLabelRouteClearance": null,
+          "minLabelRouteClearance": 26.4,
           "desktopReadabilityIssues": 0,
           "viewportHeightIssues": 0,
-          "minProjectedNodeTextPx": 6.320388349514563,
-          "maxBends": 3,
-          "routesOverSuggestedBends": 2,
-          "maxStretch": 3.267,
-          "routesOverSuggestedStretch": 2,
-          "minSegmentPx": 18,
-          "minInteriorSegmentPx": 78,
-          "shortSegmentCount": 0,
-          "shortEndpointSegmentCount": 0,
-          "shortInteriorSegmentCount": 0,
-          "microSegmentCount": 0
-        },
-        "suggestedLimits": {
-          "bendsPerRelationship": 2,
-          "stretch": 1.35,
-          "segmentPx": 16,
-          "microSegmentPx": 8
-        },
-        "routeReview": {
-          "crossings": [],
-          "detours": [
-            {
-              "relationship": {
-                "id": "failed-retry",
-                "from": "failed",
-                "to": "executing",
-                "label": "",
-                "collectionIndex": 3,
-                "artifactIndex": 5
-              },
-              "bends": 3,
-              "stretch": 3.267,
-              "directCorridorBlockers": [
-                {
-                  "id": "approval",
-                  "label": "Needs Approval",
-                  "box": [
-                    339,
-                    278,
-                    126,
-                    58
-                  ]
-                }
-              ]
-            },
-            {
-              "relationship": {
-                "id": "approval-cancelled",
-                "from": "approval",
-                "to": "cancelled",
-                "label": "",
-                "collectionIndex": 5,
-                "artifactIndex": 7
-              },
-              "bends": 3,
-              "stretch": 2.368,
-              "directCorridorBlockers": [
-                {
-                  "id": "failed",
-                  "label": "Failed",
-                  "box": [
-                    339,
-                    356,
-                    126,
-                    58
-                  ]
-                }
-              ]
-            }
-          ]
-        },
-        "leadingSpace": {
-          "measured": false,
-          "reviewSuggested": false
-        },
-        "desktopReadability": {
-          "budgetBasis": "legacy-930",
-          "readerContract": "declared-wide-v1",
-          "availableDiagramWidth": 930,
-          "actualBudgetPx": 930,
-          "limit": "legacy",
-          "requestedTargetPx": null,
-          "requestedTargetMet": null,
-          "hardFloorPx": 6,
-          "hardFloorMet": true,
-          "minimumOwner": {
-            "kind": "node",
-            "id": "queued"
-          },
-          "minimumSourceTextPx": 7,
-          "minimumProjectedTextPx": 6.320388349514563,
-          "semanticTextCount": 20
-        },
-        "issues": []
-      }
-    },
-    {
-      "id": "deployment-lifecycle",
-      "type": "lifecycle",
-      "title": "Deployment Release Lifecycle",
-      "subtitle": "",
-      "input": "gallery/sources/deployment-release.lifecycle.json",
-      "artifact": "gallery/artifacts/deployment-release.lifecycle.html",
-      "focus": "live",
-      "schemaVersion": 2,
-      "visualPreset": "signal-flow",
-      "animation": "trace",
-      "engineeringProfile": null,
-      "nodeCount": 11,
-      "edgeCount": 11,
-      "artifactBytes": 781766,
-      "artifactSha256": "f03a1931595f67fda08d4d3c288e4ef1a1454a6848666dc5feddfc68a6c5245f",
-      "sourceBytes": 3507,
-      "sourceSha256": "f565a8acfebdb21453e2bccd82d3760b4736e38fe194fb2f0804b57817eba813",
-      "checks": [
-        {
-          "name": "single_svg",
-          "ok": true
-        },
-        {
-          "name": "finite_svg",
-          "ok": true
-        },
-        {
-          "name": "orthogonal_arrows",
-          "ok": true
-        },
-        {
-          "name": "label_route_clearance",
-          "ok": true
-        },
-        {
-          "name": "relationship_crossings",
-          "ok": true
-        },
-        {
-          "name": "relationship_corridors",
-          "ok": true
-        },
-        {
-          "name": "container_border_runs",
-          "ok": true
-        },
-        {
-          "name": "route_rhythm",
-          "ok": true
-        },
-        {
-          "name": "legend_clearance",
-          "ok": true
-        }
-      ],
-      "composition": {
-        "schemaVersion": 1,
-        "profile": "showcase",
-        "status": "pass",
-        "summary": {
-          "errors": 0,
-          "warnings": 0
-        },
-        "metrics": {
-          "properCrossings": 0,
-          "resolvedCrossovers": 0,
-          "ambiguousCorridors": 0,
-          "arrowheadCollisions": 0,
-          "containerBorderRuns": 0,
-          "labelRouteClearanceIssues": 0,
-          "labelCanvasOverflowIssues": 0,
-          "minLabelRouteClearance": 21,
-          "desktopReadabilityIssues": 0,
-          "viewportHeightIssues": 0,
-          "minProjectedNodeTextPx": 6.91449814126394,
+          "minProjectedNodeTextPx": 7.265625,
           "maxBends": 2,
           "routesOverSuggestedBends": 0,
           "maxStretch": 1,
           "routesOverSuggestedStretch": 0,
-          "minSegmentPx": 60,
-          "minInteriorSegmentPx": 174,
+          "minSegmentPx": 34,
+          "minInteriorSegmentPx": 40,
           "shortSegmentCount": 0,
           "shortEndpointSegmentCount": 0,
           "shortInteriorSegmentCount": 0,
@@ -1458,9 +1287,131 @@
             "kind": "node",
             "id": "queued"
           },
-          "minimumSourceTextPx": 8,
-          "minimumProjectedTextPx": 6.91449814126394,
-          "semanticTextCount": 24
+          "minimumSourceTextPx": 9,
+          "minimumProjectedTextPx": 7.265625,
+          "semanticTextCount": 32
+        },
+        "issues": []
+      }
+    },
+    {
+      "id": "deployment-lifecycle",
+      "type": "lifecycle",
+      "title": "Deployment Release Lifecycle",
+      "subtitle": "",
+      "input": "gallery/sources/deployment-release.lifecycle.json",
+      "artifact": "gallery/artifacts/deployment-release.lifecycle.html",
+      "focus": "live",
+      "schemaVersion": 3,
+      "visualPreset": "signal-flow",
+      "animation": "trace",
+      "engineeringProfile": null,
+      "nodeCount": 12,
+      "edgeCount": 15,
+      "artifactBytes": 791266,
+      "artifactSha256": "69517d2395f4426f82d901defe2cf0238b944a2f7f66035e5ecfb720b60f1d27",
+      "sourceBytes": 4155,
+      "sourceSha256": "e3dc105d03c1c9881160006cdace23cb5d8533803e337caf0ec287c64e775275",
+      "checks": [
+        {
+          "name": "single_svg",
+          "ok": true
+        },
+        {
+          "name": "finite_svg",
+          "ok": true
+        },
+        {
+          "name": "orthogonal_arrows",
+          "ok": true
+        },
+        {
+          "name": "label_route_clearance",
+          "ok": true
+        },
+        {
+          "name": "relationship_crossings",
+          "ok": true
+        },
+        {
+          "name": "relationship_corridors",
+          "ok": true
+        },
+        {
+          "name": "container_border_runs",
+          "ok": true
+        },
+        {
+          "name": "route_rhythm",
+          "ok": true
+        },
+        {
+          "name": "legend_clearance",
+          "ok": true
+        }
+      ],
+      "composition": {
+        "schemaVersion": 1,
+        "profile": "showcase",
+        "status": "pass",
+        "summary": {
+          "errors": 0,
+          "warnings": 0
+        },
+        "metrics": {
+          "properCrossings": 0,
+          "resolvedCrossovers": 0,
+          "ambiguousCorridors": 0,
+          "arrowheadCollisions": 0,
+          "containerBorderRuns": 0,
+          "labelRouteClearanceIssues": 0,
+          "labelCanvasOverflowIssues": 0,
+          "minLabelRouteClearance": 6,
+          "desktopReadabilityIssues": 0,
+          "viewportHeightIssues": 0,
+          "minProjectedNodeTextPx": 6.518691588785047,
+          "maxBends": 2,
+          "routesOverSuggestedBends": 0,
+          "maxStretch": 1.246,
+          "routesOverSuggestedStretch": 0,
+          "minSegmentPx": 30,
+          "minInteriorSegmentPx": 68,
+          "shortSegmentCount": 0,
+          "shortEndpointSegmentCount": 0,
+          "shortInteriorSegmentCount": 0,
+          "microSegmentCount": 0
+        },
+        "suggestedLimits": {
+          "bendsPerRelationship": 2,
+          "stretch": 1.35,
+          "segmentPx": 16,
+          "microSegmentPx": 8
+        },
+        "routeReview": {
+          "crossings": [],
+          "detours": []
+        },
+        "leadingSpace": {
+          "measured": false,
+          "reviewSuggested": false
+        },
+        "desktopReadability": {
+          "budgetBasis": "legacy-930",
+          "readerContract": "declared-wide-v1",
+          "availableDiagramWidth": 930,
+          "actualBudgetPx": 930,
+          "limit": "legacy",
+          "requestedTargetPx": null,
+          "requestedTargetMet": null,
+          "hardFloorPx": 6,
+          "hardFloorMet": true,
+          "minimumOwner": {
+            "kind": "node",
+            "id": "queued"
+          },
+          "minimumSourceTextPx": 9,
+          "minimumProjectedTextPx": 6.518691588785047,
+          "semanticTextCount": 38
         },
         "issues": []
       }

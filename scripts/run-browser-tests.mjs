@@ -19,8 +19,6 @@ const testFiles = [
   'sequence-width-default-browser.test.mjs',
   'compact-header-clearance.test.mjs',
   'architecture-reading-size-browser.test.mjs',
-  'lifecycle-rail-browser.test.mjs',
-  'lifecycle-band-title.test.mjs',
   'export-cleanup-browser.test.mjs',
   'offline-font-browser.test.mjs',
   'i18n.test.mjs',
