@@ -171,7 +171,14 @@ const tickStep = (() => {
   }
 })();
 const ticks = [];
-for (let t = Math.ceil(t0 / tickStep) * tickStep; t <= t1 + 1e-9; t += tickStep) ticks.push({ t, x: xOf(t) });
+const firstTick = Math.ceil(t0 / tickStep) * tickStep;
+const tickCount = Math.max(0, Math.floor((t1 - firstTick) / tickStep + 1e-9) + 1);
+for (let index = 0; index < tickCount; index += 1) {
+  const t = firstTick + index * tickStep;
+  // Large timestamps can round adjacent ticks to the same double. Index-based
+  // iteration remains bounded even when adding tickStep cannot advance t.
+  if (ticks.at(-1)?.t !== t) ticks.push({ t, x: xOf(t) });
+}
 
 const LABEL_GAP = 7;
 const parentIds = new Set(rows.map((row) => row.parent).filter((id) => id !== undefined));

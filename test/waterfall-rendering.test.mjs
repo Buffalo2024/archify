@@ -19,7 +19,7 @@ function run(diagram, extra = []) {
   const input = path.join(directory, 'candidate.waterfall.json');
   const output = path.join(directory, 'candidate.html');
   fs.writeFileSync(input, JSON.stringify(diagram));
-  return { ...spawnSync(process.execPath, [renderer, input, output, ...extra], { cwd: directory, encoding: 'utf8' }), output };
+  return { ...spawnSync(process.execPath, [renderer, input, output, ...extra], { cwd: directory, encoding: 'utf8', timeout: 10000 }), output };
 }
 function layoutOf(diagram) {
   const result = run(diagram, ['--layout-json']);
@@ -56,6 +56,19 @@ test('waterfall: bar geometry is exactly the recorded timing on one axis', () =>
   assert.equal(rows.request.x1 - rows.request.x0, report.axis.x1 - report.axis.x0);
   // Children follow their parent, depth-first by start time.
   assert.deepEqual(report.rows.map((row) => row.id), ['request', 'auth', 'inventory', 'discount', 'payment', 'save']);
+});
+
+test('waterfall: large timestamps terminate when tick increments are below floating-point resolution', () => {
+  const diagram = clone(small);
+  diagram.spans = [{ id: 'request', name: 'Request', start: 1e16, end: 1e16 + 2 }];
+  const result = run(diagram, ['--layout-json']);
+  assert.equal(result.status, 0, result.stderr || result.error?.message);
+  const report = JSON.parse(result.stdout);
+  assert.equal(report.wall, 2);
+  assert.equal(report.rows[0].label, '2 ms');
+  assert.ok(Number.isFinite(report.rows[0].x0));
+  assert.ok(Number.isFinite(report.rows[0].x1));
+  assert.ok(report.rows[0].x1 > report.rows[0].x0);
 });
 
 test('waterfall: percentages name their denominator and are never summed into the parent', () => {
