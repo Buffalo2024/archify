@@ -1,5 +1,5 @@
 {
-  "schema_version": 3,
+  "schema_version": 2,
   "diagram_type": "lifecycle",
   "meta": {
     "title": "Where Each Job Application Stands",
@@ -7,31 +7,158 @@
     "quality_profile": "showcase",
     "output": "job-search.lifecycle.html"
   },
-  "mainPath": ["saved", "applied", "screen", "interviews", "offer", "accepted"],
+  "lanes": [
+    {
+      "id": "main",
+      "label": "Application path"
+    },
+    {
+      "id": "waiting",
+      "label": "Waiting on them"
+    },
+    {
+      "id": "terminal",
+      "label": "Outcomes"
+    }
+  ],
   "states": [
-    { "id": "saved", "type": "start", "label": "Saved", "sublabel": "role bookmarked", "step": "01" },
-    { "id": "applied", "type": "active", "label": "Applied", "sublabel": "résumé sent", "step": "02" },
-    { "id": "screen", "type": "decision", "label": "Screen Call", "sublabel": "30 min recruiter", "step": "03" },
-    { "id": "interviews", "type": "active", "label": "Interviews", "sublabel": "3 rounds", "step": "04" },
-    { "id": "offer", "type": "success", "label": "Offer", "sublabel": "negotiate terms", "step": "05" },
-    { "id": "accepted", "type": "success", "label": "Accepted", "sublabel": "start date set" },
-    { "id": "silent", "type": "waiting", "label": "No Reply", "sublabel": "2 weeks quiet" },
-    { "id": "deciding", "type": "waiting", "label": "Deciding", "sublabel": "after final round" },
-    { "id": "rejected", "type": "failure", "label": "Rejected", "sublabel": "keep the notes" }
+    {
+      "id": "saved",
+      "type": "start",
+      "label": "Saved",
+      "sublabel": "role bookmarked",
+      "lane": "main",
+      "col": 0,
+      "step": "01",
+      "icon": "flag"
+    },
+    {
+      "id": "applied",
+      "type": "active",
+      "label": "Applied",
+      "sublabel": "r\u00e9sum\u00e9 sent",
+      "lane": "main",
+      "col": 1,
+      "step": "02",
+      "icon": "briefcase"
+    },
+    {
+      "id": "screen",
+      "type": "decision",
+      "label": "Screen Call",
+      "sublabel": "30 min recruiter",
+      "lane": "main",
+      "col": 2,
+      "step": "03",
+      "icon": "person"
+    },
+    {
+      "id": "interviews",
+      "type": "active",
+      "label": "Interviews",
+      "sublabel": "3 rounds",
+      "lane": "main",
+      "col": 3,
+      "step": "04",
+      "icon": "calendar"
+    },
+    {
+      "id": "offer",
+      "type": "success",
+      "label": "Offer",
+      "sublabel": "negotiate terms",
+      "lane": "main",
+      "col": 4,
+      "step": "05"
+    },
+    {
+      "id": "silent",
+      "type": "waiting",
+      "label": "No Reply",
+      "sublabel": "2 weeks quiet",
+      "lane": "waiting",
+      "col": 1,
+      "icon": "clock"
+    },
+    {
+      "id": "deciding",
+      "type": "waiting",
+      "label": "Deciding",
+      "sublabel": "after final round",
+      "lane": "waiting",
+      "col": 3,
+      "icon": "clock"
+    },
+    {
+      "id": "rejected",
+      "type": "failure",
+      "label": "Rejected",
+      "sublabel": "keep the notes",
+      "lane": "terminal",
+      "col": 2
+    },
+    {
+      "id": "accepted",
+      "type": "success",
+      "label": "Accepted",
+      "sublabel": "start date set",
+      "lane": "terminal",
+      "col": 4
+    }
   ],
   "transitions": [
-    { "id": "saved-applied", "from": "saved", "to": "applied", "label": "apply" },
-    { "id": "applied-screen", "from": "applied", "to": "screen", "label": "callback" },
-    { "id": "screen-interviews", "from": "screen", "to": "interviews", "label": "pass" },
-    { "id": "interviews-offer", "from": "interviews", "to": "offer", "label": "offer call" },
-    { "id": "offer-accepted", "from": "offer", "to": "accepted", "label": "sign" },
-    { "id": "applied-silent", "from": "applied", "to": "silent", "variant": "dashed" },
-    { "id": "silent-applied", "from": "silent", "to": "applied", "label": "follow up", "variant": "emphasis" },
-    { "id": "interviews-deciding", "from": "interviews", "to": "deciding", "label": "final round", "variant": "dashed" },
-    { "id": "deciding-offer", "from": "deciding", "to": "offer", "label": "yes", "variant": "emphasis" },
-    { "id": "screen-rejected", "from": "screen", "to": "rejected", "label": "no", "variant": "security" },
-    { "id": "interviews-rejected", "from": "interviews", "to": "rejected", "label": "no", "variant": "security" },
-    { "id": "deciding-rejected", "from": "deciding", "to": "rejected", "label": "no", "variant": "security" }
+    {
+      "from": "saved",
+      "to": "applied",
+      "label": "apply"
+    },
+    {
+      "from": "applied",
+      "to": "screen",
+      "label": "callback"
+    },
+    {
+      "from": "screen",
+      "to": "interviews",
+      "label": "pass"
+    },
+    {
+      "from": "interviews",
+      "to": "deciding",
+      "variant": "dashed"
+    },
+    {
+      "from": "deciding",
+      "to": "offer",
+      "label": "yes",
+      "variant": "emphasis"
+    },
+    {
+      "from": "offer",
+      "to": "accepted",
+      "label": "sign"
+    },
+    {
+      "from": "applied",
+      "to": "silent",
+      "variant": "dashed"
+    },
+    {
+      "from": "silent",
+      "to": "applied",
+      "label": "follow up",
+      "variant": "emphasis"
+    },
+    {
+      "from": "screen",
+      "to": "rejected",
+      "variant": "security"
+    },
+    {
+      "from": "deciding",
+      "to": "rejected",
+      "variant": "security"
+    }
   ],
   "cards": [
     {
