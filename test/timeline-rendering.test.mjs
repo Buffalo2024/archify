@@ -60,6 +60,19 @@ test('timeline: events are drawn in chronological order whatever the authored or
   assert.ok(report.events.every((event, index, all) => !index || event.x >= all[index - 1].x));
 });
 
+test('timeline: historical years retain the actual display-zone UTC offset', () => {
+  for (const year of ['0000', '0001', '0099', '0100', '2026']) {
+    const diagram = clone(small);
+    diagram.meta.timezone = 'UTC';
+    diagram.events = [{ id: 'event', at: `${year}-01-01T00:00:00Z`, title: 'Historical event', lane: diagram.lanes[0].id }];
+    const result = run(diagram);
+    assert.equal(result.status, 0, result.stderr);
+    const html = fs.readFileSync(result.output, 'utf8');
+    assert.match(html, /UTC\+00:00/);
+    assert.doesNotMatch(html, /UTC\+\d{3,}:/);
+  }
+});
+
 test('timeline: offsets are honoured, so the same instant in two offsets aligns', () => {
   const diagram = clone(small);
   diagram.events.push({ id: 'same_instant', at: '2026-10-01T07:35:00+05:30', title: 'Same instant as the alert', lane: 'release' });
