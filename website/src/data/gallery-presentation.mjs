@@ -2,6 +2,32 @@ import { DIAGRAM_TYPE_LABELS } from '../../../scripts/site-copy.mjs';
 
 export const CASES = [
   {
+    id: 'bagel-inference',
+    sourceBacked: true,
+    type: 'architecture',
+    input: 'bagel-inference.architecture.json',
+    output: 'bagel-inference.architecture.html',
+    focus: 'context',
+    accent: '#6ee7b7',
+    titleEn: 'BAGEL Interleaved Inference',
+    titleZh: 'BAGEL 交错推理',
+    descriptionEn: 'Official source links connect the overview to optional context assembly and MoT decoder internals.',
+    descriptionZh: '通过官方源码链接，从概览进入可选的上下文组装与 MoT 解码层子图。',
+  },
+  {
+    id: 'lance-query',
+    sourceBacked: true,
+    type: 'architecture',
+    input: 'lance-query.architecture.json',
+    output: 'lance-query.architecture.html',
+    focus: 'planner',
+    accent: '#38bdf8',
+    titleEn: 'Lance Dataset Query',
+    titleZh: 'Lance 数据集查询',
+    descriptionEn: 'Inspect a source-backed query plan and the Rust to Python Arrow stream without flattening the main diagram.',
+    descriptionZh: '保留主图概览，并查看有源码依据的查询计划和 Rust 到 Python 的 Arrow 数据流。',
+  },
+  {
     id: 'transformer-layer',
     type: 'architecture',
     input: 'transformer-layer.architecture.json',

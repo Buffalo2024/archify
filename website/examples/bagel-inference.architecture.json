@@ -1,0 +1,661 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "BAGEL Interleaved Inference",
+    "locale": "en",
+    "quality_profile": "showcase",
+    "output": "bagel-inference.architecture.html",
+    "repository": {
+      "url": "https://github.com/ByteDance-Seed/Bagel",
+      "revision": "a2fa77dd8caeefc41e6607ae0ec17408d3f4ee9f"
+    },
+    "views": [
+      {
+        "id": "context-path",
+        "label": "Context assembly",
+        "focus": [
+          "context"
+        ],
+        "note": "Open text, vision and VAE context paths. VAE context depends on the requested output mode."
+      },
+      {
+        "id": "mot-layer",
+        "label": "MoT layer",
+        "focus": [
+          "mot"
+        ],
+        "note": "Open one MoT layer. Generation mode splits text and VAE feed-forward paths. TaylorSeer shortcuts are omitted."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "inputs",
+      "type": "external",
+      "label": "Text + images",
+      "pos": [
+        40,
+        210
+      ],
+      "size": [
+        170,
+        76
+      ],
+      "sources": [
+        {
+          "path": "inferencer.py",
+          "line": 208,
+          "end_line": 262
+        }
+      ]
+    },
+    {
+      "id": "context",
+      "type": "backend",
+      "label": "Context assembly",
+      "pos": [
+        270,
+        210
+      ],
+      "size": [
+        170,
+        76
+      ],
+      "sources": [
+        {
+          "path": "inferencer.py",
+          "line": 40,
+          "end_line": 97
+        }
+      ],
+      "sublabel": "Text + image tokens",
+      "subarchitecture": {
+        "title": "BAGEL Context Assembly",
+        "components": [
+          {
+            "id": "text",
+            "type": "external",
+            "label": "Text prompt",
+            "pos": [
+              40,
+              90
+            ],
+            "size": [
+              170,
+              76
+            ],
+            "sources": [
+              {
+                "path": "inferencer.py",
+                "line": 40,
+                "end_line": 59
+              }
+            ]
+          },
+          {
+            "id": "tokenize",
+            "type": "backend",
+            "label": "Tokenizer",
+            "pos": [
+              260,
+              90
+            ],
+            "size": [
+              170,
+              76
+            ],
+            "sources": [
+              {
+                "path": "modeling/bagel/bagel.py",
+                "line": 232,
+                "end_line": 265
+              }
+            ],
+            "sublabel": "BOS + EOS"
+          },
+          {
+            "id": "image",
+            "type": "external",
+            "label": "Image input",
+            "pos": [
+              40,
+              330
+            ],
+            "size": [
+              170,
+              76
+            ],
+            "sources": [
+              {
+                "path": "inferencer.py",
+                "line": 61,
+                "end_line": 97
+              }
+            ]
+          },
+          {
+            "id": "vit",
+            "type": "backend",
+            "label": "Vision encoder",
+            "pos": [
+              260,
+              330
+            ],
+            "size": [
+              170,
+              76
+            ],
+            "sources": [
+              {
+                "path": "modeling/bagel/bagel.py",
+                "line": 362,
+                "end_line": 389
+              }
+            ],
+            "sublabel": "Understanding path"
+          },
+          {
+            "id": "connector",
+            "type": "backend",
+            "label": "MLP connector",
+            "pos": [
+              480,
+              330
+            ],
+            "size": [
+              170,
+              76
+            ],
+            "sources": [
+              {
+                "path": "modeling/bagel/bagel.py",
+                "line": 390,
+                "end_line": 397
+              }
+            ],
+            "sublabel": "Vision + position"
+          },
+          {
+            "id": "vae",
+            "type": "backend",
+            "label": "VAE encoder",
+            "pos": [
+              260,
+              570
+            ],
+            "size": [
+              170,
+              76
+            ],
+            "sources": [
+              {
+                "path": "modeling/bagel/bagel.py",
+                "line": 491,
+                "end_line": 519
+              }
+            ],
+            "sublabel": "Generation context"
+          },
+          {
+            "id": "project",
+            "type": "backend",
+            "label": "Latent projection",
+            "pos": [
+              480,
+              570
+            ],
+            "size": [
+              170,
+              76
+            ],
+            "sources": [
+              {
+                "path": "modeling/bagel/bagel.py",
+                "line": 520,
+                "end_line": 526
+              }
+            ],
+            "sublabel": "Position + time"
+          },
+          {
+            "id": "cache",
+            "type": "backend",
+            "label": "KV cache update",
+            "pos": [
+              730,
+              330
+            ],
+            "size": [
+              170,
+              76
+            ],
+            "sources": [
+              {
+                "path": "modeling/bagel/bagel.py",
+                "line": 267,
+                "end_line": 297
+              },
+              {
+                "path": "modeling/bagel/bagel.py",
+                "line": 398,
+                "end_line": 415
+              },
+              {
+                "path": "modeling/bagel/bagel.py",
+                "line": 527,
+                "end_line": 546
+              }
+            ],
+            "sublabel": "Shared language model"
+          }
+        ],
+        "connections": [
+          {
+            "from": "text",
+            "to": "tokenize"
+          },
+          {
+            "from": "tokenize",
+            "to": "cache"
+          },
+          {
+            "from": "image",
+            "to": "vit",
+            "label": "vit=True"
+          },
+          {
+            "from": "vit",
+            "to": "connector"
+          },
+          {
+            "from": "connector",
+            "to": "cache"
+          },
+          {
+            "from": "image",
+            "to": "vae",
+            "fromSide": "bottom",
+            "toSide": "left",
+            "label": "vae=True"
+          },
+          {
+            "from": "vae",
+            "to": "project"
+          },
+          {
+            "from": "project",
+            "to": "cache",
+            "fromSide": "right",
+            "toSide": "bottom"
+          }
+        ]
+      }
+    },
+    {
+      "id": "mot",
+      "type": "backend",
+      "label": "Qwen2 MoT",
+      "pos": [
+        520,
+        210
+      ],
+      "size": [
+        170,
+        76
+      ],
+      "sources": [
+        {
+          "path": "modeling/bagel/qwen2_navit.py",
+          "line": 943,
+          "end_line": 1087
+        },
+        {
+          "path": "app.py",
+          "line": 36,
+          "end_line": 45
+        }
+      ],
+      "sublabel": "Shared model layers",
+      "subarchitecture": {
+        "title": "BAGEL MoT Decoder Layer",
+        "components": [
+          {
+            "id": "input",
+            "type": "backend",
+            "label": "Packed input",
+            "pos": [
+              40,
+              210
+            ],
+            "size": [
+              130,
+              76
+            ],
+            "sources": [
+              {
+                "path": "modeling/bagel/qwen2_navit.py",
+                "line": 757,
+                "end_line": 771
+              }
+            ]
+          },
+          {
+            "id": "norm1",
+            "type": "backend",
+            "label": "Input RMSNorm",
+            "pos": [
+              205,
+              210
+            ],
+            "size": [
+              130,
+              76
+            ],
+            "sources": [
+              {
+                "path": "modeling/bagel/qwen2_navit.py",
+                "line": 771,
+                "end_line": 781
+              }
+            ]
+          },
+          {
+            "id": "attention",
+            "type": "backend",
+            "label": "MoT Attention",
+            "pos": [
+              370,
+              210
+            ],
+            "size": [
+              130,
+              76
+            ],
+            "sources": [
+              {
+                "path": "modeling/bagel/qwen2_navit.py",
+                "line": 782,
+                "end_line": 795
+              }
+            ]
+          },
+          {
+            "id": "add1",
+            "type": "backend",
+            "label": "Residual Add",
+            "pos": [
+              535,
+              210
+            ],
+            "size": [
+              130,
+              76
+            ],
+            "sources": [
+              {
+                "path": "modeling/bagel/qwen2_navit.py",
+                "line": 796,
+                "end_line": 802
+              }
+            ]
+          },
+          {
+            "id": "norm2",
+            "type": "backend",
+            "label": "Post RMSNorm",
+            "pos": [
+              700,
+              210
+            ],
+            "size": [
+              130,
+              76
+            ],
+            "sources": [
+              {
+                "path": "modeling/bagel/qwen2_navit.py",
+                "line": 803,
+                "end_line": 815
+              }
+            ]
+          },
+          {
+            "id": "textffn",
+            "type": "backend",
+            "label": "Text FFN",
+            "pos": [
+              865,
+              90
+            ],
+            "size": [
+              130,
+              76
+            ],
+            "sources": [
+              {
+                "path": "modeling/bagel/qwen2_navit.py",
+                "line": 807,
+                "end_line": 818
+              }
+            ]
+          },
+          {
+            "id": "vaeffn",
+            "type": "backend",
+            "label": "VAE FFN",
+            "pos": [
+              865,
+              330
+            ],
+            "size": [
+              130,
+              76
+            ],
+            "sources": [
+              {
+                "path": "modeling/bagel/qwen2_navit.py",
+                "line": 810,
+                "end_line": 818
+              }
+            ],
+            "sublabel": "Generation mode"
+          },
+          {
+            "id": "add2",
+            "type": "backend",
+            "label": "Residual Add",
+            "pos": [
+              1030,
+              210
+            ],
+            "size": [
+              130,
+              76
+            ],
+            "sources": [
+              {
+                "path": "modeling/bagel/qwen2_navit.py",
+                "line": 819,
+                "end_line": 832
+              }
+            ]
+          }
+        ],
+        "connections": [
+          {
+            "from": "input",
+            "to": "norm1"
+          },
+          {
+            "from": "norm1",
+            "to": "attention"
+          },
+          {
+            "from": "attention",
+            "to": "add1"
+          },
+          {
+            "from": "add1",
+            "to": "norm2"
+          },
+          {
+            "from": "norm2",
+            "to": "textffn"
+          },
+          {
+            "from": "norm2",
+            "to": "vaeffn"
+          },
+          {
+            "from": "textffn",
+            "to": "add2"
+          },
+          {
+            "from": "vaeffn",
+            "to": "add2"
+          },
+          {
+            "from": "input",
+            "to": "add1",
+            "fromSide": "top",
+            "toSide": "top",
+            "variant": "dashed",
+            "label": "Residual"
+          },
+          {
+            "from": "add1",
+            "to": "add2",
+            "fromSide": "bottom",
+            "toSide": "bottom",
+            "variant": "dashed",
+            "label": "Residual"
+          }
+        ]
+      }
+    },
+    {
+      "id": "text_output",
+      "type": "backend",
+      "label": "Text completion",
+      "pos": [
+        790,
+        70
+      ],
+      "size": [
+        170,
+        76
+      ],
+      "sources": [
+        {
+          "path": "inferencer.py",
+          "line": 189,
+          "end_line": 205
+        },
+        {
+          "path": "modeling/bagel/bagel.py",
+          "line": 930,
+          "end_line": 1002
+        }
+      ],
+      "sublabel": "Understanding / thinking"
+    },
+    {
+      "id": "flow",
+      "type": "backend",
+      "label": "Flow sampling",
+      "pos": [
+        790,
+        350
+      ],
+      "size": [
+        170,
+        76
+      ],
+      "sources": [
+        {
+          "path": "modeling/bagel/bagel.py",
+          "line": 644,
+          "end_line": 755
+        }
+      ],
+      "sublabel": "Image generation"
+    },
+    {
+      "id": "decoder",
+      "type": "backend",
+      "label": "VAE decoder",
+      "pos": [
+        1030,
+        350
+      ],
+      "size": [
+        170,
+        76
+      ],
+      "sources": [
+        {
+          "path": "inferencer.py",
+          "line": 173,
+          "end_line": 185
+        }
+      ],
+      "sublabel": "Latents to image"
+    },
+    {
+      "id": "image_output",
+      "type": "external",
+      "label": "Generated image",
+      "pos": [
+        1270,
+        350
+      ],
+      "size": [
+        170,
+        76
+      ],
+      "sources": [
+        {
+          "path": "inferencer.py",
+          "line": 158,
+          "end_line": 170
+        },
+        {
+          "path": "inferencer.py",
+          "line": 275,
+          "end_line": 290
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "from": "inputs",
+      "to": "context"
+    },
+    {
+      "from": "context",
+      "to": "mot",
+      "label": "Cached context"
+    },
+    {
+      "from": "mot",
+      "to": "text_output",
+      "label": "und"
+    },
+    {
+      "from": "mot",
+      "to": "flow",
+      "label": "gen"
+    },
+    {
+      "from": "flow",
+      "to": "decoder",
+      "label": "Latents"
+    },
+    {
+      "from": "decoder",
+      "to": "image_output"
+    }
+  ]
+}

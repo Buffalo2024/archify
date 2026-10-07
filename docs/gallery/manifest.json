@@ -2,9 +2,287 @@
   "schemaVersion": 1,
   "generator": "scripts/build-gallery.mjs",
   "archifyVersion": "3.0.2-dev.1",
-  "entryCount": 13,
-  "checkCount": 117,
+  "entryCount": 15,
+  "checkCount": 135,
   "entries": [
+    {
+      "id": "bagel-inference",
+      "type": "architecture",
+      "title": "BAGEL Interleaved Inference",
+      "subtitle": "",
+      "input": "gallery/sources/bagel-inference.architecture.json",
+      "artifact": "gallery/artifacts/bagel-inference.architecture.html",
+      "focus": "context",
+      "schemaVersion": 1,
+      "visualPreset": "classic",
+      "animation": "static",
+      "engineeringProfile": null,
+      "nodeCount": 7,
+      "edgeCount": 6,
+      "artifactBytes": 856870,
+      "artifactSha256": "1756562c1a16649458be4e27c34e5e24ef892fc3ee64055e5e9a826adffb834b",
+      "sourceBytes": 14199,
+      "sourceSha256": "5a57ae43f6eb26d9b205909f66bd77d4419f9709ec7cfa0d13c81cf704338dbd",
+      "checks": [
+        {
+          "name": "single_svg",
+          "ok": true
+        },
+        {
+          "name": "finite_svg",
+          "ok": true
+        },
+        {
+          "name": "orthogonal_arrows",
+          "ok": true
+        },
+        {
+          "name": "label_route_clearance",
+          "ok": true
+        },
+        {
+          "name": "relationship_crossings",
+          "ok": true
+        },
+        {
+          "name": "relationship_corridors",
+          "ok": true
+        },
+        {
+          "name": "container_border_runs",
+          "ok": true
+        },
+        {
+          "name": "route_rhythm",
+          "ok": true
+        },
+        {
+          "name": "legend_clearance",
+          "ok": true
+        }
+      ],
+      "composition": {
+        "schemaVersion": 1,
+        "profile": "showcase",
+        "status": "pass",
+        "summary": {
+          "errors": 0,
+          "warnings": 0
+        },
+        "metrics": {
+          "properCrossings": 0,
+          "resolvedCrossovers": 0,
+          "ambiguousCorridors": 0,
+          "arrowheadCollisions": 0,
+          "containerBorderRuns": 0,
+          "labelRouteClearanceIssues": 0,
+          "labelCanvasOverflowIssues": 0,
+          "minLabelRouteClearance": 60.5,
+          "desktopReadabilityIssues": 0,
+          "viewportHeightIssues": 0,
+          "minProjectedNodeTextPx": 7.275675675675676,
+          "maxBends": 2,
+          "routesOverSuggestedBends": 0,
+          "maxStretch": 1,
+          "routesOverSuggestedStretch": 0,
+          "minSegmentPx": 50,
+          "minInteriorSegmentPx": 133,
+          "shortSegmentCount": 0,
+          "shortEndpointSegmentCount": 0,
+          "shortInteriorSegmentCount": 0,
+          "microSegmentCount": 0
+        },
+        "suggestedLimits": {
+          "bendsPerRelationship": 2,
+          "stretch": 1.35,
+          "segmentPx": 16,
+          "microSegmentPx": 8
+        },
+        "routeReview": {
+          "crossings": [],
+          "detours": []
+        },
+        "leadingSpace": {
+          "measured": true,
+          "emptyTopPx": 70,
+          "emptyTopRatio": 0.142,
+          "occupiedTop": 70,
+          "viewBoxTop": 0,
+          "canvasHeight": 494,
+          "typicalNodeHeight": 76,
+          "reviewSuggested": false
+        },
+        "desktopReadability": {
+          "budgetBasis": "recognized-declared-wide",
+          "readerContract": "declared-wide-v1",
+          "availableDiagramWidth": 1346,
+          "actualBudgetPx": 1346,
+          "actualReaderWidth": 1376,
+          "desiredReaderWidth": 1417.5,
+          "viewportCap": 1376,
+          "limit": "viewport-cap",
+          "requestedTargetPx": 7.5,
+          "requestedTargetMet": false,
+          "hardFloorPx": 6,
+          "hardFloorMet": true,
+          "minimumOwner": {
+            "kind": "edge",
+            "id": null,
+            "from": "context",
+            "to": "mot"
+          },
+          "minimumSourceTextPx": 8,
+          "minimumProjectedTextPx": 7.275675675675676,
+          "semanticTextCount": 16
+        },
+        "issues": []
+      }
+    },
+    {
+      "id": "lance-query",
+      "type": "architecture",
+      "title": "Lance Dataset Query",
+      "subtitle": "",
+      "input": "gallery/sources/lance-query.architecture.json",
+      "artifact": "gallery/artifacts/lance-query.architecture.html",
+      "focus": "planner",
+      "schemaVersion": 1,
+      "visualPreset": "classic",
+      "animation": "static",
+      "engineeringProfile": null,
+      "nodeCount": 7,
+      "edgeCount": 6,
+      "artifactBytes": 846973,
+      "artifactSha256": "423b070c4352be60d477ca3e3aa7729df04651821811569043a30f0cf80cb7ac",
+      "sourceBytes": 11611,
+      "sourceSha256": "d8798725be3947d7a364cbf7b5b317b336094e5d17ba06dd616962cd04e85e3d",
+      "checks": [
+        {
+          "name": "single_svg",
+          "ok": true
+        },
+        {
+          "name": "finite_svg",
+          "ok": true
+        },
+        {
+          "name": "orthogonal_arrows",
+          "ok": true
+        },
+        {
+          "name": "label_route_clearance",
+          "ok": true
+        },
+        {
+          "name": "relationship_crossings",
+          "ok": true
+        },
+        {
+          "name": "relationship_corridors",
+          "ok": true
+        },
+        {
+          "name": "container_border_runs",
+          "ok": true
+        },
+        {
+          "name": "route_rhythm",
+          "ok": true
+        },
+        {
+          "name": "legend_clearance",
+          "ok": true
+        }
+      ],
+      "composition": {
+        "schemaVersion": 1,
+        "profile": "showcase",
+        "status": "pass",
+        "summary": {
+          "errors": 0,
+          "warnings": 0
+        },
+        "metrics": {
+          "properCrossings": 0,
+          "resolvedCrossovers": 0,
+          "ambiguousCorridors": 0,
+          "arrowheadCollisions": 0,
+          "containerBorderRuns": 0,
+          "labelRouteClearanceIssues": 0,
+          "labelCanvasOverflowIssues": 0,
+          "minLabelRouteClearance": 69.7,
+          "desktopReadabilityIssues": 0,
+          "viewportHeightIssues": 0,
+          "minProjectedNodeTextPx": 7.5,
+          "maxBends": 4,
+          "routesOverSuggestedBends": 1,
+          "maxStretch": 1.15,
+          "routesOverSuggestedStretch": 0,
+          "minSegmentPx": 16,
+          "minInteriorSegmentPx": 16,
+          "shortSegmentCount": 0,
+          "shortEndpointSegmentCount": 0,
+          "shortInteriorSegmentCount": 0,
+          "microSegmentCount": 0
+        },
+        "suggestedLimits": {
+          "bendsPerRelationship": 2,
+          "stretch": 1.35,
+          "segmentPx": 16,
+          "microSegmentPx": 8
+        },
+        "routeReview": {
+          "crossings": [],
+          "detours": [
+            {
+              "relationship": {
+                "from": "runtime",
+                "to": "fragments",
+                "label": "Scan / take",
+                "collectionIndex": 4,
+                "artifactIndex": 5
+              },
+              "bends": 4,
+              "stretch": 1.15
+            }
+          ]
+        },
+        "leadingSpace": {
+          "measured": true,
+          "emptyTopPx": 210,
+          "emptyTopRatio": 0.331,
+          "occupiedTop": 210,
+          "viewBoxTop": 0,
+          "canvasHeight": 634,
+          "typicalNodeHeight": 76,
+          "reviewSuggested": true
+        },
+        "desktopReadability": {
+          "budgetBasis": "recognized-declared-wide",
+          "readerContract": "declared-wide-v1",
+          "availableDiagramWidth": 1256.25,
+          "actualBudgetPx": 1256.25,
+          "actualReaderWidth": 1286.25,
+          "desiredReaderWidth": 1286.25,
+          "viewportCap": 1376,
+          "limit": "source-size",
+          "requestedTargetPx": 7.5,
+          "requestedTargetMet": true,
+          "hardFloorPx": 6,
+          "hardFloorMet": true,
+          "minimumOwner": {
+            "kind": "edge",
+            "id": null,
+            "from": "python",
+            "to": "planner"
+          },
+          "minimumSourceTextPx": 8,
+          "minimumProjectedTextPx": 7.5,
+          "semanticTextCount": 18
+        },
+        "issues": []
+      }
+    },
     {
       "id": "transformer-layer",
       "type": "architecture",

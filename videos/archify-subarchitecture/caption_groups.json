@@ -1,0 +1,263 @@
+[
+  {
+    "frame": 1,
+    "english": "A complex system can be hard to read in one diagram.",
+    "chinese": "复杂系统很难在一张图中清楚呈现。",
+    "start": 0,
+    "end": 3.563,
+    "absolute_start": 0,
+    "absolute_end": 3.563
+  },
+  {
+    "frame": 1,
+    "english": "Keep the overview clear.",
+    "chinese": "让概览保持清晰。",
+    "start": 3.723,
+    "end": 5.195,
+    "absolute_start": 3.723,
+    "absolute_end": 5.195
+  },
+  {
+    "frame": 1,
+    "english": "Open a component when you need more detail.",
+    "chinese": "需要更多细节时，再展开组件。",
+    "start": 5.355,
+    "end": 7.979,
+    "absolute_start": 5.355,
+    "absolute_end": 7.979
+  },
+  {
+    "frame": 2,
+    "english": "This is the Transformer example in Archify Labs.",
+    "chinese": "这是 Archify Labs 中的 Transformer 示例。",
+    "start": 0,
+    "end": 3.221,
+    "absolute_start": 8.139,
+    "absolute_end": 11.36
+  },
+  {
+    "frame": 2,
+    "english": "Select Transformer Layer and open its internal architecture.",
+    "chinese": "选择 Transformer Layer，然后打开内部架构。",
+    "start": 3.381,
+    "end": 7.392,
+    "absolute_start": 11.52,
+    "absolute_end": 15.531
+  },
+  {
+    "frame": 2,
+    "english": "The child expands below the main diagram.",
+    "chinese": "子图在主图下方展开。",
+    "start": 7.552,
+    "end": 10.283,
+    "absolute_start": 15.691,
+    "absolute_end": 18.422
+  },
+  {
+    "frame": 2,
+    "english": "Its local components have their own Semantic Passport.",
+    "chinese": "局部组件有各自的 Semantic Passport。",
+    "start": 10.443,
+    "end": 13.643,
+    "absolute_start": 18.582,
+    "absolute_end": 21.782
+  },
+  {
+    "frame": 3,
+    "english": "The Export menu offers two targets.",
+    "chinese": "Export 菜单提供两个导出目标。",
+    "start": 0,
+    "end": 2.411,
+    "absolute_start": 21.942,
+    "absolute_end": 24.353
+  },
+  {
+    "frame": 3,
+    "english": "Main diagram exports the overview.",
+    "chinese": "Main diagram 导出主图概览。",
+    "start": 2.571,
+    "end": 5.067,
+    "absolute_start": 24.513,
+    "absolute_end": 27.009
+  },
+  {
+    "frame": 3,
+    "english": "Current subarchitecture exports only the open child.",
+    "chinese": "Current subarchitecture 只导出当前子图。",
+    "start": 5.227,
+    "end": 8.939,
+    "absolute_start": 27.169,
+    "absolute_end": 30.881
+  },
+  {
+    "frame": 3,
+    "english": "This child SVG contains seven local components.",
+    "chinese": "这张子图 SVG 仅包含七个局部组件。",
+    "start": 9.099,
+    "end": 12.725,
+    "absolute_start": 31.041,
+    "absolute_end": 34.667
+  },
+  {
+    "frame": 3,
+    "english": "The two exports stay independent.",
+    "chinese": "两种导出彼此独立。",
+    "start": 12.885,
+    "end": 15.083,
+    "absolute_start": 34.827,
+    "absolute_end": 37.025
+  },
+  {
+    "frame": 4,
+    "english": "Use Back to model to return.",
+    "chinese": "点击 Back to model 返回。",
+    "start": 0,
+    "end": 1.941,
+    "absolute_start": 37.185,
+    "absolute_end": 39.126
+  },
+  {
+    "frame": 4,
+    "english": "The page restores your scroll position and parent selection.",
+    "chinese": "页面恢复原来的滚动位置和父组件选择。",
+    "start": 2.101,
+    "end": 5.813,
+    "absolute_start": 39.286,
+    "absolute_end": 42.998
+  },
+  {
+    "frame": 4,
+    "english": "Larger children can scroll.",
+    "chinese": "较大的子图可以滚动查看。",
+    "start": 5.973,
+    "end": 7.787,
+    "absolute_start": 43.158,
+    "absolute_end": 44.972
+  },
+  {
+    "frame": 4,
+    "english": "The main diagram keeps its original behavior.",
+    "chinese": "主图保留原有行为。",
+    "start": 7.947,
+    "end": 10.848,
+    "absolute_start": 45.132,
+    "absolute_end": 48.033
+  },
+  {
+    "frame": 5,
+    "english": "The BAGEL example follows the official inference code.",
+    "chinese": "BAGEL 示例依据官方推理代码绘制。",
+    "start": 0,
+    "end": 3.285,
+    "absolute_start": 48.193,
+    "absolute_end": 51.478
+  },
+  {
+    "frame": 5,
+    "english": "Open context assembly to inspect text, vision, and VAE paths.",
+    "chinese": "展开上下文组装，查看文本、视觉和 VAE 路径。",
+    "start": 3.445,
+    "end": 8.117,
+    "absolute_start": 51.638,
+    "absolute_end": 56.31
+  },
+  {
+    "frame": 5,
+    "english": "Open the MoT layer to see attention and separate feed-forward paths.",
+    "chinese": "展开 MoT 层，查看注意力和分别处理的前馈路径。",
+    "start": 8.277,
+    "end": 12.693,
+    "absolute_start": 56.47,
+    "absolute_end": 60.886
+  },
+  {
+    "frame": 5,
+    "english": "Source links point to a fixed repository revision.",
+    "chinese": "源码链接指向固定的仓库版本。",
+    "start": 12.853,
+    "end": 16.075,
+    "absolute_start": 61.046,
+    "absolute_end": 64.268
+  },
+  {
+    "frame": 6,
+    "english": "The Lance example follows a dataset query.",
+    "chinese": "Lance 示例展示数据集查询路径。",
+    "start": 0,
+    "end": 2.901,
+    "absolute_start": 64.428,
+    "absolute_end": 67.329
+  },
+  {
+    "frame": 6,
+    "english": "Open the scanner to inspect its query plan.",
+    "chinese": "展开 Scanner，查看查询计划。",
+    "start": 3.061,
+    "end": 5.707,
+    "absolute_start": 67.489,
+    "absolute_end": 70.135
+  },
+  {
+    "frame": 6,
+    "english": "Some stages depend on the query options.",
+    "chinese": "部分阶段由查询选项决定。",
+    "start": 5.867,
+    "end": 8.576,
+    "absolute_start": 70.295,
+    "absolute_end": 73.004
+  },
+  {
+    "frame": 6,
+    "english": "Then open the Arrow stream bridge.",
+    "chinese": "再展开 Arrow 数据流桥接层。",
+    "start": 8.736,
+    "end": 10.741,
+    "absolute_start": 73.164,
+    "absolute_end": 75.169
+  },
+  {
+    "frame": 6,
+    "english": "See how Rust batches reach Python.",
+    "chinese": "查看 Rust 中的批次如何传到 Python。",
+    "start": 10.901,
+    "end": 12.992,
+    "absolute_start": 75.329,
+    "absolute_end": 77.42
+  },
+  {
+    "frame": 7,
+    "english": "These views are optional additions in Labs.",
+    "chinese": "这些视图是 Labs 中的可选增量功能。",
+    "start": 0,
+    "end": 2.667,
+    "absolute_start": 77.58,
+    "absolute_end": 80.247
+  },
+  {
+    "frame": 7,
+    "english": "Each child stays one level deep with up to twelve components.",
+    "chinese": "子图仅支持一层，最多包含十二个组件。",
+    "start": 2.827,
+    "end": 6.624,
+    "absolute_start": 80.407,
+    "absolute_end": 84.204
+  },
+  {
+    "frame": 7,
+    "english": "Try Transformer, BAGEL, and Lance in the gallery.",
+    "chinese": "在 Gallery 中体验 Transformer、BAGEL 和 Lance。",
+    "start": 6.784,
+    "end": 9.877,
+    "absolute_start": 84.364,
+    "absolute_end": 87.457
+  },
+  {
+    "frame": 7,
+    "english": "Bring a real diagram and share what you find.",
+    "chinese": "欢迎用真实架构图试用，并分享你的发现。",
+    "start": 10.037,
+    "end": 12.875,
+    "absolute_start": 87.617,
+    "absolute_end": 90.455
+  }
+]

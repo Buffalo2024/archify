@@ -251,8 +251,8 @@
           <p class="hero-copy" data-en="Every frame below is a live Archify artifact—not a mockup. Each one is regenerated from versioned JSON IR, checked for structural integrity, and linked to the exact source that produced it." data-zh="下面每一帧都是可运行的 Archify 成品，不是效果图。它们全部由版本化 JSON IR 重新生成、经过结构检查，并链接到产生它的精确源数据。">Every frame below is a live Archify artifact—not a mockup. Each one is regenerated from versioned JSON IR, checked for structural integrity, and linked to the exact source that produced it.</p>
         </div>
         <div class="proof-board" aria-label="Gallery quality summary">
-          <div class="proof-row"><span class="proof-value">13</span><span class="proof-label" data-en="scenario proofs<br>from real IR" data-zh="个场景成品<br>来自真实 IR">scenario proofs<br>from real IR</span></div>
-          <div class="proof-row"><span class="proof-value">117</span><span class="proof-label" data-en="structural checks<br>passed" data-zh="项结构检查<br>全部通过">structural checks<br>passed</span></div>
+          <div class="proof-row"><span class="proof-value">15</span><span class="proof-label" data-en="scenario proofs<br>from real IR" data-zh="个场景成品<br>来自真实 IR">scenario proofs<br>from real IR</span></div>
+          <div class="proof-row"><span class="proof-value">135</span><span class="proof-label" data-en="structural checks<br>passed" data-zh="项结构检查<br>全部通过">structural checks<br>passed</span></div>
           <div class="proof-row"><span class="proof-value proof-status">PASS</span><span class="proof-label" data-en="generated from<br>source of truth" data-zh="从源数据<br>自动生成">generated from<br>source of truth</span></div>
         </div>
       </div>
@@ -261,7 +261,7 @@
     <section class="controls" aria-label="Gallery controls">
       <div class="shell controls-inner">
         <div class="filter-group" role="group" aria-label="Filter diagrams by type">
-          <button class="filter-button" type="button" data-filter="all" aria-pressed="true" data-en="All / 13" data-zh="全部配方 / 13">All / 13</button>
+          <button class="filter-button" type="button" data-filter="all" aria-pressed="true" data-en="All / 15" data-zh="全部配方 / 15">All / 15</button>
           <button class="filter-button" type="button" data-filter="architecture" aria-pressed="false" data-en="Architecture" data-zh="架构图">Architecture</button>
           <button class="filter-button" type="button" data-filter="workflow" aria-pressed="false" data-en="Workflow" data-zh="工作流">Workflow</button>
           <button class="filter-button" type="button" data-filter="sequence" aria-pressed="false" data-en="Sequence" data-zh="时序图">Sequence</button>
@@ -279,13 +279,71 @@
     <section class="gallery-section" id="gallery">
       <div class="shell">
         <div class="section-intro">
-          <h2 data-en="Six lenses. Thirteen real stories." data-zh="六种视角，十三个真实故事。">Six lenses. Thirteen real stories.</h2>
+          <h2 data-en="Six lenses. Fifteen real stories." data-zh="六种视角，十五个真实故事。">Six lenses. Fifteen real stories.</h2>
           <p data-en="Every scenario has focus, reach, and path exploration, shareable links, dark/light rendering, self-contained export, and a machine-readable quality receipt." data-zh="每个场景都支持聚焦、上下游与路径探索、可分享链接、深浅主题、自包含导出和机器可读质量凭证。">Every scenario has focus, reach, and path exploration, shareable links, dark/light rendering, self-contained export, and a machine-readable quality receipt.</p>
         </div>
         <div class="gallery-grid" id="gallery-grid">
-          <article class="showcase-card" id="proof-transformer-layer" data-proof-id="transformer-layer" data-type="architecture" style="--accent:#0891b2">
+          <article class="showcase-card" id="proof-bagel-inference" data-proof-id="bagel-inference" data-type="architecture" style="--accent:#0891b2">
             <header class="card-header">
               <div class="card-index">01</div>
+              <div class="card-title-wrap">
+                <div class="card-kicker">Architecture / 7 nodes</div>
+                <h3 class="card-title" data-en="BAGEL Interleaved Inference" data-zh="BAGEL 交错推理">BAGEL Interleaved Inference</h3>
+              </div>
+              <div class="card-mode">classic</div>
+            </header>
+            <div class="preview-shell">
+              <div class="live-flag">Live artifact</div>
+              <iframe src="gallery/artifacts/bagel-inference.architecture.html?embed=1&amp;theme=dark" data-src-base="gallery/artifacts/bagel-inference.architecture.html" title="BAGEL Interleaved Inference live Archify preview" loading="lazy"></iframe>
+            </div>
+            <div class="card-body">
+              <p class="card-description" data-en="Official source links connect the overview to optional context assembly and MoT decoder internals." data-zh="通过官方源码链接，从概览进入可选的上下文组装与 MoT 解码层子图。">Official source links connect the overview to optional context assembly and MoT decoder internals.</p>
+              <div class="receipt" aria-label="Validation receipt">
+                <div class="receipt-cell"><span class="receipt-label">Artifact</span><span class="receipt-value ok">9/9 pass</span></div>
+                <div class="receipt-cell"><span class="receipt-label">Composition</span><span class="receipt-value ok" title="0 crossings · 0 border runs · 0 micro segments · 0 cramped turns">SHOWCASE · PASS</span></div>
+                <div class="receipt-cell"><span class="receipt-label">Graph</span><span class="receipt-value">7N · 6E</span></div>
+                <div class="receipt-cell"><span class="receipt-label">SHA-256</span><span class="receipt-value" title="1756562c1a16649458be4e27c34e5e24ef892fc3ee64055e5e9a826adffb834b">1756562c1a16</span></div>
+              </div>
+              <div class="card-actions">
+                <a class="card-link primary" href="gallery/artifacts/bagel-inference.architecture.html#focus=context" target="_blank" rel="noopener" data-en="Explore focus ↗" data-zh="探索聚焦路径 ↗">Explore focus ↗</a>
+                <a class="card-link" href="gallery/artifacts/bagel-inference.architecture.html" target="_blank" rel="noopener" data-en="Full artifact" data-zh="完整成品">Full artifact</a>
+                <a class="card-link" href="gallery/sources/bagel-inference.architecture.json" target="_blank" rel="noopener">JSON IR</a>
+                <a class="card-link create-link" href="start.html?type=architecture&amp;source=gallery" data-en="Create this type" data-zh="按此类型开始">Create this type</a>
+              </div>
+            </div>
+          </article>
+          <article class="showcase-card" id="proof-lance-query" data-proof-id="lance-query" data-type="architecture" style="--accent:#0891b2">
+            <header class="card-header">
+              <div class="card-index">02</div>
+              <div class="card-title-wrap">
+                <div class="card-kicker">Architecture / 7 nodes</div>
+                <h3 class="card-title" data-en="Lance Dataset Query" data-zh="Lance 数据集查询">Lance Dataset Query</h3>
+              </div>
+              <div class="card-mode">classic</div>
+            </header>
+            <div class="preview-shell">
+              <div class="live-flag">Live artifact</div>
+              <iframe src="gallery/artifacts/lance-query.architecture.html?embed=1&amp;theme=dark" data-src-base="gallery/artifacts/lance-query.architecture.html" title="Lance Dataset Query live Archify preview" loading="lazy"></iframe>
+            </div>
+            <div class="card-body">
+              <p class="card-description" data-en="Inspect a source-backed query plan and the Rust to Python Arrow stream without flattening the main diagram." data-zh="保留主图概览，并查看有源码依据的查询计划和 Rust 到 Python 的 Arrow 数据流。">Inspect a source-backed query plan and the Rust to Python Arrow stream without flattening the main diagram.</p>
+              <div class="receipt" aria-label="Validation receipt">
+                <div class="receipt-cell"><span class="receipt-label">Artifact</span><span class="receipt-value ok">9/9 pass</span></div>
+                <div class="receipt-cell"><span class="receipt-label">Composition</span><span class="receipt-value ok" title="0 crossings · 0 border runs · 0 micro segments · 0 cramped turns">SHOWCASE · PASS</span></div>
+                <div class="receipt-cell"><span class="receipt-label">Graph</span><span class="receipt-value">7N · 6E</span></div>
+                <div class="receipt-cell"><span class="receipt-label">SHA-256</span><span class="receipt-value" title="423b070c4352be60d477ca3e3aa7729df04651821811569043a30f0cf80cb7ac">423b070c4352</span></div>
+              </div>
+              <div class="card-actions">
+                <a class="card-link primary" href="gallery/artifacts/lance-query.architecture.html#focus=planner" target="_blank" rel="noopener" data-en="Explore focus ↗" data-zh="探索聚焦路径 ↗">Explore focus ↗</a>
+                <a class="card-link" href="gallery/artifacts/lance-query.architecture.html" target="_blank" rel="noopener" data-en="Full artifact" data-zh="完整成品">Full artifact</a>
+                <a class="card-link" href="gallery/sources/lance-query.architecture.json" target="_blank" rel="noopener">JSON IR</a>
+                <a class="card-link create-link" href="start.html?type=architecture&amp;source=gallery" data-en="Create this type" data-zh="按此类型开始">Create this type</a>
+              </div>
+            </div>
+          </article>
+          <article class="showcase-card" id="proof-transformer-layer" data-proof-id="transformer-layer" data-type="architecture" style="--accent:#0891b2">
+            <header class="card-header">
+              <div class="card-index">03</div>
               <div class="card-title-wrap">
                 <div class="card-kicker">Architecture / 3 nodes</div>
                 <h3 class="card-title" data-en="Transformer Layer Internals" data-zh="Transformer 层内部架构">Transformer Layer Internals</h3>
@@ -314,7 +372,7 @@
           </article>
           <article class="showcase-card is-featured" id="proof-agent-tool-call" data-proof-id="agent-tool-call" data-type="workflow" style="--accent:#047857">
             <header class="card-header">
-              <div class="card-index">02</div>
+              <div class="card-index">04</div>
               <div class="card-title-wrap">
                 <div class="card-kicker">Workflow / 12 nodes</div>
                 <h3 class="card-title" data-en="Agent Tool Call" data-zh="智能体工具调用">Agent Tool Call</h3>
@@ -343,7 +401,7 @@
           </article>
           <article class="showcase-card" id="proof-deployment-ownership" data-proof-id="deployment-ownership" data-type="architecture" style="--accent:#0891b2">
             <header class="card-header">
-              <div class="card-index">03</div>
+              <div class="card-index">05</div>
               <div class="card-title-wrap">
                 <div class="card-kicker">Architecture / 12 nodes</div>
                 <h3 class="card-title" data-en="Production Deployment Ownership" data-zh="生产部署与归属">Production Deployment Ownership</h3>
@@ -373,7 +431,7 @@
           </article>
           <article class="showcase-card" id="proof-cache-miss" data-proof-id="cache-miss" data-type="sequence" style="--accent:#6d28d9">
             <header class="card-header">
-              <div class="card-index">04</div>
+              <div class="card-index">06</div>
               <div class="card-title-wrap">
                 <div class="card-kicker">Sequence / 7 nodes</div>
                 <h3 class="card-title" data-en="Cache Miss Request" data-zh="缓存未命中请求">Cache Miss Request</h3>
@@ -402,7 +460,7 @@
           </article>
           <article class="showcase-card" id="proof-delivery-workflow" data-proof-id="delivery-workflow" data-type="workflow" style="--accent:#047857">
             <header class="card-header">
-              <div class="card-index">05</div>
+              <div class="card-index">07</div>
               <div class="card-title-wrap">
                 <div class="card-kicker">Workflow / 10 nodes</div>
                 <h3 class="card-title" data-en="Release Delivery Workflow" data-zh="研发交付流程">Release Delivery Workflow</h3>
@@ -431,7 +489,7 @@
           </article>
           <article class="showcase-card" id="proof-incident-runbook" data-proof-id="incident-runbook" data-type="workflow" style="--accent:#047857">
             <header class="card-header">
-              <div class="card-index">06</div>
+              <div class="card-index">08</div>
               <div class="card-title-wrap">
                 <div class="card-kicker">Workflow / 11 nodes</div>
                 <h3 class="card-title" data-en="Incident Response Runbook" data-zh="事故处置 Runbook">Incident Response Runbook</h3>
@@ -460,7 +518,7 @@
           </article>
           <article class="showcase-card" id="proof-product-analytics" data-proof-id="product-analytics" data-type="dataflow" style="--accent:#b45309">
             <header class="card-header">
-              <div class="card-index">07</div>
+              <div class="card-index">09</div>
               <div class="card-title-wrap">
                 <div class="card-kicker">Data flow / 10 nodes</div>
                 <h3 class="card-title" data-en="Product Analytics" data-zh="产品分析数据流">Product Analytics</h3>
@@ -489,7 +547,7 @@
           </article>
           <article class="showcase-card" id="proof-async-roundtrip" data-proof-id="async-roundtrip" data-type="sequence" style="--accent:#6d28d9">
             <header class="card-header">
-              <div class="card-index">08</div>
+              <div class="card-index">10</div>
               <div class="card-title-wrap">
                 <div class="card-kicker">Sequence / 7 nodes</div>
                 <h3 class="card-title" data-en="Async Job Roundtrip" data-zh="异步任务往返链路">Async Job Roundtrip</h3>
@@ -518,7 +576,7 @@
           </article>
           <article class="showcase-card" id="proof-event-stream" data-proof-id="event-stream" data-type="dataflow" style="--accent:#b45309">
             <header class="card-header">
-              <div class="card-index">09</div>
+              <div class="card-index">11</div>
               <div class="card-title-wrap">
                 <div class="card-kicker">Data flow / 12 nodes</div>
                 <h3 class="card-title" data-en="Order Event-stream Topology" data-zh="订单事件流拓扑">Order Event-stream Topology</h3>
@@ -547,7 +605,7 @@
           </article>
           <article class="showcase-card" id="proof-agent-run" data-proof-id="agent-run" data-type="lifecycle" style="--accent:#be123c">
             <header class="card-header">
-              <div class="card-index">10</div>
+              <div class="card-index">12</div>
               <div class="card-title-wrap">
                 <div class="card-kicker">Lifecycle / 10 nodes</div>
                 <h3 class="card-title" data-en="Agent Run Lifecycle" data-zh="智能体运行生命周期">Agent Run Lifecycle</h3>
@@ -576,7 +634,7 @@
           </article>
           <article class="showcase-card" id="proof-deployment-lifecycle" data-proof-id="deployment-lifecycle" data-type="lifecycle" style="--accent:#be123c">
             <header class="card-header">
-              <div class="card-index">11</div>
+              <div class="card-index">13</div>
               <div class="card-title-wrap">
                 <div class="card-kicker">Lifecycle / 11 nodes</div>
                 <h3 class="card-title" data-en="Deployment Release Lifecycle" data-zh="部署发布生命周期">Deployment Release Lifecycle</h3>
@@ -605,7 +663,7 @@
           </article>
           <article class="showcase-card" id="proof-web-app" data-proof-id="web-app" data-type="architecture" style="--accent:#0891b2">
             <header class="card-header">
-              <div class="card-index">12</div>
+              <div class="card-index">14</div>
               <div class="card-title-wrap">
                 <div class="card-kicker">Architecture / 10 nodes</div>
                 <h3 class="card-title" data-en="Three-tier Web App" data-zh="三层 Web 应用">Three-tier Web App</h3>
@@ -634,7 +692,7 @@
           </article>
           <article class="showcase-card" id="proof-orders" data-proof-id="orders" data-type="erd" style="--accent:#0f766e">
             <header class="card-header">
-              <div class="card-index">13</div>
+              <div class="card-index">15</div>
               <div class="card-title-wrap">
                 <div class="card-kicker">Entity-relationship / 6 nodes</div>
                 <h3 class="card-title" data-en="Order Management Schema" data-zh="订单管理表结构">Order Management Schema</h3>
@@ -696,7 +754,7 @@ render  lifecycle      ✓
 render  architecture   ✓
 render  erd            ✓
 
-receipt 117 checks / 13 artifacts / deterministic hashes</pre>
+receipt 135 checks / 15 artifacts / deterministic hashes</pre>
         </div>
       </div>
     </section>
@@ -713,9 +771,287 @@ receipt 117 checks / 13 artifacts / deterministic hashes</pre>
   "schemaVersion": 1,
   "generator": "scripts/build-gallery.mjs",
   "archifyVersion": "3.0.2-dev.1",
-  "entryCount": 13,
-  "checkCount": 117,
+  "entryCount": 15,
+  "checkCount": 135,
   "entries": [
+    {
+      "id": "bagel-inference",
+      "type": "architecture",
+      "title": "BAGEL Interleaved Inference",
+      "subtitle": "",
+      "input": "gallery/sources/bagel-inference.architecture.json",
+      "artifact": "gallery/artifacts/bagel-inference.architecture.html",
+      "focus": "context",
+      "schemaVersion": 1,
+      "visualPreset": "classic",
+      "animation": "static",
+      "engineeringProfile": null,
+      "nodeCount": 7,
+      "edgeCount": 6,
+      "artifactBytes": 856870,
+      "artifactSha256": "1756562c1a16649458be4e27c34e5e24ef892fc3ee64055e5e9a826adffb834b",
+      "sourceBytes": 14199,
+      "sourceSha256": "5a57ae43f6eb26d9b205909f66bd77d4419f9709ec7cfa0d13c81cf704338dbd",
+      "checks": [
+        {
+          "name": "single_svg",
+          "ok": true
+        },
+        {
+          "name": "finite_svg",
+          "ok": true
+        },
+        {
+          "name": "orthogonal_arrows",
+          "ok": true
+        },
+        {
+          "name": "label_route_clearance",
+          "ok": true
+        },
+        {
+          "name": "relationship_crossings",
+          "ok": true
+        },
+        {
+          "name": "relationship_corridors",
+          "ok": true
+        },
+        {
+          "name": "container_border_runs",
+          "ok": true
+        },
+        {
+          "name": "route_rhythm",
+          "ok": true
+        },
+        {
+          "name": "legend_clearance",
+          "ok": true
+        }
+      ],
+      "composition": {
+        "schemaVersion": 1,
+        "profile": "showcase",
+        "status": "pass",
+        "summary": {
+          "errors": 0,
+          "warnings": 0
+        },
+        "metrics": {
+          "properCrossings": 0,
+          "resolvedCrossovers": 0,
+          "ambiguousCorridors": 0,
+          "arrowheadCollisions": 0,
+          "containerBorderRuns": 0,
+          "labelRouteClearanceIssues": 0,
+          "labelCanvasOverflowIssues": 0,
+          "minLabelRouteClearance": 60.5,
+          "desktopReadabilityIssues": 0,
+          "viewportHeightIssues": 0,
+          "minProjectedNodeTextPx": 7.275675675675676,
+          "maxBends": 2,
+          "routesOverSuggestedBends": 0,
+          "maxStretch": 1,
+          "routesOverSuggestedStretch": 0,
+          "minSegmentPx": 50,
+          "minInteriorSegmentPx": 133,
+          "shortSegmentCount": 0,
+          "shortEndpointSegmentCount": 0,
+          "shortInteriorSegmentCount": 0,
+          "microSegmentCount": 0
+        },
+        "suggestedLimits": {
+          "bendsPerRelationship": 2,
+          "stretch": 1.35,
+          "segmentPx": 16,
+          "microSegmentPx": 8
+        },
+        "routeReview": {
+          "crossings": [],
+          "detours": []
+        },
+        "leadingSpace": {
+          "measured": true,
+          "emptyTopPx": 70,
+          "emptyTopRatio": 0.142,
+          "occupiedTop": 70,
+          "viewBoxTop": 0,
+          "canvasHeight": 494,
+          "typicalNodeHeight": 76,
+          "reviewSuggested": false
+        },
+        "desktopReadability": {
+          "budgetBasis": "recognized-declared-wide",
+          "readerContract": "declared-wide-v1",
+          "availableDiagramWidth": 1346,
+          "actualBudgetPx": 1346,
+          "actualReaderWidth": 1376,
+          "desiredReaderWidth": 1417.5,
+          "viewportCap": 1376,
+          "limit": "viewport-cap",
+          "requestedTargetPx": 7.5,
+          "requestedTargetMet": false,
+          "hardFloorPx": 6,
+          "hardFloorMet": true,
+          "minimumOwner": {
+            "kind": "edge",
+            "id": null,
+            "from": "context",
+            "to": "mot"
+          },
+          "minimumSourceTextPx": 8,
+          "minimumProjectedTextPx": 7.275675675675676,
+          "semanticTextCount": 16
+        },
+        "issues": []
+      }
+    },
+    {
+      "id": "lance-query",
+      "type": "architecture",
+      "title": "Lance Dataset Query",
+      "subtitle": "",
+      "input": "gallery/sources/lance-query.architecture.json",
+      "artifact": "gallery/artifacts/lance-query.architecture.html",
+      "focus": "planner",
+      "schemaVersion": 1,
+      "visualPreset": "classic",
+      "animation": "static",
+      "engineeringProfile": null,
+      "nodeCount": 7,
+      "edgeCount": 6,
+      "artifactBytes": 846973,
+      "artifactSha256": "423b070c4352be60d477ca3e3aa7729df04651821811569043a30f0cf80cb7ac",
+      "sourceBytes": 11611,
+      "sourceSha256": "d8798725be3947d7a364cbf7b5b317b336094e5d17ba06dd616962cd04e85e3d",
+      "checks": [
+        {
+          "name": "single_svg",
+          "ok": true
+        },
+        {
+          "name": "finite_svg",
+          "ok": true
+        },
+        {
+          "name": "orthogonal_arrows",
+          "ok": true
+        },
+        {
+          "name": "label_route_clearance",
+          "ok": true
+        },
+        {
+          "name": "relationship_crossings",
+          "ok": true
+        },
+        {
+          "name": "relationship_corridors",
+          "ok": true
+        },
+        {
+          "name": "container_border_runs",
+          "ok": true
+        },
+        {
+          "name": "route_rhythm",
+          "ok": true
+        },
+        {
+          "name": "legend_clearance",
+          "ok": true
+        }
+      ],
+      "composition": {
+        "schemaVersion": 1,
+        "profile": "showcase",
+        "status": "pass",
+        "summary": {
+          "errors": 0,
+          "warnings": 0
+        },
+        "metrics": {
+          "properCrossings": 0,
+          "resolvedCrossovers": 0,
+          "ambiguousCorridors": 0,
+          "arrowheadCollisions": 0,
+          "containerBorderRuns": 0,
+          "labelRouteClearanceIssues": 0,
+          "labelCanvasOverflowIssues": 0,
+          "minLabelRouteClearance": 69.7,
+          "desktopReadabilityIssues": 0,
+          "viewportHeightIssues": 0,
+          "minProjectedNodeTextPx": 7.5,
+          "maxBends": 4,
+          "routesOverSuggestedBends": 1,
+          "maxStretch": 1.15,
+          "routesOverSuggestedStretch": 0,
+          "minSegmentPx": 16,
+          "minInteriorSegmentPx": 16,
+          "shortSegmentCount": 0,
+          "shortEndpointSegmentCount": 0,
+          "shortInteriorSegmentCount": 0,
+          "microSegmentCount": 0
+        },
+        "suggestedLimits": {
+          "bendsPerRelationship": 2,
+          "stretch": 1.35,
+          "segmentPx": 16,
+          "microSegmentPx": 8
+        },
+        "routeReview": {
+          "crossings": [],
+          "detours": [
+            {
+              "relationship": {
+                "from": "runtime",
+                "to": "fragments",
+                "label": "Scan / take",
+                "collectionIndex": 4,
+                "artifactIndex": 5
+              },
+              "bends": 4,
+              "stretch": 1.15
+            }
+          ]
+        },
+        "leadingSpace": {
+          "measured": true,
+          "emptyTopPx": 210,
+          "emptyTopRatio": 0.331,
+          "occupiedTop": 210,
+          "viewBoxTop": 0,
+          "canvasHeight": 634,
+          "typicalNodeHeight": 76,
+          "reviewSuggested": true
+        },
+        "desktopReadability": {
+          "budgetBasis": "recognized-declared-wide",
+          "readerContract": "declared-wide-v1",
+          "availableDiagramWidth": 1256.25,
+          "actualBudgetPx": 1256.25,
+          "actualReaderWidth": 1286.25,
+          "desiredReaderWidth": 1286.25,
+          "viewportCap": 1376,
+          "limit": "source-size",
+          "requestedTargetPx": 7.5,
+          "requestedTargetMet": true,
+          "hardFloorPx": 6,
+          "hardFloorMet": true,
+          "minimumOwner": {
+            "kind": "edge",
+            "id": null,
+            "from": "python",
+            "to": "planner"
+          },
+          "minimumSourceTextPx": 8,
+          "minimumProjectedTextPx": 7.5,
+          "semanticTextCount": 18
+        },
+        "issues": []
+      }
+    },
     {
       "id": "transformer-layer",
       "type": "architecture",

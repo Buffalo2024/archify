@@ -1,0 +1,88 @@
+WEBVTT
+
+00:00:00.000 --> 00:00:03.563
+A complex system can be hard to read in one diagram.
+
+00:00:03.723 --> 00:00:05.195
+Keep the overview clear.
+
+00:00:05.355 --> 00:00:07.979
+Open a component when you need more detail.
+
+00:00:08.139 --> 00:00:11.360
+This is the Transformer example in Archify Labs.
+
+00:00:11.520 --> 00:00:15.531
+Select Transformer Layer and open its internal architecture.
+
+00:00:15.691 --> 00:00:18.422
+The child expands below the main diagram.
+
+00:00:18.582 --> 00:00:21.782
+Its local components have their own Semantic Passport.
+
+00:00:21.942 --> 00:00:24.353
+The Export menu offers two targets.
+
+00:00:24.513 --> 00:00:27.009
+Main diagram exports the overview.
+
+00:00:27.169 --> 00:00:30.881
+Current subarchitecture exports only the open child.
+
+00:00:31.041 --> 00:00:34.667
+This child SVG contains seven local components.
+
+00:00:34.827 --> 00:00:37.025
+The two exports stay independent.
+
+00:00:37.185 --> 00:00:39.126
+Use Back to model to return.
+
+00:00:39.286 --> 00:00:42.998
+The page restores your scroll position and parent selection.
+
+00:00:43.158 --> 00:00:44.972
+Larger children can scroll.
+
+00:00:45.132 --> 00:00:48.033
+The main diagram keeps its original behavior.
+
+00:00:48.193 --> 00:00:51.478
+The BAGEL example follows the official inference code.
+
+00:00:51.638 --> 00:00:56.310
+Open context assembly to inspect text, vision, and VAE paths.
+
+00:00:56.470 --> 00:01:00.886
+Open the MoT layer to see attention and separate feed-forward paths.
+
+00:01:01.046 --> 00:01:04.268
+Source links point to a fixed repository revision.
+
+00:01:04.428 --> 00:01:07.329
+The Lance example follows a dataset query.
+
+00:01:07.489 --> 00:01:10.135
+Open the scanner to inspect its query plan.
+
+00:01:10.295 --> 00:01:13.004
+Some stages depend on the query options.
+
+00:01:13.164 --> 00:01:15.169
+Then open the Arrow stream bridge.
+
+00:01:15.329 --> 00:01:17.420
+See how Rust batches reach Python.
+
+00:01:17.580 --> 00:01:20.247
+These views are optional additions in Labs.
+
+00:01:20.407 --> 00:01:24.204
+Each child stays one level deep with up to twelve components.
+
+00:01:24.364 --> 00:01:27.457
+Try Transformer, BAGEL, and Lance in the gallery.
+
+00:01:27.617 --> 00:01:30.455
+Bring a real diagram and share what you find.

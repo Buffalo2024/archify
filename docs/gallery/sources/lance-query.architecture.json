@@ -1,0 +1,537 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Lance Dataset Query",
+    "locale": "en",
+    "quality_profile": "showcase",
+    "output": "lance-query.architecture.html",
+    "repository": {
+      "url": "https://github.com/lance-format/lance",
+      "revision": "75c7762d426b425f9999be6eb497e105f20b20fc"
+    },
+    "views": [
+      {
+        "id": "query-plan",
+        "label": "Query plan",
+        "focus": [
+          "planner"
+        ],
+        "note": "Open the ordinary scan and nearest-query plan. Filters, sorting and limits are conditional. Aggregation and other search modes are omitted."
+      },
+      {
+        "id": "arrow-stream",
+        "label": "Arrow stream",
+        "focus": [
+          "bridge"
+        ],
+        "note": "Open the Python reader bridge. Cancellation and errors also travel through this stream."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "python",
+      "type": "backend",
+      "label": "Python Dataset",
+      "pos": [
+        40,
+        210
+      ],
+      "size": [
+        170,
+        76
+      ],
+      "sources": [
+        {
+          "path": "python/python/lance/dataset.py",
+          "line": 1223,
+          "end_line": 1246
+        },
+        {
+          "path": "python/python/lance/dataset.py",
+          "line": 1526,
+          "end_line": 1569
+        }
+      ],
+      "sublabel": "scanner()"
+    },
+    {
+      "id": "planner",
+      "type": "backend",
+      "label": "Rust Scanner",
+      "pos": [
+        280,
+        210
+      ],
+      "size": [
+        170,
+        76
+      ],
+      "sources": [
+        {
+          "path": "rust/lance/src/dataset/scanner.rs",
+          "line": 2631,
+          "end_line": 2700
+        },
+        {
+          "path": "rust/lance/src/dataset/scanner.rs",
+          "line": 3272,
+          "end_line": 3300
+        }
+      ],
+      "sublabel": "Plan + execute",
+      "subarchitecture": {
+        "title": "Lance Query Plan",
+        "components": [
+          {
+            "id": "scan",
+            "type": "backend",
+            "label": "Scan source",
+            "pos": [
+              40,
+              90
+            ],
+            "size": [
+              150,
+              76
+            ],
+            "sources": [
+              {
+                "path": "rust/lance/src/dataset/scanner.rs",
+                "line": 3330,
+                "end_line": 3400
+              }
+            ],
+            "sublabel": "No search query"
+          },
+          {
+            "id": "knn",
+            "type": "backend",
+            "label": "Vector source",
+            "pos": [
+              40,
+              330
+            ],
+            "size": [
+              150,
+              76
+            ],
+            "sources": [
+              {
+                "path": "rust/lance/src/dataset/scanner.rs",
+                "line": 3310,
+                "end_line": 3355
+              }
+            ],
+            "sublabel": "nearest query"
+          },
+          {
+            "id": "filter",
+            "type": "backend",
+            "label": "Refine filter",
+            "pos": [
+              250,
+              210
+            ],
+            "size": [
+              150,
+              76
+            ],
+            "sources": [
+              {
+                "path": "rust/lance/src/dataset/scanner.rs",
+                "line": 3400,
+                "end_line": 3422
+              }
+            ],
+            "sublabel": "When needed"
+          },
+          {
+            "id": "sort",
+            "type": "backend",
+            "label": "Sort",
+            "pos": [
+              440,
+              210
+            ],
+            "size": [
+              150,
+              76
+            ],
+            "sources": [
+              {
+                "path": "rust/lance/src/dataset/scanner.rs",
+                "line": 3430,
+                "end_line": 3452
+              }
+            ],
+            "sublabel": "When requested"
+          },
+          {
+            "id": "limit",
+            "type": "backend",
+            "label": "Limit / offset",
+            "pos": [
+              630,
+              210
+            ],
+            "size": [
+              150,
+              76
+            ],
+            "sources": [
+              {
+                "path": "rust/lance/src/dataset/scanner.rs",
+                "line": 3453,
+                "end_line": 3471
+              }
+            ],
+            "sublabel": "Unless pushed down"
+          },
+          {
+            "id": "take",
+            "type": "backend",
+            "label": "Take columns",
+            "pos": [
+              820,
+              210
+            ],
+            "size": [
+              150,
+              76
+            ],
+            "sources": [
+              {
+                "path": "rust/lance/src/dataset/scanner.rs",
+                "line": 3460,
+                "end_line": 3480
+              }
+            ],
+            "sublabel": "Remaining projection"
+          },
+          {
+            "id": "projection",
+            "type": "backend",
+            "label": "Projection",
+            "pos": [
+              1010,
+              210
+            ],
+            "size": [
+              150,
+              76
+            ],
+            "sources": [
+              {
+                "path": "rust/lance/src/dataset/scanner.rs",
+                "line": 3475,
+                "end_line": 3495
+              }
+            ],
+            "sublabel": "Arrow schema"
+          }
+        ],
+        "connections": [
+          {
+            "from": "scan",
+            "to": "filter"
+          },
+          {
+            "from": "knn",
+            "to": "filter"
+          },
+          {
+            "from": "filter",
+            "to": "sort"
+          },
+          {
+            "from": "sort",
+            "to": "limit"
+          },
+          {
+            "from": "limit",
+            "to": "take"
+          },
+          {
+            "from": "take",
+            "to": "projection"
+          }
+        ]
+      }
+    },
+    {
+      "id": "runtime",
+      "type": "backend",
+      "label": "DataFusion runtime",
+      "pos": [
+        530,
+        210
+      ],
+      "size": [
+        190,
+        76
+      ],
+      "sources": [
+        {
+          "path": "rust/lance/src/dataset/scanner.rs",
+          "line": 2631,
+          "end_line": 2660
+        }
+      ],
+      "sublabel": "Execution plan"
+    },
+    {
+      "id": "bridge",
+      "type": "backend",
+      "label": "Arrow stream bridge",
+      "pos": [
+        850,
+        210
+      ],
+      "size": [
+        190,
+        76
+      ],
+      "sources": [
+        {
+          "path": "python/src/reader.rs",
+          "line": 46,
+          "end_line": 112
+        }
+      ],
+      "sublabel": "Rust to Python",
+      "subarchitecture": {
+        "title": "Lance Arrow Stream Bridge",
+        "components": [
+          {
+            "id": "scanner",
+            "type": "backend",
+            "label": "Python Scanner",
+            "pos": [
+              40,
+              210
+            ],
+            "size": [
+              170,
+              76
+            ],
+            "sources": [
+              {
+                "path": "python/src/scanner.rs",
+                "line": 36,
+                "end_line": 49
+              }
+            ]
+          },
+          {
+            "id": "reader",
+            "type": "backend",
+            "label": "LanceReader",
+            "pos": [
+              280,
+              210
+            ],
+            "size": [
+              170,
+              76
+            ],
+            "sources": [
+              {
+                "path": "python/src/reader.rs",
+                "line": 46,
+                "end_line": 62
+              }
+            ]
+          },
+          {
+            "id": "stream",
+            "type": "backend",
+            "label": "Dataset stream",
+            "pos": [
+              520,
+              210
+            ],
+            "size": [
+              170,
+              76
+            ],
+            "sources": [
+              {
+                "path": "rust/lance/src/dataset/scanner.rs",
+                "line": 2631,
+                "end_line": 2660
+              }
+            ],
+            "sublabel": "DataFusion execution"
+          },
+          {
+            "id": "channel",
+            "type": "backend",
+            "label": "Async channel",
+            "pos": [
+              760,
+              210
+            ],
+            "size": [
+              170,
+              76
+            ],
+            "sources": [
+              {
+                "path": "python/src/reader.rs",
+                "line": 64,
+                "end_line": 95
+              }
+            ],
+            "sublabel": "Batch / Finished"
+          },
+          {
+            "id": "arrow",
+            "type": "backend",
+            "label": "Arrow reader",
+            "pos": [
+              1000,
+              210
+            ],
+            "size": [
+              170,
+              76
+            ],
+            "sources": [
+              {
+                "path": "python/src/reader.rs",
+                "line": 137,
+                "end_line": 173
+              }
+            ],
+            "sublabel": "Python consumer"
+          }
+        ],
+        "connections": [
+          {
+            "from": "scanner",
+            "to": "reader"
+          },
+          {
+            "from": "reader",
+            "to": "stream"
+          },
+          {
+            "from": "stream",
+            "to": "channel"
+          },
+          {
+            "from": "channel",
+            "to": "arrow"
+          }
+        ]
+      }
+    },
+    {
+      "id": "batches",
+      "type": "external",
+      "label": "Arrow batches",
+      "pos": [
+        1130,
+        210
+      ],
+      "size": [
+        170,
+        76
+      ],
+      "sources": [
+        {
+          "path": "python/src/reader.rs",
+          "line": 64,
+          "end_line": 112
+        }
+      ]
+    },
+    {
+      "id": "fragments",
+      "type": "backend",
+      "label": "Fragment reader",
+      "pos": [
+        530,
+        490
+      ],
+      "size": [
+        170,
+        76
+      ],
+      "sources": [
+        {
+          "path": "rust/lance/src/io/exec/scan.rs",
+          "line": 783,
+          "end_line": 810
+        },
+        {
+          "path": "rust/lance/src/dataset/fragment.rs",
+          "line": 1159,
+          "end_line": 1235
+        }
+      ],
+      "sublabel": "Projected data"
+    },
+    {
+      "id": "storage",
+      "type": "cloud",
+      "label": "Object store",
+      "pos": [
+        780,
+        490
+      ],
+      "size": [
+        170,
+        76
+      ],
+      "sources": [
+        {
+          "path": "rust/lance/src/dataset/fragment.rs",
+          "line": 1380,
+          "end_line": 1395
+        },
+        {
+          "path": "rust/lance-io/src/object_reader.rs",
+          "line": 204,
+          "end_line": 212
+        }
+      ],
+      "sublabel": "Local / cloud"
+    }
+  ],
+  "connections": [
+    {
+      "from": "python",
+      "to": "planner",
+      "label": "PyO3 binding"
+    },
+    {
+      "from": "planner",
+      "to": "runtime",
+      "label": "Physical plan"
+    },
+    {
+      "from": "runtime",
+      "to": "bridge",
+      "label": "RecordBatch stream"
+    },
+    {
+      "from": "bridge",
+      "to": "batches"
+    },
+    {
+      "from": "runtime",
+      "to": "fragments",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "label": "Scan / take"
+    },
+    {
+      "from": "fragments",
+      "to": "storage",
+      "label": "Read data"
+    }
+  ]
+}
