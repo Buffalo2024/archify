@@ -1,6 +1,6 @@
 # Subarchitecture refresh evidence
 
-Comparison base: `e4595e03d69ae8268c99ffc631c7671aa5df9d21` (`dev`). The candidate is the merged source accompanying these artifacts. Scope follows the [maintainer's requests](https://github.com/tt-a1i/archify/pull/269): bounded component internals, laptop readability, return navigation, independent child exports, and preserved parent behavior.
+Comparison base: `2afbf454d3d8c61e8a90b8eaf3d5fe27af67dc40` (`dev`). The candidate is the merged source accompanying these artifacts. Scope follows the [maintainer's requests](https://github.com/tt-a1i/archify/pull/269): bounded component internals, laptop readability, return navigation, independent child exports, and preserved parent behavior.
 
 The trial destination is [the fork Labs branch](https://github.com/Puuuuup/archify/tree/labs/subarchitecture). PR #269 targets [the upstream Labs branch](https://github.com/tt-a1i/archify/tree/labs/subarchitecture). Upstream integration and a later mainline decision remain with the maintainers.
 
