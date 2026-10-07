@@ -594,7 +594,7 @@ export function compactFinalizeReceipt(receipt) {
       action: 'inspect-sequence-width',
       evidence: sequenceColumnSpace,
       reason: 'Fixed participant columns leave substantial unused space on the right, after accounting for message labels and notes. This is a layout suggestion, not a failed gate.',
-      repair: 'For a newly authored Sequence with omitted meta.column_fit and no user-fixed column geometry, set meta.column_fit to "spread" and rerun finalize once. Preserve participant order, every message, its y position, labels, notes and sources. Retain explicit fixed layouts and legacy inputs; report the suggestion instead of changing them automatically.',
+      repair: 'Check whether the explicit fixed column geometry is intentional. Only when changing that geometry is authorized, set meta.column_fit to "spread" and rerun finalize once. Preserve participant order, every message, its y position, labels, notes, sources and canvas dimensions. Retain intentional fixed layouts; report the suggestion instead of changing them automatically.',
     };
   }
   if (!receipt.ok && receipt.status === 'fail' && receipt.failedStage === 'validate') {

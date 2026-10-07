@@ -340,3 +340,28 @@ test('legacy v1 lifecycle geometry remains renderable without an explicit qualit
 });
 
 process.on('exit', () => fs.rmSync(tmp, { recursive: true, force: true }));
+
+
+test('historical v1 Sequence remains valid with default spread and supports explicit fixed coordinates', () => {
+  const doc = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures/v1-baseline/cache-miss-request.sequence.json'), 'utf8'));
+  assert.equal(doc.meta.column_fit, undefined, 'historical fixture retains its original omitted fit');
+  const defaultResult = render('sequence', doc);
+  assert.equal(defaultResult.code, 0, defaultResult.stderr);
+  const defaultHtml = fs.readFileSync(defaultResult.output, 'utf8');
+  assert.match(defaultHtml, /data-sequence-column-fit="spread"/);
+  assert.equal(validate('sequence', doc).code, 0);
+  doc.meta.column_fit = 'spread';
+  const spreadResult = render('sequence', doc);
+  assert.equal(spreadResult.code, 0, spreadResult.stderr);
+  assert.equal(fs.readFileSync(spreadResult.output, 'utf8'), defaultHtml);
+  doc.meta.column_fit = 'fixed';
+  const fixedResult = render('sequence', doc);
+  assert.equal(fixedResult.code, 0, fixedResult.stderr);
+  const fixedHtml = fs.readFileSync(fixedResult.output, 'utf8');
+  const boxes = [...fixedHtml.matchAll(/<rect x="([\d.]+)" y="72" width="([\d.]+)" height="60"/g)]
+    .map(([, x, width]) => ({ x: Number(x), width: Number(width) }))
+    .filter((box, index, all) => all.findIndex(other => other.x === box.x) === index);
+  assert.deepEqual(boxes, [19, 127, 235, 343, 451, 559, 667].map(x => ({ x, width: 86 })));
+  assert.match(fixedHtml, /viewBox="0 0 820 760"/);
+  assert.equal(validate('sequence', doc).code, 0);
+});
