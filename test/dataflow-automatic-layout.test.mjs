@@ -52,11 +52,11 @@ function pipeline() {
 
 test('five-stage unpinned pipeline passes first draft with complete text and projected typography', t => {
   const diagram = pipeline();
-  const { result, receipt, input, output } = inspect(t, diagram);
+  const { result, receipt, input, output, env } = inspect(t, diagram);
   assert.equal(result.status, 0, result.stdout + result.stderr);
   assert.equal(receipt.composition.metrics.desktopReadabilityIssues, 0);
   assert.ok(receipt.composition.metrics.minProjectedNodeTextPx >= 6);
-  const render = spawnSync(process.execPath, [cli, 'render', 'dataflow', input, output], { encoding: 'utf8' });
+  const render = spawnSync(process.execPath, [cli, 'render', 'dataflow', input, output], { encoding: 'utf8', env });
   assert.equal(render.status, 0, render.stderr);
   const html = fs.readFileSync(output, 'utf8');
   assert.match(html, /viewBox="0 0 1068 512"/);
@@ -165,9 +165,9 @@ test('natural height includes explicit outer route and two-line label plate', t 
   ];
   diagram.flows = [{ from: 'a', to: 'b', label: 'archive', classification: 'restricted',
     fromSide: 'bottom', toSide: 'bottom', via: [[100, 560], [315, 560]], labelAt: [210, 560] }];
-  const { result, input, output } = inspect(t, diagram);
+  const { result, input, output, env } = inspect(t, diagram);
   assert.equal(result.status, 0, result.stdout + result.stderr);
-  const render = spawnSync(process.execPath, [cli, 'render', 'dataflow', input, output], { encoding: 'utf8' });
+  const render = spawnSync(process.execPath, [cli, 'render', 'dataflow', input, output], { encoding: 'utf8', env });
   assert.equal(render.status, 0, render.stderr);
   const html = fs.readFileSync(output, 'utf8');
   assert.match(html, /viewBox="0 0 940 674"/);
@@ -255,11 +255,11 @@ for (const profile of ['standard', 'showcase']) {
 test('an explicit insufficient canvas retains its width and bounds diagnostics', t => {
   const diagram = fiveStageDiagram('showcase');
   diagram.meta.viewBox = [940, 720];
-  const { result, receipt, input, output } = inspect(t, diagram, { quality: 'showcase' });
+  const { result, receipt, input, output, env } = inspect(t, diagram, { quality: 'showcase' });
   assert.equal(result.status, 1);
   assert.ok(receipt.diagnostics.some(({ message }) => /Node "n4" exceeds the horizontal bounds/.test(message)));
   assert.ok(receipt.diagnostics.some(({ message }) => /Stages exceed viewBox width/.test(message)));
-  const render = spawnSync(process.execPath, [cli, 'render', 'dataflow', input, output, '--quality', 'showcase'], { encoding: 'utf8' });
+  const render = spawnSync(process.execPath, [cli, 'render', 'dataflow', input, output, '--quality', 'showcase'], { encoding: 'utf8', env });
   assert.equal(render.status, 1);
   assert.equal(fs.existsSync(output), false, 'a fixed insufficient canvas must remain rejected');
 });
@@ -335,9 +335,9 @@ for (const [name, mutate, expectedSha256] of [
     const diagram = smallFootprintDiagram({ id: 'f' });
     diagram.nodes[0].sublabel = 'context text for processing';
     mutate(diagram);
-    const { result, input, output } = inspect(t, diagram);
+    const { result, input, output, env } = inspect(t, diagram);
     assert.equal(result.status, name === 'explicit-viewbox' ? 1 : 0, result.stdout + result.stderr);
-    const render = spawnSync(process.execPath, [cli, 'render', 'dataflow', input, output], { encoding: 'utf8' });
+    const render = spawnSync(process.execPath, [cli, 'render', 'dataflow', input, output], { encoding: 'utf8', env });
     assert.equal(render.status, 0, render.stderr);
     const svg = fs.readFileSync(output, 'utf8').match(/<svg\b[^]*?<\/svg>/)[0];
     assert.equal(crypto.createHash('sha256').update(svg).digest('hex'), expectedSha256);
