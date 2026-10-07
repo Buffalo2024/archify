@@ -816,6 +816,86 @@ test('readable-v2 preset diagnostics measure the segment that actually violates 
   assert.equal(diagnostic.evidence.requiredSegmentPx, 28);
 });
 
+test('readable-v2 direct rhythm rejection and acceptance agree at the 28px boundary', () => {
+  for (const qualityProfile of ['standard', 'showcase']) {
+    for (const gap of [27.9998, 28]) {
+      const document = workflow({
+        lanes: [{ id: 'main', label: 'M' }],
+        nodes: [
+          { id: 'a', lane: 'main', col: 0, type: 'backend', label: 'A', yOffset: -(52 + gap) / 2 },
+          { id: 'b', lane: 'main', col: 0, type: 'backend', label: 'B', yOffset: (52 + gap) / 2 },
+        ],
+        edges: [{ id: 'ab', from: 'a', to: 'b', route: 'straight', fromSide: 'bottom', toSide: 'top' }],
+      });
+      const result = compileWorkflow({ workflow: document, qualityProfile });
+      assert.equal(result.ok, gap === 28, JSON.stringify(result.diagnostics));
+      if (result.ok) {
+        assert.deepEqual(result.receipt.edges[0].points, [[94, 138], [94, 166]]);
+      } else {
+        const { evidence } = result.diagnostics.find(({ code }) => code === 'workflow/route-preset-conflict');
+        assert.equal(evidence.invariant, 'readable segment rhythm');
+        assert.equal(evidence.requiredSegmentPx, 28);
+        assert.equal(evidence.segmentIndex, 0);
+        assert.ok(Math.abs(evidence.actualSegmentPx - gap) < 1e-9);
+      }
+    }
+  }
+});
+
+test('readable-v2 endpoint rhythm runs before the separate preset-family rejection', () => {
+  for (const qualityProfile of ['standard', 'showcase']) {
+    for (const offset of [18.9998, 19]) {
+      const document = oneLaneWorkflow([{
+        id: 'ab', from: 'a', to: 'b', route: 'drop', fromSide: 'top', toSide: 'top',
+      }]);
+      document.nodes.forEach((node) => { node.yOffset = offset; });
+      const result = compileWorkflow({ workflow: document, qualityProfile });
+      assert.equal(result.ok, false);
+      const { evidence } = result.diagnostics.find(({ code }) => code === 'workflow/route-preset-conflict');
+      assert.equal(evidence.invariant, offset === 19 ? 'route preset compatibility' : 'readable segment rhythm');
+      if (offset < 19) {
+        assert.equal(evidence.segmentIndex, 0);
+        assert.equal(evidence.requiredSegmentPx, 8);
+        assert.ok(Math.abs(evidence.actualSegmentPx - 7.9998) < 1e-9);
+      } else {
+        assert.equal(evidence.points[0][1] - evidence.points[1][1], 8);
+      }
+    }
+  }
+});
+
+test('readable-v2 interior rhythm precedes node clearance and accepts a cleared 16px segment', () => {
+  for (const qualityProfile of ['standard', 'showcase']) {
+    for (const gap of [15.9998, 16, 16.0002]) {
+      const document = workflow({
+        lanes: [{ id: 'main', label: 'M' }],
+        nodes: [
+          { id: 'a', lane: 'main', col: 2, type: 'backend', label: 'A', height: 32 },
+          { id: 'b', lane: 'main', col: 0, type: 'backend', label: 'B', height: 32, yOffset: gap },
+        ],
+        edges: [{ id: 'ab', from: 'a', to: 'b', route: 'outside-right', fromSide: 'right', toSide: 'right' }],
+      });
+      const result = compileWorkflow({ workflow: document, qualityProfile });
+      assert.equal(result.ok, gap > 16, JSON.stringify(result.diagnostics));
+      if (result.ok) {
+        const points = result.receipt.edges[0].points;
+        assert.ok(Math.abs(points[2][1] - points[1][1] - gap) < 1e-9);
+      } else {
+        const { evidence } = result.diagnostics.find(({ code }) => code === 'workflow/route-preset-conflict');
+        assert.equal(evidence.invariant, gap === 16 ? 'node clearance' : 'readable segment rhythm');
+        if (gap < 16) {
+          assert.equal(evidence.segmentIndex, 1);
+          assert.equal(evidence.requiredSegmentPx, 16);
+          assert.ok(Math.abs(evidence.actualSegmentPx - gap) < 1e-9);
+        } else {
+          assert.equal(evidence.obstacleNode, 'a');
+          assert.equal(evidence.obstacleRole, 'source-endpoint');
+        }
+      }
+    }
+  }
+});
+
 test('readable-v2 never silently ignores coordinate pins that conflict with a route preset', () => {
   const cases = [
     {

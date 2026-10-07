@@ -92,6 +92,32 @@ const GROUP_LABEL_MASK_ASCENT = 10;
 const GROUP_LABEL_MASK_H = 14;
 const GROUP_NODE_INSET = 4;
 
+const HARD_ROUTE_RHYTHM = Object.freeze({ direct: 28, endpoint: 8, interior: 16 });
+
+function hardRouteSegmentMinimum(points, index) {
+  if (points.length === 2) return HARD_ROUTE_RHYTHM.direct;
+  return index === 0 || index === points.length - 2
+    ? HARD_ROUTE_RHYTHM.endpoint : HARD_ROUTE_RHYTHM.interior;
+}
+
+// One ordered contract for candidate acceptance and the first rejection.
+// Helpers retain compiler-local obstacle state; this table and its adapters
+// are allocated once at module load, rather than for each routed candidate.
+const READABLE_CANDIDATE_CHECKS = Object.freeze([
+  { invariant: 'route endpoints', accepts: (_checks, _edge, points) => points.length >= 2 },
+  { invariant: 'orthogonal non-zero segments', accepts: (checks, _edge, points) => checks.orthogonalRoute(points) },
+  { invariant: 'readable segment rhythm', accepts: (checks, _edge, points) => checks.routeMeetsHardRhythm(points) },
+  { invariant: 'perpendicular endpoint-side direction', accepts: (_checks, _edge, points, _from, _to, fromSide, toSide) => routeHonorsEndpointSides(points, fromSide, toSide) },
+  { invariant: 'node clearance', accepts: (checks, _edge, points, from, to) => checks.routeClearsEndpointNodes(points, from, to) },
+  { invariant: 'edge-label node clearance', accepts: (checks, edge, points) => checks.routeLabelClearsNodes(edge, points) },
+  { invariant: 'lane/phase/group label clearance', accepts: (checks, edge, points) => checks.routeClearsSceneLabelObstacles(edge, points) },
+  { invariant: 'node clearance', accepts: (checks, edge, points) => checks.routeClearsUnrelatedNodes(edge, points) },
+  { invariant: 'placed edge-label clearance', accepts: (checks, edge, points) => checks.routeClearsPlacedLabels(edge, points) },
+  { invariant: 'canvas origin', accepts: (checks, edge, points) => checks.routeFitsCanvasOrigin(edge, points) },
+  { invariant: 'structural-frame border clearance', accepts: (checks, _edge, points) => checks.routeClearsFrameBorders(points) },
+  { invariant: 'legend clearance', accepts: (checks, edge, points) => checks.routeClearsLegend(edge, points) },
+]);
+
 class WorkflowLayoutFeedback extends Error {
   constructor(request) {
     super(`Workflow layout requires ${request.kind} feedback.`);
@@ -3283,12 +3309,11 @@ function routeClearsEndpointNodes(points, from, to) {
 
 function routeMeetsHardRhythm(points) {
   if (points.length === 2) {
-    return Math.hypot(points[1][0] - points[0][0], points[1][1] - points[0][1]) + 0.0001 >= 28;
+    return Math.hypot(points[1][0] - points[0][0], points[1][1] - points[0][1]) + 0.0001 >= hardRouteSegmentMinimum(points, 0);
   }
   return points.slice(0, -1).every((point, index) => {
     const length = Math.abs(points[index + 1][0] - point[0]) + Math.abs(points[index + 1][1] - point[1]);
-    const endpoint = index === 0 || index === points.length - 2;
-    return length + 0.0001 >= (endpoint ? 8 : 16);
+    return length + 0.0001 >= hardRouteSegmentMinimum(points, index);
   });
 }
 
@@ -3530,43 +3555,37 @@ function routeFitsCanvasOrigin(edge, points) {
   return routeExtentCoordinates(edge, points).every(([x, y]) => x >= 0 && y >= 0);
 }
 
-// Predicates are pure, so their order does not change the result; they are
-// ordered by "cheap and selective first" so the expensive clearance work runs
-// on fewer candidates.
+// Allocate helper references once per compiler, keeping candidate arguments
+// local to each evaluation without a per-candidate context or mutable state.
+const readableCandidateChecks = {
+  orthogonalRoute,
+  routeMeetsHardRhythm,
+  routeClearsEndpointNodes,
+  routeLabelClearsNodes,
+  routeClearsSceneLabelObstacles,
+  routeClearsUnrelatedNodes,
+  routeClearsPlacedLabels,
+  routeFitsCanvasOrigin,
+  routeClearsFrameBorders,
+  routeClearsLegend,
+};
+
+// Cheap and selective predicates run first; every preserves short-circuiting
+// before expensive clearance work and never collects diagnostic evidence.
 function readableCandidateIsFeasible(edge, points, from, to, fromSide, toSide) {
-  return points.length >= 2
-    && orthogonalRoute(points)
-    && routeMeetsHardRhythm(points)
-    && routeHonorsEndpointSides(points, fromSide, toSide)
-    && routeClearsEndpointNodes(points, from, to)
-    && routeLabelClearsNodes(edge, points)
-    && routeClearsSceneLabelObstacles(edge, points)
-    && routeClearsUnrelatedNodes(edge, points)
-    && routeClearsPlacedLabels(edge, points)
-    && routeFitsCanvasOrigin(edge, points)
-    && routeClearsFrameBorders(points)
-    && routeClearsLegend(edge, points);
+  return READABLE_CANDIDATE_CHECKS.every(({ accepts }) => (
+    accepts(readableCandidateChecks, edge, points, from, to, fromSide, toSide)
+  ));
 }
 
 // Inspect only a rejected preset. Keep successful routing and automatic
 // candidate enumeration on the short-circuit feasibility path above.
 function readablePresetRejection(edge, points, from, to, fromSide, toSide) {
-  const checks = [
-    ['route endpoints', () => points.length >= 2],
-    ['orthogonal non-zero segments', () => orthogonalRoute(points)],
-    ['readable segment rhythm', () => routeMeetsHardRhythm(points)],
-    ['perpendicular endpoint-side direction', () => routeHonorsEndpointSides(points, fromSide, toSide)],
-    ['node clearance', () => routeClearsEndpointNodes(points, from, to)],
-    ['edge-label node clearance', () => routeLabelClearsNodes(edge, points)],
-    ['lane/phase/group label clearance', () => routeClearsSceneLabelObstacles(edge, points)],
-    ['node clearance', () => routeClearsUnrelatedNodes(edge, points)],
-    ['placed edge-label clearance', () => routeClearsPlacedLabels(edge, points)],
-    ['canvas origin', () => routeFitsCanvasOrigin(edge, points)],
-    ['structural-frame border clearance', () => routeClearsFrameBorders(points)],
-    ['legend clearance', () => routeClearsLegend(edge, points)],
-    ['route preset compatibility', () => routeMatchesPresetFamily(edge.route, points, from, to)],
-  ];
-  const invariant = checks.find(([, accepts]) => !accepts())?.[0];
+  const rejectedCheck = READABLE_CANDIDATE_CHECKS.find(({ accepts }) => (
+    !accepts(readableCandidateChecks, edge, points, from, to, fromSide, toSide)
+  ));
+  const invariant = rejectedCheck?.invariant
+    ?? (!routeMatchesPresetFamily(edge.route, points, from, to) ? 'route preset compatibility' : undefined);
   if (invariant === 'placed edge-label clearance') {
     const evidence = {};
     routeClearsPlacedLabels(edge, points, evidence);
@@ -3577,7 +3596,7 @@ function readablePresetRejection(edge, points, from, to, fromSide, toSide) {
   }
   if (invariant === 'readable segment rhythm') {
     const segmentIndex = points.slice(0, -1).findIndex((point, index) => {
-      const minimum = points.length === 2 ? 28 : index === 0 || index === points.length - 2 ? 8 : 16;
+      const minimum = hardRouteSegmentMinimum(points, index);
       return Math.hypot(points[index + 1][0] - point[0], points[index + 1][1] - point[1]) + 0.0001 < minimum;
     });
     return {
@@ -3587,7 +3606,7 @@ function readablePresetRejection(edge, points, from, to, fromSide, toSide) {
         points[segmentIndex + 1][0] - points[segmentIndex][0],
         points[segmentIndex + 1][1] - points[segmentIndex][1],
       ),
-      requiredSegmentPx: points.length === 2 ? 28 : segmentIndex === 0 || segmentIndex === points.length - 2 ? 8 : 16,
+      requiredSegmentPx: hardRouteSegmentMinimum(points, segmentIndex),
     };
   }
   if (invariant === 'edge-label node clearance') {
@@ -4032,9 +4051,9 @@ function readablePresetVia(edge, from, to, start, end, fromSide, toSide) {
       points,
       fromSide,
       toSide,
-      requiredEndpointStubPx: 8,
-      requiredInteriorSegmentPx: 16,
-      requiredDirectClearancePx: 28,
+      requiredEndpointStubPx: HARD_ROUTE_RHYTHM.endpoint,
+      requiredInteriorSegmentPx: HARD_ROUTE_RHYTHM.interior,
+      requiredDirectClearancePx: HARD_ROUTE_RHYTHM.direct,
     },
     supportedFixes,
   }]);
