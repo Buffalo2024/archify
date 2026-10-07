@@ -72,7 +72,9 @@ test('waterfall: small fractional values keep nonzero duration labels', () => {
     const result = run(diagram);
     assert.equal(result.status, 0, result.stderr);
     const html = fs.readFileSync(result.output, 'utf8');
-    assert.match(html, new RegExp(`${String(duration).replace('.', '\\.')} ms`));
+    const durationText = `${String(duration).replace('.', '\\.')} ms`;
+    assert.match(html, new RegExp(durationText));
+    assert.match(html, new RegExp(`data-node-id="request"[^>]*aria-label="[^"]*${durationText}[^"]*"`));
     const tickLabels = [...html.matchAll(/class="t-muted wf-num"[^>]*>([^<]+)<\/text>/g)].map((match) => match[1]);
     assert.ok(new Set(tickLabels).size > 1, 'distinct positive ticks must not all round to zero');
     const report = layoutOf(diagram);
