@@ -149,10 +149,14 @@ for (const transition of ofKind('between')) {
   if (!downByTarget.has(transition.to)) downByTarget.set(transition.to, []);
   downByTarget.get(transition.to).push(transition);
 }
+// A merged exit promises one meaning, so a target joins a bracket only when
+// every transition into it shares label, note and variant; differing exits
+// keep separate connectors instead of painting over each other.
+const exitSignature = (transition) => [transition.label ?? '', transition.note ?? '', variantOf(transition)].join('\u0000');
 const brackets = new Map();
 for (const [target, list] of downByTarget) {
   const sources = [...new Set(list.map((transition) => transition.from))].sort((a, b) => spineIndex.get(a) - spineIndex.get(b));
-  if (sources.length < 2) continue;
+  if (sources.length < 2 || new Set(list.map(exitSignature)).size > 1) continue;
   const key = sources.join('\u0000');
   if (!brackets.has(key)) brackets.set(key, { key, sources, targets: [], transitions: [] });
   brackets.get(key).targets.push(target);
@@ -399,13 +403,36 @@ function layout({ spineGap, rowGap, drop, firstTrack, ports: portMode }) {
       if (x > run.lo + 0.5 && x < run.hi - 0.5) junctions.push([x, y]);
     }
   }
+  // Parallel transitions between two neighbours spread symmetrically around
+  // the shared edge, left-to-right ones first; a reciprocal pair lands at ±10.
+  const sideGroups = new Map();
   for (const transition of sides) {
-    const from = states.get(transition.from);
-    const to = states.get(transition.to);
-    const reciprocal = sides.some((other) => other.from === transition.to && other.to === transition.from);
-    const y = from.cy + (reciprocal ? (from.x < to.x ? -10 : 10) : 0);
-    const points = from.x < to.x ? [[from.x + from.width, y], [to.x, y]] : [[from.x, y], [to.x + to.width, y]];
-    routes.set(transition, { points, segment: 0, labelMode: 'above' });
+    const key = [transition.from, transition.to].sort().join('\u0000');
+    if (!sideGroups.has(key)) sideGroups.set(key, []);
+    sideGroups.get(key).push(transition);
+  }
+  for (const group of sideGroups.values()) {
+    const rightward = (transition) => states.get(transition.from).x < states.get(transition.to).x;
+    const ordered = [...group.filter(rightward), ...group.filter((transition) => !rightward(transition))];
+    const step = Math.min(20, 48 / (ordered.length - 1));
+    if (step < 12) {
+      const message = `${ordered.length} transitions between the neighbouring states "${ordered[0].from}" and "${ordered[0].to}" cannot spread apart on the shared edge; at most five stay legible.`;
+      throwDiagnosticProblems('Lifecycle validation failed', [message], {
+        subject: { diagramType: 'lifecycle' },
+        diagnostics: [structureProblem('lifecycle/crowded-side-transitions', message,
+          { collection: 'transitions', from: ordered[0].from, to: ordered[0].to },
+          ['merge the triggers into one transition label'])],
+      });
+    }
+    ordered.forEach((transition, index) => {
+      const from = states.get(transition.from);
+      const to = states.get(transition.to);
+      const y = from.cy + (index - (ordered.length - 1) / 2) * step;
+      const points = from.x < to.x ? [[from.x + from.width, y], [to.x, y]] : [[from.x, y], [to.x + to.width, y]];
+      // With three or more parallels the inner strokes leave no lane for a
+      // floating label, so their labels ride on the line like arc labels.
+      routes.set(transition, { points, segment: 0, labelMode: ordered.length > 2 ? 'on' : 'above' });
+    });
   }
 
   const stateRight = Math.max(...[...states.values()].map((state) => state.x + state.width));
@@ -724,10 +751,8 @@ function placeLabels({ routes, contentRight }) {
   const others = (transition) => transitions.filter((other) => !siblings(transition).includes(other));
   for (const transition of transitions) {
     const route = routes.get(transition);
-    if (!route || route.labelMode === 'none') continue;
-    const text = route.bracket ? combinedLabel(route.bracket, transition.to) : transition;
-    if (!hasLabel(text)) continue;
-    const { width, height } = labelBox(text);
+    if (!route || route.labelMode === 'none' || !hasLabel(transition)) continue;
+    const { width, height } = labelBox(transition);
     const [start, end] = [route.points[route.segment], route.points[route.segment + 1]];
     const candidates = [];
     const at = (cx, cy) => ({ x: cx - width / 2, y: cy - height / 2, width, height, cx, cy });
@@ -770,13 +795,6 @@ function placeLabels({ routes, contentRight }) {
     }
   }
   return { placedLabels, unplacedLabels };
-}
-
-// A bracket drop carries every distinct condition that leads into its target.
-function combinedLabel(bracket, target) {
-  const list = bracket.transitions.filter((transition) => transition.to === target);
-  const unique = (field) => [...new Set(list.map((transition) => transition[field]).filter(Boolean))].join(' / ');
-  return { label: unique('label'), note: unique('note') };
 }
 
 // ---------------------------------------------------------------- validate
@@ -958,7 +976,7 @@ function renderTransition(transition, index) {
   const strokeWidth = variant === 'emphasis' ? 1.8 : 1.2;
   const d = roundedPath(route.points, CORNER);
   const junction = route.bracket ? ` data-composition-junction="${esc(route.bracket.key.replaceAll('\u0000', '+'))}"` : '';
-  const edge = `          <path ${focusEdgeAttrs(transition.from, transition.to, transition.label || transition.note, index, transition.id)} data-composition-points="${routePointsValue(route.points)}" data-composition-crossover="halo"${junction} d="${d}" class="${cls}"${animateAttr(lifecycle.meta, 'edge', index)} stroke-width="${strokeWidth}" marker-end="url(#${marker})"/>`;
+  const edge = `          <path ${focusEdgeAttrs(transition.from, transition.to, transition.label || transition.note, index, transition.id)} data-composition-points="${routePointsValue(route.points)}" data-composition-crossover="halo" data-composition-independent="true"${junction} d="${d}" class="${cls}"${animateAttr(lifecycle.meta, 'edge', index)} stroke-width="${strokeWidth}" marker-end="url(#${marker})"/>`;
   const underlay = `          <path data-graph-role="automatic-crossover-underlay" d="${d}" fill="none" stroke="var(--mask)" stroke-width="${strokeWidth + 4}" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>`;
   return `        <g data-graph-role="automatic-crossover" style="--step:${index}">\n${underlay}\n${edge}\n        </g>`;
 }
@@ -966,17 +984,15 @@ function renderTransition(transition, index) {
 function renderLabel(transition, index) {
   const rect = geometry.placedLabels.get(transition);
   if (!rect) return '';
-  const route = geometry.routes.get(transition);
-  const text = route.bracket ? combinedLabel(route.bracket, transition.to) : transition;
   const accent = edgeLabelAccent(variantOf(transition));
-  const baseline = rect.y + (text.label ? 11.5 : 11);
-  const label = text.label
-    ? `\n          <text x="${rect.cx}" y="${baseline}" class="${accent}" font-size="${LABEL_FONT}" text-anchor="middle">${esc(text.label)}</text>`
+  const baseline = rect.y + (transition.label ? 11.5 : 11);
+  const label = transition.label
+    ? `\n          <text x="${rect.cx}" y="${baseline}" class="${accent}" font-size="${LABEL_FONT}" text-anchor="middle">${esc(transition.label)}</text>`
     : '';
-  const note = text.note
-    ? `\n          <text data-detail="fine" x="${rect.cx}" y="${baseline + (text.label ? 12 : 0)}" class="t-dim" font-size="${NOTE_FONT}" text-anchor="middle">${esc(text.note)}</text>`
+  const note = transition.note
+    ? `\n          <text data-detail="fine" x="${rect.cx}" y="${baseline + (transition.label ? 12 : 0)}" class="t-dim" font-size="${NOTE_FONT}" text-anchor="middle">${esc(transition.note)}</text>`
     : '';
-  return `        <g data-detail="${text.label ? 'context' : 'fine'}" ${focusEdgeAttrs(transition.from, transition.to, transition.label || transition.note, index, transition.id)}>
+  return `        <g data-detail="${transition.label ? 'context' : 'fine'}" ${focusEdgeAttrs(transition.from, transition.to, transition.label || transition.note, index, transition.id)}>
           <rect x="${rect.x}" y="${rect.y}" width="${rect.width}" height="${rect.height}" rx="4" class="c-mask"/>${label}${note}
         </g>`;
 }

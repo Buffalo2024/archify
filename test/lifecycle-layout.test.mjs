@@ -4,7 +4,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -46,6 +46,11 @@ function points(svg, from, to) {
     .find((match) => match[1] === from && match[2] === to);
   assert.ok(tag, `route ${from} -> ${to}`);
   return tag[3].split(';').map((pair) => pair.split(',').map(Number));
+}
+function allPoints(svg, from, to) {
+  return [...svg.matchAll(/<path [^>]*data-edge-from="([^"]+)" data-edge-to="([^"]+)"[^>]*data-composition-points="([^"]+)"/g)]
+    .filter((match) => match[1] === from && match[2] === to)
+    .map((match) => match[3].split(';').map((pair) => pair.split(',').map(Number)));
 }
 function box(svg, id) {
   const group = svg.match(new RegExp(`data-node-id="${id}"[\\s\\S]*?<rect x="([\\d.-]+)" y="([\\d.-]+)" width="([\\d.]+)" height="([\\d.]+)"`));
@@ -117,14 +122,112 @@ test('an exit shared by non-consecutive phases uses a declared bus that passes t
       { from: 'a', to: 'b' },
       { from: 'b', to: 'c' },
       { from: 'a', to: 'void', label: 'abort' },
-      { from: 'c', to: 'void', label: 'revoke' },
+      { from: 'c', to: 'void', label: 'abort' },
     ],
   }));
   assert.equal(result.code, 0, result.stderr);
   assert.match(result.svg, /data-composition-junction="a\+c"/);
   assert.equal(result.check.composition.metrics.ambiguousCorridors, 0);
   assert.equal(result.check.ok, true, JSON.stringify(result.check.composition.issues));
-  assert.match(result.svg, />abort \/ revoke<\/text>/);
+  assert.equal((result.svg.match(/>abort<\/text>/g) || []).length, 1, 'one label for the shared exit');
+});
+
+// Two waits and a failure on one lower row give transitions between neighbours
+// something to spread across.
+const neighbourCase = (extra) => base({
+  mainPath: ['a', 'b', 'c'],
+  states: [state('a', 'start'), state('b'), state('c', 'success'), state('w', 'waiting'), state('f', 'failure')],
+  transitions: [
+    { from: 'a', to: 'b' },
+    { from: 'b', to: 'c' },
+    { from: 'b', to: 'w' },
+    { from: 'b', to: 'f' },
+    ...extra,
+  ],
+});
+
+test('parallel transitions between two neighbours each get their own lane', () => {
+  const two = render(neighbourCase([
+    { from: 'w', to: 'f', label: 'retry' },
+    { from: 'w', to: 'f', label: 'fail' },
+  ]));
+  assert.equal(two.code, 0, two.stderr);
+  assert.equal(two.check.ok, true, JSON.stringify(two.check.composition.issues));
+  const ys = allPoints(two.svg, 'w', 'f').map((route) => route[0][1]);
+  assert.equal(ys.length, 2);
+  assert.equal(new Set(ys).size, 2, 'parallel strokes need distinct y values');
+
+  const three = render(neighbourCase([
+    { from: 'w', to: 'f', label: 'retry' },
+    { from: 'w', to: 'f', label: 'fail' },
+    { from: 'w', to: 'f', label: 'skip' },
+  ]));
+  assert.equal(three.code, 0, three.stderr);
+  assert.equal(three.check.ok, true, JSON.stringify(three.check.composition.issues));
+  const ys3 = allPoints(three.svg, 'w', 'f').map((route) => route[0][1]);
+  assert.equal(new Set(ys3).size, 3, 'three parallel strokes need three distinct y values');
+});
+
+test('a reciprocal pair still lands just above and below the shared edge', () => {
+  const result = render(neighbourCase([
+    { from: 'w', to: 'f', label: 'fail' },
+    { from: 'f', to: 'w', label: 'recover' },
+  ]));
+  assert.equal(result.code, 0, result.stderr);
+  const cy = box(result.svg, 'w').y + box(result.svg, 'w').height / 2;
+  assert.deepEqual(points(result.svg, 'w', 'f').map((point) => point[1]), [cy - 10, cy - 10]);
+  assert.deepEqual(points(result.svg, 'f', 'w').map((point) => point[1]), [cy + 10, cy + 10]);
+});
+
+test('more than five parallel transitions between neighbours are a typed error', () => {
+  const result = render(neighbourCase(Array.from({ length: 6 }, (_, index) => ({ from: 'w', to: 'f', label: `way ${index}` }))));
+  assert.notEqual(result.code, 0);
+  assert.match(result.stderr, /\[lifecycle\/crowded-side-transitions\]/);
+  assert.match(result.stderr, /merge the triggers into one transition label/);
+});
+
+test('exits to one target with different labels or variants stay separate connectors', () => {
+  const result = render(base({
+    mainPath: ['a', 'b', 'c', 'd'],
+    states: [state('a', 'start'), state('b'), state('c'), state('d', 'success'), state('x', 'failure', 'Cancelled')],
+    transitions: [
+      { from: 'a', to: 'b' },
+      { from: 'b', to: 'c' },
+      { from: 'c', to: 'd' },
+      { from: 'b', to: 'x', label: 'user cancels', variant: 'dashed' },
+      { from: 'c', to: 'x', label: 'timeout', note: 'after 24h', variant: 'security' },
+    ],
+  }));
+  assert.equal(result.code, 0, result.stderr);
+  assert.equal(result.check.ok, true, JSON.stringify(result.check.composition.issues));
+  assert.notDeepEqual(points(result.svg, 'b', 'x'), points(result.svg, 'c', 'x'), 'different semantics draw separate routes');
+  assert.doesNotMatch(result.svg, /data-composition-junction/);
+  assert.doesNotMatch(result.svg, /data-edge-label="[^"]* \/ [^"]*"/, 'no merged edge label');
+  assert.doesNotMatch(result.svg, />user cancels \/ timeout</);
+  assert.match(result.svg, />user cancels<\/text>/);
+  assert.match(result.svg, />timeout<\/text>/);
+  assert.match(result.svg, />after 24h<\/text>/);
+});
+
+test('the artifact checker flags identical overlapping lifecycle routes', () => {
+  const result = render(neighbourCase([
+    { from: 'w', to: 'f', label: 'retry' },
+    { from: 'w', to: 'f', label: 'fail' },
+  ]));
+  assert.equal(result.code, 0, result.stderr);
+  const groups = [...result.html.matchAll(/<g data-graph-role="automatic-crossover"[^>]*>\s*<path data-graph-role="automatic-crossover-underlay" d="[^"]*"[^>]*\/>\s*<path [^>]*data-edge-from="w" data-edge-to="f"[^>]*\/>/g)];
+  assert.equal(groups.length, 2, 'two w -> f route groups');
+  const d = groups[0][0].match(/<path [^>]*data-edge-from="w"[^>]*\bd="([^"]+)"/)[1];
+  const routePoints = groups[0][0].match(/data-composition-points="([^"]+)"/)[1];
+  const duplicated = groups[1][0]
+    .replace(/\bd="[^"]*"/g, `d="${d}"`)
+    .replace(/data-composition-points="[^"]*"/, `data-composition-points="${routePoints}"`);
+  const file = path.join(tmp, 'overlapping-routes.html');
+  fs.writeFileSync(file, result.html.replace(groups[1][0], duplicated));
+  const checked = spawnSync('node', [path.join(skillRoot, 'scripts/check-render-output.mjs'), file], { encoding: 'utf8' });
+  const receipt = JSON.parse(checked.stdout);
+  assert.ok(receipt.composition.issues.some((issue) => issue.code === 'composition/ambiguous-corridor'),
+    JSON.stringify(receipt.composition.issues));
 });
 
 test('note-only transitions keep their text', () => {
