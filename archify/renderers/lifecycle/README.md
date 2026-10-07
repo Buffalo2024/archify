@@ -35,11 +35,6 @@ A complete example lives at `archify/examples/deployment-release.lifecycle.json`
 - `transitions[]` carry `from`, `to`, optional `id`, `label`, `note` and
   `variant`. There are no routing or label-position controls.
 
-Schema versions 1 and 2 (lanes, columns and routing controls) were removed.
-To port one, list the old `main` lane states in `mainPath` and delete `lanes`,
-`lane`, `col`, `width`, `height`, `yOffset`, `meta.viewBox` and every routing
-or label-position field.
-
 ## Layout
 
 The geometry follows from the structure alone:

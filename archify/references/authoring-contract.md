@@ -484,10 +484,7 @@ them the same label. There are no lanes, columns, sizes, or routing controls.
 
 Keep the main path to the phases a reader follows, at most about six states,
 and keep transition labels short. A recoverable failure needs a real transition
-back to an active state; a card saying “retry” is not topology. Versions 1 and
-2 were removed: list the old `main` lane in `mainPath` and delete `lanes`,
-`lane`, `col`, `width`, `height`, `yOffset`, `viewBox` and every routing or
-label-position field.
+back to an active state; a card saying “retry” is not topology.
 
 ## Repository evidence
 

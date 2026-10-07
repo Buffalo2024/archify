@@ -14,7 +14,7 @@
   ],
   "properties": {
     "schema_version": {
-      "description": "Lifecycle uses version 3: an automatic main-path layout. Versions 1 and 2 (lanes, columns and routing controls) were removed; list the happy-path states in mainPath and delete lanes, lane, col and routing fields.",
+      "description": "Lifecycle uses version 3: an automatic main-path layout.",
       "const": 3
     },
     "diagram_type": {

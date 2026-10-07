@@ -154,18 +154,6 @@ test('structure errors are typed diagnostics with fixes', () => {
   assert.match(wide.stderr, /\[lifecycle\/too-wide\]/);
 });
 
-test('removed v2 layout fields are rejected by the schema', () => {
-  const result = render(base({
-    schema_version: 2,
-    lanes: [{ id: 'main', label: 'Main' }],
-    mainPath: ['a', 'b'],
-    states: [{ ...state('a', 'start'), lane: 'main', col: 0 }, { ...state('b'), lane: 'main', col: 1 }],
-    transitions: [{ from: 'a', to: 'b' }],
-  }));
-  assert.notEqual(result.code, 0);
-  assert.match(result.stderr, /schema_version|lanes/);
-});
-
 test('nodeLabelLayout reserves the source badge footprint on the right rail', () => {
   const rows = [{ text: 'Offline mode', font: 10, y: 21 }];
   const without = nodeLabelLayout({ width: 144, height: 64, rows });

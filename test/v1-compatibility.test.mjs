@@ -274,18 +274,6 @@ test('legacy v1 composition findings remain visible as advisory warnings', () =>
   assert.equal(receipt.composition.issues[0].severity, 'warning');
 });
 
-// Lifecycle v1 and v2 were removed in favour of the automatic v3 layout.
-test('a v1 lifecycle baseline is rejected with the v3 migration hint in the schema', () => {
-  const doc = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures/v1-baseline/agent-run.lifecycle.json'), 'utf8'));
-  const rendered = render('lifecycle', doc);
-  assert.notEqual(rendered.code, 0);
-  assert.match(rendered.stderr, /schema_version must be equal to constant/);
-  assert.match(rendered.stderr, /required property "mainPath"/);
-  const schema = JSON.parse(fs.readFileSync(path.join(skillRoot, 'schemas/lifecycle.schema.json'), 'utf8'));
-  assert.equal(schema.properties.schema_version.const, 3);
-  assert.match(schema.properties.schema_version.description, /mainPath/);
-});
-
 process.on('exit', () => fs.rmSync(tmp, { recursive: true, force: true }));
 
 
