@@ -157,7 +157,7 @@ test('structure errors are typed diagnostics with fixes', () => {
 test('only states a reader should notice get a default corner sigil', () => {
   const types = ['start', 'active', 'waiting', 'decision', 'success', 'failure', 'neutral', 'external'];
   const states = types.map((type) => ({ ...state(type, type), step: '01' }));
-  states.push({ ...state('flagged', 'active'), icon: 'flag' });
+  states.push({ ...state('flagged', 'active'), icon: 'flag' }, state('parked', 'neutral'));
   const result = render(base({
     mainPath: ['start', 'active', 'decision', 'success'],
     states,
@@ -165,14 +165,16 @@ test('only states a reader should notice get a default corner sigil', () => {
       { from: 'start', to: 'active' }, { from: 'active', to: 'decision' }, { from: 'decision', to: 'success' },
       { from: 'active', to: 'waiting' }, { from: 'decision', to: 'failure' }, { from: 'active', to: 'neutral' },
       { from: 'waiting', to: 'external' }, { from: 'start', to: 'flagged' },
+      { from: 'decision', to: 'parked' }, { from: 'parked', to: 'decision' },
     ],
   }));
   assert.equal(result.code, 0, result.stderr);
   const group = (id) => result.svg.match(new RegExp(`data-node-id="${id}"[\\s\\S]*?<text data-node-label`))[0];
   const sigilOf = (id) => group(id).match(/data-semantic-sigil="([^"]+)"/)?.[1] ?? null;
-  assert.deepEqual(Object.fromEntries([...types, 'flagged'].map((id) => [id, sigilOf(id)])), {
+  // A final ordinary state is an outcome and gets the stop sigil.
+  assert.deepEqual(Object.fromEntries([...types, 'flagged', 'parked'].map((id) => [id, sigilOf(id)])), {
     start: null, active: null, waiting: 'waiting', decision: 'decision', success: 'success',
-    failure: 'failure', neutral: null, external: 'external', flagged: 'flag',
+    failure: 'failure', neutral: 'stop', external: 'external', flagged: 'flag', parked: null,
   });
 });
 

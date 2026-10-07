@@ -106,6 +106,7 @@
             "$ref": "common.schema.json#/$defs/id"
           },
           "type": {
+            "description": "start: the initial state. active: work in progress. waiting: paused for a person, time, or input. decision: a review or branch point (Mermaid <<choice>>). success / failure: a good or bad outcome. neutral: parked, or ended without success or failure. external: handled by an outside party. Color and the default corner sigil follow the type.",
             "enum": [
               "start",
               "active",

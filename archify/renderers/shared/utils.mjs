@@ -81,6 +81,8 @@ const SIGIL_SHAPE = {
             <path d="m5.2 8 1.8 1.8 3.8-4"/>`,
   failure: `<circle cx="8" cy="8" r="5.3"/>
             <path d="m5.7 5.7 4.6 4.6m0-4.6-4.6 4.6"/>`,
+  stop: `<circle cx="8" cy="8" r="5.3"/>
+            <rect x="6.1" y="6.1" width="3.8" height="3.8" rx=".5" class="sigil-fill"/>`,
   neutral: `<rect x="3" y="3" width="10" height="10" rx="2"/>
             <circle cx="8" cy="8" r="1.2" class="sigil-fill"/>`,
 };

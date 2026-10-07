@@ -46,7 +46,8 @@ const typeClass = {
   success: 'c-backend', failure: 'c-security', neutral: 'c-external', external: 'c-external',
 };
 // Ordinary states carry no default corner sigil, so the ones a reader should
-// notice (waiting, decision, outcomes, external) stand out.
+// notice (waiting, decision, outcomes, external) stand out. An ordinary state
+// that ends the lifecycle is still an outcome and gets a stop sigil.
 const QUIET_TYPES = new Set(['start', 'active', 'neutral']);
 const textClass = {
   start: 't-frontend', active: 't-frontend', waiting: 't-cloud', decision: 't-database',
@@ -918,7 +919,7 @@ function renderState(state) {
   const tag = state.tag
     ? `\n          <text data-detail="fine" x="${state.cx}" y="${state.y + labelLayout.ys[hasSub ? 2 : 1]}" class="${accent}" font-size="${tagFont}" text-anchor="middle">${esc(state.tag)}</text>`
     : '';
-  const icon = state.icon ?? (QUIET_TYPES.has(state.type) ? 'none' : undefined);
+  const icon = state.icon ?? (QUIET_TYPES.has(state.type) ? (isFinal(state) ? 'stop' : 'none') : undefined);
   const step = state.step
     ? `\n          <text data-detail="fine" x="${state.x + 23}" y="${state.y + 14}" class="${accent}" font-size="${TEXT.step}" font-weight="700">${esc(state.step)}</text>`
     : '';

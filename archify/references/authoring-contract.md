@@ -486,6 +486,19 @@ Keep the main path to the phases a reader follows, at most about six states,
 and keep transition labels short. A recoverable failure needs a real transition
 back to an active state; a card saying “retry” is not topology.
 
+Pick each state's `type` by what the reader should notice, since color and the
+corner sigil follow it: `waiting` for a pause on a person, time, or input;
+`decision` for a review or branch point; `success` or `failure` for a good or
+bad outcome; `neutral` for parked states and outcomes that are neither;
+`external` when an outside party holds the work; `active` otherwise. From a
+Mermaid `stateDiagram`, `[*] -->` names the first `mainPath` state, a state
+with `--> [*]` is an outcome (`success`, `failure`, or `neutral`; it is drawn as
+final when it has no other outgoing transition), and `<<choice>>` becomes a
+`decision` state. Flatten a composite `state X { ... }` into its inner states
+and repeat its exit from each of them with one label; consecutive main-path
+phases sharing that exit are framed automatically. Concurrent regions (`--`)
+have no lifecycle form: draw one lifecycle per region.
+
 ## Repository evidence
 
 When the diagram must reflect real code, inspect repository entrypoints,
