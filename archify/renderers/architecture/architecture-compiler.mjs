@@ -1,7 +1,7 @@
 import { esc, renderDefinitions, renderSemanticSigil, scopedSvgId, textUnits } from '../shared/utils.mjs';
 import { animateAttr, focusEdgeAttrs, focusNodeAttrs, focusNodeTitle, svgAccessibleText, svgRootAttrs } from '../shared/cli.mjs';
 import { componentBox, boundaryBox, connectionPath } from '../shared/layout-report.mjs';
-import { rendererFailure, throwDiagnosticProblems } from '../shared/diagnostics.mjs';
+import { rendererFailure, throwDiagnosticProblems, withDiagnosticSubject } from '../shared/diagnostics.mjs';
 import { legendFootprint, relationshipLegendObstacles, resolveLegend, renderLegend as renderResolvedLegend } from '../shared/legend.mjs';
 import { availableNodeTextWidth, fittedNodeFontSize, minimumNodeTextWidth } from '../shared/text-fit.mjs';
 import { brandLabelFitWidth, brandMetadataFor, brandTopRailProblem, renderBrandMark } from '../shared/brand-marks.mjs';
@@ -44,6 +44,15 @@ const componentTextFit = {
 };
 
 export function compileArchitectureGraph(input, options = {}) {
+  const scope = {
+    ...(options.graphScope && options.graphScope !== 'main' ? { graphScope: options.graphScope } : {}),
+    ...(options.parentId != null ? { parentId: options.parentId } : {}),
+    ...(options.subjectBase ? { subjectBase: options.subjectBase } : {}),
+  };
+  return withDiagnosticSubject(scope, () => compileGraph(input, options));
+}
+
+function compileGraph(input, options = {}) {
 const {
   identityPrefix = '',
   graphScope = 'main',

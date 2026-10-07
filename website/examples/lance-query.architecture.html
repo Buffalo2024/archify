@@ -6949,7 +6949,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
               // so drawing it at CSS size under this transform stays 1:1.
               ctx.setTransform(scale, 0, 0, scale, 0, 0);
               var origin = childOnly ? { x: 0, y: 0 } : paintFigure(ctx, layout);
-              if (childOnly && format !== 'png') {
+              if (childOnly) {
                 ctx.fillStyle = currentBg();
                 ctx.fillRect(0, 0, vb.width, vb.height);
               }
@@ -15342,24 +15342,24 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       } else if (e.key === 'Escape' && Archify.semanticLens.isOpen()) {
         e.preventDefault();
         Archify.semanticLens.close({ restoreFocus: true });
-      } else if (e.key === 'Escape' && Archify.semanticLens.active()) {
-        e.preventDefault();
-        Archify.semanticLens.clear({ preserveView: true });
       } else if (e.key === 'Escape' && Archify.guide.isOpen()) {
         e.preventDefault();
         Archify.guide.close({ restoreFocus: true });
       } else if (e.key === 'Escape' && Archify.radar.isOpen()) {
         e.preventDefault();
         Archify.radar.close({ restoreFocus: true });
+      } else if (e.key === 'Escape' && Archify.subarchitecture.active()) {
+        e.preventDefault();
+        Archify.subarchitecture.escape();
+      } else if (e.key === 'Escape' && Archify.semanticLens.active()) {
+        e.preventDefault();
+        Archify.semanticLens.clear({ preserveView: true });
       } else if (e.key === 'Escape' && Archify.routeProbe.active()) {
         e.preventDefault();
         Archify.routeProbe.escape({ restoreFocus: true });
       } else if (e.key === 'Escape' && Archify.intentTrace.active()) {
         e.preventDefault();
         Archify.intentTrace.clear();
-      } else if (e.key === 'Escape' && Archify.subarchitecture.active()) {
-        e.preventDefault();
-        Archify.subarchitecture.escape();
       } else if (e.key === 'Escape' && Archify.focus.active()) {
         e.preventDefault();
         Archify.focus.clear({ restoreFocus: true });

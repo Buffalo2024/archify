@@ -1066,3 +1066,99 @@ test('duplicate, conflicting, and unknown subarchitecture deep links fail closed
 });
 
 process.on('exit', () => fs.rmSync(scratch, { recursive: true, force: true }));
+
+test('child PNG download and clipboard copy paint the current theme background', {
+  skip: chromePath ? false : 'Set ARCHIFY_CHROME to run the real browser regression.',
+}, async () => {
+  const browser = new ChromeVisualBrowser(chromePath);
+  try {
+    const sessionId = await load(browser, renderFixture());
+    const receipt = await evaluate(browser, sessionId, `(async function () {
+      var blobs = [];
+      var copied = null;
+      var originalCreateObjectUrl = URL.createObjectURL;
+      URL.createObjectURL = function (blob) { blobs.push(blob); return originalCreateObjectUrl(blob); };
+      window.ClipboardItem = function (data) { this.getType = function (type) { return Promise.resolve(data[type]); }; };
+      Object.defineProperty(navigator, 'clipboard', { configurable: true, value: {
+        write: async function (items) { copied = await items[0].getType('image/png'); }
+      } });
+      document.querySelector('.diagram-container > svg [data-node-id="transformer"]').dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0 }));
+      document.getElementById('btn-focus-internals').click();
+      document.getElementById('btn-export').click();
+      document.querySelector('#export-menu [data-export-target="subarchitecture"]').click();
+      async function pixels(blob) {
+        var image = await createImageBitmap(blob);
+        var canvas = document.createElement('canvas');
+        canvas.width = image.width;
+        canvas.height = image.height;
+        var context = canvas.getContext('2d');
+        context.drawImage(image, 0, 0);
+        var data = context.getImageData(0, 0, canvas.width, canvas.height).data;
+        var transparent = 0;
+        for (var index = 3; index < data.length; index += 4) if (data[index] !== 255) transparent += 1;
+        return { corner: Array.from(data.slice(0, 4)), transparent: transparent };
+      }
+      var expectedCanvas = document.createElement('canvas');
+      expectedCanvas.width = expectedCanvas.height = 1;
+      var expectedContext = expectedCanvas.getContext('2d');
+      expectedContext.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
+      expectedContext.fillRect(0, 0, 1, 1);
+      var expected = Array.from(expectedContext.getImageData(0, 0, 1, 1).data);
+      await Archify.exportMenu.run('png');
+      var downloaded = await pixels(blobs.filter(function (blob) { return blob.type === 'image/png'; }).slice(-1)[0]);
+      document.getElementById('btn-export').click();
+      document.querySelector('#export-menu [data-action="copy"]').click();
+      var deadline = Date.now() + 5000;
+      while (!copied && Date.now() < deadline) await new Promise(function (resolve) { setTimeout(resolve, 25); });
+      if (!copied) throw new Error('Clipboard copy must produce its PNG Blob');
+      var clipboard = await pixels(copied);
+      URL.createObjectURL = originalCreateObjectUrl;
+      return { expected: expected, downloaded: downloaded, clipboard: clipboard };
+    })()`);
+    assert.deepEqual(receipt.downloaded.corner, receipt.expected);
+    assert.equal(receipt.downloaded.transparent, 0);
+    assert.deepEqual(receipt.clipboard.corner, receipt.expected);
+    assert.equal(receipt.clipboard.transparent, 0);
+  } finally {
+    await browser.close();
+  }
+});
+
+test('Escape clears child focus before a selected parent Semantic Lens', {
+  skip: chromePath ? false : 'Set ARCHIFY_CHROME to run the real browser regression.',
+}, async () => {
+  const browser = new ChromeVisualBrowser(chromePath);
+  try {
+    const sessionId = await load(browser, renderFixture());
+    const receipt = await evaluate(browser, sessionId, `(function () {
+      function state() { return { lens: Archify.semanticLens.active(), lensOpen: Archify.semanticLens.isOpen(), child: Archify.subarchitecture.child(), drawer: Archify.subarchitecture.active() }; }
+      document.querySelector('.diagram-container > svg [data-node-id="transformer"]').dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0 }));
+      document.getElementById('btn-focus-internals').click();
+      var child = document.querySelector('#subarchitecture-mount [data-node-id="attention"]');
+      child.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0 }));
+      document.getElementById('btn-semantic-lens').click();
+      document.querySelector('#semantic-lens-kinds [data-kind]').click();
+      document.getElementById('semantic-lens-close').click();
+      child.focus();
+      document.getElementById('btn-semantic-lens').click();
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      var popupClosed = state();
+      var before = state();
+      child.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      var first = state();
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      return { popupClosed: popupClosed, before: before, first: first, second: state() };
+    })()`);
+    assert.equal(receipt.popupClosed.lensOpen, false);
+    assert.equal(receipt.popupClosed.child, 'attention');
+    assert.equal(receipt.popupClosed.drawer, 'transformer');
+    assert.ok(receipt.before.lens && receipt.before.lens.length);
+    assert.equal(receipt.before.child, 'attention');
+    assert.equal(receipt.first.child, null);
+    assert.equal(receipt.first.drawer, 'transformer');
+    assert.deepEqual(receipt.first.lens, receipt.before.lens);
+    assert.equal(receipt.second.drawer, null);
+  } finally {
+    await browser.close();
+  }
+});

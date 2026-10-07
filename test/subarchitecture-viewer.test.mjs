@@ -27,9 +27,12 @@ test('parent Semantic Passport is the only opt-in internals entry and the drawer
   assert.match(html, /id="subarchitecture-drawer"[^>]+hidden[^>]+role="region"[^>]+aria-labelledby="subarchitecture-title"/);
   assert.match(html, /id="subarchitecture-mount"/);
   assert.match(html, /id="subarchitecture-passport"/);
+  const templateAt = html.indexOf('</div>\n\n    <template data-subarchitecture-parent=');
+  const drawerAt = html.indexOf('id="subarchitecture-drawer"');
+  assert.ok(templateAt >= 0, 'the child template follows the closed diagram container');
+  assert.ok(drawerAt >= 0, 'the child drawer exists');
   assert.ok(
-    html.indexOf('</div>\n\n    <template data-subarchitecture-parent=') <
-      html.indexOf('id="subarchitecture-drawer"'),
+    templateAt < drawerAt,
     'the inert child template and drawer remain outside the canonical diagram container',
   );
   assert.match(html, /html\[data-embed="true"\] \.subarchitecture-drawer/);

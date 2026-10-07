@@ -637,7 +637,7 @@
               // so drawing it at CSS size under this transform stays 1:1.
               ctx.setTransform(scale, 0, 0, scale, 0, 0);
               var origin = childOnly ? { x: 0, y: 0 } : paintFigure(ctx, layout);
-              if (childOnly && format !== 'png') {
+              if (childOnly) {
                 ctx.fillStyle = currentBg();
                 ctx.fillRect(0, 0, vb.width, vb.height);
               }
