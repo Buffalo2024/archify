@@ -66,6 +66,9 @@ for (const [index, span] of raw.entries()) {
   const hasDuration = Number.isFinite(span.duration);
   const timing = (message, fixes) => fail('waterfall/invalid-timing', `Span "${span.id}" ${message}`, { path: `/spans/${index}`, nodeId: span.id },
     { start: span.start, end: span.end ?? null, duration: span.duration ?? null, status: span.status ?? 'ok' }, fixes);
+  if (hasDuration && !Number.isFinite(span.start + span.duration)) {
+    timing('has a derived end outside the finite numeric range.', ['Rescale the recorded timing and unit to a representable range.']);
+  }
   if (hasEnd && span.end < span.start) timing(`ends (${span.end}) before it starts (${span.start}).`, ['Correct start or end from the recorded timing.']);
   if (hasEnd && hasDuration && Math.abs(span.end - span.start - span.duration) > 1e-9) {
     timing(`states end ${span.end} and duration ${span.duration}, which disagree with start ${span.start}.`, ['Keep only one of end or duration.']);
@@ -126,7 +129,7 @@ const rows = [];
 }(spans.filter((span) => span.parent === undefined), 0));
 
 function number(value) {
-  const rounded = Math.round(value * 100) / 100;
+  const rounded = Math.abs(value) > Number.MAX_VALUE / 100 ? value : Math.round(value * 100) / 100;
   return rounded.toLocaleString('en-US', { maximumFractionDigits: 2 });
 }
 const formatDuration = (value) => `${number(value)} ${unitLabel}`;
@@ -157,6 +160,12 @@ const labelW = Math.ceil(Math.max(140, ...rows.map(nameWidth)));
 const axisX0 = layout.margin + labelW + layout.columnGap;
 const axisX1 = axisX0 + layout.axisWidth;
 const scale = wall > 0 ? layout.axisWidth / wall : 0;
+if (!Number.isFinite(scale)) {
+  throwDiagnosticProblems('Waterfall validation failed', ['The recorded range cannot form a finite axis scale.'], {
+    code: 'waterfall/invalid-timing', subject: { diagramType: 'waterfall', path: '/spans' },
+    evidence: { start: t0, end: t1, wall }, supportedFixes: ['Rescale the recorded timing and unit to a representable range.'],
+  });
+}
 const xOf = (t) => Math.round((axisX0 + (t - t0) * scale) * 100) / 100;
 const rowsTop = layout.top + layout.axisH;
 
