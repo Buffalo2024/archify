@@ -145,7 +145,10 @@
         var ordinary = html.getAttribute('data-embed') !== 'true' &&
           html.getAttribute('data-present') !== 'true' &&
           (!window.matchMedia || !window.matchMedia('print').matches);
-        if (ordinary && camera.scale < 1 && height > window.innerHeight) {
+        // Restore ordinary flow as soon as the target reaches 100%. Chrome
+        // uses that target to resume baseline rail measurement; retaining a
+        // partially shrunk box during the CSS transition would inflate reserve.
+        if (ordinary && state.scale < 1 && camera.scale < 1 && height > window.innerHeight) {
           var style = getComputedStyle(container);
           var chrome = ['paddingTop', 'paddingBottom', 'borderTopWidth', 'borderBottomWidth']
             .reduce(function (total, key) { return total + (parseFloat(style[key]) || 0); }, 0);

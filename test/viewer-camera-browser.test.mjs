@@ -91,9 +91,12 @@ test('Camera preserves transactions, rendered state and real caller handoffs', {
         const container = document.querySelector('.diagram-container');
         const svg = container.querySelector(':scope > svg');
         const rect = svg.getBoundingClientRect();
+        const box = container.getBoundingClientRect(), nav = container.querySelector('.diagram-nav').getBoundingClientRect();
         const current = JSON.stringify([Archify.view.state(), getComputedStyle(svg).transform,
           svg.style.clipPath, container.scrollLeft, container.getAttribute('data-camera-transaction'),
-          container.style.getPropertyValue('--archify-nav-reserve'), rect.x, rect.y, rect.width, rect.height]);
+          container.style.getPropertyValue('--archify-nav-reserve'), rect.x, rect.y, rect.width, rect.height,
+          scrollY, document.documentElement.scrollHeight, box.top, box.bottom, nav.top, nav.bottom,
+          container.style.getPropertyValue('--archify-dock-lift')]);
         equal = current === previous ? equal + 1 : 0;
         previous = current;
         return equal >= 8 && !container.hasAttribute('data-camera-transaction');
@@ -297,25 +300,54 @@ test('Camera preserves transactions, rendered state and real caller handoffs', {
   });
 
   await t.test('long-diagram zoom preserves visible content from middle and bottom scroll positions', async () => {
-    for (const position of [0.5, 0.85, 'page-bottom']) {
-      await load('longSequence', { width: 1280, height: 800, reduced: position !== 'page-bottom' });
-      const scrollTarget = position === 'page-bottom' ? 'document.documentElement.scrollHeight'
+    for (const position of ['page-bottom-no-anchor', 0, 0.5, 0.85, 'page-bottom']) {
+      await load('longSequence', { width: 1280, height: 800, reduced: typeof position === 'number' && position > 0 });
+      if (position === 'page-bottom-no-anchor') await run(`document.documentElement.style.overflowAnchor = 'none'`);
+      const scrollTarget = typeof position === 'string' ? 'document.documentElement.scrollHeight'
         : `document.querySelector('.diagram-container > svg').clientHeight * ${position}`;
       await run(`window.scrollTo(0, ${scrollTarget})`);
       await stable();
+      const initialReserve = await run(`document.querySelector('.diagram-container').style.getPropertyValue('--archify-nav-reserve')`);
       for (const scale of [0.75, 0.5, 0.25, 0.5, 0.75, 1]) {
+        await run(`(() => {
+          window.cameraDockTrace = []; window.cameraDockTracing = true;
+          function frame() {
+            if (!cameraDockTracing) return;
+            const c = document.querySelector('.diagram-container'), s = c.querySelector(':scope > svg');
+            const nav = c.querySelector('.diagram-nav'), n = nav.getBoundingClientRect(), b = c.getBoundingClientRect();
+            cameraDockTrace.push({ time: performance.now(), scale: Archify.view.state().scale,
+              paintedScale: s.getBoundingClientRect().height / s.clientHeight, scrollY,
+              pageHeight: document.documentElement.scrollHeight, containerTop: b.top, containerBottom: b.bottom,
+              navTop: n.top, navBottom: n.bottom, lift: c.style.getPropertyValue('--archify-dock-lift'),
+              height: c.style.height });
+            requestAnimationFrame(frame);
+          }
+          requestAnimationFrame(frame);
+        })()`);
         const currentScale = await run('Archify.view.state().scale');
         await run(`Archify.view.${scale < currentScale ? 'zoomOut' : 'zoomIn'}()`);
         await stable();
         const value = await run(`(() => {
           const s = document.querySelector('.diagram-container > svg'), c = s.parentElement;
-          const r = s.getBoundingClientRect(), nav = c.querySelector('.diagram-nav').getBoundingClientRect();
+          cameraDockTracing = false;
+          const r = s.getBoundingClientRect(), nav = c.querySelector('.diagram-nav').getBoundingClientRect(), b = c.getBoundingClientRect();
           return { state: Archify.view.state(), top: r.top, bottom: r.bottom,
-            scrollY, navTop: nav.top, navBottom: nav.bottom, windowHeight: innerHeight };
+            scrollY, navTop: nav.top, navBottom: nav.bottom, navHeight: nav.height, windowHeight: innerHeight,
+            windowWidth: innerWidth, documentWidth: document.documentElement.clientWidth,
+            pageHeight: document.documentElement.scrollHeight, containerTop: b.top, containerBottom: b.bottom,
+            containerHeight: b.height, baseSvgHeight: s.clientHeight,
+            ratio: s.viewBox.baseVal.width / s.viewBox.baseVal.height,
+            lift: c.style.getPropertyValue('--archify-dock-lift'), flowHeight: c.style.height,
+            reserve: c.style.getPropertyValue('--archify-nav-reserve'),
+            trajectory: cameraDockTrace };
         })()`);
+        records.push({ label: `dock-trajectory-${position}-${scale}`, ...value });
         assert.equal(value.state.scale, scale);
+        assert.ok(Math.abs(parseFloat(value.reserve || '0') - parseFloat(initialReserve || '0')) <= 1,
+          'manual zoom preserves the baseline rail within one CSS-pixel rounding: ' + JSON.stringify({ position, requestedScale: scale, ...value }));
         assert.ok(value.bottom > 0 && value.top < value.windowHeight, 'shrunk content stays on screen');
-        assert.ok(value.navTop >= 0 && value.navBottom <= value.windowHeight, 'existing dock lift keeps controls usable');
+        assert.ok(value.navTop >= 0 && value.navBottom <= value.windowHeight,
+          'existing dock lift keeps controls usable: ' + JSON.stringify({ position, requestedScale: scale, ...value }));
         await snapshot(`long-scrolled-${position}-${scale}`);
         await screenshot(`long-scrolled-${position}-${scale}`);
       }

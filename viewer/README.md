@@ -653,7 +653,10 @@ absent legend does not disable protection of the SVG stage. `stageRect` removes
 camera scale/translation from measured geometry; it never rewrites SVG geometry.
 
 Resize, load, print, font readiness and the existing observers retain their
-original roles. ResizeObserver watches navigation/SVG/legend size;
+original roles. ResizeObserver watches navigation/SVG/legend size; a separate
+container-size observation updates dock lift when Camera changes page flow,
+without remeasuring the baseline rail. The stability waiter includes that lift
+frame and its final value.
 MutationObserver watches legend content and the root embed/presentation/preset/
 theme attributes. Camera Reset preserves the established rail; viewport, mode
 and content changes are responsible for baseline reprobes. Optional observer
@@ -696,7 +699,9 @@ page-flow height to the painted SVG height plus its existing padding/borders.
 The SVG retains its intrinsic client size, so zoom and layout cannot repeatedly
 shrink the camera base. Size observation follows Reader width and Chrome reserve
 changes without requiring a window resize. Reset, short diagrams, Embed, Present
-and print restore the original inline container height and priority. This outer
+and print restore the original inline container height and priority. Reaching
+a 100% target restores ordinary flow immediately, so Chrome cannot interpret
+a partly shrunk CSS-animation frame as a new baseline rail. This outer
 layout state is absent from canonical SVG exports.
 
 `reveal` returns a transaction or false, with branch-specific side effects.
