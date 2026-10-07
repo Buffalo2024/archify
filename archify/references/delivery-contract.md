@@ -431,7 +431,8 @@ The receipt binds the artifact SHA-256 and byte count, identifies
 
 Horizontal overflow always fails. Normal document-level vertical scrolling is
 accepted only with a renderer-declared contract and measured readable text.
-Automatic canvases declare `data-reader-fit="intrinsic-height"`; their adaptive
+Automatic canvases declare `data-reader-fit="intrinsic-height"` (height fitting)
+or `data-reader-fit="width-first"` (Sequence and Waterfall reading width); their adaptive
 Reader must reach its readable width and expose `data-reader-overflow="authored"`.
 Architecture with an explicit `meta.viewBox` instead declares
 `data-diagram-type="architecture"` and `data-reader-fit="authored-height"`:

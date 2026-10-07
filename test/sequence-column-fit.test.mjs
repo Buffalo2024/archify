@@ -103,7 +103,7 @@ test('a label the fixed box rejects fits the spread box on the same viewBox', ()
   const fixed = renderOutcome(labelledSequence('fixed'));
   assert.notEqual(fixed.code, 0, 'the fixed box still rejects a label it cannot hold');
   assert.ok(fixed.stderr.includes(`Label "${wideLabel}"`), `expected the label in stderr:\n${fixed.stderr}`);
-  assert.ok(fixed.stderr.includes('86px participant box'), `expected the fixed box width in stderr:\n${fixed.stderr}`);
+  assert.ok(fixed.stderr.includes('component "gateway" (86px)'), `expected the fixed box width in stderr:\n${fixed.stderr}`);
 
   const spread = renderOutcome(labelledSequence('spread'));
   assert.equal(spread.code, 0, spread.stderr);
@@ -204,7 +204,7 @@ test('spread capacity still rejects an infeasible frame and unrescuable particip
   doc.participants[0].label = 'A participant label far beyond the available frame capacity';
   const long = renderOutcome(doc);
   assert.notEqual(long.code, 0);
-  assert.match(long.stderr, /wider than the 86px participant box/);
+  assert.ok(long.stderr.includes(`wider than component "${doc.participants[0].id}" (86px)`), long.stderr);
 });
 
 
@@ -247,4 +247,16 @@ test('eight participants fit the automatic 920px canvas with default and explici
   assert.equal(html, render({ ...doc, meta: { ...doc.meta, column_fit: 'spread' } }, true));
   const fixedBoxes = participantBoxes(render({ ...doc, meta: { ...doc.meta, column_fit: 'fixed' } }, true));
   assert.deepEqual(fixedBoxes, Array.from({ length: 8 }, (_, index) => ({ x: 19 + index * 108, width: 86 })));
+});
+// The Viewer fit declaration is independent of fixed/spread column geometry.
+test('automatic sequence declares width-first fit; authored viewBox does not', () => {
+  for (const columnFit of [undefined, 'fixed', 'spread']) {
+    const doc = wideSequence(columnFit);
+    delete doc.meta.viewBox;
+    const root = render(doc).match(/<svg\b[^>]*>/)?.[0];
+    assert.match(root, /data-reader-fit="width-first"/);
+    assert.match(root, new RegExp(`data-sequence-column-fit="${columnFit || 'spread'}"`));
+    const authoredRoot = render(wideSequence(columnFit)).match(/<svg\b[^>]*>/)?.[0];
+    assert.doesNotMatch(authoredRoot, /data-reader-fit=/);
+  }
 });
