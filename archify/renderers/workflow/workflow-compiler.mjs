@@ -3508,6 +3508,51 @@ function readableCandidateIsFeasible(edge, points, from, to, fromSide, toSide) {
     && routeClearsLegend(edge, points);
 }
 
+// Inspect only a rejected preset. Keep successful routing and automatic
+// candidate enumeration on the short-circuit feasibility path above.
+function readablePresetRejection(edge, points, from, to, fromSide, toSide) {
+  const checks = [
+    ['route endpoints', () => points.length >= 2],
+    ['orthogonal non-zero segments', () => orthogonalRoute(points)],
+    ['readable segment rhythm', () => routeMeetsHardRhythm(points)],
+    ['perpendicular endpoint-side direction', () => routeHonorsEndpointSides(points, fromSide, toSide)],
+    ['node clearance', () => routeClearsEndpointNodes(points, from, to)],
+    ['edge-label node clearance', () => routeLabelClearsNodes(edge, points)],
+    ['lane/phase/group label clearance', () => routeClearsSceneLabelObstacles(edge, points)],
+    ['node clearance', () => routeClearsUnrelatedNodes(edge, points)],
+    ['placed edge-label clearance', () => routeClearsPlacedLabels(edge, points)],
+    ['canvas origin', () => routeFitsCanvasOrigin(edge, points)],
+    ['structural-frame border clearance', () => routeClearsFrameBorders(points)],
+    ['legend clearance', () => routeClearsLegend(edge, points)],
+    ['route preset compatibility', () => routeMatchesPresetFamily(edge.route, points, from, to)],
+  ];
+  const invariant = checks.find(([, accepts]) => !accepts())?.[0];
+  if (invariant === 'node clearance') {
+    return { invariant, ...firstRouteNodeCollision(edge, points) };
+  }
+  if (invariant === 'readable segment rhythm') {
+    const segmentIndex = points.slice(0, -1).findIndex((point, index) => {
+      const minimum = points.length === 2 ? 28 : index === 0 || index === points.length - 2 ? 8 : 16;
+      return Math.hypot(points[index + 1][0] - point[0], points[index + 1][1] - point[1]) + 0.0001 < minimum;
+    });
+    return {
+      invariant,
+      segmentIndex,
+      actualSegmentPx: Math.hypot(
+        points[segmentIndex + 1][0] - points[segmentIndex][0],
+        points[segmentIndex + 1][1] - points[segmentIndex][1],
+      ),
+      requiredSegmentPx: points.length === 2 ? 28 : segmentIndex === 0 || segmentIndex === points.length - 2 ? 8 : 16,
+    };
+  }
+  if (invariant === 'edge-label node clearance') {
+    const labelRect = candidateLabelRect(edge, points);
+    const obstacle = [...nodes.values()].find((node) => rectsOverlap(labelRect, node, -2));
+    return { invariant, labelRect, obstacleNode: obstacle?.id };
+  }
+  return { invariant };
+}
+
 function corridorViaY(start, end, fromSide, toSide, y) {
   const startStub = outwardStub(start, fromSide);
   const endStub = outwardStub(end, toSide);
@@ -3904,7 +3949,11 @@ function readablePresetVia(edge, from, to, start, end, fromSide, toSide) {
     && routeMatchesPresetFamily(preset, points, from, to)) {
     return points.slice(1, -1);
   }
-  const message = `Workflow edge "${workflowEdgeName(edge)}" cannot satisfy route preset "${preset}" under readable-v2 constraints (minimum 8px endpoint stubs, 16px interior turns, and 28px direct clearance).`;
+  const rejection = readablePresetRejection(edge, points, from, to, fromSide, toSide);
+  const obstacle = rejection.obstacleNode
+    ? `: ${rejection.segmentIndex === undefined ? 'its label' : `segment ${rejection.segmentIndex}`} intersects node "${rejection.obstacleNode}"`
+    : '';
+  const message = `Workflow edge "${workflowEdgeName(edge)}" cannot satisfy route preset "${preset}": candidate violates ${rejection.invariant}${obstacle}.`;
   const edgeIndex = workflow.edges.indexOf(edge);
   const edgeName = workflowEdgeName(edge);
   const supportedFixes = [];
@@ -3933,6 +3982,7 @@ function readablePresetVia(edge, from, to, start, end, fromSide, toSide) {
       route: preset,
     },
     evidence: {
+      ...rejection,
       attemptedCandidateFamily: preset,
       points,
       fromSide,

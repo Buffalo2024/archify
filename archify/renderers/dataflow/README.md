@@ -58,7 +58,7 @@ without a database node keeps it visual-only.
 
 | Constant | Value |
 |----------|-------|
-| viewBox | default `[940, 720]`; schema minimum `[360, 360]` |
+| viewBox | width at least 940, covering all stage frames and authored node widths with 24px right padding (five default stages need 1068); `standard` height 720; automatic showcase height fits content; schema minimum `[360, 360]` |
 | Stages (2–5) | centers at x = 100 + stage×215; stage band 168 wide, header at y 46 |
 | Row tops (`row` 0–4) | y = 128, 242, 356, 470, 584 (plus `yOffset`) |
 | Default node | 112×58 |
@@ -69,6 +69,26 @@ without a database node keeps it visual-only.
 
 Route presets for flows: `straight`, `vertical-channel`, `bottom-channel`,
 `top-channel`, explicit `via` points, or the default `auto` (midpoint elbow).
+
+In `showcase`, omitted node widths can grow within the stage and canvas budget
+to keep supporting text legible at the desktop projection. The actual text
+font floor grows with canvas width; an authored width that cannot fit it still
+fails with the required text width. Explicit `viewBox` and node widths are
+never resized. `standard` keeps its established node sizing and text fitting.
+Without an authored canvas, showcase height follows node rows, offsets and
+heights, outer route/channel points, and authored label plates in one budget
+pass, leaving 24px below content plus the 74px stage/legend reserve. It does
+not compact rows or reroute authored channels to reduce height.
+
+Showcase automatic routes use perpendicular bridges for vertical ports and
+small differences introduced by port spreading. Unpinned flow labels receive
+one bounded placement pass around their own route, with a maximum 36px mask
+clearance from that route. A distant free space is rejected in favor of the
+original placement and its actionable collision diagnostic. Explicit
+`labelAt`, `labelDx`, `labelDy`, and `labelSegment` remain authoritative,
+including zero offsets. Existing valid labels are retained. Explicit routing
+continues to be validated, including cross-row straight routes whose authored
+horizontal ports cannot be honored.
 
 ## Design Rules
 

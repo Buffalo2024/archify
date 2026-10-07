@@ -647,7 +647,7 @@ const SHRINK_CASES = [
     d.meta.column_fit = 'fixed';
     d.participants[0].sublabel = 'long browser session';
   }, 7],
-  ['dataflow', (d) => { d.nodes[0].sublabel = 'browser SDK and mobile SDK'; }, 7],
+  ['dataflow', (d) => { d.meta.quality_profile = 'standard'; d.nodes[0].sublabel = 'browser SDK and mobile SDK'; }, 7],
   ['lifecycle', (d) => { d.states[0].sublabel = 'request accepted and queued'; }, 7],
 ];
 
@@ -680,6 +680,7 @@ const TAG_SHRINK_CASES = [
 for (const [mode, collection, tag, preferred] of TAG_SHRINK_CASES) {
   test(`${mode}: an over-long tag shrinks to fit instead of overflowing`, () => {
     const d = load(mode);
+    if (mode === 'dataflow') d.meta.quality_profile = 'standard';
     d[collection][0].tag = tag;
     const { code, stderr, outPath } = render(mode, d);
     assert.equal(code, 0, stderr);
@@ -1073,6 +1074,7 @@ test('dataflow: showcase rejects a relationship label that hides another route',
   delete approvedReplay.labelDx;
   delete approvedReplay.labelDy;
   delete approvedReplay.labelSegment;
+  approvedReplay.labelDx = 0; // A pinned collision must still be rejected.
   const { code, stderr } = render('dataflow', d);
   assert.notEqual(code, 0, `expected non-zero exit; stderr:\n${stderr}`);
   assert.match(stderr, /\[composition\/label-route-clearance\] showcase dataflow/);

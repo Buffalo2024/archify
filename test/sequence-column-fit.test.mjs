@@ -133,7 +133,8 @@ test('the authoring contract explains automatic spread and explicit geometry com
   assert.match(description, /meaningful participant labels/);
   assert.match(description, /Defaults to spread whether or not meta\.viewBox is supplied/);
   assert.match(description, /Explicit fixed preserves the historical 86px boxes and 108px column gap/);
-  assert.match(skill, /use `spread` when a wide viewBox leaves unused horizontal space or meaningful labels need width/);
+  assert.match(skill, /Omit `meta\.column_fit` for spread columns on both automatic and authored canvases/);
+  assert.match(skill, /set `meta\.column_fit: "fixed"` explicitly/);
   assert.match(rendererReadme, /Use `"spread"` when a wide/);
   assert.match(rendererReadme, /default to `meta\.column_fit: "spread"`, whether or not\s+`meta\.viewBox` is supplied/);
   assert.match(rendererReadme, /try `meta\.column_fit: "spread"` before shortening/);

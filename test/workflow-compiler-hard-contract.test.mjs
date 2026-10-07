@@ -763,7 +763,57 @@ test('readable-v2 never accepts a same-lane drop through the preset-only fallbac
     assert.equal(result.svg, undefined);
     assert.ok(result.diagnostics.some(({ code }) => code === 'workflow/route-preset-conflict'));
     assert.ok(result.diagnostics.every(({ code }) => code !== 'workflow/explicit-pin-conflict'));
+    assert.equal(result.diagnostics[0].evidence.invariant, 'route preset compatibility');
   }
+});
+
+test('readable-v2 preset diagnostics identify the blocked node rather than blaming segment rhythm', () => {
+  const document = workflow({
+    lanes: [{ id: 'upper', label: 'Upper' }, { id: 'lower', label: 'Lower' }],
+    nodes: [
+      { id: 'blocker', lane: 'upper', col: 0, type: 'backend', label: 'Blocker' },
+      { id: 'target', lane: 'upper', col: 2, type: 'backend', label: 'Target' },
+      { id: 'source', lane: 'lower', col: 0, type: 'backend', label: 'Source' },
+    ],
+    edges: [{ id: 'return', from: 'source', to: 'target', route: 'up-channel', fromSide: 'top', toSide: 'top' }],
+  });
+  for (const qualityProfile of ['standard', 'showcase']) {
+    const result = compileWorkflow({ workflow: clone(document), qualityProfile });
+    assert.equal(result.ok, false);
+    const diagnostic = result.diagnostics.find(({ code }) => code === 'workflow/route-preset-conflict');
+    assert.ok(diagnostic);
+    assert.equal(diagnostic.evidence.invariant, 'node clearance');
+    assert.equal(diagnostic.evidence.obstacleNode, 'blocker');
+    assert.equal(diagnostic.evidence.obstacleRole, 'unrelated');
+    assert.equal(diagnostic.evidence.segmentIndex, 0);
+    assert.equal(diagnostic.evidence.clearancePx, 2);
+    assert.deepEqual(diagnostic.evidence.from, diagnostic.evidence.points[0]);
+    assert.deepEqual(diagnostic.evidence.to, diagnostic.evidence.points[1]);
+    assert.match(diagnostic.message, /segment 0 intersects node "blocker"/);
+    assert.doesNotMatch(diagnostic.message, /minimum 8px/);
+    assert.deepEqual(document.edges[0], {
+      id: 'return', from: 'source', to: 'target', route: 'up-channel', fromSide: 'top', toSide: 'top',
+    });
+  }
+});
+
+test('readable-v2 preset diagnostics measure the segment that actually violates rhythm', () => {
+  const document = workflow({
+    lanes: [{ id: 'main', label: 'Main' }],
+    nodes: [
+      { id: 'a', lane: 'main', col: 0, type: 'backend', label: 'A', yOffset: -30 },
+      { id: 'b', lane: 'main', col: 0, type: 'backend', label: 'B', yOffset: 30 },
+    ],
+    edges: [{ id: 'ab', from: 'a', to: 'b', route: 'straight', fromSide: 'bottom', toSide: 'top' }],
+  });
+  const result = compileWorkflow({ workflow: document, qualityProfile: 'standard' });
+  assert.equal(result.ok, false);
+  const diagnostic = result.diagnostics.find(({ code }) => code === 'workflow/route-preset-conflict');
+  assert.ok(diagnostic);
+  assert.equal(diagnostic.evidence.invariant, 'readable segment rhythm');
+  assert.equal(diagnostic.evidence.segmentIndex, 0);
+  assert.equal(diagnostic.evidence.actualSegmentPx, 8);
+  assert.equal(diagnostic.evidence.requiredSegmentPx, 28);
 });
 
 test('readable-v2 never silently ignores coordinate pins that conflict with a route preset', () => {
