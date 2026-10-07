@@ -5,7 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { findChrome } from '../archify/bin/visual-check.mjs';
 
-const skillRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'archify');
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 // Shared by PR CI and tag releases. WebM decoding stays in test:webm.
 const testFiles = [
   'finalize-browser.test.mjs',
@@ -13,6 +13,7 @@ const testFiles = [
   'reader-readability-maintained-browser.test.mjs',
   'reader-layout-browser.test.mjs',
   'reader-layout-settle-browser.test.mjs',
+  'reader-cards-overflow-browser.test.mjs',
   'joint-layout-browser.test.mjs',
   'sequence-header-clearance.test.mjs',
   'compact-header-clearance.test.mjs',
@@ -37,6 +38,8 @@ const testFiles = [
   'viewer-identifiers-browser.test.mjs',
   'repository-evidence.test.mjs',
   'repository-evidence-types-browser.test.mjs',
+  'tree-branches-browser.test.mjs',
+  'class-motion-browser.test.mjs',
 ];
 
 const chrome = findChrome();
@@ -50,7 +53,7 @@ const [major, minor] = process.versions.node.split('.').map(Number);
 if (major > 18 || (major === 18 && minor >= 19)) args.push('--test-concurrency=2');
 args.push(...testFiles.map((file) => path.join('test', file)));
 const result = spawnSync(process.execPath, args, {
-  cwd: skillRoot,
+  cwd: repoRoot,
   env: { ...process.env, ARCHIFY_CHROME: chrome },
   stdio: 'inherit',
 });

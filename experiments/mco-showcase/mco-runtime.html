@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="generator" content="archify 2.17.0-dev.1">
+  <meta name="generator" content="archify 3.0.2-dev.1">
   <meta name="archify-reader-contract" content="declared-wide-v1">
   <title>MCO Runtime Architecture Diagram</title>
   <script>
@@ -2463,6 +2463,13 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       border-radius: 0.75rem;
       border: 1px solid var(--panel-border);
       padding: 1.125rem 1.25rem;
+      /* Card notes are authored prose and may carry an unbreakable run such as a
+         slash-joined pipeline or a long identifier. Without this, that run sets the
+         card's min-content width, spills past its track in every rail placement,
+         and pushes the whole page into horizontal overflow at desktop widths.
+         `anywhere` rather than `break-word` because only `anywhere` shrinks the
+         intrinsic minimum the layout is sized from. */
+      overflow-wrap: anywhere;
     }
 
     html[data-preset="signal-flow"] .card {
