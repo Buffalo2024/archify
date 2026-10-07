@@ -1,0 +1,213 @@
+{
+  "baseline": "e23fc2c5c8cf1aaa3864e7966f8b8ec43dc2bebd",
+  "records": [
+    {
+      "name": "five-stage-stack",
+      "revision": "before",
+      "screenshot": "five-stage-stack-before.png",
+      "viewport": [
+        1440,
+        1000
+      ],
+      "theme": "light",
+      "preset": "signal-flow",
+      "readerFit": "intrinsic-height",
+      "svgWidth": 925,
+      "viewBoxWidth": 768,
+      "gateMinimumProjectedNodeTextPx": 8,
+      "scrollY": 0,
+      "scrollHeight": 1136,
+      "pageScrollPx": 136,
+      "overflowX": false,
+      "zoom": "100%",
+      "minimumActualNodeFontPx": 12.044229233226837,
+      "fonts": [
+        {
+          "text": "Build preview",
+          "pixelFont": 12.887325279552716
+        },
+        {
+          "text": "Check format",
+          "pixelFont": 13.248652156549522
+        },
+        {
+          "text": "Collect input",
+          "pixelFont": 12.887325279552716
+        },
+        {
+          "text": "Publish result",
+          "pixelFont": 12.044229233226837
+        },
+        {
+          "text": "Review output",
+          "pixelFont": 12.887325279552716
+        }
+      ],
+      "dockCoveredNodesAtPageTop": [],
+      "dockOverlapsSvgAtPageTop": false,
+      "bottomScroll": {
+        "scrollY": 136,
+        "lowestNodeBottom": 596.4901123046875,
+        "allNodesAboveViewportBottom": true
+      }
+    },
+    {
+      "name": "five-stage-stack",
+      "revision": "after",
+      "screenshot": "five-stage-stack-after.png",
+      "viewport": [
+        1440,
+        1000
+      ],
+      "theme": "light",
+      "preset": "signal-flow",
+      "readerFit": "width-first",
+      "svgWidth": 1152,
+      "viewBoxWidth": 768,
+      "gateMinimumProjectedNodeTextPx": 8,
+      "scrollY": 0,
+      "scrollHeight": 1289,
+      "pageScrollPx": 289,
+      "overflowX": false,
+      "zoom": "100%",
+      "minimumActualNodeFontPx": 15,
+      "fonts": [
+        {
+          "text": "Build preview",
+          "pixelFont": 16.049999999999997
+        },
+        {
+          "text": "Check format",
+          "pixelFont": 16.5
+        },
+        {
+          "text": "Collect input",
+          "pixelFont": 16.049999999999997
+        },
+        {
+          "text": "Publish result",
+          "pixelFont": 15
+        },
+        {
+          "text": "Review output",
+          "pixelFont": 16.049999999999997
+        }
+      ],
+      "dockCoveredNodesAtPageTop": [],
+      "dockOverlapsSvgAtPageTop": true,
+      "bottomScroll": {
+        "scrollY": 289,
+        "lowestNodeBottom": 590.6875,
+        "allNodesAboveViewportBottom": true
+      }
+    },
+    {
+      "name": "execution-failure-stack",
+      "revision": "before",
+      "screenshot": "execution-failure-stack-before.png",
+      "viewport": [
+        1440,
+        1000
+      ],
+      "theme": "light",
+      "preset": "signal-flow",
+      "readerFit": "intrinsic-height",
+      "svgWidth": 799,
+      "viewBoxWidth": 780,
+      "gateMinimumProjectedNodeTextPx": 8,
+      "scrollY": 0,
+      "scrollHeight": 1199,
+      "pageScrollPx": 199,
+      "overflowX": false,
+      "zoom": "100%",
+      "minimumActualNodeFontPx": 10.243503736413045,
+      "fonts": [
+        {
+          "text": "Execute job",
+          "pixelFont": 11.26785411005435
+        },
+        {
+          "text": "Store result",
+          "pixelFont": 11.26785411005435
+        },
+        {
+          "text": "Prepare job",
+          "pixelFont": 11.26785411005435
+        },
+        {
+          "text": "Inspect error",
+          "pixelFont": 10.960548997961956
+        },
+        {
+          "text": "Record failure",
+          "pixelFont": 10.243503736413045
+        },
+        {
+          "text": "Queue retry",
+          "pixelFont": 11.26785411005435
+        }
+      ],
+      "dockCoveredNodesAtPageTop": [],
+      "dockOverlapsSvgAtPageTop": false,
+      "bottomScroll": {
+        "scrollY": 199,
+        "lowestNodeBottom": 556.4925537109375,
+        "allNodesAboveViewportBottom": true
+      }
+    },
+    {
+      "name": "execution-failure-stack",
+      "revision": "after",
+      "screenshot": "execution-failure-stack-after.png",
+      "viewport": [
+        1440,
+        1000
+      ],
+      "theme": "light",
+      "preset": "signal-flow",
+      "readerFit": "width-first",
+      "svgWidth": 1170,
+      "viewBoxWidth": 780,
+      "gateMinimumProjectedNodeTextPx": 8,
+      "scrollY": 0,
+      "scrollHeight": 1549,
+      "pageScrollPx": 549,
+      "overflowX": false,
+      "zoom": "100%",
+      "minimumActualNodeFontPx": 15,
+      "fonts": [
+        {
+          "text": "Execute job",
+          "pixelFont": 16.5
+        },
+        {
+          "text": "Store result",
+          "pixelFont": 16.5
+        },
+        {
+          "text": "Prepare job",
+          "pixelFont": 16.5
+        },
+        {
+          "text": "Inspect error",
+          "pixelFont": 16.049999999999997
+        },
+        {
+          "text": "Record failure",
+          "pixelFont": 15
+        },
+        {
+          "text": "Queue retry",
+          "pixelFont": 16.5
+        }
+      ],
+      "dockCoveredNodesAtPageTop": [],
+      "dockOverlapsSvgAtPageTop": true,
+      "bottomScroll": {
+        "scrollY": 549,
+        "lowestNodeBottom": 495.6875,
+        "allNodesAboveViewportBottom": true
+      }
+    }
+  ]
+}
