@@ -609,7 +609,13 @@ test('Reader Layout preserves final-artifact behavior across its ownership bound
         participants: [{ id: 'a', type: 'external', label: 'Client' }, { id: 'b', type: 'backend', label: 'Server' }],
         messages: [{ from: 'a', to: 'b', y: 160, label: 'ping' }] };
       const waterfall = JSON.parse(fs.readFileSync(path.join(skillRoot, 'examples/checkout-request.waterfall.json'), 'utf8'));
-      for (const [mode, doc] of [['sequence', sequence], ['waterfall', waterfall]]) {
+      const workflow = { schema_version: 2, diagram_type: 'workflow',
+        meta: { title: 'Reader stacked workflow', output: 'reader-workflow.html', legend: { mode: 'hidden' } },
+        lanes: [{ id: 'runtime', label: 'Runtime' }],
+        nodes: [-180, -90, 0, 90, 180].map((yOffset, index) => ({
+          id: `stage-${index}`, lane: 'runtime', col: 2, type: 'backend', label: `Stage ${index + 1}`, yOffset,
+        })), edges: [] };
+      for (const [mode, doc] of [['sequence', sequence], ['waterfall', waterfall], ['workflow', workflow]]) {
         const input = path.join(scratch, `${mode}-automatic.json`);
         const output = path.join(scratch, `${mode}-automatic.html`);
         fs.writeFileSync(input, JSON.stringify(doc));
