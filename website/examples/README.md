@@ -26,6 +26,6 @@ The HTML files here are frozen, verified build inputs for the Gallery. Ordinary 
 
 ## Interaction evidence
 
-The three examples and all five children were checked in real Chrome at 1366 × 768. Checks exercised actual SVG downloads, independent main and child targets, parent selection, and return scroll position. The new child labels measured at least 11.3 CSS pixels. The BAGEL context child is tall and uses page scrolling. These checks describe the authored examples, rather than all possible diagrams.
+The three examples and all five children were checked in real Chrome at 1920 × 1080, 1366 × 768 and 1280 × 720. Every complete child graph fits these viewports. Checks also exercised actual SVG downloads, independent main and child targets, parent selection, and return scroll position. At 1366 × 768, BAGEL context labels measure about 13.2 CSS pixels. Selecting a component keeps the graph size stable. [Screenshots and sizing evidence](../../docs/issue-269-visual-evidence/responsive/README.md) record the results. Taller authored graphs can still use page scrolling when a complete fit would make the labels too small.
 
 The [walkthrough](https://github.com/Puuuuup/archify/tree/labs/subarchitecture#try-subarchitecture-in-labs) plays directly in the Labs README. It uses actual browser captures and clicks. Its English narration uses local Kokoro. English and Chinese captions follow separately synthesized sentence durations. The [composition source](../../videos/archify-subarchitecture/README.md) explains reproduction.

@@ -10,8 +10,8 @@
     "bytes": 11611
   },
   "artifact": {
-    "sha256": "423b070c4352be60d477ca3e3aa7729df04651821811569043a30f0cf80cb7ac",
-    "bytes": 846973
+    "sha256": "5c4dc208789c295adbc582e3ce4534754a74f8371c1f480fbc186da5e71bb5ba",
+    "bytes": 850542
   },
   "gates": {
     "validate": "pass",
@@ -23,7 +23,7 @@
     "url": "https://github.com/lance-format/lance",
     "revision": "75c7762d426b425f9999be6eb497e105f20b20fc"
   },
-  "generatorCommit": "95cae569f45f083e9f0b2fc25de759ca57b99e4d",
+  "generatorCommit": "b6e0ad361a0323d04e22dd14fadf0f8f712e7c2a",
   "method": "Archify finalize with the pinned official checkout and a real Chrome browser",
   "visualReview": "not-requested"
 }

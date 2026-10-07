@@ -79,7 +79,7 @@
             "label": "Text prompt",
             "pos": [
               40,
-              90
+              40
             ],
             "size": [
               170,
@@ -99,7 +99,7 @@
             "label": "Tokenizer",
             "pos": [
               260,
-              90
+              40
             ],
             "size": [
               170,
@@ -120,7 +120,7 @@
             "label": "Image input",
             "pos": [
               40,
-              330
+              190
             ],
             "size": [
               170,
@@ -140,7 +140,7 @@
             "label": "Vision encoder",
             "pos": [
               260,
-              330
+              190
             ],
             "size": [
               170,
@@ -161,7 +161,7 @@
             "label": "MLP connector",
             "pos": [
               480,
-              330
+              190
             ],
             "size": [
               170,
@@ -182,7 +182,7 @@
             "label": "VAE encoder",
             "pos": [
               260,
-              570
+              340
             ],
             "size": [
               170,
@@ -203,7 +203,7 @@
             "label": "Latent projection",
             "pos": [
               480,
-              570
+              340
             ],
             "size": [
               170,
@@ -224,7 +224,7 @@
             "label": "KV cache update",
             "pos": [
               730,
-              330
+              190
             ],
             "size": [
               170,
