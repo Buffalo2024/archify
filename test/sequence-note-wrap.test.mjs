@@ -138,6 +138,19 @@ test('a short note on a reverse message that skips a participant keeps its origi
   assert.match(html, new RegExp(`<text data-detail="fine" x="${client + 19}" y="218" class="t-dim" font-size="7">from replica</text>`));
 });
 
+test('equal spread gaps that differ only by floating-point rounding keep the left-most gap', (t) => {
+  // Six and seven spread columns produce middle gaps such as 141.80000000000007.
+  for (const count of [6, 7]) {
+    const ids = Array.from({ length: count }, (_, index) => `p${index}`);
+    for (const [from, to] of [[ids.at(-1), ids[0]], [ids[0], ids.at(-1)]]) {
+      const html = render(t, sequence({ participants: ids, messages: [{ from, to, y: 200, label: 'reply', note: 'ok' }] }));
+      const [first] = lifelines(html);
+      const [note] = notes(html);
+      assert.ok(Math.abs(note.x - (first + 19)) < 1e-9, `${count} participants, ${from} → ${to}: note at ${note.x}, expected ${first + 19}`);
+    }
+  }
+});
+
 // Fixed columns keep the first note beside the segment label column at x=56.
 test('a segment label steps up clear of a wrapped note', (t) => {
   const spec = sequence({
@@ -155,6 +168,46 @@ test('a segment label steps up clear of a wrapped note', (t) => {
     `segment label at y=${labelY} clears the note from ${noteTop}`);
 });
 
+// Read one structured diagnostic from `validate --json` and apply its single
+// supported fix ("set /json/pointer to value") to a copy of the input.
+function failure(t, spec, code) {
+  const { result } = run(t, 'validate', spec);
+  assert.notEqual(result.status, 0, 'validate must fail');
+  const diagnostic = JSON.parse(result.stdout).diagnostics.find((entry) => entry.code === code);
+  assert.ok(diagnostic, `expected ${code} in ${result.stdout}`);
+  assert.equal(diagnostic.severity, 'error');
+  return diagnostic;
+}
+
+function applyFix(spec, fix) {
+  const [, pointer, value] = fix.match(/^set (\/\S+) to (.+)$/);
+  const copy = structuredClone(spec);
+  const keys = pointer.slice(1).split('/');
+  const parent = keys.slice(0, -1).reduce((node, key) => {
+    node[key] ??= {};
+    return node[key];
+  }, copy);
+  parent[keys.at(-1)] = JSON.parse(value);
+  return copy;
+}
+
+test('a segment label left covering a message label reports it with a verified fix', (t) => {
+  // The reviewer's case: the wrapped note pushes the label up onto "request".
+  const spec = sequence({ messages: [{ from: 'client', to: 'api', y: 200, label: 'request', note: LONG_NOTE }] });
+  spec.meta.column_fit = 'fixed';
+  spec.segments = [{ label: 'Fallback', from: 280, to: 360 }];
+  const diagnostic = failure(t, spec, 'sequence/segment-label-overlap');
+  assert.deepEqual(diagnostic.subject, { diagramType: 'sequence', segment: 'Fallback', path: '/segments/0/from' });
+  assert.equal(diagnostic.evidence.attempts, 4);
+  assert.equal(diagnostic.evidence.covered.kind, 'message label');
+  assert.equal(diagnostic.evidence.covered.path, '/messages/0/label');
+  assert.equal(diagnostic.evidence.covered.message, 'request');
+  assert.equal(diagnostic.supportedFixes.length, 1);
+  assert.match(diagnostic.supportedFixes[0], /^set \/segments\/0\/from to \d+$/);
+  const repaired = run(t, 'validate', applyFix(spec, diagnostic.supportedFixes[0])).result;
+  assert.equal(repaired.status, 0, repaired.stdout);
+});
+
 test('a segment label with no clear position names the note it would cover', (t) => {
   const spec = sequence({
     messages: [
@@ -164,9 +217,12 @@ test('a segment label with no clear position names the note it would cover', (t)
   });
   spec.meta.column_fit = 'fixed';
   spec.segments = [{ label: 'Fallback', from: 360, to: 400 }];
-  const { result } = run(t, 'validate', spec);
-  assert.notEqual(result.status, 0);
-  assert.match(result.stdout, /Segment \\"Fallback\\" label would cover the note on message \\"request\\"/);
+  const diagnostic = failure(t, spec, 'sequence/segment-label-overlap');
+  assert.equal(diagnostic.evidence.covered.kind, 'note');
+  assert.equal(diagnostic.evidence.covered.path, '/messages/1/note');
+  for (const fix of diagnostic.supportedFixes) {
+    assert.equal(run(t, 'validate', applyFix(spec, fix)).result.status, 0, `${fix} must hold`);
+  }
 });
 
 test('a wrapped note below an authored canvas reports the height it needs', (t) => {
@@ -174,11 +230,15 @@ test('a wrapped note below an authored canvas reports the height it needs', (t) 
     ...sequence({ messages: [{ id: 'late', from: 'client', to: 'api', y: 660, label: 'late', note: LONG_NOTE.repeat(3) }] }),
     meta: { title: 'Fixed canvas', output: 'note.html', quality_profile: 'showcase', column_fit: 'spread', viewBox: [920, height], legend: { mode: 'hidden' } },
   });
-  const failed = run(t, 'validate', spec(760)).result;
-  assert.notEqual(failed.status, 0);
-  const required = Number(failed.stdout.match(/set meta\.viewBox\[1\] to at least (\d+)/)?.[1]);
-  assert.ok(required > 760, failed.stdout);
-  const repaired = run(t, 'validate', spec(required)).result;
+  const diagnostic = failure(t, spec(760), 'sequence/note-canvas-limit');
+  assert.equal(diagnostic.subject.path, '/messages/0/note');
+  assert.equal(diagnostic.subject.message, 'late');
+  assert.equal(diagnostic.evidence.viewBoxHeight, 760);
+  assert.equal(diagnostic.evidence.canvasLimitY, 760 - 65 + 20);
+  assert.ok(diagnostic.evidence.note.y + diagnostic.evidence.note.height > diagnostic.evidence.canvasLimitY);
+  const required = diagnostic.evidence.requiredViewBoxHeight;
+  assert.deepEqual(diagnostic.supportedFixes, [`set /meta/viewBox/1 to ${required}`]);
+  const repaired = run(t, 'validate', applyFix(spec(760), diagnostic.supportedFixes[0])).result;
   assert.equal(repaired.status, 0, repaired.stdout);
   const standard = spec(760);
   standard.meta.quality_profile = 'standard';
@@ -193,15 +253,18 @@ test('a wrapped note that reaches the next message names the message and the y i
       { id: 'reply', from: 'api', to: 'client', y: replyY, label: 'reply', variant: 'return' },
     ],
   });
-  const failed = run(t, 'validate', crowded(230)).result;
-  assert.notEqual(failed.status, 0);
-  const receipt = JSON.parse(failed.stdout);
-  const message = receipt.diagnostics.map((entry) => entry.message).join('\n');
-  assert.match(message, /Note on message "request" wraps to \d+ lines/);
-  const requiredY = Number(message.match(/move "reply" and later messages down so it sits at y=(\d+) or below/)?.[1]);
-  assert.ok(requiredY > 230, message);
+  const diagnostic = failure(t, crowded(230), 'sequence/note-overlap');
+  assert.match(diagnostic.message, /Note on message "request" wraps to \d+ lines/);
+  assert.deepEqual(diagnostic.subject, { diagramType: 'sequence', message: 'request', path: '/messages/0/note', from: 'client', to: 'api' });
+  assert.equal(diagnostic.evidence.blocker.path, '/messages/1/y');
+  assert.equal(diagnostic.evidence.blocker.message, 'reply');
+  assert.equal(diagnostic.evidence.blocker.y, 230);
+  assert.ok(diagnostic.evidence.lines > 1);
+  const requiredY = diagnostic.evidence.requiredY;
+  assert.ok(requiredY > 230);
+  assert.deepEqual(diagnostic.supportedFixes, [`set /messages/1/y to ${requiredY}`]);
 
-  const repaired = run(t, 'validate', crowded(requiredY)).result;
+  const repaired = run(t, 'validate', applyFix(crowded(230), diagnostic.supportedFixes[0])).result;
   assert.equal(repaired.status, 0, repaired.stdout);
   const html = render(t, crowded(requiredY));
   assert.equal(decode(notes(html)[0].lines.join(' ')), LONG_NOTE);

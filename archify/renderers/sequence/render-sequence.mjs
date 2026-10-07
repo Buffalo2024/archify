@@ -83,6 +83,9 @@ const NOTE_ARROW_INSET = 7;
 const NOTE_TEXT_INSET = 12;
 // Activation bars reach 5px past a lifeline; keep 6px of air beyond them.
 const NOTE_LIFELINE_CLEARANCE = 11;
+// Spread columns share one computed gap, but subtracting floating-point column
+// centres can differ in the last digits; such gaps still count as equal.
+const NOTE_GAP_TOLERANCE = 0.5;
 const NOTE_BREAK_AFTER = new Set(['/', '.', '-', '?', '&', '=', '#', '_']);
 const noteSegmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
 const noteLayouts = new Map();
@@ -140,7 +143,7 @@ function noteGapIndex(fromIndex, toIndex) {
   let best = null;
   for (let gap = low; gap < high; gap += 1) {
     const width = participantX(gap + 1) - participantX(gap);
-    if (!best || width > best.width) best = { gap, width };
+    if (!best || width > best.width + NOTE_GAP_TOLERANCE) best = { gap, width };
   }
   return best?.gap ?? null;
 }
@@ -273,17 +276,54 @@ function messageRouteBox(message) {
   };
 }
 
+// Message labels, routes and notes a segment label must not cover, with the
+// source path of each so a failure can name what it hides.
+function segmentLabelOccupants() {
+  return asArray(sequence.messages).flatMap((message, messageIndex) => [
+    { kind: 'message label', path: `/messages/${messageIndex}/label`, message, rect: messageLabelBox(message) },
+    { kind: 'message route', path: `/messages/${messageIndex}/y`, message, rect: messageRouteBox(message) },
+    { kind: 'note', path: `/messages/${messageIndex}/note`, message, rect: noteRect(message) },
+  ]).filter((occupant) => occupant.rect);
+}
+
 function segmentLabelBox(segment) {
   const labelW = Math.max(42, textUnits(segment.label) * 5.2 + 14);
-  const occupied = asArray(sequence.messages)
-    .flatMap((message) => [messageLabelBox(message), messageRouteBox(message), noteRect(message)])
-    .filter(Boolean);
+  const occupied = segmentLabelOccupants();
   const label = { x: 56, y: segment.from - 22, width: labelW, height: 18 };
   for (let attempt = 0; attempt < 4; attempt += 1) {
-    if (!occupied.some((rect) => rectsOverlap(label, rect, 2))) break;
+    if (!occupied.some(({ rect }) => rectsOverlap(label, rect, 2))) break;
     label.y -= 22;
   }
   return label;
+}
+
+// Whether moving one message to `y` keeps it readable: inside the timeline,
+// 28px from messages sharing its horizontal span, and clear of every other
+// label, route and note. Used to offer only repairs that hold.
+function messageFitsAt(messageIndex, y) {
+  const messages = asArray(sequence.messages);
+  if (y < layout.lifelineTop + 18 || y > layout.lifelineBottom - 18) return false;
+  const span = (message) => {
+    const from = participants.get(message.from)?.cx;
+    const to = participants.get(message.to)?.cx;
+    return [Math.min(from, to), Math.max(from, to)];
+  };
+  const moved = { ...messages[messageIndex], y };
+  const [left, right] = span(moved);
+  const movedRects = [messageLabelBox(moved), messageRouteBox(moved), noteRect(moved)].filter(Boolean);
+  return messages.every((other, otherIndex) => {
+    if (otherIndex === messageIndex || typeof other.y !== 'number') return true;
+    const [otherLeft, otherRight] = span(other);
+    if (Math.abs(other.y - y) < 28 && left < otherRight && otherLeft < right) return false;
+    const otherRects = [messageLabelBox(other), messageRouteBox(other), noteRect(other)].filter(Boolean);
+    return !movedRects.some((rect) => otherRects.some((otherRect) => rectsOverlap(rect, otherRect, 2)));
+  });
+}
+
+// The first occupant the segment label still covers after its upward steps.
+function segmentLabelBlocker(segment) {
+  const label = segmentLabelBox(segment);
+  return segmentLabelOccupants().find(({ rect }) => rectsOverlap(label, rect, 2)) || null;
 }
 
 const compositionFrames = asArray(sequence.segments).map((segment, index) => ({
@@ -473,6 +513,16 @@ function validateSequence() {
   // later message or the canvas bottom needs the diagram changed; authored y
   // values and viewBox stay as written. Showcase only, so standard keeps
   // accepting existing diagrams.
+  const report = (problem, detail) => {
+    problems.push(problem);
+    diagnostics.push({ severity: 'error', message: problem, ...detail });
+  };
+  const bounds = (rect) => ({
+    x: Math.round(rect.x * 10) / 10,
+    y: Math.round(rect.y * 10) / 10,
+    width: Math.round(rect.width * 10) / 10,
+    height: Math.round(rect.height * 10) / 10,
+  });
   if (readableMessages) {
     const messages = asArray(sequence.messages);
     const noteFloor = layout.lifelineBottom + 20;
@@ -481,26 +531,57 @@ function validateSequence() {
       if (!note) return;
       const lines = note.lines.length === 1 ? '1 line' : `${note.lines.length} lines`;
       const bottom = Math.ceil(note.bottom);
-      if (note.bottom > noteFloor) {
-        const requiredHeight = Math.ceil(viewBox[1] + note.bottom - noteFloor);
-        problems.push(`Note on message "${message.label}" wraps to ${lines} and ends at y=${bottom}, below the canvas content limit y=${noteFloor} — set meta.viewBox[1] to at least ${requiredHeight}, move the message up, or shorten the note.`);
-      }
       const ownRect = noteRect(message);
+      const subject = {
+        diagramType: 'sequence',
+        message: message.label ?? null,
+        path: `/messages/${messageIndex}/note`,
+        from: message.from,
+        to: message.to,
+      };
+      if (note.bottom > noteFloor) {
+        // A visible legend needs its own room below the note as well.
+        const requiredHeight = Math.max(Math.ceil(viewBox[1] + note.bottom - noteFloor), legendRequiredHeight(viewBox[0]));
+        const fix = sequence.meta?.viewBox
+          ? `set /meta/viewBox/1 to ${requiredHeight}`
+          : `set /meta/viewBox to [${viewBox[0]}, ${requiredHeight}]`;
+        report(`Note on message "${message.label}" wraps to ${lines} and ends at y=${bottom}, below the canvas content limit y=${noteFloor} — set meta.viewBox[1] to at least ${requiredHeight}, move the message up, or shorten the note.`, {
+          code: 'sequence/note-canvas-limit',
+          subject,
+          evidence: { lines: note.lines.length, note: bounds(ownRect), canvasLimitY: noteFloor, viewBoxHeight: viewBox[1], requiredViewBoxHeight: requiredHeight },
+          supportedFixes: [fix],
+        });
+      }
       const blocker = messages
         .map((other, otherIndex) => {
           if (otherIndex === messageIndex || typeof other.y !== 'number' || other.y <= message.y) return null;
-          const rects = [messageLabelBox(other), messageRouteBox(other), noteRect(other)].filter(Boolean);
-          return rects.some((rect) => rectsOverlap(ownRect, rect, 2)) ? other : null;
+          const hit = [
+            ['message label', messageLabelBox(other)],
+            ['message route', messageRouteBox(other)],
+            ['note', noteRect(other)],
+          ].find(([, rect]) => rect && rectsOverlap(ownRect, rect, 2));
+          return hit ? { message: other, index: otherIndex, kind: hit[0], rect: hit[1] } : null;
         })
         .filter(Boolean)
-        .sort((a, b) => a.y - b.y)[0];
+        .sort((a, b) => a.message.y - b.message.y)[0];
       if (!blocker) return;
       const requiredY = Math.ceil(note.bottom + 22);
-      problems.push(`Note on message "${message.label}" wraps to ${lines} (down to y=${bottom}) and reaches message "${blocker.label}" at y=${blocker.y} — move "${blocker.label}" and later messages down so it sits at y=${requiredY} or below, or shorten the note.`);
+      const blockerPath = `/messages/${blocker.index}/y`;
+      report(`Note on message "${message.label}" wraps to ${lines} (down to y=${bottom}) and reaches message "${blocker.message.label}" at y=${blocker.message.y} — move "${blocker.message.label}" and later messages down so it sits at y=${requiredY} or below, or shorten the note.`, {
+        code: 'sequence/note-overlap',
+        subject,
+        evidence: {
+          lines: note.lines.length,
+          note: bounds(ownRect),
+          blocker: { message: blocker.message.label ?? null, path: blockerPath, y: blocker.message.y, kind: blocker.kind, bounds: bounds(blocker.rect) },
+          requiredY,
+        },
+        supportedFixes: messageFitsAt(blocker.index, requiredY) ? [`set ${blockerPath} to ${requiredY}`] : [],
+      });
     });
   }
 
-  for (const segment of asArray(sequence.segments)) {
+  asArray(sequence.segments).forEach((segment, segmentIndex) => {
     if (segment.to <= segment.from) {
       problems.push(`Segment "${segment.label}" has invalid y range (from ${segment.from} to ${segment.to}) — "to" must be greater than "from".`);
     }
@@ -513,18 +594,34 @@ function validateSequence() {
       const requiredWidth = Math.ceil(labelBox.x + labelBox.width + 48);
       problems.push(`Segment "${segment.label}" label (~${Math.round(labelBox.width)}px) exceeds the segment frame's available width (${availableWidth}px) — shorten the label or increase meta.viewBox[0] to at least ${requiredWidth}.`);
     }
-    // Segment labels are drawn above notes and step up to stay clear of them;
-    // in showcase, a label with no clear position would hide note text.
-    if (readableMessages) {
-      const covered = asArray(sequence.messages).find((message) => {
-        const rect = noteRect(message);
-        return rect && rectsOverlap(labelBox, rect, 2);
-      });
-      if (covered) {
-        problems.push(`Segment "${segment.label}" label would cover the note on message "${covered.label}" — move the segment start (from: ${segment.from}) or that message so they are further apart, or shorten the note.`);
+    // Segment labels are drawn above messages and notes and step up to stay
+    // clear of them; in showcase, a label left covering any of them fails.
+    const covered = readableMessages ? segmentLabelBlocker(segment) : null;
+    if (covered) {
+      // Offer the nearest start whose label lands clear, inside the segment.
+      let clearFrom = null;
+      for (let distance = 1; distance <= 300 && clearFrom === null; distance += 1) {
+        for (const candidate of [segment.from + distance, segment.from - distance]) {
+          if (candidate < layout.topY || candidate >= segment.to) continue;
+          if (!segmentLabelBlocker({ ...segment, from: candidate })) {
+            clearFrom = candidate;
+            break;
+          }
+        }
       }
+      const fromPath = `/segments/${segmentIndex}/from`;
+      report(`Segment "${segment.label}" label would cover the ${covered.kind} of message "${covered.message.label}" — move the segment start (from: ${segment.from}) or that message so they are further apart${covered.kind === 'note' ? ', or shorten the note' : ''}.`, {
+        code: 'sequence/segment-label-overlap',
+        subject: { diagramType: 'sequence', segment: segment.label ?? null, path: fromPath },
+        evidence: {
+          label: bounds(labelBox),
+          attempts: 4,
+          covered: { kind: covered.kind, message: covered.message.label ?? null, path: covered.path, bounds: bounds(covered.rect) },
+        },
+        supportedFixes: clearFrom === null ? [] : [`set ${fromPath} to ${clearFrom}`],
+      });
     }
-  }
+  });
 
   for (const activation of asArray(sequence.activations)) {
     if (!participants.has(activation.participant)) problems.push(`Activation references unknown participant "${activation.participant}".`);
