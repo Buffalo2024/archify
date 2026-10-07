@@ -65,6 +65,21 @@ test('waterfall: percentages name their denominator and are never summed into th
   assert.match(html, /data-waterfall-evidence="illustrative"/);
 });
 
+test('waterfall: small fractional values keep nonzero duration labels', () => {
+  for (const duration of [0.004, 0.00004, 1e-8]) {
+    const diagram = clone(small);
+    diagram.spans = [{ id: 'request', name: 'Request', start: 0, duration }];
+    const result = run(diagram);
+    assert.equal(result.status, 0, result.stderr);
+    const html = fs.readFileSync(result.output, 'utf8');
+    assert.match(html, new RegExp(`${String(duration).replace('.', '\\.')} ms`));
+    const tickLabels = [...html.matchAll(/class="t-muted wf-num"[^>]*>([^<]+)<\/text>/g)].map((match) => match[1]);
+    assert.ok(new Set(tickLabels).size > 1, 'distinct positive ticks must not all round to zero');
+    const report = layoutOf(diagram);
+    assert.notEqual(report.rows[0].label, '0 ms');
+  }
+});
+
 test('waterfall: a short operation keeps its duration label beside the bar', () => {
   const diagram = clone(small);
   diagram.spans.push({ id: 'cache', name: 'Read cache', start: 400, duration: 4, parent: 'payment' });

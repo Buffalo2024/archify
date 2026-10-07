@@ -126,6 +126,10 @@ const rows = [];
 }(spans.filter((span) => span.parent === undefined), 0));
 
 function number(value) {
+  if (value !== 0 && Math.abs(value) < 0.01) {
+    return Math.abs(value) < 1e-6 ? Number(value.toPrecision(3)).toString()
+      : value.toLocaleString('en-US', { maximumSignificantDigits: 3 });
+  }
   const rounded = Math.round(value * 100) / 100;
   return rounded.toLocaleString('en-US', { maximumFractionDigits: 2 });
 }
