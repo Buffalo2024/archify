@@ -23,7 +23,7 @@
     "url": "https://github.com/lance-format/lance",
     "revision": "75c7762d426b425f9999be6eb497e105f20b20fc"
   },
-  "generatorCommit": "41798f5f6aab5c3b8e0b8dbf5ac5942b7939a503",
+  "generatorCommit": "4114636795e5405bfd4fab82fd5326956fa514ab",
   "method": "Archify finalize with the pinned official checkout and a real Chrome browser",
   "visualReview": "not-requested"
 }

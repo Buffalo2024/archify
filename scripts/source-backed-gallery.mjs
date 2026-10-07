@@ -7,6 +7,11 @@ import path from 'node:path';
 export function verifiedGalleryArtifact(directory, item, sourceBuffer) {
   const receipt = JSON.parse(fs.readFileSync(path.join(directory, `${item.id}.receipt.json`), 'utf8'));
   const artifact = fs.readFileSync(path.join(directory, item.output));
+  // Git stores these text inputs with LF. Verify that exact representation
+  // before accepting a receipt, including files written by Windows authoring tools.
+  if (sourceBuffer.includes(Buffer.from('\r\n')) || artifact.includes(Buffer.from('\r\n'))) {
+    throw new Error(`${item.id}: frozen Gallery inputs must use LF line endings; convert the input and rerun finalize`);
+  }
   const hash = (buffer) => crypto.createHash('sha256').update(buffer).digest('hex');
   const source = JSON.parse(sourceBuffer.toString('utf8'));
   if (receipt.ok !== true || receipt.quality !== 'showcase'

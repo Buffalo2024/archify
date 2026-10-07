@@ -24,6 +24,8 @@ node scripts/build-gallery.mjs docs
 
 The HTML files here are frozen, verified build inputs for the Gallery. Ordinary site builds check their JSON and HTML digests against the passing finalize records. They do not download external repositories. Changed inputs or failed browser gates require regeneration. These external source examples are kept outside the standalone Skill ZIP.
 
+Use LF line endings for the frozen JSON and HTML files before running finalize. The receipts verify the exact bytes stored by Git.
+
 ## Interaction evidence
 
 The three examples and all five children were checked in real Chrome at 1920 × 1080, 1366 × 768 and 1280 × 720. Every complete child graph fits these viewports. Checks also exercised actual SVG downloads, independent main and child targets, parent selection, and return scroll position. At 1366 × 768, BAGEL context labels measure about 13.2 CSS pixels. Selecting a component keeps the graph size stable. [Screenshots and sizing evidence](../../docs/issue-269-visual-evidence/responsive/README.md) record the results. Taller authored graphs can still use page scrolling when a complete fit would make the labels too small.
