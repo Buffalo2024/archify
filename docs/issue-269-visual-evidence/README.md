@@ -51,6 +51,8 @@ The PR description links engineering CI for the updated head and records the loc
 
 ## Labs corrections
 
+The screenshots, pixel comparisons, and receipt above are historical evidence from the contributor candidate. Maintainer finalization additionally preserves child scope in ordinary CLI failure diagnostics, paints child PNG and clipboard exports with the current theme background, and gives the active child priority over background Lens selections when handling Escape. Those corrections have separate regression results; the earlier artifacts are not presented as a new run of the corrected source.
+
 `validate architecture <input> --layout-json` now compiles the child graphs before reporting overall success. Its `subarchitectures` results and failure diagnostics identify each owning parent and local scope. The regression includes the maintainer's overlapping Transformer components, identical failures under two parents, successful child geometry, and a failed parent with valid children.
 
 The download regression allows Chrome to write a real child SVG to disk. It observes the actual anchor click without replacing or cancelling it, verifies that the file contains the child graph, and checks the parent selection before download, after download, and after returning. The export isolation regression also retains native anchor clicks while testing the other child formats and the separate main export.

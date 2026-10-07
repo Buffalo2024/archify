@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { after, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { compileArchitectureGraph } from '../archify/renderers/architecture/architecture-compiler.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const skillRoot = path.resolve(here, '..', 'archify');
@@ -346,4 +347,86 @@ test('layout inspection retains parent failures alongside valid child reports', 
   assert.ok(report.diagnostics.some((entry) => /Components .*less than 8px apart/.test(entry.message)));
   assert.ok(report.diagnostics.every((entry) => !entry.subject.parentId));
   assert.ok(report.subarchitectures.every((child) => child.ok));
+});
+
+for (const [name, code, mutate] of [
+  ['self-loop', 'layout/self-loop-ports', (graph) => {
+    graph.connections = [{ id: 'bad-loop', from: graph.components[0].id, to: graph.components[0].id, fromSide: 'right', toSide: 'right' }];
+  }],
+  ['endpoint-side', 'clean-flow/endpoint-side-direction', (graph) => {
+    graph.connections = [{ id: 'bad-side', from: graph.components[0].id, to: graph.components[1].id, fromSide: 'right', toSide: 'left', via: [[160, 180], [240, 180]] }];
+  }],
+]) {
+  test(`public validation scopes child ${name} diagnostics while preserving parent subjects`, () => {
+    const { diagram, input } = writeFixture(`scoped-${name}`, (diagram) => {
+      mutate(diagram.components[0].subarchitecture);
+    });
+    const childResults = [
+      run(['validate', 'architecture', input, '--json']),
+      run(['validate', 'architecture', input, '--layout-json']),
+      run(['deliver', 'architecture', input, path.join(tmp, `${name}.html`), '--json']),
+    ];
+    for (const result of childResults) {
+      assert.equal(result.status, 1, result.stderr || result.stdout);
+      assert.equal(result.stderr, '');
+      const failure = JSON.parse(result.stdout);
+      const diagnostic = failure.diagnostics.find((entry) => entry.code === code);
+      assert.ok(diagnostic, JSON.stringify(failure.diagnostics, null, 2));
+      assert.equal(diagnostic.subject.collection, 'connections');
+      assert.equal(diagnostic.subject.index, 0);
+      assert.equal(diagnostic.subject.graphScope, 'subarchitecture');
+      assert.equal(diagnostic.subject.parentId, 'parent-a');
+      assert.equal(diagnostic.subject.subjectBase, '/components/0/subarchitecture');
+      assert.ok(diagnostic.supportedFixes.length > 0);
+      assert.ok(Object.keys(diagnostic.evidence).length > 0);
+    }
+    diagram.components[1].subarchitecture = structuredClone(diagram.components[0].subarchitecture);
+    const siblingsInput = path.join(tmp, `siblings-${name}.architecture.json`);
+    fs.writeFileSync(siblingsInput, JSON.stringify(diagram));
+    const siblings = run(['validate', 'architecture', siblingsInput, '--layout-json']);
+    assert.equal(siblings.status, 1, siblings.stderr || siblings.stdout);
+    const siblingReport = JSON.parse(siblings.stdout);
+    for (const [index, child] of siblingReport.subarchitectures.entries()) {
+      const diagnostics = child.diagnostics.filter((entry) => entry.code === code);
+      assert.ok(diagnostics.length > 0, JSON.stringify(child.diagnostics));
+      for (const diagnostic of diagnostics) {
+        assert.equal(diagnostic.subject.parentId, `parent-${index === 0 ? 'a' : 'b'}`);
+        assert.equal(diagnostic.subject.subjectBase, `/components/${index}/subarchitecture`);
+        assert.equal(diagnostic.subject.collection, 'connections');
+        assert.equal(diagnostic.subject.index, 0);
+        assert.ok(Object.keys(diagnostic.evidence).length > 0);
+      }
+    }
+    assert.equal(siblingReport.diagnostics.length, siblingReport.subarchitectures.reduce((total, child) => total + child.diagnostics.length, 0));
+    const rendered = run(['render', 'architecture', input, path.join(tmp, `${name}-render.html`)]);
+    assert.equal(rendered.status, 1, rendered.stderr || rendered.stdout);
+    assert.ok(!fs.existsSync(path.join(tmp, `${name}-render.html`)));
+
+    const local = diagram.components[0].subarchitecture;
+    const parentInput = path.join(tmp, `parent-${name}.architecture.json`);
+    fs.writeFileSync(parentInput, JSON.stringify({ ...diagram, components: local.components, boundaries: [], connections: local.connections }));
+    const parent = run(['validate', 'architecture', parentInput, '--json']);
+    assert.equal(parent.status, 1, parent.stderr || parent.stdout);
+    const parentDiagnostic = JSON.parse(parent.stdout).diagnostics.find((entry) => entry.code === code);
+    assert.ok(parentDiagnostic);
+    const { graphScope, parentId, subjectBase, ...localSubject } = JSON.parse(childResults[0].stdout).diagnostics.find((entry) => entry.code === code).subject;
+    assert.deepEqual(parentDiagnostic.subject, localSubject);
+  });
+}
+
+test('failed child compilation restores the parent diagnostic subject context', () => {
+  const local = baseDiagram().components[0].subarchitecture;
+  local.connections = [{ id: 'bad-loop', from: 'local-a', to: 'local-a', fromSide: 'right', toSide: 'right' }];
+  let childFailure;
+  try {
+    compileArchitectureGraph(local, { graphScope: 'subarchitecture', parentId: 'parent-a', subjectBase: '/components/0/subarchitecture' });
+  } catch (error) {
+    childFailure = error;
+  }
+  assert.equal(childFailure.archifyDiagnostics[0].subject.parentId, 'parent-a');
+  assert.throws(() => compileArchitectureGraph(local), (error) => {
+    const { graphScope, parentId, subjectBase, ...childSubject } = childFailure.archifyDiagnostics[0].subject;
+    assert.deepEqual(error.archifyDiagnostics[0].subject, childSubject);
+    return true;
+  });
 });

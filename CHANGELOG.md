@@ -10,7 +10,6 @@ All notable changes are documented here. Format loosely follows [Keep a Changelo
 - **Traditional Chinese (Taiwan) Viewer catalog.** `meta.locale: "zh-TW"` now selects a bundled catalog covering all 487 Viewer keys with Taiwan terminology (for example 循序圖, 資料流, 匯出, 檢視), instead of falling back to English. Enrollment is data only: `locales/zh-TW.json` plus one manifest entry. `zh-Hant` and `zh-HK` remain distinct, unbundled tags.
 - **GitLab source links.** Repository evidence on gitlab.com, or on a self-managed host declared with `provider: "gitlab"`, now generates revision-pinned web links (`/-/blob/<revision>/<path>#L<a>-<b>`, `/-/tree/<revision>`) instead of requiring `link_mode: "local-only"`. Nested groups are accepted, SSH and HTTPS origins on the same host match, paths compare case-insensitively, and cited Markdown line ranges open the plain view. Verification is unchanged and `local-only` remains available.
 
-### Added
 - **Scoped one-level Architecture drill-downs.** A top-level Architecture component may own one bounded authored `subarchitecture` without changing the parent graph. Semantic Passport provides the explicit entry; the child reuses the existing node, relationship, theme, motion, and local-inspection vocabulary, supports stable deep links, and can be selected for child-only static or Share Card export while print, embed, Route, Reachability, and WebM remain parent-only.
 
 ### Fixed

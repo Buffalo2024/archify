@@ -6,6 +6,7 @@ const recorded = [];
 const recordedMessages = new Set();
 const boundaryKey = Symbol.for('archify.renderer-diagnostic-boundary');
 let recordingSuppressionDepth = 0;
+let diagnosticSubjectContext = {};
 
 function plainObject(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
@@ -18,7 +19,7 @@ function normalizedDiagnostic(diagnostic) {
     code: String(diagnostic?.code || 'internal/unclassified'),
     severity: diagnostic?.severity === 'warning' ? 'warning' : 'error',
     message,
-    subject: plainObject(diagnostic?.subject),
+    subject: { ...plainObject(diagnostic?.subject), ...diagnosticSubjectContext },
     evidence: plainObject(diagnostic?.evidence),
     supportedFixes: Array.isArray(diagnostic?.supportedFixes)
       ? [...new Set(diagnostic.supportedFixes.map((fix) => String(fix).trim()).filter(Boolean))]
@@ -29,11 +30,25 @@ function normalizedDiagnostic(diagnostic) {
   };
 }
 
+// Renderer compilers are synchronous. Restore the caller's subject even when
+// a child graph fails so later parent or sibling diagnostics keep their scope.
+export function withDiagnosticSubject(subject, callback) {
+  const previous = diagnosticSubjectContext;
+  diagnosticSubjectContext = { ...previous, ...plainObject(subject) };
+  try {
+    return callback();
+  } finally {
+    diagnosticSubjectContext = previous;
+  }
+}
+
 export function recordDiagnostic(diagnostic) {
   if (!DIAGNOSTIC_MODE || recordingSuppressionDepth > 0) return;
   const normalized = normalizedDiagnostic(diagnostic);
-  if (recordedMessages.has(normalized.message)) return;
-  recordedMessages.add(normalized.message);
+  const key = normalized.subject.subjectBase
+    ? `${normalized.subject.subjectBase}:${normalized.message}` : normalized.message;
+  if (recordedMessages.has(key)) return;
+  recordedMessages.add(key);
   recorded.push(normalized);
 }
 
@@ -55,7 +70,11 @@ export function throwDiagnosticError(message, diagnostics) {
 
 export function throwDiagnosticProblems(prefix, problems, { code = 'layout/constraint', subject = {}, diagnostics: details = [] } = {}) {
   const messages = (problems || []).map((problem) => String(problem));
-  const byMessage = new Map(details.map((entry) => [entry.message, entry]));
+  // Shared gates record precise evidence before returning their messages.
+  // Keep that evidence attached to this error, including in layout inspection
+  // where earlier sibling failures must not be selected from global recording.
+  const current = recorded.filter((entry) => entry.subject.subjectBase === diagnosticSubjectContext.subjectBase);
+  const byMessage = new Map([...current, ...details].map((entry) => [entry.message, entry]));
   const diagnostics = messages.map((message) => normalizedDiagnostic(byMessage.get(message) || {
       code,
       severity: 'error',
