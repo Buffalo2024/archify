@@ -81,8 +81,19 @@ const contentBottom = Math.max(0, ...asArray(dataflow.nodes).map(rawNodeBottom),
   ...asArray(dataflow.flows).flatMap(flow => {
     const from = rawNodes.get(flow.from);
     const to = rawNodes.get(flow.to);
-    const routeBottom = flow.channelY ?? (flow.route === 'bottom-channel' && from && to
-      ? Math.max(rawNodeBottom(from), rawNodeBottom(to)) + 26 : 0);
+    // Match routeVia precedence: an authored via (even []) wins; channelY
+    // only contributes geometry for the two horizontal channel presets.
+    let routeBottom = 0;
+    if (!flow.via && from && to) {
+      if (flow.route === 'bottom-channel') {
+        routeBottom = flow.channelY ?? Math.max(rawNodeBottom(from), rawNodeBottom(to)) + 26;
+      } else if (flow.route === 'top-channel') {
+        routeBottom = flow.channelY ?? Math.min(
+          layout.rowYs[from.row] + (from.yOffset || 0),
+          layout.rowYs[to.row] + (to.yOffset || 0),
+        ) - 24;
+      }
+    }
     const viaBottom = Math.max(0, ...asArray(flow.via).map(point => point[1]));
     const pathBottom = Math.max(routeBottom, viaBottom);
     const endpointBottom = Math.max(from ? rawNodeBottom(from) : 0, to ? rawNodeBottom(to) : 0);

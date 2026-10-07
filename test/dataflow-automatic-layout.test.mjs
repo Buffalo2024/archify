@@ -157,3 +157,58 @@ test('natural height includes explicit outer route and two-line label plate', t 
   assert.match(html, /data-composition-points="100,186;100,560;315,560;315,186"/);
   assert.match(html, /<text x="210" y="560"/);
 });
+
+function smallFootprintDiagram(flow) {
+  return {
+    schema_version: 1, diagram_type: 'dataflow',
+    meta: { title: 'Path footprint', output: 'diagram.html', quality_profile: 'showcase' },
+    stages: [{ label: 'In' }, { label: 'Out' }],
+    nodes: [
+      { id: 'a', type: 'backend', label: 'Source', stage: 0, row: 0 },
+      { id: 'b', type: 'backend', label: 'Target', stage: 1, row: 0 },
+    ],
+    flows: [{ from: 'a', to: 'b', label: 'data', ...flow }],
+  };
+}
+
+function footprintSvg(t, diagram) {
+  const { result, input, output } = inspect(t, diagram);
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+  const render = spawnSync(process.execPath, [cli, 'render', 'dataflow', input, output], { encoding: 'utf8' });
+  assert.equal(render.status, 0, render.stderr);
+  return fs.readFileSync(output, 'utf8').match(/<svg\b[^]*?<\/svg>/)[0];
+}
+
+test('straight ignores inactive channelY in both route and natural height', t => {
+  const plain = footprintSvg(t, smallFootprintDiagram({ route: 'straight' }));
+  const inactive = footprintSvg(t, smallFootprintDiagram({ route: 'straight', channelY: 1500 }));
+  assert.match(plain, /viewBox="0 0 940 360"/);
+  assert.match(plain, /data-composition-points="156,157;259,157"/);
+  assert.equal(inactive, plain);
+});
+
+test('explicit via overrides channelY in both route and natural height', t => {
+  const flow = { route: 'bottom-channel', fromSide: 'bottom', toSide: 'bottom',
+    via: [[100, 560], [315, 560]], labelAt: [210, 560], classification: 'restricted' };
+  const plain = footprintSvg(t, smallFootprintDiagram(flow));
+  const inactive = footprintSvg(t, smallFootprintDiagram({ ...flow, channelY: 1500 }));
+  assert.match(plain, /viewBox="0 0 940 674"/);
+  assert.equal(inactive, plain);
+});
+
+test('labelAt overrides labelDy in both label and natural height', t => {
+  const flow = { route: 'straight', labelAt: [210, 210] };
+  const plain = footprintSvg(t, smallFootprintDiagram(flow));
+  const inactive = footprintSvg(t, smallFootprintDiagram({ ...flow, labelDy: 1500 }));
+  assert.match(plain, /viewBox="0 0 940 360"/);
+  assert.match(plain, /<text x="210" y="210"/);
+  assert.equal(inactive, plain);
+});
+
+test('empty authored via also suppresses the preset channel footprint', t => {
+  const flow = { route: 'bottom-channel', fromSide: 'right', toSide: 'left', via: [] };
+  const plain = footprintSvg(t, smallFootprintDiagram(flow));
+  const inactive = footprintSvg(t, smallFootprintDiagram({ ...flow, channelY: 1500 }));
+  assert.match(plain, /viewBox="0 0 940 360"/);
+  assert.equal(inactive, plain);
+});
