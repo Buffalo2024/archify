@@ -666,6 +666,17 @@ function snapPorts(ports, mode) {
     if (!slot.endsWith('|top')) continue;
     const lowerId = slot.split('|')[0];
     if (onSpine(lowerId)) continue;
+    // Validate the final group, since neighboring ports may move together.
+    const group = [...entries.values()].sort((a, b) => a.x - b.x);
+    const state = states.get(lowerId);
+    const targets = group.map((port) => port.key?.kind === 'single'
+      ? ports.get(`${port.key.upperId}|bottom`)?.get(port.key)?.x : undefined);
+    if (targets.every((x, index) => Number.isFinite(x)
+      && x >= state.x + PORT_PAD - 8 && x <= state.x + state.width - PORT_PAD + 8
+      && (index === 0 || x - targets[index - 1] >= 12))) {
+      group.forEach((port, index) => { port.x = targets[index]; });
+      continue;
+    }
     for (const port of entries.values()) {
       const connector = port.key;
       if (connector?.kind === 'single') {
