@@ -533,7 +533,7 @@ test('browser renders local-only sources as searchable text and web sources as l
               locations: rows.map(row => row.querySelector('code').textContent),
               repositoryHref: document.getElementById('focus-repository').getAttribute('href'),
               scope: panel.title,
-              beacon: !!document.querySelector('[data-node-id="users"] [data-source-evidence-beacon]'),
+              badges: document.querySelectorAll('[data-source-evidence-beacon], [data-source-evidence-count], [data-source-evidence-original-label]').length,
               invalidLinks: [...panel.querySelectorAll('a[href]')].some(a => /undefined|javascript:/.test(a.getAttribute('href'))),
               search: document.getElementById('node-finder-results').textContent
             };
@@ -542,7 +542,7 @@ test('browser renders local-only sources as searchable text and web sources as l
         assert.equal(response.exceptionDetails, undefined);
         const observed = response.result.value;
         assert.equal(observed.visible, true);
-        assert.equal(observed.beacon, true);
+        assert.equal(observed.badges, 0);
         assert.equal(observed.invalidLinks, false);
         assert.deepEqual(observed.paths, ['src/router.js', 'src/store.js']);
         assert.match(observed.scope, /local Git/);
@@ -607,9 +607,7 @@ test('repository evidence is revision-verified, receipt-backed, searchable, and 
   assert.match(html, /var sourceSearch = sources\.map/);
   assert.match(html, /renderSourceEvidence\(id\)/);
   assert.match(html, /referrerPolicy = 'no-referrer'/);
-  assert.match(html, /classList\.add\('source-evidence-beacon'\)/);
-  assert.match(html, /text\.textContent = viewerText\('viewer\.passport\.sourceMarker'\) \+ ' ' \+ count/);
-  assert.match(html, /Archify\.sourceEvidence\.installBeacons\(\)/);
+  assert.doesNotMatch(html, /Archify\.sourceEvidence\.installBeacons\(\)|classList\.add\('source-evidence-beacon'\)/);
   assert.match(html, /querySelectorAll\('\[data-source-evidence-beacon\]'\)/);
   assert.match(html, /data-source-evidence-original-label/);
 

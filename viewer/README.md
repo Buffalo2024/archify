@@ -144,7 +144,7 @@ and candidate; encoding bytes/timing are not a deterministic oracle for video.
 
 ## Focus / Semantic Explorer contract
 
-The complete IIFE initializes once after Source Evidence and installBeacons(),
+The complete IIFE initializes once after Source Evidence,
 before Intent Trace. Reader/Chrome Layout, Camera, Finder, Route
 and Lens keep their later positions. Required diagram SVG, Passport controls and
 relationship list remain required DOM. Shared viewerText/viewerCount/viewerKindLabel
@@ -175,10 +175,13 @@ provider is part of Focus ownership, not a second initialization step.
   record or null; reachability returns copied node/edge arrays. Snapshot results
   are constructed from current authored nodes, edges and validated Reach state.
 - Passport uses existing label/kind/detail/context/tag/brand/source metadata. The
-  Source Evidence provider owns repository/node lookup and beacon installation;
+  Source Evidence provider owns repository/node lookup; Finder searches source paths.
   Focus owns displaying or hiding evidence and building the existing safe links.
   Relationship rows are grouped out/in/loop, retaining authored order within each
   group and deduplicating keys. Up/Down/Home/End clamp within the resulting rows.
+  A diagram-container ResizeObserver requests the existing placement frame while
+  Passport is visible, so manual positions are reclamped after Reader layout
+  settles. Active dragging retains its existing placement guard.
 - Relationship intent priority is pin, then focus, then hover. Clearing one intent
   may restore another. Pointer transitions within the same row/hit target do not
   reset intent; touch and non-fine-pointer hover retain their filters. Direct hover
@@ -561,13 +564,36 @@ The source split narrows maintenance scope while preserving runtime dependencies
   It captures `.container`, `.diagram-container` and its direct child SVG,
   optional header/card elements, and the initial viewBox ratio.
 - The public Interface remains `measure`, `schedule`, `whenStable`, `active`,
-  and `receipt`. Viewer Chrome Layout calls `schedule` after changing the
+  `receipt`, and `syncLegend`. Camera calls `syncLegend` while sampling its
+  rendered transform so a corner legend stays fixed through zoom transitions.
+  Viewer Chrome Layout calls `schedule` after changing the
   navigation reserve and `whenStable` while probing layout. The browser
   visual checker also uses `window.Archify.readerLayout.whenStable`.
 - Reader owns the outer width (`html`'s `--archify-reader-width`) and temporary
-  `data-reader-layout` / `data-reader-overflow` attributes. Ineligible measures
-  clear them and reset the recorded width. CSS consumes the width on `.container`.
+  `data-reader-layout` / `data-reader-overflow` attributes. Automatic canvases
+  whose enlargement cap binds also use `data-reader-area` and
+  `--archify-diagram-min-height` to keep a normal viewport-sized reading area.
+  Uncapped and ineligible measures clear these values
+  and reset the recorded width. CSS consumes the width on `.container`.
   Reader never writes canonical SVG geometry, viewBox or semantic IDs.
+- Automatic (`intrinsic-height`) Sequence and Waterfall canvases use the
+  available desktop reading width and retain authored vertical page scroll;
+  overflow settling must not shrink them back to fit the viewport height.
+  Other diagram families retain height fitting. All automatic canvases cap
+  enlargement at 1.5 times the authored SVG width without reducing the outer
+  reading area. Capped SVGs are centered inside that area; uncapped diagrams
+  retain their existing natural flow. In a capped reader area, the original
+  SVG legend uses a temporary CSS transform to sit at the outer canvas's
+  bottom-left content corner, at its normal reading size through 25–100%
+  camera zoom. The group stays in the same SVG for hover/focus and export.
+  A legend that cannot fit clear of the navigation dock keeps its original
+  position. Camera zoom above 100%, a nonbinding cap, small screens, Embed,
+  Present and print restore ordinary in-SVG legend placement; canonical
+  exports remove the corner marker and transform without changing authored
+  coordinates or transforms. The 960px shell floor still serves the header and
+  controls. An explicit viewBox retains
+  its existing fixed-canvas fit. Present still provides the full overview;
+  camera 100% is relative to the fitted reading size, not intrinsic SVG pixels.
 - Initial wide-diagram classification sets `data-wide-diagram` on the diagram
   container and `data-diagram-shape` on `html`. These survive eligibility changes;
   CSS and camera/radar behavior still depend on the wide-diagram flag on narrow
@@ -577,8 +603,8 @@ The source split narrows maintenance scope while preserving runtime dependencies
   the page lifetime. `schedule` coalesces requests; deferred overflow settling
   rechecks eligibility. Leaving adaptive layout clears its state without
   unmounting the module or clearing another module's state.
-- Width eligibility, overflow fallback and optional-observer behavior are
-  unchanged. Shared `waitForStableLayout` waits for fonts, pending work and
+- Desktop eligibility and optional-observer behavior are unchanged. Shared
+  `waitForStableLayout` waits for fonts, pending work and
   consecutive stable dimensions; its default 240-frame sampling limit starts
   after font readiness. It is not a wall-clock timeout for stalled fonts or
   background pages. Keep this helper shared with Viewer Chrome Layout.
@@ -642,6 +668,16 @@ the modes are overview, manual and semantic. Zoom and Reset return undefined;
 `centerAt` returns a boolean, `logicalViewport` can return null, and `sync`
 delegates to `reveal` or returns false. Manual Reset interrupts callers, whereas
 `reset({ automatic: true })` stops camera motion without the manual takeover path.
+
+Manual zoom uses 25 percentage point steps from 25% through 300%, relative to
+the Reader's fitted size. Below 100%, the diagram centers within the visible
+horizontal scroll viewport; diagrams taller than the viewport stay top-aligned.
+Manual zoom adjusts page scrolling for those long diagrams to preserve the
+visible reading region, or reveal the whole diagram when it fits onscreen.
+Map detail and no camera dragging apply; wide mobile layouts retain
+their contained horizontal scroll. Reset restores 100% overview. Semantic reveal
+and Radar centering retain their existing minimum of 100%. Canonical exports
+retain the original geometry regardless of the manual zoom.
 
 `reveal` returns a transaction or false, with branch-specific side effects.
 Desktop empty/unknown targets can return before changing the camera. At widths
