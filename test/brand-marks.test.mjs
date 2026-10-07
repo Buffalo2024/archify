@@ -161,7 +161,7 @@ test('brand discovery resolves model names, aliases, domains, and Chinese channe
 test('all five renderers keep the semantic sigil and add one export-safe brand badge', () => {
   for (const type of Object.keys(cases)) {
     const input = writeFixture(type, `preset-${type}`, 'openai', (_diagram, node) => {
-      if (type === 'lifecycle') node.step = node.step || '01';
+      if (type === 'lifecycle') Object.assign(node, { step: node.step || '01', icon: 'start' });
     });
     const { result, html } = renderSync(type, input, `preset-${type}`);
     assert.equal(result.status, 0, `${type}: ${result.stderr || result.stdout}`);
@@ -223,7 +223,7 @@ test('every renderer enforces the same collision-free brand top rail', () => {
 
 test('branded lifecycle states move the semantic stamp left and keep the brand at upper right', () => {
   const input = writeFixture('lifecycle', 'lifecycle-placement', 'openai', (_diagram, node) => {
-    node.step = '01';
+    Object.assign(node, { step: '01', icon: 'start' });
   });
   const { result, html } = renderSync('lifecycle', input, 'lifecycle-placement');
   assert.equal(result.status, 0, result.stderr || result.stdout);

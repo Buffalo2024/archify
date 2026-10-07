@@ -64,9 +64,12 @@ non-interactive `final` entry when a final state exists. Supported
 `decision`, `success`, `failure`, `neutral`, and `external`.
 
 State decorations share one top rail: the type sigil and `step` on the left and
-the brand mark at the right corner. State width grows from 140px to 220px to fit
-its text at the preferred size (12px label, 9px sublabel, 8px tag) before the
-text shrinks.
+the brand mark at the right corner. Only states a reader should notice get a
+default sigil: `waiting` (hourglass), `decision` (diamond), `success` (check),
+`failure` (cross) and `external`; `start`, `active` and `neutral` states have
+none unless `icon` sets one. State width grows from 140px to 220px to fit its
+text at the preferred size (12px label, 9px sublabel, 8px tag) before the text
+shrinks.
 
 ## Validation
 

@@ -45,6 +45,9 @@ const typeClass = {
   start: 'c-frontend', active: 'c-frontend', waiting: 'c-cloud', decision: 'c-database',
   success: 'c-backend', failure: 'c-security', neutral: 'c-external', external: 'c-external',
 };
+// Ordinary states carry no default corner sigil, so the ones a reader should
+// notice (waiting, decision, outcomes, external) stand out.
+const QUIET_TYPES = new Set(['start', 'active', 'neutral']);
 const textClass = {
   start: 't-frontend', active: 't-frontend', waiting: 't-cloud', decision: 't-database',
   success: 't-backend', failure: 't-security', neutral: 't-muted', external: 't-muted',
@@ -915,6 +918,7 @@ function renderState(state) {
   const tag = state.tag
     ? `\n          <text data-detail="fine" x="${state.cx}" y="${state.y + labelLayout.ys[hasSub ? 2 : 1]}" class="${accent}" font-size="${tagFont}" text-anchor="middle">${esc(state.tag)}</text>`
     : '';
+  const icon = state.icon ?? (QUIET_TYPES.has(state.type) ? 'none' : undefined);
   const step = state.step
     ? `\n          <text data-detail="fine" x="${state.x + 23}" y="${state.y + 14}" class="${accent}" font-size="${TEXT.step}" font-weight="700">${esc(state.step)}</text>`
     : '';
@@ -936,7 +940,7 @@ function renderState(state) {
           ${focusNodeTitle(state.label, passport)}
           <rect x="${state.x}" y="${state.y}" width="${state.width}" height="${state.height}" rx="8" class="c-mask"/>
           <rect x="${state.x}" y="${state.y}" width="${state.width}" height="${state.height}" rx="8" class="${fill}"${animateAttr(lifecycle.meta, 'node', stateSteps.get(state.id))} stroke-width="1.5"/>${finalBorder}${initial}
-          ${renderSemanticSigil(state.type, { icon: state.icon, x: state.x + 6, y: state.y + labelLayout.sigilY, size: labelLayout.sigilSize })}${brand ? `\n          ${brand}` : ''}${step}
+          ${renderSemanticSigil(state.type, { icon, x: state.x + 6, y: state.y + labelLayout.sigilY, size: labelLayout.sigilSize })}${brand ? `\n          ${brand}` : ''}${step}
           <text data-node-label=""${hasSub ? ' data-detail-anchor=""' : ''} x="${state.x + labelLayout.x}" y="${state.y + labelLayout.ys[0]}" class="t-primary" font-size="${labelFont}" font-weight="600" text-anchor="middle">${esc(state.label)}</text>${sub}${tag}
         </g>`;
 }

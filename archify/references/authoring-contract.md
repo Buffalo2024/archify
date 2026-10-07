@@ -586,7 +586,8 @@ workflow/dataflow nodes, sequence participants, or lifecycle states. Choose
 `calendar`, `clock`, `person`, `briefcase`, `flag`, or `moon` for everyday concepts;
 the complete catalog (including existing technical and lifecycle symbols) is
 `common.schema.json#/$defs/nodeIcon`. Use `icon: "none"` to hide the corner symbol.
-Omitting `icon` keeps the type-based default. These inline SVG symbols are
+Omitting `icon` keeps the type-based default; lifecycle `start`, `active`, and
+`neutral` states default to no symbol. These inline SVG symbols are
 renderer-owned and export with the diagram; URLs and raw SVG are not accepted.
 
 Icon selection changes only the corner symbol. The node's type still determines

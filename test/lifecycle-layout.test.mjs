@@ -154,6 +154,28 @@ test('structure errors are typed diagnostics with fixes', () => {
   assert.match(wide.stderr, /\[lifecycle\/too-wide\]/);
 });
 
+test('only states a reader should notice get a default corner sigil', () => {
+  const types = ['start', 'active', 'waiting', 'decision', 'success', 'failure', 'neutral', 'external'];
+  const states = types.map((type) => ({ ...state(type, type), step: '01' }));
+  states.push({ ...state('flagged', 'active'), icon: 'flag' });
+  const result = render(base({
+    mainPath: ['start', 'active', 'decision', 'success'],
+    states,
+    transitions: [
+      { from: 'start', to: 'active' }, { from: 'active', to: 'decision' }, { from: 'decision', to: 'success' },
+      { from: 'active', to: 'waiting' }, { from: 'decision', to: 'failure' }, { from: 'active', to: 'neutral' },
+      { from: 'waiting', to: 'external' }, { from: 'start', to: 'flagged' },
+    ],
+  }));
+  assert.equal(result.code, 0, result.stderr);
+  const group = (id) => result.svg.match(new RegExp(`data-node-id="${id}"[\\s\\S]*?<text data-node-label`))[0];
+  const sigilOf = (id) => group(id).match(/data-semantic-sigil="([^"]+)"/)?.[1] ?? null;
+  assert.deepEqual(Object.fromEntries([...types, 'flagged'].map((id) => [id, sigilOf(id)])), {
+    start: null, active: null, waiting: 'waiting', decision: 'decision', success: 'success',
+    failure: 'failure', neutral: null, external: 'external', flagged: 'flag',
+  });
+});
+
 test('nodeLabelLayout reserves the source badge footprint on the right rail', () => {
   const rows = [{ text: 'Offline mode', font: 10, y: 21 }];
   const without = nodeLabelLayout({ width: 144, height: 64, rows });
