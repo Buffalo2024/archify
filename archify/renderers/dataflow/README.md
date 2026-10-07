@@ -58,7 +58,7 @@ without a database node keeps it visual-only.
 
 | Constant | Value |
 |----------|-------|
-| viewBox | default `[940, 720]`; schema minimum `[360, 360]` |
+| viewBox | default `[940, 720]`; fully automatic showcase width covers all stage frames with 24px right padding (five stages need 1068), and height fits content; schema minimum `[360, 360]` |
 | Stages (2–5) | centers at x = 100 + stage×215; stage band 168 wide, header at y 46 |
 | Row tops (`row` 0–4) | y = 128, 242, 356, 470, 584 (plus `yOffset`) |
 | Default node | 112×58 |
@@ -69,6 +69,23 @@ without a database node keeps it visual-only.
 
 Route presets for flows: `straight`, `vertical-channel`, `bottom-channel`,
 `top-channel`, explicit `via` points, or the default `auto` (midpoint elbow).
+
+Showcase improvements apply only when `meta.viewBox` and every node's `width`
+are omitted. Any authored canvas or node width preserves the established
+whole-diagram layout, as does `standard`.
+
+For a fully automatic showcase, node widths can grow within their stage and
+canvas budget to keep supporting text readable at desktop projection. Height
+follows actual node bounds, routed points and rendered label plates, leaving
+24px below content plus the 74px stage/legend reserve. Rows and authored routes
+remain authoritative; inactive channel controls do not enlarge the canvas.
+
+Automatic routes use perpendicular bridges for vertical ports and small
+port-spread differences. Unpinned labels receive one bounded placement pass,
+with at most 36px mask clearance from their own route. Distant free space is
+rejected in favor of the original placement and its collision diagnostic.
+Explicit `labelAt`, `labelDx`, `labelDy` and `labelSegment` remain authoritative,
+including zero offsets. Existing valid labels are retained.
 
 ## Design Rules
 
