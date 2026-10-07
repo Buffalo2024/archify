@@ -62,8 +62,32 @@ The renderer package is in `archify/`; repository tests and their dependencies l
 ```sh
 npm ci
 npm --prefix archify ci
-npm test
+npm run test:focus -- test/geometry.test.mjs
 ```
+
+For the development loop, select the files covering the changed behavior with
+`npm run test:focus -- test/<name>.test.mjs [test/<other>.test.mjs ...]`.
+This runs only those suites, without the generated-output checks or golden pass.
+It requires at least one file and rejects unknown files rather than silently
+running the full suite. Paths are relative to the repository root; absolute
+paths also work. Use `--list` with the same selection to inspect it without
+running tests. A focused pass is evidence for that selection only.
+
+To narrow a large file further, add a quoted Node test-name pattern (Node 18.11+):
+
+```sh
+npm run test:focus -- test/cli.test.mjs '--test-name-pattern=cli: validate'
+```
+
+Nested tests follow Node's filtering rules: include their parent test names in
+the pattern as well. Check the reported pass/skip counts for the intended cases.
+
+`npm test` still runs all generated-output checks, golden comparisons, and every
+discovered test suite. Both test runners accept `--concurrency=N` to tune the
+number of simultaneous test files on Node 18.19+, for example
+`npm test -- --concurrency=4`. The default remains 2.
+Compare timing and results on the same machine before increasing concurrency;
+browser tests can become slower or unstable under CPU contention.
 
 Test through public behavior such as `render`, `validate`, `deliver`, `visual-check`, or final SVG/HTML. Behavioral fixes should include a regression that demonstrates the original failure. Private helper checks can supplement that evidence.
 
@@ -74,7 +98,7 @@ A visual PR must provide enough evidence to evaluate whether the intended user v
 Static SVG/XML checks cannot establish browser layout, font settling, or interaction behavior. When the adaptive reader or Viewer layout changes, run the real browser test with Chrome available:
 
 ```sh
-ARCHIFY_CHROME="/path/to/chrome" node --test test/desktop-reader-browser.test.mjs
+ARCHIFY_CHROME="/path/to/chrome" npm run test:browser -- test/desktop-reader-browser.test.mjs
 ```
 
 A browser test skipped because Chrome was unavailable is **skipped**, not passed. Follow [the delivery contract](archify/references/delivery-contract.md) for visual evidence, receipts, and failure stages. Successful validation, atomic delivery, browser checks, and perceptual review establish different claims.
@@ -90,6 +114,12 @@ Its maintained file list is in `scripts/run-browser-tests.mjs`; add new browser
 suites there so both workflows keep the same coverage. Ordinary `npm test`
 retains optional browser skips. Real WebM decoding and site-language integration
 remain in the separate `npm run test:webm` gate used by both workflows.
+
+Only set `ARCHIFY_CHROME` for the browser run when you also plan to run the full
+browser gate: many browser suites are included in `npm test` and would otherwise
+execute again. The ordinary CI Node matrix and required browser gate retain
+their existing coverage. Reuse the applicable final-head CI results instead of
+repeating an unchanged full suite locally.
 
 ## Packages and generated artifacts
 

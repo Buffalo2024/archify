@@ -4,6 +4,7 @@ import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { findChrome } from '../archify/bin/visual-check.mjs';
+import { testRunnerOptions } from './test-runner-options.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 // Shared by PR CI and tag releases. WebM decoding stays in test:webm.
@@ -41,17 +42,28 @@ const testFiles = [
   'class-motion-browser.test.mjs',
 ];
 
+let options;
+try {
+  options = testRunnerOptions(process.argv.slice(2), {
+    repoRoot, testFiles: testFiles.map(file => path.join('test', file)),
+  });
+} catch (error) {
+  console.error(error.message);
+  process.exit(1);
+}
+if (options.list) {
+  console.log(options.files.join('\n'));
+  process.exit(0);
+}
+
 const chrome = findChrome();
 if (!chrome) {
   console.error('Browser tests require an executable Chrome/Chromium. Set ARCHIFY_CHROME to its path; this gate cannot skip browser coverage.');
   process.exit(1);
 }
 
-const args = ['--test'];
-const [major, minor] = process.versions.node.split('.').map(Number);
-if (major > 18 || (major === 18 && minor >= 19)) args.push('--test-concurrency=2');
-args.push(...testFiles.map((file) => path.join('test', file)));
-const result = spawnSync(process.execPath, args, {
+console.error(`Browser tests: ${options.files.length} files, concurrency ${options.concurrency}`);
+const result = spawnSync(process.execPath, options.args, {
   cwd: repoRoot,
   env: { ...process.env, ARCHIFY_CHROME: chrome },
   stdio: 'inherit',
