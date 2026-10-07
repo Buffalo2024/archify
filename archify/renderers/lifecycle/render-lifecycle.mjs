@@ -23,8 +23,8 @@ const { diagram: lifecycle, template, outPath, sourceEvidence } = await loadDiag
 });
 
 const TEXT = { labelPreferred: 12, labelMinimum: 10, sublabelPreferred: 9, sublabelMinimum: 8, tagPreferred: 8, tagMinimum: 7, step: 8 };
-const LABEL_FONT = 9;
-const NOTE_FONT = 8;
+const LABEL_FONT = 10;
+const NOTE_FONT = 9;
 const STATE_H = 64;
 const STATE_MIN_W = 140;
 const STATE_MAX_W = 220;
@@ -32,7 +32,7 @@ const MARGIN_X = 56;
 const MARGIN_TOP = 28;
 const PORT_PAD = 22;
 const PORT_STEP = 26;
-const CORNER = 8;
+const CORNER = 12;
 const FRAME_PAD = 10;
 const ARC_BASE = 30;
 const ARC_STEP = 24;
@@ -178,15 +178,33 @@ const isFinal = (state) => !outgoing.has(state.id);
 
 // ---------------------------------------------------------------- layout
 
+// Each round tries ports pulled toward their partners and ports spread evenly,
+// and keeps the placed layout with the fewest bends and short jogs.
 let spacing = { spineGap: 72, rowGap: 44, drop: 58, firstTrack: 34 };
 let geometry;
 for (let round = 0; round < SPACING_ROUNDS; round += 1) {
-  geometry = layout(spacing);
-  if (!geometry.unplacedLabels.length) break;
+  const candidates = ['partner', 'even'].map((ports) => ({ ports, ...layout({ ...spacing, ports }) }));
+  const placed = candidates.filter((candidate) => !candidate.unplacedLabels.length);
+  const best = placed.sort((a, b) => routeCost(a.routes) - routeCost(b.routes))[0] || candidates[0];
+  // layout() positions the shared states, so the winner is laid out again.
+  geometry = best === candidates.at(-1) ? best : layout({ ...spacing, ports: best.ports });
+  if (placed.length) break;
   spacing = { spineGap: spacing.spineGap + 28, rowGap: spacing.rowGap + 28, drop: spacing.drop + 14, firstTrack: spacing.firstTrack + 6 };
 }
 
-function layout({ spineGap, rowGap, drop, firstTrack }) {
+function routeCost(routes) {
+  let cost = 0;
+  for (const { points } of routes.values()) {
+    cost += Math.max(0, points.length - 2) * 10;
+    for (let index = 1; index < points.length; index += 1) {
+      const run = Math.abs(points[index][0] - points[index - 1][0]);
+      if (points.length > 2 && Math.abs(points[index][1] - points[index - 1][1]) < 0.5) cost += run * 0.1 + (run < 30 ? 40 : 0);
+    }
+  }
+  return cost;
+}
+
+function layout({ spineGap, rowGap, drop, firstTrack, ports: portMode }) {
   // Main-path x positions: each gap fits its row label.
   let cursor = MARGIN_X;
   mainPath.forEach((id, index) => {
@@ -195,7 +213,7 @@ function layout({ spineGap, rowGap, drop, firstTrack }) {
     state.cx = cursor + state.width / 2;
     const edge = spineEdges.get(index);
     const labelWidth = edge && hasLabel(edge) ? labelBox(edge).width : 0;
-    cursor += state.width + Math.max(spineGap, labelWidth + 32);
+    cursor += state.width + Math.max(spineGap, labelWidth + 26);
   });
   for (let row = 1; row < rowCount; row += 1) placeRow(row, rowGap);
 
@@ -284,7 +302,7 @@ function layout({ spineGap, rowGap, drop, firstTrack }) {
       requestPort(transition.to, 'top', `${arc.key}:in`, cx(transition.from), 0);
     }
   }
-  distributePorts(ports, arcs);
+  distributePorts(ports, arcs, portMode);
   placeFrameExits(connectors, ports, portOf);
 
   // Each gap assigns its horizontal runs to tracks, then the next row follows.
@@ -531,13 +549,23 @@ function assignArcLevels() {
 
 // Port order on one side avoids crossings: connections toward the left use
 // the left part of the side, connections toward the right the right part.
-// Nested arcs put the outer (higher) arc's port furthest out.
-function distributePorts(ports, arcs) {
+// Nested arcs put the outer (higher) arc's port furthest out and spread evenly;
+// every other port moves toward its partner so connectors can drop straight.
+function distributePorts(ports, arcs, mode) {
   const arcLevel = new Map(arcs.flatMap((arc) => [[`${arc.key}:out`, arc.level], [`${arc.key}:in`, arc.level]]));
-  for (const [slot, entries] of ports) {
+  // Lower-row tops follow the upper ports they connect to, so place them last.
+  const lowerTop = ([slot]) => slot.endsWith('|top') && !onSpine(slot.split('|')[0]);
+  const slots = [...ports].sort((a, b) => lowerTop(a) - lowerTop(b));
+  for (const [slot, entries] of slots) {
     const id = slot.split('|')[0];
     const state = states.get(id);
     const list = [...entries.values()];
+    if (lowerTop([slot])) {
+      for (const port of list) {
+        const upper = port.key?.kind === 'single' ? ports.get(`${port.key.upperId}|bottom`)?.get(port.key) : null;
+        if (upper) port.otherX = upper.x;
+      }
+    }
     list.sort((left, right) => {
       const leftDirection = Math.sign(left.otherX - state.cx);
       const rightDirection = Math.sign(right.otherX - state.cx);
@@ -552,15 +580,35 @@ function distributePorts(ports, arcs) {
     });
     const usable = state.width - PORT_PAD * 2;
     const step = list.length > 1 ? Math.min(PORT_STEP, usable / (list.length - 1)) : 0;
-    const start = state.cx - (step * (list.length - 1)) / 2;
-    list.forEach((port, index) => { port.x = Math.round((start + index * step) * 10) / 10; });
+    const xs = mode === 'even' || (onSpine(id) && slot.endsWith('|top'))
+      ? list.map((_, index) => state.cx - (step * (list.length - 1)) / 2 + index * step)
+      : fitPorts(list.map((port) => port.otherX), step, state.x + PORT_PAD, state.x + state.width - PORT_PAD);
+    list.forEach((port, index) => { port.x = Math.round(xs[index] * 10) / 10; });
   }
-  snapPorts(ports);
+  snapPorts(ports, mode);
+}
+
+// Ordered ports as close to their wanted x as the step and side allow: a pool
+// of adjacent violators (isotonic regression on wanted - index * step).
+function fitPorts(wanted, step, low, high) {
+  const n = wanted.length;
+  const top = high - step * (n - 1);
+  const clamp = (x) => Math.min(Math.max(x, low), Math.max(low, top));
+  const pools = [];
+  wanted.forEach((x, index) => {
+    pools.push({ sum: (Number.isFinite(x) ? x : x > 0 ? high : low) - index * step, count: 1 });
+    while (pools.length > 1 && pools.at(-2).sum / pools.at(-2).count > pools.at(-1).sum / pools.at(-1).count) {
+      const last = pools.pop();
+      pools.at(-1).sum += last.sum;
+      pools.at(-1).count += last.count;
+    }
+  });
+  return pools.flatMap((pool) => Array(pool.count).fill(clamp(pool.sum / pool.count))).map((x, index) => x + index * step);
 }
 
 // A nearly vertical connector becomes exactly vertical when a port can move
 // without crowding its neighbours; otherwise its jog widens to a readable run.
-function snapPorts(ports) {
+function snapPorts(ports, mode) {
   const fits = (id, side, moving, x) => {
     const state = states.get(id);
     return x >= state.x + PORT_PAD - 8 && x <= state.x + state.width - PORT_PAD + 8
@@ -575,8 +623,9 @@ function snapPorts(ports) {
       if (connector?.kind === 'single') {
         const upperPort = ports.get(`${connector.upperId}|bottom`).get(connector);
         const delta = Math.abs(upperPort.x - port.x);
-        if (delta < 0.5 || delta >= 16) continue;
+        if (delta < 0.5 || (delta >= 16 && mode === 'even')) continue;
         if (fits(lowerId, 'top', port, upperPort.x)) port.x = upperPort.x;
+        else if (delta >= 16) continue;
         else if (fits(connector.upperId, 'bottom', upperPort, port.x)) upperPort.x = port.x;
         else {
           const away = Math.sign(port.x - upperPort.x) || 1;
@@ -957,7 +1006,7 @@ function renderLegend() {
 
 function renderSvg() {
   const junctions = geometry.junctions.map(([x, y]) => `        <circle cx="${x}" cy="${y}" r="2.6" data-lifecycle-junction="" style="fill: var(--arrow)" aria-hidden="true"/>`).join('\n');
-  const frames = geometry.frames.map((rect) => `        <rect x="${rect.x}" y="${rect.y}" width="${rect.width}" height="${rect.height}" rx="14" data-lifecycle-frame="" fill="none" stroke="var(--arrow)" stroke-width="1" stroke-dasharray="5 4" aria-hidden="true"/>`).join('\n');
+  const frames = geometry.frames.map((rect) => `        <rect x="${rect.x}" y="${rect.y}" width="${rect.width}" height="${rect.height}" rx="14" data-lifecycle-frame="" fill="none" stroke="var(--arrow)" stroke-opacity="0.55" stroke-width="1" stroke-dasharray="1.5 3.5" stroke-linecap="round" aria-hidden="true"/>`).join('\n');
   return `      <svg viewBox="0 0 ${viewBox[0]} ${viewBox[1]}" data-reader-fit="intrinsic-height" data-lifecycle-layout="main-path-v3" ${svgRootAttrs(lifecycle.meta)}>
 ${svgAccessibleText(lifecycle.meta, 'lifecycle')}
 ${renderDefinitions()}

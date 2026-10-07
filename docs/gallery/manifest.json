@@ -1186,8 +1186,8 @@
       "engineeringProfile": null,
       "nodeCount": 10,
       "edgeCount": 12,
-      "artifactBytes": 784768,
-      "artifactSha256": "db30206a7e263eab36002cdba140d0d5e6145680aa93c76b24d1eeb871103385",
+      "artifactBytes": 784774,
+      "artifactSha256": "940fbf5447f78bf67e0e8baf7394aa3845b4f51ffdd6e4c707e1bee4f537aaf3",
       "sourceBytes": 3260,
       "sourceSha256": "5ba36f5ce91ed428cb48b599e275424916d82b619b9a3231cbd1bbc3966fc54b",
       "checks": [
@@ -1244,7 +1244,7 @@
           "containerBorderRuns": 0,
           "labelRouteClearanceIssues": 0,
           "labelCanvasOverflowIssues": 0,
-          "minLabelRouteClearance": 30.4,
+          "minLabelRouteClearance": 26.4,
           "desktopReadabilityIssues": 0,
           "viewportHeightIssues": 0,
           "minProjectedNodeTextPx": 7.265625,
@@ -1308,8 +1308,8 @@
       "engineeringProfile": null,
       "nodeCount": 12,
       "edgeCount": 15,
-      "artifactBytes": 791386,
-      "artifactSha256": "bfa669c558f337448c010a423e7a4d65c6d7eea38aa7704bfedde38dd52999f0",
+      "artifactBytes": 791439,
+      "artifactSha256": "f73b2aae6733e5337a4e58fd35da9aebe07aee4ea89e94a983c0ba5c84a7d616",
       "sourceBytes": 4155,
       "sourceSha256": "e3dc105d03c1c9881160006cdace23cb5d8533803e337caf0ec287c64e775275",
       "checks": [
@@ -1369,7 +1369,7 @@
           "minLabelRouteClearance": 6,
           "desktopReadabilityIssues": 0,
           "viewportHeightIssues": 0,
-          "minProjectedNodeTextPx": 6.498447204968944,
+          "minProjectedNodeTextPx": 6.518691588785047,
           "maxBends": 2,
           "routesOverSuggestedBends": 0,
           "maxStretch": 1.246,
@@ -1410,7 +1410,7 @@
             "id": "queued"
           },
           "minimumSourceTextPx": 9,
-          "minimumProjectedTextPx": 6.498447204968944,
+          "minimumProjectedTextPx": 6.518691588785047,
           "semanticTextCount": 38
         },
         "issues": []
