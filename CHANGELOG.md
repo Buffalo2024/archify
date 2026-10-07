@@ -6,6 +6,10 @@ All notable changes are documented here. Format loosely follows [Keep a Changelo
 
 > Development identity: `v3.0.2-dev.1`. Not a stable release.
 
+### Added
+- **Traditional Chinese (Taiwan) Viewer catalog.** `meta.locale: "zh-TW"` now selects a bundled catalog covering all 487 Viewer keys with Taiwan terminology (for example 循序圖, 資料流, 匯出, 檢視), instead of falling back to English. Enrollment is data only: `locales/zh-TW.json` plus one manifest entry. `zh-Hant` and `zh-HK` remain distinct, unbundled tags.
+- **GitLab source links.** Repository evidence on gitlab.com, or on a self-managed host declared with `provider: "gitlab"`, now generates revision-pinned web links (`/-/blob/<revision>/<path>#L<a>-<b>`, `/-/tree/<revision>`) instead of requiring `link_mode: "local-only"`. Nested groups are accepted, SSH and HTTPS origins on the same host match, paths compare case-insensitively, and cited Markdown line ranges open the plain view. Verification is unchanged and `local-only` remains available.
+
 ### Fixed
 
 - **SVG 路径检查（#641）。** 统一解析关系线和结构边界的 `M/L/H/V/Q/Z` 路径，正确保留子路径与闭合语义；截断参数、非法数值和不支持的命令现在有限失败并给出定位诊断，避免检查挂起、漏检或虚构跨子路径线段。非共线 `Q` 前后的直线保留真实连续性，避免虚假交叉、标签遮挡和漏检；曲线采样点不会增加微线段预算。普通有效产物的 9 项检查保持不变。

@@ -1179,7 +1179,7 @@ function collectDesktopReadability(svgAttrs, fragment, contract) {
   }
   const minimumSourceTextPx = entries.length ? Math.min(...entries.map((entry) => entry.sourceFontPx)) : Number.NaN;
   const eligible = contract === DECLARED_WIDE_READER_CONTRACT
-    && svgAttrs['data-reader-fit'] === 'intrinsic-height'
+    && ['intrinsic-height', 'width-first'].includes(svgAttrs['data-reader-fit'])
     && Number.isFinite(requestedMinimumTextPx) && requestedMinimumTextPx > 0
     && !invalidSemanticText && entries.length > 0;
   const declared = eligible ? declaredWideReadabilityBudget({

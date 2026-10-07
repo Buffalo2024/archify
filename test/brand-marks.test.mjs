@@ -788,11 +788,11 @@ test('unknown preset names fail with a repairable public CLI diagnostic', () => 
   assert.ok(receipt.diagnostics.some((entry) => entry.supportedFixes.some((fix) => fix.includes('archify brands'))));
 });
 
-test('viewer exposes brand identity to Passport and Finder while keeping source beacons clear', () => {
+test('viewer exposes brand identity to Passport and Finder with sources in the Focus card', () => {
   const template = fs.readFileSync(path.join(skillRoot, 'assets', 'template.html'), 'utf8');
   assert.match(template, /id="focus-brand" data-passport="brand" hidden/);
   assert.match(template, /node\.getAttribute\('data-node-brand'\)/);
-  assert.match(template, /brandOffset = node\.hasAttribute\('data-node-brand'\) \? 22 : 0/);
+  assert.doesNotMatch(template, /Archify\.sourceEvidence\.installBeacons\(\)|classList\.add\('source-evidence-beacon'\)/);
   assert.match(template, /sourceSearch \+ ' ' \+ text\)\.toLowerCase\(\) \+ ' ' \+ brand\.toLowerCase\(\)/);
 });
 

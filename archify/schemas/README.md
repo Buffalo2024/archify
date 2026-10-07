@@ -30,7 +30,7 @@ It also accepts `locale`, any well-formed language tag (schema pattern
 `^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$`). The field selects the fixed Viewer UI,
 renderer-owned default legend and accessibility copy, document-title suffix,
 and `<html lang>` value; it does not translate authored strings. The bundled
-catalogs enrolled in `locales/manifest.json` (`en`, `zh-CN`, `es`, `ko`) are
+catalogs enrolled in `locales/manifest.json` (`en`, `zh-CN`, `zh-TW`, `es`, `ko`) are
 selected by tag, case-insensitively; region and script variants are distinct
 tags. Any other tag needs a matching `translations` object (see below) or the
 renderer falls back to English and discloses it.
@@ -213,7 +213,7 @@ relationship IDs within the mode's relationship collection.
 
 All five modes support opt-in, revision-pinned repository evidence.
 `meta.repository` names the repository URL and full commit SHA, with optional
-`provider` (`github` or `gitee`) and `link_mode` (`web` or `local-only`; see the
+`provider` (`github`, `gitee`, or `gitlab`) and `link_mode` (`web` or `local-only`; see the
 authoring contract); a node may carry one to three `sources` with repo-relative POSIX paths, optional line
 ranges, and optional labels. Sources are authored on the mode's own node
 collection — Architecture `components`, Workflow and Data Flow `nodes`,
