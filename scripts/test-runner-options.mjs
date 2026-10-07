@@ -1,8 +1,8 @@
 import path from 'node:path';
 
 // Both runners accept exact files, never infer coverage from changed sources.
-export function testRunnerOptions(argv, { repoRoot, testFiles, allowRequireFiles = false }) {
-  let concurrency = 2;
+export function testRunnerOptions(argv, { repoRoot, testFiles, allowRequireFiles = false, defaultConcurrency = 2 }) {
+  let concurrency = defaultConcurrency;
   let explicitConcurrency = false;
   let list = false;
   let requireFiles = false;

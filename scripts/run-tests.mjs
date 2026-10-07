@@ -16,7 +16,11 @@ const testFiles = fs.readdirSync(testRoot)
 
 let options;
 try {
-  options = testRunnerOptions(process.argv.slice(2), { repoRoot, testFiles, allowRequireFiles: true });
+  // Node-only files benefit from independent CPU slots. Keep Chrome's lower
+  // ceiling when a full run explicitly enables browser cases.
+  const parallelism = os.availableParallelism?.() ?? os.cpus().length;
+  const defaultConcurrency = process.env.ARCHIFY_CHROME ? 2 : Math.max(1, Math.min(4, parallelism));
+  options = testRunnerOptions(process.argv.slice(2), { repoRoot, testFiles, allowRequireFiles: true, defaultConcurrency });
 } catch (error) {
   console.error(error.message);
   process.exit(1);

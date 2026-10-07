@@ -83,9 +83,30 @@ Nested tests follow Node's filtering rules: include their parent test names in
 the pattern as well. Check the reported pass/skip counts for the intended cases.
 
 `npm test` still runs all generated-output checks, golden comparisons, and every
-discovered test suite. Both test runners accept `--concurrency=N` to tune the
-number of simultaneous test files on Node 18.19+, for example
-`npm test -- --concurrency=4`. The default remains 2.
+discovered test suite. CI runs that complete suite once on canonical Node 22.
+The Node 18, 20, and 24 checks run `npm run test:compat`: all golden comparisons
+across the ten diagram types, followed by the maintained whole suites for CLI,
+schema compatibility, processes, paths, atomic output, preview, update, and
+diagnostics. The compatibility inventory is in
+`scripts/compat-test-inventory.mjs`; it also retains the complete package-gate
+suite for filesystem failures and noncanonical archive-toolchain rejection.
+Repository content, generator, and installation regressions remain in the
+complete Node 22 run. This preserves every regression in its owning gate while
+testing the maintained Node runtimes; it does not repeat every regression on
+every Node major. Tags retain the complete Node 22 suite, and both workflows
+retain their real Windows path, browser, WebM, and package gates.
+
+Use `npm run test:compat -- --list` to inspect the compatibility suites without
+running them; a normal compatibility run also runs the golden harness first.
+Exact file and test-name selections are supported through the shared runner,
+but a selected pass covers only that selection plus the golden harness.
+`test:focus` remains the development command that omits the golden pass.
+
+The test runners accept `--concurrency=N` to tune the number of simultaneous
+test files on Node 18.19+, for example `npm test -- --concurrency=4`. Headless
+repository and compatibility runs default to the available CPU count, capped
+at 4. Setting `ARCHIFY_CHROME` or running `test:browser` keeps the default at 2.
+Older Node versions that lack this concurrency option retain Node's default.
 Compare timing and results on the same machine before increasing concurrency;
 browser tests can become slower or unstable under CPU contention.
 
@@ -115,11 +136,20 @@ suites there so both workflows keep the same coverage. Ordinary `npm test`
 retains optional browser skips. Real WebM decoding and site-language integration
 remain in the separate `npm run test:webm` gate used by both workflows.
 
+PR CI divides the maintained browser inventory into two disjoint file shards
+with `npm run test:browser -- --shard=1/2` and `--shard=2/2`. Both run alongside
+the independent WebM gate; the required `webm-artifact` check succeeds only
+after both browser shards, WebM, and scope checks succeed. Tag releases and an
+unqualified `npm run test:browser` still run the complete browser inventory.
+`--list --shard=1/2` lists a shard without requiring Chrome. Shards cannot be
+combined with explicit files or test-name filtering; every maintained file runs
+in exactly one shard, and every executing shard still requires Chrome.
+
 Only set `ARCHIFY_CHROME` for the browser run when you also plan to run the full
 browser gate: many browser suites are included in `npm test` and would otherwise
-execute again. The ordinary CI Node matrix and required browser gate retain
-their existing coverage. Reuse the applicable final-head CI results instead of
-repeating an unchanged full suite locally.
+execute again. The canonical regression suite, Node compatibility matrix, and
+required browser gate establish their respective coverage. Reuse the applicable
+final-head CI results instead of repeating an unchanged full suite locally.
 
 ## Packages and generated artifacts
 

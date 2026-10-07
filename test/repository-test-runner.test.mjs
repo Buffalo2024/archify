@@ -11,14 +11,16 @@ const runner = path.join(repoRoot, 'scripts/run-tests.mjs');
 const [nodeMajor, nodeMinor] = process.versions.node.split('.').map(Number);
 const supportsConcurrency = nodeMajor > 18 || (nodeMajor === 18 && nodeMinor >= 19);
 const supportsNamePattern = nodeMajor > 18 || (nodeMajor === 18 && nodeMinor >= 11);
+const defaultConcurrency = process.env.ARCHIFY_CHROME ? 2 : Math.max(1, Math.min(4, os.availableParallelism?.() ?? os.cpus().length));
 
-function interceptedRun(t, args = [], outcome = { status: 0 }, nodeVersion = process.versions.node) {
+function interceptedRun(t, args = [], outcome = { status: 0 }, nodeVersion = process.versions.node, runtime = {}) {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'archify-runner-'));
   t.after(() => fs.rmSync(directory, { recursive: true, force: true }));
   const preload = path.join(directory, 'capture.cjs');
   fs.writeFileSync(preload, `
 const childProcess = require('node:child_process');
 const fs = require('node:fs');
+${runtime.parallelism === undefined ? '' : `require('node:os').availableParallelism = () => ${runtime.parallelism};`}
 Object.defineProperty(process.versions, 'node', { value: ${JSON.stringify(nodeVersion)} });
 childProcess.spawnSync = (command, args, options) => {
   const cache = options.env.ARCHIFY_UPDATE_CACHE_DIRECTORY;
@@ -29,7 +31,7 @@ require('node:module').syncBuiltinESMExports();
 `);
   return spawnSync(process.execPath, ['--require', preload, runner, ...args], {
     cwd: directory, encoding: 'utf8',
-    env: { ...process.env, ARCHIFY_UPDATE_CACHE_DIRECTORY: path.join(directory, 'user-cache') },
+    env: { ...process.env, ...(runtime.chrome === undefined ? {} : { ARCHIFY_CHROME: runtime.chrome }), ARCHIFY_UPDATE_CACHE_DIRECTORY: path.join(directory, 'user-cache') },
   });
 }
 
@@ -58,6 +60,14 @@ test('supported older Node retains default operation and rejects explicit concur
   assert.match(override.stderr, /requires Node 18\.19 or newer/);
 });
 
+test('default Node concurrency uses available CPUs with a four-file ceiling and a separate Chrome limit', (t) => {
+  for (const [parallelism, chrome, expected] of [[1, '', 1], [2, '', 2], [8, '', 4], [8, 'chrome', 2]]) {
+    const result = interceptedRun(t, ['test/repository-test-runner.test.mjs'], { status: 0 }, '22.0.0', { parallelism, chrome });
+    assert.equal(result.status, 0, result.stderr);
+    assert.deepEqual(JSON.parse(result.stdout).args, ['--test', `--test-concurrency=${expected}`, 'test/repository-test-runner.test.mjs']);
+  }
+});
+
 test('focused runner forwards a validated test name pattern as one child argument', (t) => {
   const pattern = '^repository runner .*failure';
   const result = interceptedRun(t, ['test/repository-test-runner.test.mjs', `--test-name-pattern=${pattern}`]);
@@ -69,7 +79,7 @@ test('focused runner forwards a validated test name pattern as one child argumen
   }
   assert.equal(result.status, 0, result.stderr);
   assert.deepEqual(JSON.parse(result.stdout).args, [
-    '--test', ...(supportsConcurrency ? ['--test-concurrency=2'] : []),
+    '--test', ...(supportsConcurrency ? [`--test-concurrency=${defaultConcurrency}`] : []),
     `--test-name-pattern=${pattern}`, 'test/repository-test-runner.test.mjs',
   ]);
 });
@@ -147,7 +157,7 @@ require('node:module').syncBuiltinESMExports();
   const invocation = JSON.parse(result.stdout);
   const [major, minor] = process.versions.node.split('.').map(Number);
   if (major > 18 || (major === 18 && minor >= 19)) {
-    assert.ok(invocation.args.includes('--test-concurrency=2'));
+    assert.ok(invocation.args.includes(`--test-concurrency=${defaultConcurrency}`));
   }
   assert.equal(fs.realpathSync(invocation.cwd), fs.realpathSync(repoRoot));
   const expected = fs.readdirSync(path.join(repoRoot, 'test'))

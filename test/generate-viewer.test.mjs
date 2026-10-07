@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { generateViewer } from '../scripts/generate-viewer.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const marker = '/* ARCHIFY:READER_LAYOUT */';
@@ -108,29 +109,44 @@ test('viewer.css owns the complete main style block', (t) => {
   assert.match(css, /\n\}\n$/);
 });
 
-for (const [fragment, slot] of Object.entries(fragments)) {
-  for (const failure of ['missing shell', 'missing fragment', 'missing marker', 'duplicate marker', 'empty fragment', ...Object.keys(fragments).map(name => `${name} marker`)]) {
-    test(`assembly rejects ${fragment}: ${failure} without overwriting a valid artifact`, (t) => {
-      const f = fixture(t);
-      const previous = fs.readFileSync(f.output);
-      if (failure === 'missing shell') fs.unlinkSync(f.shell);
-      if (failure === 'missing fragment') fs.unlinkSync(f[fragment]);
-      const owner = fragment === 'cleanup' ? f.export : f.shell;
-      if (failure === 'missing marker') fs.writeFileSync(owner, fs.readFileSync(owner, 'utf8').replace(slot, ''));
-      if (failure === 'duplicate marker') fs.appendFileSync(owner, slot);
-      if (failure === 'empty fragment') fs.writeFileSync(f[fragment], ' \n');
-      const embeddedSlot = fragments[failure.replace(/ marker$/, '')];
-      if (embeddedSlot) fs.appendFileSync(f[fragment], embeddedSlot);
-      for (const args of [[], ['--check']]) {
-        const result = f.run(...args);
-        assert.equal(result.status, 1, failure);
-        assert.match(result.stderr, /ENOENT|marker|empty/);
-        assert.deepEqual(fs.readFileSync(f.output), previous);
-        assert.deepEqual(fs.readdirSync(path.dirname(f.output)), ['template.html']);
-      }
-    });
+test('assembly failure matrix preserves a valid artifact', { concurrency: false }, async (t) => {
+  const f = fixture(t);
+  // Marker rejection depends on source structure, not production bundle size.
+  // The CLI tests above and below retain the complete authoritative sources.
+  const shellSlots = Object.values(fragments).filter(slot => slot !== cleanupMarker && slot !== viewerCssMarker);
+  fs.writeFileSync(f.shell, `<style>\n${viewerCssMarker}\n</style><script>\n${shellSlots.join('\n')}\n</script>\n`);
+  for (const fragment of Object.keys(fragments)) {
+    fs.writeFileSync(f[fragment], `/* ${fragment} source */\n${fragment === 'export' ? `${cleanupMarker}\n` : ''}`);
   }
-}
+  generateViewer({ root: f.root });
+  // Each case restores its mutations before the next awaited subtest starts.
+  for (const [fragment, slot] of Object.entries(fragments)) {
+    for (const failure of ['missing shell', 'missing fragment', 'missing marker', 'duplicate marker', 'empty fragment', ...Object.keys(fragments).map(name => `${name} marker`)]) {
+      await t.test(`assembly rejects ${fragment}: ${failure} without overwriting a valid artifact`, () => {
+        const previous = fs.readFileSync(f.output);
+        const owner = fragment === 'cleanup' ? f.export : f.shell;
+        const sources = new Map([f.shell, f[fragment], owner].map(file => [file, fs.readFileSync(file)]));
+        try {
+          if (failure === 'missing shell') fs.unlinkSync(f.shell);
+          if (failure === 'missing fragment') fs.unlinkSync(f[fragment]);
+          if (failure === 'missing marker') fs.writeFileSync(owner, fs.readFileSync(owner, 'utf8').replace(slot, ''));
+          if (failure === 'duplicate marker') fs.appendFileSync(owner, slot);
+          if (failure === 'empty fragment') fs.writeFileSync(f[fragment], ' \n');
+          const embeddedSlot = fragments[failure.replace(/ marker$/, '')];
+          if (embeddedSlot) fs.appendFileSync(f[fragment], embeddedSlot);
+          for (const check of [false, true]) {
+            assert.throws(() => generateViewer({ root: f.root, check }), /ENOENT|marker|empty/, failure);
+            assert.deepEqual(fs.readFileSync(f.output), previous);
+            assert.deepEqual(fs.readdirSync(path.dirname(f.output)), ['template.html']);
+          }
+        } finally {
+          for (const [file, bytes] of sources) fs.writeFileSync(file, bytes);
+          fs.writeFileSync(f.output, previous);
+        }
+      });
+    }
+  }
+});
 
 test('assembly preserves literal replacement tokens, Unicode and source line endings', (t) => {
   const f = fixture(t);
