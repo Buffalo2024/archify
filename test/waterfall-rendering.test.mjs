@@ -19,7 +19,7 @@ function run(diagram, extra = []) {
   const input = path.join(directory, 'candidate.waterfall.json');
   const output = path.join(directory, 'candidate.html');
   fs.writeFileSync(input, JSON.stringify(diagram));
-  return { ...spawnSync(process.execPath, [renderer, input, output, ...extra], { cwd: directory, encoding: 'utf8', timeout: 10000 }), output };
+  return { ...spawnSync(process.execPath, [renderer, input, output, ...extra], { cwd: directory, encoding: 'utf8', timeout: 10000 }), input, output };
 }
 function layoutOf(diagram) {
   const result = run(diagram, ['--layout-json']);
@@ -82,6 +82,12 @@ test('waterfall: unrepresentable derived timing is rejected without writing inva
     assert.equal(result.status, 1, result.stderr || result.error?.message);
     assert.match(result.stderr, /finite/);
     assert.equal(fs.existsSync(result.output), false);
+    const cli = spawnSync(process.execPath, [path.join(skillRoot, 'bin/archify.mjs'), 'render', 'waterfall', result.input, result.output, '--json'], { encoding: 'utf8', timeout: 10000 });
+    assert.equal(cli.status, 1, cli.stderr || cli.stdout);
+    const receipt = JSON.parse(cli.stdout);
+    const diagnostic = receipt.diagnostics.find(({ code }) => code === 'waterfall/invalid-timing');
+    assert.ok(diagnostic, cli.stdout);
+    assert.ok(diagnostic.supportedFixes.length > 0, cli.stdout);
   }
 });
 

@@ -161,10 +161,9 @@ const axisX0 = layout.margin + labelW + layout.columnGap;
 const axisX1 = axisX0 + layout.axisWidth;
 const scale = wall > 0 ? layout.axisWidth / wall : 0;
 if (!Number.isFinite(scale)) {
-  throwDiagnosticProblems('Waterfall validation failed', ['The recorded range cannot form a finite axis scale.'], {
-    code: 'waterfall/invalid-timing', subject: { diagramType: 'waterfall', path: '/spans' },
-    evidence: { start: t0, end: t1, wall }, supportedFixes: ['Rescale the recorded timing and unit to a representable range.'],
-  });
+  fail('waterfall/invalid-timing', 'The recorded range cannot form a finite axis scale.',
+    { path: '/spans' }, { start: t0, end: t1, wall }, ['Rescale the recorded timing and unit to a representable range.']);
+  throwDiagnosticProblems('Waterfall validation failed', problems, { diagnostics: details });
 }
 const xOf = (t) => Math.round((axisX0 + (t - t0) * scale) * 100) / 100;
 const rowsTop = layout.top + layout.axisH;
