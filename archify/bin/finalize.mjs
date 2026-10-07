@@ -370,6 +370,62 @@ function stageStatus(stage, exitCode, receipt, quality) {
   return exitCode === 0 && validStageReceipt(stage, receipt, quality) ? 'pass' : 'fail';
 }
 
+function consolidateDiagnostics(diagnostics) {
+  const result = [];
+  const seen = new Set();
+  const overflow = [];
+  let overflowIndex = -1;
+  for (const diagnostic of diagnostics || []) {
+    if (diagnostic?.code === 'viewer/viewport-overflow') {
+      if (overflowIndex < 0) overflowIndex = result.length;
+      overflow.push(diagnostic);
+      continue;
+    }
+    const key = `${diagnostic?.code}${diagnostic?.message}${JSON.stringify(diagnostic?.subject ?? null)}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push(diagnostic);
+  }
+  const slimEvidence = (evidence) => {
+    if (!evidence || typeof evidence !== 'object') return evidence;
+    const { innerWidth: _w, innerHeight: _h, readerLayout: _l, readerOverflow: _o, readerFit: _f, ...rest } = evidence;
+    return rest;
+  };
+  if (overflow.length > 1) {
+    const first = overflow[0];
+    const tightest = overflow
+      .map((entry) => entry.subject?.viewport)
+      .filter(Boolean)
+      .sort((a, b) => a.width * a.height - b.width * b.height)[0];
+    const fixes = tightest
+      ? [`contain the rendered layout within ${tightest.width}x${tightest.height} (smallest reported viewport), then rerun browser-check`]
+      : [...new Set(overflow.flatMap((entry) => entry.supportedFixes || []))];
+    result.splice(overflowIndex, 0, {
+      ...first,
+      message: `The rendered artifact overflows ${overflow.length} viewport/theme combinations.`,
+      subject: { diagramType: first.subject?.diagramType },
+      supportedFixes: fixes,
+      evidence: {
+        overflows: overflow.map((entry) => {
+          const { artifact: _artifact, ...subject } = entry.subject || {};
+          return {
+            // Predicted validate-stage overflow carries estimatedTextWidthPx;
+            // the browser-check measurement carries scroll* geometry instead.
+            detection: entry.evidence?.estimatedTextWidthPx != null ? 'validate-prediction' : 'browser-measurement',
+            subject,
+            evidence: slimEvidence(entry.evidence),
+          };
+        }),
+      },
+    });
+  } else if (overflow.length === 1) {
+    const [entry] = overflow;
+    const { artifact: _artifact, ...subject } = entry.subject || {};
+    result.splice(overflowIndex, 0, { ...entry, subject, evidence: slimEvidence(entry.evidence) });
+  }
+  return result;
+}
+
 function failureDiagnostics(stage, result, receipt, quality) {
   if (Array.isArray(receipt?.diagnostics) && receipt.diagnostics.length) return receipt.diagnostics;
   const invalidReceipt = (result.status ?? 1) === 0 && !validStageReceipt(stage, receipt, quality);
@@ -536,8 +592,9 @@ export function compactFinalizeReceipt(receipt) {
       message: entry.message,
       ...(entry.subject ? { subject: entry.subject } : {}),
       ...(entry.evidence && Object.keys(entry.evidence).length ? { evidence: entry.evidence } : {}),
+      // Verified repairs may require every edit in the set to be applied together.
       ...(Array.isArray(entry.supportedFixes) && entry.supportedFixes.length
-        ? { supportedFixes: entry.supportedFixes.slice(0, 2) } : {}),
+        ? { supportedFixes: [...entry.supportedFixes] } : {}),
     });
   };
   for (const [index, entry] of allDiagnostics.entries()) {
@@ -570,7 +627,9 @@ export function compactFinalizeReceipt(receipt) {
       truncated: allDiagnostics.length > selectedDiagnostics.length,
     },
     evidence: receipt.evidence,
-    ...(receipt.update ? { update: receipt.update } : {}),
+    ...(receipt.update && receipt.update.status !== 'unavailable'
+      ? { update: receipt.update }
+      : {}),
     visualReview: receipt.visualReview || 'not-requested',
     durationMs: receipt.durationMs,
   };
@@ -860,7 +919,9 @@ export async function runFinalize({
       if (status !== 'pass') {
         exitCode = status === 'skipped' ? 2 : (code || 1);
         receipt.status = status;
-        receipt.diagnostics = stageDiagnostics || failureDiagnostics(stage, result, stageReceipt, quality);
+        receipt.diagnostics = consolidateDiagnostics(
+          stageDiagnostics || failureDiagnostics(stage, result, stageReceipt, quality),
+        );
         receipt.failedStage = stage === 'deliver'
           && receipt.stages.validate.status === 'fail' ? 'validate' : stage;
         break;
