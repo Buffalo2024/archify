@@ -52,17 +52,25 @@ const LEGEND_BLOCK_HEIGHT = 86;
 // feeds that automatic height.
 // `column_fit: "spread"` widens the lanes with the viewBox instead of keeping
 // the fixed 108px gap, so a wide canvas gains column distance and label room
-// rather than dead space on the right. The default stays "fixed" so existing
-// diagrams keep their coordinates.
+// rather than dead space on the right. Spread is the default on both automatic
+// and authored canvases; explicit fixed retains historical coordinates.
 const canvasWidth = sequence.meta?.viewBox?.[0] ?? 920;
-const columnFit = sequence.meta?.column_fit === 'spread' ? 'spread' : 'fixed';
+const columnFit = sequence.meta?.column_fit || 'spread';
 const participantCount = Math.max(1, asArray(sequence.participants).length);
-const sideMargin = 62;
+const preferredSideMargin = 62;
 const participantW = columnFit === 'spread'
-  ? Math.max(86, Math.min(190, Math.round((canvasWidth - sideMargin * 2) / participantCount) - 24))
+  ? Math.max(86, Math.min(190, Math.round((canvasWidth - preferredSideMargin * 2) / participantCount) - 24))
   : 86;
+// Narrow feasible frames can reduce the left margin, while ordinary frames
+// keep 62px. Compute card width first so this does not change its sizing rule.
+const minimumParticipantSpan = participantCount * participantW + (participantCount - 1) * 16;
+const sideMargin = columnFit === 'spread'
+  ? Math.max(40, Math.min(preferredSideMargin, canvasWidth - 40 - minimumParticipantSpan))
+  : preferredSideMargin;
+// Fit the authored width when feasible, preserving a real 16px card gutter.
+// Infeasible frames retain that minimum and fail the capacity check below.
 const colGap = columnFit === 'spread' && participantCount > 1
-  ? Math.max(108, (canvasWidth - 40 - sideMargin - participantW) / (participantCount - 1))
+  ? Math.max(participantW + 16, (canvasWidth - 40 - sideMargin - participantW) / (participantCount - 1))
   : 108;
 const leftX = columnFit === 'spread' ? sideMargin + participantW / 2 : sideMargin;
 const participantIndexById = new Map(asArray(sequence.participants).map((participant, index) => [participant.id, index]));

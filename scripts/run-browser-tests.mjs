@@ -16,6 +16,7 @@ const testFiles = [
   'reader-cards-overflow-browser.test.mjs',
   'joint-layout-browser.test.mjs',
   'sequence-header-clearance.test.mjs',
+  'sequence-width-default-browser.test.mjs',
   'compact-header-clearance.test.mjs',
   'architecture-reading-size-browser.test.mjs',
   'lifecycle-rail-browser.test.mjs',
