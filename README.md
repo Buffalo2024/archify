@@ -55,9 +55,11 @@ In **Export**, choose **Main architecture** or **Current subarchitecture**. Each
 | [BAGEL](https://puuuuup.github.io/archify/gallery/artifacts/bagel-inference.architecture.html) | Context assembly and a MoT decoder layer from official code |
 | [Lance](https://puuuuup.github.io/archify/gallery/artifacts/lance-query.architecture.html) | A dataset query plan and the Arrow stream bridge from official code |
 
-[![Watch the Labs walkthrough](docs/labs/subarchitecture-poster.jpg)](https://puuuuup.github.io/archify/labs/subarchitecture.html)
+<!-- archify-subarchitecture-video -->
 
-[Watch the English walkthrough with English and Chinese subtitles](https://puuuuup.github.io/archify/labs/subarchitecture.html). [Read the source pins, scope and regeneration steps](website/examples/README.md).
+https://github.com/user-attachments/assets/f0e1f816-261c-41d2-a541-388f962c0a28
+
+English narration with English and Chinese subtitles. [Read the source pins, scope and regeneration steps](website/examples/README.md).
 
 This experiment supports one child level and up to 12 components per child. Taller graphs use scrolling. The BAGEL context view is one such example. Try it with real diagrams and share what works well.
 
