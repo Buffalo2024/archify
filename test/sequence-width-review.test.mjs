@@ -216,3 +216,33 @@ test('an authored six-column canvas spreads by default without a width repair', 
   spec.meta.column_fit = 'spread';
   assert.equal(render(t, spec).html, original.html);
 });
+
+
+test('public finalize preserves a passing fixed candidate and publishes a reversible width-review recommendation', {
+  skip: !process.env.ARCHIFY_CHROME ? 'Set ARCHIFY_CHROME for public finalize browser checks' : false,
+}, t => {
+  const spec = sequence();
+  spec.meta.column_fit = 'fixed';
+  const original = render(t, spec);
+  const inputBytes = fs.readFileSync(original.input);
+  const outDir = path.join(path.dirname(original.input), 'fixed-evidence');
+  const result = spawnSync(process.execPath, [cli, 'finalize', 'sequence', original.input, original.output,
+    '--quality', 'showcase', '--out-dir', outDir, '--json'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+  const compact = JSON.parse(result.stdout);
+  assert.equal(compact.status, 'pass');
+  assert.equal(compact.gates['browser-check'], 'pass');
+  assert.deepEqual(compact.diagnostics, []);
+  const advice = compact.layoutReviewRecommendation;
+  assert.equal(advice.action, 'inspect-sequence-width');
+  assert.equal(advice.evidence.columnFit, 'fixed');
+  assert.match(advice.repair, /Only when changing that geometry is authorized, save the passing fixed candidate/);
+  assert.match(advice.repair, /set only meta.column_fit to "spread".*complete finalize once with --out-dir <folder>\/width-review/);
+  assert.match(advice.repair, /If that attempt fails, restore the saved candidate and finalize it with --out-dir <folder>\/width-restore/);
+  assert.match(advice.repair, /report the remaining suggestion instead of iterating/);
+  assert.match(advice.repair, /participant order, every message, its y position, labels, notes, sources and canvas dimensions/);
+  assert.deepEqual(JSON.parse(fs.readFileSync(compact.evidence.summaryReceipt, 'utf8')).layoutReviewRecommendation, advice,
+    'persisted public summary carries the same recovery instructions as stdout');
+  assert.deepEqual(fs.readFileSync(original.input), inputBytes, 'advice leaves the passing fixed candidate unchanged');
+  assert.match(fs.readFileSync(original.output, 'utf8'), /data-sequence-column-fit="fixed"/);
+});
