@@ -574,8 +574,9 @@ export function compactFinalizeReceipt(receipt) {
       message: entry.message,
       ...(entry.subject ? { subject: entry.subject } : {}),
       ...(entry.evidence && Object.keys(entry.evidence).length ? { evidence: entry.evidence } : {}),
+      // Verified repairs may require every edit in the set to be applied together.
       ...(Array.isArray(entry.supportedFixes) && entry.supportedFixes.length
-        ? { supportedFixes: entry.supportedFixes.slice(0, 2) } : {}),
+        ? { supportedFixes: [...entry.supportedFixes] } : {}),
     });
   };
   for (const [index, entry] of allDiagnostics.entries()) {

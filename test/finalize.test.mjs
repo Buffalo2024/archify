@@ -1180,3 +1180,56 @@ test('finalize rechecks delivery barriers and the frozen candidate after the bro
     assert.equal(finalized.summary.diagnostics[0].code, scenario === 'pending-delivery' ? 'delivery/provenance-pending' : 'finalize/candidate-changed');
   }
 });
+
+test('default finalize JSON preserves complete verified workflow repairs', t => {
+  const directory = workspace(t);
+  const input = path.join(directory, 'shared-endpoint.json');
+  const output = path.join(directory, 'shared-endpoint.html');
+  const receipt = path.join(directory, 'receipt.json');
+  const cli = fileURLToPath(new URL('../archify/bin/archify.mjs', import.meta.url));
+  const source = {
+    schema_version: 2,
+    diagram_type: 'workflow',
+    meta: { title: 'Shared missing endpoint', output: 'shared-endpoint.html', legend: { mode: 'hidden' } },
+    lanes: [{ id: 'main', label: 'M' }],
+    nodes: ['a', 'b', 'c'].map((id, col) => ({ id, lane: 'main', col, type: 'backend', label: id.toUpperCase() })),
+    edges: [{ id: 'ab', from: 'a', to: 'ghost' }, { id: 'bc', from: 'ghost', to: 'c' }],
+    mainPath: ['a', 'ghost', 'c'],
+  };
+  fs.writeFileSync(input, JSON.stringify(source));
+  const finalized = spawnSync(process.execPath, [
+    cli, 'finalize', 'workflow', input, output, '--quality', 'standard', '--json', '--receipt', receipt,
+  ], { encoding: 'utf8', timeout: 30000 });
+  assert.equal(finalized.status, 1, finalized.stderr || finalized.stdout);
+  const summary = JSON.parse(finalized.stdout);
+  const full = JSON.parse(fs.readFileSync(receipt, 'utf8'));
+  const diagnostic = summary.diagnostics.find(entry => entry.code === 'workflow/unknown-edge-endpoint');
+  assert.ok(diagnostic);
+  assert.deepEqual(diagnostic.supportedFixes,
+    full.diagnostics.find(entry => entry.code === diagnostic.code).supportedFixes);
+  const candidates = new Map();
+  for (const fix of diagnostic.supportedFixes) {
+    const match = /^set (\/\S+) to verified node id "([^"]+)"$/.exec(fix);
+    assert.ok(match, `Expected an executable verified repoint: ${fix}`);
+    const [, pointer, candidate] = match;
+    if (!candidates.has(candidate)) candidates.set(candidate, []);
+    candidates.get(candidate).push(pointer);
+  }
+  assert.ok(candidates.size > 0);
+  for (const [candidate, pointers] of candidates) {
+    assert.deepEqual([...pointers].sort(), ['/edges/0/to', '/edges/1/from', '/mainPath/1']);
+    const repaired = structuredClone(source);
+    for (const pointer of pointers) {
+      const segments = pointer.slice(1).split('/');
+      const key = segments.pop();
+      const parent = segments.reduce((value, segment) => value[segment], repaired);
+      parent[key] = candidate;
+    }
+    fs.writeFileSync(input, JSON.stringify(repaired));
+    const validated = spawnSync(process.execPath, [
+      cli, 'validate', 'workflow', input, '--quality', 'standard', '--json',
+    ], { encoding: 'utf8', timeout: 30000 });
+    assert.equal(validated.status, 0, validated.stderr || validated.stdout);
+    assert.equal(JSON.parse(validated.stdout).ok, true);
+  }
+});
