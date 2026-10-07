@@ -1,6 +1,6 @@
 # Archify Labs walkthrough
 
-The finished video [plays directly in the Labs README](https://github.com/Puuuuup/archify/tree/labs/subarchitecture#try-subarchitecture-in-labs). Its [GitHub video attachment](https://github.com/user-attachments/assets/f0e1f816-261c-41d2-a541-388f962c0a28) is the same encoded MP4 as `docs/labs/subarchitecture.mp4`. It is 1920 × 1080 with English narration and embedded English and Chinese subtitles. The composition lasts 90.615 seconds.
+The finished video [plays directly in the Labs README](https://github.com/Puuuuup/archify/tree/labs/subarchitecture#try-subarchitecture-in-labs). The [encoded MP4](https://puuuuup.github.io/archify/labs/subarchitecture.mp4) is also included as `docs/labs/subarchitecture.mp4`. It is 1920 × 1080 with English narration and embedded English and Chinese subtitles. The composition lasts 90.615 seconds.
 
 Seven frames cover the overview, inline expansion, independent exports, returning, official BAGEL inference, official Lance queries, and the bounded Labs scope. Frames 2, 3 and 4 use actual browser interaction footage. The remaining frames use actual browser captures. No product UI was reconstructed.
 
