@@ -701,6 +701,8 @@ export function cleanCrossingProblems({
 // exception. Other callers keep their existing authored-junction contract.
 // The counterflow-only opt-in serves older workflow exports without a root
 // readable-v2 contract; full shared-endpoint checking takes precedence.
+// Relationships a renderer declares on one junction (a Lifecycle exit bracket)
+// may share that junction's horizontal bus; other overlaps between them count.
 // Tiny overlaps below the route rhythm
 // floor are ignored to avoid turning sub-pixel rounding into a quality debt.
 export function collectAmbiguousCorridors({
@@ -729,6 +731,7 @@ export function collectAmbiguousCorridors({
     const left = routed[leftIndex];
     for (let rightIndex = leftIndex + 1; rightIndex < routed.length; rightIndex += 1) {
       const right = routed[rightIndex];
+      const sharedBus = Boolean(left.relation.junction) && left.relation.junction === right.relation.junction;
       const sharedEndpoint = [left.relation.from, left.relation.to].some((id) => id === right.relation.from || id === right.relation.to);
       const counterflowOnly = sharedEndpoint && !includeSharedEndpoints(left.relation, right.relation);
       if (counterflowOnly && !includeSharedEndpointCounterflow(left.relation, right.relation)) continue;
@@ -744,6 +747,8 @@ export function collectAmbiguousCorridors({
           );
           if (!overlap || overlap.length + 0.0001 < minOverlapPx) continue;
           if (allowShortWorkflowTrunks && shortWorkflowTrunk(left, right, leftSegment, rightSegment, overlap.length)) continue;
+          // Only the horizontal bus itself is shared; vertical overlaps still count.
+          if (sharedBus && Math.abs(overlap.start[1] - overlap.end[1]) < 0.0001) continue;
           if (counterflowOnly) {
             const leftDelta = left.points[leftSegment + 1].map((value, axis) => value - left.points[leftSegment][axis]);
             const rightDelta = right.points[rightSegment + 1].map((value, axis) => value - right.points[rightSegment][axis]);

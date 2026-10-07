@@ -10,7 +10,7 @@ against one of the schemas in this folder before any layout work happens.
 | `workflow.schema.json` | `diagram_type: "workflow"` | `lanes`, `phases`, `groups`, `mainPath`, `nodes`, `edges` |
 | `sequence.schema.json` | `diagram_type: "sequence"` | `participants`, `segments`, `messages`, `activations` |
 | `dataflow.schema.json` | `diagram_type: "dataflow"` | `stages`, `nodes`, `flows` |
-| `lifecycle.schema.json` | `diagram_type: "lifecycle"` | `lanes`, `states`, `transitions` |
+| `lifecycle.schema.json` | `diagram_type: "lifecycle"` | `mainPath`, `states`, `transitions` |
 | `architecture.schema.json` | `diagram_type: "architecture"` | `components`, `boundaries`, `connections` |
 | `erd.schema.json` | `diagram_type: "erd"` | `entities`, `relationships` |
 | `tree.schema.json` | `diagram_type: "tree"` | `nodes` (each with one `parent`) |
@@ -131,13 +131,11 @@ output.
 Workflow supports schema versions 1 and 2. Version 1 remains the fixed-layout
 compatibility contract; version 2 opts into the readable workflow compiler and
 can be produced explicitly with `archify migrate workflow ... --to-schema 2`.
-Lifecycle also supports versions 1 and 2 with the same fields. Version 1 keeps
-the fixed three-band layout; version 2 renders one row per lane on a shared
-column grid (see the [lifecycle renderer](../renderers/lifecycle/README.md)).
-Lifecycle has no migration command: to adopt v2, set `schema_version: 2`,
-re-place lower-lane `col` values on the shared grid (v1 column `N` sat under
-main column `N + 2`), and drop coordinates authored for the v1 canvas
-(`viewBox`, `via`, `channelX`, `channelY`, `labelAt`).
+Lifecycle accepts only version 3, an automatic main-path layout (see the
+[lifecycle renderer](../renderers/lifecycle/README.md)). Versions 1 and 2 were
+removed without a migration command: list the old `main` lane states in
+`mainPath`, then delete `lanes`, `lane`, `col`, `width`, `height`, `yOffset`,
+`viewBox` and every routing or label-position field.
 The other three diagram schemas keep `schema_version` pinned to `1`; they have
 no schema-version migration command. For any of the five diagram types, repair
 a legacy missing or nonportable `meta.output` in the source and run `validate`.

@@ -204,14 +204,15 @@ test('a branded node fails before its semantic sigil, label, and brand badge can
 });
 
 test('every renderer enforces the same collision-free brand top rail', () => {
-  for (const type of ['architecture', 'sequence', 'dataflow', 'lifecycle']) {
+  // Lifecycle sizes states to their text, so it has no narrow-box case.
+  for (const type of ['architecture', 'sequence', 'dataflow']) {
     const input = writeFixture(type, `narrow-brand-rail-${type}`, 'openai', (diagram, node) => {
       node.label = type === 'sequence' ? 'ABCDEFGHI' : 'A';
       delete node.sublabel;
       delete node.tag;
       if (type === 'architecture') node.size = [32, 60];
       if (type === 'sequence') diagram.meta.column_fit = 'fixed';
-      if (type === 'dataflow' || type === 'lifecycle') node.width = 48;
+      if (type === 'dataflow') node.width = 48;
     });
     const { result, html } = renderSync(type, input, `narrow-brand-rail-${type}`);
     assert.equal(result.status, 1, `${type}: ${result.stderr || result.stdout}`);

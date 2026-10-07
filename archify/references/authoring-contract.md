@@ -154,8 +154,8 @@ Generate one responsive artifact for laptops and external displays, preserving t
 
 - Node anchors start at side midpoints. `left`/`right` change the horizontal endpoint; `top`/`bottom` change the vertical endpoint. For an automatic Architecture relationship, unobstructed facing ports whose axis offset is under 16px may share one horizontal or vertical axis when both endpoints retain the 16px corner gutter. If exactly one endpoint belongs to a spread group, only its unshared counterpart moves; relationships spread at both endpoints keep their distinct ports and outside bridge unless a reciprocal facing pair can jointly use separate straight lanes while preserving endpoint spacing, labels, and all surrounding route and obstacle clearances.
 - A side is a direction contract. The first and final route segment must be perpendicular and outward/inward in the named direction.
-- In architecture, data-flow, and lifecycle diagrams, explicit `route: "straight"` requests one direct segment, which may be diagonal when endpoint sides are not pinned. The artifact checker preserves this intent; explicit sides, opaque-node clearance, and other quality gates still apply. `via` takes precedence and retains existing rules, including data-flow's requirement for orthogonal via segments.
-- Automatic Port Spread is a default renderer behavior for architecture, workflow, data-flow, and lifecycle diagrams. Shared automatic endpoints spread deterministically and symmetrically with a 16px corner gutter. It does not apply to sequence messages, single relationships, or explicit `via`, `channelX`, `channelY`, `labelAt`, or non-`auto` routes.
+- In architecture and data-flow diagrams, explicit `route: "straight"` requests one direct segment, which may be diagonal when endpoint sides are not pinned. The artifact checker preserves this intent; explicit sides, opaque-node clearance, and other quality gates still apply. `via` takes precedence and retains existing rules, including data-flow's requirement for orthogonal via segments.
+- Automatic Port Spread is a default renderer behavior for architecture, workflow, and data-flow diagrams. Shared automatic endpoints spread deterministically and symmetrically with a 16px corner gutter. It does not apply to sequence messages, single relationships, or explicit `via`, `channelX`, `channelY`, `labelAt`, or non-`auto` routes.
 - Showcase route rhythm: every nonzero segment must be at least 8px; every interior segment must be at least 16px. When spread ports are nearly parallel, the router uses a 24px endpoint stub and a 16px outside bridge instead of manufacturing a tiny dogleg.
 - Showcase route compactness: an explicit Architecture route fails with `composition/excessive-route-detour` when its orthogonal length is at least 2.5 times an obstacle-aware legal route, adds at least 200px, and sends a control point at least 96px beyond the content envelope. The evidence records both lengths, ratio, excess, bounds, and excursion. Remove an unnecessary `via` or move the diagnosed corridor inward instead of enlarging the canvas. Related relationships that overlap on the same outer corridor by at least 32px are treated as an intentional bus and remain valid.
 - Shared endpoint corridors are allowed only when they remain semantically unambiguous. Unrelated collinear overlap of 8px or more fails showcase.
@@ -473,21 +473,21 @@ unless the input states the dependency. See
 
 ### Lifecycle
 
-Schema v2 (new diagrams): each populated lane is one row, `main` first,
-`terminal` last, others in `lanes[]` order. `col` `0..4` is one shared x grid,
-so a state placed in the column of the state it leaves gets a straight vertical
-transition. Every transition, including the main path, is authored; there is no
-implied rail. The renderer sizes the canvas, widens a column gap for a
-same-row label, and routes automatic transitions orthogonally through row gaps.
-Keep labels short: a gap carrying several parallel lines has little room.
+Schema v3 is the only lifecycle contract. `mainPath` lists the happy path from
+the initial state; every consecutive pair needs a transition. The renderer owns
+all geometry: the main path is one row, transitions back to an earlier phase
+(or skipping ahead) become arcs above it, and every other state sits below the
+state it branches from, one row deeper per step away from the main path.
+Exits that several consecutive phases share (for example “cancel” from any
+running phase) are drawn once from a composite frame around those phases; give
+them the same label. There are no lanes, columns, sizes, or routing controls.
 
-Schema v1 (legacy): main phases use columns `0..4`; event and terminal bands
-use columns `0..2`, and event/terminal column `N` aligns with main column
-`N + 2`. Every lane other than `main` and `terminal` shares one middle band;
-states in the same column there need distinct `yOffset` values.
-
-In both versions a recoverable failure needs a real transition back to an
-active state. A card saying “retry” is not topology.
+Keep the main path to the phases a reader follows, at most about six states,
+and keep transition labels short. A recoverable failure needs a real transition
+back to an active state; a card saying “retry” is not topology. Versions 1 and
+2 were removed: list the old `main` lane in `mainPath` and delete `lanes`,
+`lane`, `col`, `width`, `height`, `yOffset`, `viewBox` and every routing or
+label-position field.
 
 ## Repository evidence
 
