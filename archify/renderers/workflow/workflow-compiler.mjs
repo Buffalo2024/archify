@@ -101,22 +101,22 @@ function hardRouteSegmentMinimum(points, index) {
 }
 
 // One ordered contract for candidate acceptance and the first rejection.
-// Helpers retain compiler-local obstacle state; this table and its adapters
-// are allocated once at module load, rather than for each routed candidate.
+// Predicate names dispatch directly to compiler-local helpers. Freeze the rows
+// once at module load; candidate checks need no callbacks or context objects.
 const READABLE_CANDIDATE_CHECKS = Object.freeze([
-  { invariant: 'route endpoints', accepts: (_checks, _edge, points) => points.length >= 2 },
-  { invariant: 'orthogonal non-zero segments', accepts: (checks, _edge, points) => checks.orthogonalRoute(points) },
-  { invariant: 'readable segment rhythm', accepts: (checks, _edge, points) => checks.routeMeetsHardRhythm(points) },
-  { invariant: 'perpendicular endpoint-side direction', accepts: (_checks, _edge, points, _from, _to, fromSide, toSide) => routeHonorsEndpointSides(points, fromSide, toSide) },
-  { invariant: 'node clearance', accepts: (checks, _edge, points, from, to) => checks.routeClearsEndpointNodes(points, from, to) },
-  { invariant: 'edge-label node clearance', accepts: (checks, edge, points) => checks.routeLabelClearsNodes(edge, points) },
-  { invariant: 'lane/phase/group label clearance', accepts: (checks, edge, points) => checks.routeClearsSceneLabelObstacles(edge, points) },
-  { invariant: 'node clearance', accepts: (checks, edge, points) => checks.routeClearsUnrelatedNodes(edge, points) },
-  { invariant: 'placed edge-label clearance', accepts: (checks, edge, points) => checks.routeClearsPlacedLabels(edge, points) },
-  { invariant: 'canvas origin', accepts: (checks, edge, points) => checks.routeFitsCanvasOrigin(edge, points) },
-  { invariant: 'structural-frame border clearance', accepts: (checks, _edge, points) => checks.routeClearsFrameBorders(points) },
-  { invariant: 'legend clearance', accepts: (checks, edge, points) => checks.routeClearsLegend(edge, points) },
-]);
+  { invariant: 'route endpoints', predicate: 'routeEndpoints' },
+  { invariant: 'orthogonal non-zero segments', predicate: 'orthogonalRoute' },
+  { invariant: 'readable segment rhythm', predicate: 'routeMeetsHardRhythm' },
+  { invariant: 'perpendicular endpoint-side direction', predicate: 'routeHonorsEndpointSides' },
+  { invariant: 'node clearance', predicate: 'routeClearsEndpointNodes' },
+  { invariant: 'edge-label node clearance', predicate: 'routeLabelClearsNodes' },
+  { invariant: 'lane/phase/group label clearance', predicate: 'routeClearsSceneLabelObstacles' },
+  { invariant: 'node clearance', predicate: 'routeClearsUnrelatedNodes' },
+  { invariant: 'placed edge-label clearance', predicate: 'routeClearsPlacedLabels' },
+  { invariant: 'canvas origin', predicate: 'routeFitsCanvasOrigin' },
+  { invariant: 'structural-frame border clearance', predicate: 'routeClearsFrameBorders' },
+  { invariant: 'legend clearance', predicate: 'routeClearsLegend' },
+].map(Object.freeze));
 
 class WorkflowLayoutFeedback extends Error {
   constructor(request) {
@@ -3311,10 +3311,12 @@ function routeMeetsHardRhythm(points) {
   if (points.length === 2) {
     return Math.hypot(points[1][0] - points[0][0], points[1][1] - points[0][1]) + 0.0001 >= hardRouteSegmentMinimum(points, 0);
   }
-  return points.slice(0, -1).every((point, index) => {
+  for (let index = 0; index < points.length - 1; index += 1) {
+    const point = points[index];
     const length = Math.abs(points[index + 1][0] - point[0]) + Math.abs(points[index + 1][1] - point[1]);
-    return length + 0.0001 >= hardRouteSegmentMinimum(points, index);
-  });
+    if (!(length + 0.0001 >= hardRouteSegmentMinimum(points, index))) return false;
+  }
+  return true;
 }
 
 function routeLabelClearsNodes(edge, points) {
@@ -3555,36 +3557,41 @@ function routeFitsCanvasOrigin(edge, points) {
   return routeExtentCoordinates(edge, points).every(([x, y]) => x >= 0 && y >= 0);
 }
 
-// Allocate helper references once per compiler, keeping candidate arguments
-// local to each evaluation without a per-candidate context or mutable state.
-const readableCandidateChecks = {
-  orthogonalRoute,
-  routeMeetsHardRhythm,
-  routeClearsEndpointNodes,
-  routeLabelClearsNodes,
-  routeClearsSceneLabelObstacles,
-  routeClearsUnrelatedNodes,
-  routeClearsPlacedLabels,
-  routeFitsCanvasOrigin,
-  routeClearsFrameBorders,
-  routeClearsLegend,
-};
+// This is the single evaluator for acceptance and rejection. Its ordered loop
+// exits before expensive clearance work and never collects evidence. Direct
+// helper calls avoid per-candidate callback/context allocation and adapters.
+function readableCandidateRejection(edge, points, from, to, fromSide, toSide) {
+  for (let index = 0; index < READABLE_CANDIDATE_CHECKS.length; index += 1) {
+    const check = READABLE_CANDIDATE_CHECKS[index];
+    let accepted;
+    switch (check.predicate) {
+      case 'routeEndpoints': accepted = points.length >= 2; break;
+      case 'orthogonalRoute': accepted = orthogonalRoute(points); break;
+      case 'routeMeetsHardRhythm': accepted = routeMeetsHardRhythm(points); break;
+      case 'routeHonorsEndpointSides': accepted = routeHonorsEndpointSides(points, fromSide, toSide); break;
+      case 'routeClearsEndpointNodes': accepted = routeClearsEndpointNodes(points, from, to); break;
+      case 'routeLabelClearsNodes': accepted = routeLabelClearsNodes(edge, points); break;
+      case 'routeClearsSceneLabelObstacles': accepted = routeClearsSceneLabelObstacles(edge, points); break;
+      case 'routeClearsUnrelatedNodes': accepted = routeClearsUnrelatedNodes(edge, points); break;
+      case 'routeClearsPlacedLabels': accepted = routeClearsPlacedLabels(edge, points); break;
+      case 'routeFitsCanvasOrigin': accepted = routeFitsCanvasOrigin(edge, points); break;
+      case 'routeClearsFrameBorders': accepted = routeClearsFrameBorders(points); break;
+      case 'routeClearsLegend': accepted = routeClearsLegend(edge, points); break;
+      default: throw new Error(`Unknown readable candidate predicate: ${check.predicate}`);
+    }
+    if (!accepted) return check.invariant;
+  }
+  return null;
+}
 
-// Cheap and selective predicates run first; every preserves short-circuiting
-// before expensive clearance work and never collects diagnostic evidence.
 function readableCandidateIsFeasible(edge, points, from, to, fromSide, toSide) {
-  return READABLE_CANDIDATE_CHECKS.every(({ accepts }) => (
-    accepts(readableCandidateChecks, edge, points, from, to, fromSide, toSide)
-  ));
+  return readableCandidateRejection(edge, points, from, to, fromSide, toSide) === null;
 }
 
 // Inspect only a rejected preset. Keep successful routing and automatic
 // candidate enumeration on the short-circuit feasibility path above.
 function readablePresetRejection(edge, points, from, to, fromSide, toSide) {
-  const rejectedCheck = READABLE_CANDIDATE_CHECKS.find(({ accepts }) => (
-    !accepts(readableCandidateChecks, edge, points, from, to, fromSide, toSide)
-  ));
-  const invariant = rejectedCheck?.invariant
+  const invariant = readableCandidateRejection(edge, points, from, to, fromSide, toSide)
     ?? (!routeMatchesPresetFamily(edge.route, points, from, to) ? 'route preset compatibility' : undefined);
   if (invariant === 'placed edge-label clearance') {
     const evidence = {};
