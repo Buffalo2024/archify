@@ -506,6 +506,7 @@ function collectArrows(fragment, useActualPoints = false) {
       // Readable-v2's root contract supersedes this narrower automatic-pair rule.
       // This marker never certifies a crossover halo or waives a quality rule.
       automaticWorkflowRoute: attrs['data-composition-routing'] === 'workflow-v2-auto',
+      junction: attrs['data-composition-junction'] || null,
       width: routeStrokeWidth,
       variant: raw.match(/\ba-(default|emphasis|security|dashed)\b/)?.[1] || 'default',
       role: attrs['data-edge-role'],

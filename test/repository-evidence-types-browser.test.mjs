@@ -39,11 +39,11 @@ test('verified sources remain in Focus and Finder with accessible counts and no 
     ['lifecycle', 'states', 'deployment-release.lifecycle.json', false, 'light', { brand: 'github' }],
     ['lifecycle', 'states', 'agent-run.lifecycle.json', false, 'light', {
       label: 'API', sublabel: 'source data', tag: undefined, step: undefined,
-      width: 92, height: 52, brand: 'github',
+      brand: 'github',
     }],
     ['lifecycle', 'states', 'agent-run.lifecycle.json', false, 'dark', {
       label: 'Awaiting', sublabel: 'source data', tag: 'waiting', step: undefined,
-      width: 126, height: 58, brand: 'github',
+      brand: 'github',
     }, 'approval'],
     ['lifecycle', 'states', 'deployment-release.lifecycle.json', false, 'dark', {
       label: 'Offline mode', sublabel: 'source data', tag: 'waiting', step: undefined, brand: 'github',
@@ -125,8 +125,10 @@ test('verified sources remain in Focus and Finder with accessible counts and no 
     if (Object.keys(extra).length > 1) {
       assert.deepEqual(result.textCollisions, [], `${type} ${node.label}: compact rows must remain separate`);
       assert.deepEqual(result.overflowingText, [], `${type} ${node.label}: compact rows must remain inside the authored box`);
-      assert.deepEqual(result.nodeSize, [extra.width || 140, extra.height || 64], 'retain authored/default box dimensions');
-      assert.equal(result.labelFont, diagram.schema_version === 2 ? 11 : 10, 'retain the label font size');
+      // Lifecycle v3 sizes a state to its text: 64px tall, at least 140px wide.
+      assert.equal(result.nodeSize[1], 64, 'retain the state height');
+      assert.ok(result.nodeSize[0] >= 140, 'retain the minimum state width');
+      assert.equal(result.labelFont, 12, 'retain the preferred label font size');
     }
     assert.equal(result.hasBrand, Boolean(extra.brand), `${type} ${example}: brand fixture`);
     assert.deepEqual(result.paths, ['source.js'], type);
