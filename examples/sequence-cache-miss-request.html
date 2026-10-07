@@ -6663,6 +6663,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         var a = document.createElement('a');
         a.href = url;
         a.download = filename;
+        a.setAttribute('data-archify-download', '');
         document.body.appendChild(a);
         a.click();
         a.remove();
@@ -9775,7 +9776,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         if (container.getAttribute('data-just-panned') === 'true') return;
         if (target.closest('.subarchitecture-drawer')) return;
         if (document.documentElement.getAttribute('data-subarchitecture-open') === 'true' &&
-            target.closest('.toolbar')) return;
+            target.closest('.toolbar, a[data-archify-download]')) return;
         if (target.closest('[data-node-id], [data-relationship-hit-key], .overview-map')) return;
         clear();
       }, true);

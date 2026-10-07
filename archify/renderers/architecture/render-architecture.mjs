@@ -19,13 +19,13 @@ let compiled;
 try { compiled = compileArchitectureGraph(arch, { sourceEvidence, tolerateInvalid: layoutJsonMode }); }
 catch (error) {
   if (!layoutJsonMode) throw error;
-  console.log(JSON.stringify({ ...rendererFailure(error), contract: 'archify-architecture-layout-v1' }, null, 2));
-  process.exit(1);
+  compiled = { layoutReport: { ...rendererFailure(error), contract: 'archify-architecture-layout-v1' } };
 }
-if (layoutJsonMode) {
-  console.log(JSON.stringify(compiled.layoutReport, null, 2));
-  process.exit(compiled.layoutReport.ok === false ? 1 : 0);
-}
+
+// Snapshot the parent's diagnostics before any child compilation can record
+// another failure in the renderer's process-wide diagnostic boundary.
+const parentDiagnostics = [...(compiled.layoutReport.diagnostics || [])];
+const childLayouts = [];
 
 const inheritedMeta = Object.fromEntries([
   'locale',
@@ -45,18 +45,66 @@ const subarchitectureTemplates = (arch.components || []).flatMap((parent, parent
     ...(local.layout ? { layout: local.layout } : {}),
   };
   const scopedEvidence = sourceEvidence?.subgraphs?.[parent.id] || null;
-  const localCompiled = compileArchitectureGraph(localGraph, {
-    identityPrefix: `sub-${parent.id}-`,
+  const scope = {
     graphScope: 'subarchitecture',
     parentId: parent.id,
     subjectBase: `/components/${parentIndex}/subarchitecture`,
-    inheritedMeta,
-    sourceEvidence: scopedEvidence,
-  });
+  };
+  let localCompiled;
+  try {
+    localCompiled = compileArchitectureGraph(localGraph, {
+      identityPrefix: `sub-${parent.id}-`,
+      ...scope,
+      inheritedMeta,
+      sourceEvidence: scopedEvidence,
+    });
+  } catch (error) {
+    if (!layoutJsonMode) throw error;
+    const failure = rendererFailure(error);
+    // Attached diagnostics belong to this compilation. The process-wide
+    // recording may also contain failures from earlier sibling graphs.
+    const diagnostics = Array.isArray(error.archifyDiagnostics) && error.archifyDiagnostics.length
+      ? error.archifyDiagnostics : failure.diagnostics;
+    childLayouts.push({
+      ...scope,
+      ...failure,
+      diagnostics: diagnostics.map((diagnostic) => ({
+        ...diagnostic,
+        subject: { ...diagnostic.subject, ...scope },
+      })),
+    });
+    return [];
+  }
+  if (layoutJsonMode) {
+    childLayouts.push({ ...scope, ...localCompiled.layoutReport });
+    return [];
+  }
   return [`    <template data-subarchitecture-parent="${esc(parent.id)}" data-subarchitecture-title="${esc(local.title)}">
 ${localCompiled.svg}
     </template>`];
 }).join('\n');
+
+if (layoutJsonMode) {
+  const failedChildren = childLayouts.filter((child) => child.ok === false);
+  const failed = compiled.layoutReport.ok === false || failedChildren.length > 0;
+  const report = childLayouts.length ? {
+    ...compiled.layoutReport,
+    ok: !failed,
+    subarchitectures: childLayouts,
+    ...(failed ? {
+      schemaVersion: 1,
+      source: 'renderer',
+      contract: 'archify-architecture-layout-v1',
+      error: [
+        ...(compiled.layoutReport.ok === false ? [compiled.layoutReport.error] : []),
+        ...failedChildren.map((child) => `Subarchitecture of "${child.parentId}": ${child.error}`),
+      ].join('\n'),
+      diagnostics: [...parentDiagnostics, ...failedChildren.flatMap((child) => child.diagnostics)],
+    } : {}),
+  } : compiled.layoutReport;
+  console.log(JSON.stringify(report, null, 2));
+  process.exit(report.ok === false ? 1 : 0);
+}
 
 writeDiagram({
   outPath,

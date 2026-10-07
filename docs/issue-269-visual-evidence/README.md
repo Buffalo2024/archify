@@ -1,6 +1,8 @@
 # Subarchitecture refresh evidence
 
-Comparison base: `68b77b73eaf12297356d122968d9b7b8767be278` (`dev`). The candidate is the merged source accompanying these artifacts. Scope follows the [maintainer's request](https://github.com/tt-a1i/archify/pull/269#issuecomment-5909452518): bounded component internals, laptop readability, return navigation, independent child exports, and preserved parent behavior.
+Comparison base: `e4595e03d69ae8268c99ffc631c7671aa5df9d21` (`dev`). The candidate is the merged source accompanying these artifacts. Scope follows the [maintainer's requests](https://github.com/tt-a1i/archify/pull/269): bounded component internals, laptop readability, return navigation, independent child exports, and preserved parent behavior.
+
+The trial destination is [the fork Labs branch](https://github.com/Puuuuup/archify/tree/labs/subarchitecture). PR #269 targets [the upstream Labs branch](https://github.com/tt-a1i/archify/tree/labs/subarchitecture). Upstream integration and a later mainline decision remain with the maintainers.
 
 ## Try the interactive example
 
@@ -46,3 +48,9 @@ Children remain one level deep, with 1–12 local components and no cross-scope 
 In this example, child primary labels measure approximately 11.7 px at 1366 × 768 and 10.8 px at 1280 × 720. The sizes stay the same after selecting a child component. Details use their own scrolling area. Longer child graphs or details can require ordinary page scrolling; the graph is not compressed to fit both into one screen. Exported graph dimensions remain independent of the viewport.
 
 The PR description links engineering CI for the updated head and records the local checks separately.
+
+## Labs corrections
+
+`validate architecture <input> --layout-json` now compiles the child graphs before reporting overall success. Its `subarchitectures` results and failure diagnostics identify each owning parent and local scope. The regression includes the maintainer's overlapping Transformer components, identical failures under two parents, successful child geometry, and a failed parent with valid children.
+
+The download regression allows Chrome to write a real child SVG to disk. It observes the actual anchor click without replacing or cancelling it, verifies that the file contains the child graph, and checks the parent selection before download, after download, and after returning. The export isolation regression also retains native anchor clicks while testing the other child formats and the separate main export.

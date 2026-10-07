@@ -51,6 +51,17 @@ function asUrl(value) {
   }
 }
 
+// Public provenance is separate from the URL used to reproduce a pinned asset.
+export function normalizeBrandSourceUrl(value) {
+  const url = asUrl(value);
+  if (!url) return null;
+  url.username = '';
+  url.password = '';
+  url.search = '';
+  url.hash = '';
+  return url.href;
+}
+
 function domainMark(hostname) {
   const host = hostname.toLocaleLowerCase('en-US').replace(/\.$/, '');
   const candidates = [...MARK_BY_DOMAIN.entries()]
@@ -479,13 +490,14 @@ async function imageData(response) {
 
 async function captureRemoteBrand(value, deadline = Date.now() + captureTimeoutMilliseconds()) {
   const sourceUrl = new URL(value);
+  const publicSourceUrl = normalizeBrandSourceUrl(sourceUrl);
   const fallback = (reason) => ({
     id: sourceUrl.hostname,
     title: sourceUrl.hostname,
     category: 'link',
     kind: 'fallback',
     status: 'unavailable',
-    sourceUrl: sourceUrl.href,
+    sourceUrl: publicSourceUrl,
     reason,
   });
   try {
@@ -499,7 +511,7 @@ async function captureRemoteBrand(value, deadline = Date.now() + captureTimeoutM
         category: 'link',
         kind: 'remote',
         status: 'captured',
-        sourceUrl: sourceUrl.href,
+        sourceUrl: publicSourceUrl,
         resolvedUrl: page.finalUrl.href,
         ...image,
       };
@@ -522,7 +534,7 @@ async function captureRemoteBrand(value, deadline = Date.now() + captureTimeoutM
           category: 'link',
           kind: 'remote',
           status: 'captured',
-          sourceUrl: sourceUrl.href,
+          sourceUrl: publicSourceUrl,
           resolvedUrl: fetched.finalUrl.href,
           ...image,
         };

@@ -127,6 +127,8 @@ are part of the interface, not normalized by the extraction.
 | Recording tracks/rAF | Constructor failure stops created tracks; recorder error/stop uses existing guarded cleanup to stop tracks and cancel the frame callback |
 | Recording/toast timers | Preserve existing bounded callbacks and state checks; extraction adds no cancellation protocol or shared busy flag |
 
+Download anchors carry `data-archify-download`. While a child is open, Focus treats those owned download clicks as an export action and preserves the parent selection. The actual click still propagates and starts the browser download. The parent-only outside-click behavior is unchanged. The subarchitecture browser regression downloads an SVG to disk without replacing the anchor's `click` method, then verifies selection and page position after returning.
+
 recordWebm retains duration/fps options, defaults, minimums, MIME selection,
 geometry-driven scene and encoder flush timing. This table describes existing
 paths; it does not add universal recovery from arbitrary browser API exceptions.

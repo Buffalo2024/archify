@@ -488,6 +488,7 @@
         var a = document.createElement('a');
         a.href = url;
         a.download = filename;
+        a.setAttribute('data-archify-download', '');
         document.body.appendChild(a);
         a.click();
         a.remove();

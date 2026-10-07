@@ -11523,6 +11523,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         var a = document.createElement(&#39;a&#39;);
         a.href = url;
         a.download = filename;
+        a.setAttribute(&#39;data-archify-download&#39;, &#39;&#39;);
         document.body.appendChild(a);
         a.click();
         a.remove();
@@ -14635,7 +14636,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         if (container.getAttribute(&#39;data-just-panned&#39;) === &#39;true&#39;) return;
         if (target.closest(&#39;.subarchitecture-drawer&#39;)) return;
         if (document.documentElement.getAttribute(&#39;data-subarchitecture-open&#39;) === &#39;true&#39; &amp;&amp;
-            target.closest(&#39;.toolbar&#39;)) return;
+            target.closest(&#39;.toolbar, a[data-archify-download]&#39;)) return;
         if (target.closest(&#39;[data-node-id], [data-relationship-hit-key], .overview-map&#39;)) return;
         clear();
       }, true);
@@ -26917,6 +26918,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         var a = document.createElement(&#39;a&#39;);
         a.href = url;
         a.download = filename;
+        a.setAttribute(&#39;data-archify-download&#39;, &#39;&#39;);
         document.body.appendChild(a);
         a.click();
         a.remove();
@@ -30029,7 +30031,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         if (container.getAttribute(&#39;data-just-panned&#39;) === &#39;true&#39;) return;
         if (target.closest(&#39;.subarchitecture-drawer&#39;)) return;
         if (document.documentElement.getAttribute(&#39;data-subarchitecture-open&#39;) === &#39;true&#39; &amp;&amp;
-            target.closest(&#39;.toolbar&#39;)) return;
+            target.closest(&#39;.toolbar, a[data-archify-download]&#39;)) return;
         if (target.closest(&#39;[data-node-id], [data-relationship-hit-key], .overview-map&#39;)) return;
         clear();
       }, true);

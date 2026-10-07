@@ -268,3 +268,82 @@ test('deliver preserves sentinel output bytes when local validation fails', () =
     [],
   );
 });
+
+test('layout inspection rejects the checked-in Transformer child overlap with local scope', () => {
+  const diagram = JSON.parse(fs.readFileSync(path.join(skillRoot, 'examples', 'transformer-layer.architecture.json'), 'utf8'));
+  const local = diagram.components[1].subarchitecture;
+  local.components[1].pos = [...local.components[0].pos];
+  const input = path.join(tmp, 'transformer-child-overlap.architecture.json');
+  fs.writeFileSync(input, JSON.stringify(diagram));
+  const inspected = run(['validate', 'architecture', input, '--layout-json']);
+  const rendered = run(['render', 'architecture', input, path.join(tmp, 'overlap.html')]);
+  assert.equal(rendered.status, 1, rendered.stderr || rendered.stdout);
+  assert.equal(inspected.status, 1, inspected.stderr || inspected.stdout);
+  assert.equal(inspected.stderr, '');
+  const report = JSON.parse(inspected.stdout);
+  assert.equal(report.ok, false);
+  assert.equal(report.contract, 'archify-architecture-layout-v1');
+  assert.ok(report.diagnostics.some((entry) => /Components .*less than 8px apart/.test(entry.message)));
+  for (const diagnostic of report.diagnostics) {
+    assert.equal(diagnostic.subject.graphScope, 'subarchitecture');
+    assert.equal(diagnostic.subject.parentId, 'transformer');
+    assert.equal(diagnostic.subject.subjectBase, '/components/1/subarchitecture');
+  }
+  assert.equal(report.subarchitectures.length, 1);
+  assert.equal(report.subarchitectures[0].ok, false);
+  assert.equal(report.subarchitectures[0].parentId, 'transformer');
+});
+
+test('layout inspection keeps identical failures under different parents separate', () => {
+  const { input } = writeFixture('two-overlapping-children', (diagram) => {
+    const local = diagram.components[0].subarchitecture;
+    local.components[1].pos = [...local.components[0].pos];
+    diagram.components[1].subarchitecture = structuredClone(local);
+  });
+  const result = run(['validate', 'architecture', input, '--layout-json']);
+  assert.equal(result.status, 1, result.stderr || result.stdout);
+  const report = JSON.parse(result.stdout);
+  assert.equal(report.ok, false);
+  assert.deepEqual(report.subarchitectures.map((child) => child.parentId), ['parent-a', 'parent-b']);
+  for (const [index, child] of report.subarchitectures.entries()) {
+    assert.equal(child.ok, false);
+    assert.ok(child.diagnostics.length > 0);
+    assert.ok(child.diagnostics.every((entry) => entry.subject.parentId === child.parentId));
+    assert.ok(child.diagnostics.every((entry) => entry.subject.subjectBase === `/components/${index}/subarchitecture`));
+  }
+  assert.equal(report.diagnostics.length, report.subarchitectures.reduce((total, child) => total + child.diagnostics.length, 0));
+});
+
+test('layout inspection reports valid child geometry without replacing the parent report', () => {
+  const { diagram, input } = writeFixture('valid-child-layouts');
+  const result = run(['validate', 'architecture', input, '--layout-json']);
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  const report = JSON.parse(result.stdout);
+  assert.equal(report.ok, true);
+  assert.deepEqual(report.components.map((component) => component.id), ['parent-a', 'parent-b']);
+  assert.deepEqual(report.subarchitectures.map((child) => child.parentId), ['parent-a', 'parent-b']);
+  assert.deepEqual(report.subarchitectures[0].components.map((component) => component.id), ['local-a', 'local-b']);
+  assert.ok(report.subarchitectures.every((child) => child.ok && child.graphScope === 'subarchitecture'));
+  delete diagram.components[0].subarchitecture;
+  delete diagram.components[1].subarchitecture;
+  const parentInput = path.join(tmp, 'parent-only-layout.architecture.json');
+  fs.writeFileSync(parentInput, JSON.stringify(diagram));
+  const parent = run(['validate', 'architecture', parentInput, '--layout-json']);
+  assert.equal(parent.status, 0, parent.stderr || parent.stdout);
+  const parentReport = JSON.parse(parent.stdout);
+  const { subarchitectures, ...mainReport } = report;
+  assert.deepEqual(mainReport, parentReport);
+});
+
+test('layout inspection retains parent failures alongside valid child reports', () => {
+  const { input } = writeFixture('invalid-parent-valid-children', (diagram) => {
+    diagram.components[1].pos = [...diagram.components[0].pos];
+  });
+  const result = run(['validate', 'architecture', input, '--layout-json']);
+  assert.equal(result.status, 1, result.stderr || result.stdout);
+  const report = JSON.parse(result.stdout);
+  assert.equal(report.ok, false);
+  assert.ok(report.diagnostics.some((entry) => /Components .*less than 8px apart/.test(entry.message)));
+  assert.ok(report.diagnostics.every((entry) => !entry.subject.parentId));
+  assert.ok(report.subarchitectures.every((child) => child.ok));
+});

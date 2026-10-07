@@ -508,6 +508,7 @@ test('export target downloads only the open subarchitecture and strips local vie
 }, async () => {
   const browser = new ChromeVisualBrowser(chromePath);
   try {
+    await browser.cdp.send('Browser.setDownloadBehavior', { behavior: 'deny' });
     const sessionId = await load(browser, renderFixture(), { width: 1440, height: 900 });
     const receipt = await evaluate(browser, sessionId, `(async function () {
       var blobs = [];
@@ -518,7 +519,10 @@ test('export target downloads only the open subarchitecture and strips local vie
         blobs.push(blob);
         return originalCreateObjectUrl(blob);
       };
-      HTMLAnchorElement.prototype.click = function () { filenames.push(this.download); };
+      document.addEventListener('click', function (event) {
+        var anchor = event.target.closest('a[download]');
+        if (anchor) filenames.push(anchor.download);
+      }, true);
       window.alert = function (message) { alerts.push(String(message)); };
 
       var selector = document.getElementById('export-target-selector');
@@ -700,6 +704,63 @@ test('export target downloads only the open subarchitecture and strips local vie
       parentFocus: 'transformer',
     });
     assert.deepEqual(receipt.alerts, []);
+  } finally {
+    await browser.close();
+  }
+});
+
+test('a real child SVG download preserves parent selection through export and return', {
+  skip: chromePath ? false : 'Set ARCHIFY_CHROME to run the real browser regression.',
+}, async () => {
+  const browser = new ChromeVisualBrowser(chromePath);
+  const downloads = fs.mkdtempSync(path.join(scratch, 'native-download-'));
+  try {
+    await browser.cdp.send('Browser.setDownloadBehavior', { behavior: 'allow', downloadPath: downloads, eventsEnabled: true });
+    const sessionId = await load(browser, renderFixture(), { width: 1366, height: 768 });
+    const before = await evaluate(browser, sessionId, `(async function () {
+      window.nativeDownloadClicks = [];
+      document.addEventListener('click', function (event) {
+        var anchor = event.target.closest('a[download]');
+        if (anchor) window.nativeDownloadClicks.push(anchor.download);
+      }, true);
+      document.querySelector('.diagram-container > svg [data-node-id="transformer"]').dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0 }));
+      var scroll = [scrollX, scrollY];
+      document.getElementById('btn-focus-internals').click();
+      await new Promise(function (resolve) { requestAnimationFrame(function () { requestAnimationFrame(resolve); }); });
+      return { parent: Archify.focus.active(), scroll: scroll };
+    })()`);
+    assert.equal(before.parent, 'transformer');
+    const started = browser.cdp.waitFor('Browser.downloadWillBegin');
+    started.catch(() => {});
+    const afterDownload = await evaluate(browser, sessionId, `(async function () {
+      document.getElementById('btn-export').click();
+      document.querySelector('#export-menu [data-export-target="subarchitecture"]').click();
+      document.querySelector('#export-menu [data-format="svg"]').click();
+      await new Promise(function (resolve) { requestAnimationFrame(function () { requestAnimationFrame(resolve); }); });
+      return { parent: Archify.focus.active(), child: Archify.subarchitecture.active(), clicks: window.nativeDownloadClicks, target: document.documentElement.getAttribute('data-last-export-target') };
+    })()`);
+    const download = await started;
+    assert.match(download.suggestedFilename, /transformer-internals\.svg$/);
+    const output = path.join(downloads, download.suggestedFilename);
+    const deadline = Date.now() + 5000;
+    while (!fs.existsSync(output) && Date.now() < deadline) await new Promise((resolve) => setTimeout(resolve, 25));
+    assert.ok(fs.existsSync(output), 'Chrome must write the real SVG download');
+    const svg = fs.readFileSync(output, 'utf8');
+    assert.match(svg, /data-node-id="attention"/);
+    assert.doesNotMatch(svg, /data-node-id="transformer"/);
+    assert.equal(afterDownload.clicks.length, 1, 'the native anchor click must reach the document observer');
+    assert.equal(afterDownload.target, 'subarchitecture');
+    assert.equal(afterDownload.child, 'transformer');
+    assert.equal(afterDownload.parent, 'transformer');
+    const returned = await evaluate(browser, sessionId, `(async function () {
+      document.getElementById('subarchitecture-back').click();
+      await Archify.readerLayout.whenStable();
+      await new Promise(function (resolve) { requestAnimationFrame(function () { requestAnimationFrame(resolve); }); });
+      return { parent: Archify.focus.active(), child: Archify.subarchitecture.active(), scroll: [scrollX, scrollY] };
+    })()`);
+    assert.equal(returned.parent, 'transformer');
+    assert.equal(returned.child, null);
+    assert.deepEqual(returned.scroll, before.scroll);
   } finally {
     await browser.close();
   }
