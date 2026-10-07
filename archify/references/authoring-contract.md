@@ -322,6 +322,14 @@ Participants are ordered by conversation role. Messages own their vertical order
 
 Stages express transformation or custody. Rows separate parallel streams. Label only data contracts, classifications, or cross-boundary movement that is not obvious.
 
+Omit `meta.viewBox` to fit canvas width to all stages and nodes in either quality
+profile, including explicit node widths. The 940px minimum and 24px right padding
+remain; left-edge overflow still needs a node repair. An authored viewBox stays
+fixed. Showcase node growth, readable typography, content height, port bridges
+and bounded label placement apply only when the canvas and all node widths are
+omitted. `--quality` overrides `meta.quality_profile`; without it, the renderer
+uses `ARCHIFY_QUALITY_PROFILE` when set, otherwise the JSON profile.
+
 ### ERD
 
 Treat a schema ERD as a table catalogue as well as a relationship map. If the

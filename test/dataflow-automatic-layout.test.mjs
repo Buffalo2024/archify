@@ -9,16 +9,20 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 const cli = fileURLToPath(new URL('../archify/bin/archify.mjs', import.meta.url));
-function inspect(t, diagram) {
+function inspect(t, diagram, { quality, envQuality } = {}) {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'archify-dataflow-auto-'));
   t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
   const input = path.join(cwd, 'source.json');
   const source = JSON.stringify(diagram);
   fs.writeFileSync(input, source);
-  const result = spawnSync(process.execPath, [cli, 'validate', 'dataflow', input, '--json'], { encoding: 'utf8' });
+  const env = { ...process.env };
+  delete env.ARCHIFY_QUALITY_PROFILE;
+  if (envQuality !== undefined) env.ARCHIFY_QUALITY_PROFILE = envQuality;
+  const qualityArgs = quality ? ['--quality', quality] : [];
+  const result = spawnSync(process.execPath, [cli, 'validate', 'dataflow', input, '--json', ...qualityArgs], { encoding: 'utf8', env });
   assert.equal(fs.readFileSync(input, 'utf8'), source, 'automatic layout must not rewrite authored input');
   const receipt = JSON.parse(result.stdout);
-  return { result, receipt, input, output: path.join(cwd, 'diagram.html') };
+  return { result, receipt, input, output: path.join(cwd, 'diagram.html'), env, qualityArgs };
 }
 function pipeline() {
   return {
@@ -184,13 +188,81 @@ function smallFootprintDiagram(flow) {
   };
 }
 
-function footprintSvg(t, diagram) {
-  const { result, input, output } = inspect(t, diagram);
+function footprintSvg(t, diagram, options) {
+  const { result, input, output, env, qualityArgs } = inspect(t, diagram, options);
   assert.equal(result.status, 0, result.stdout + result.stderr);
-  const render = spawnSync(process.execPath, [cli, 'render', 'dataflow', input, output], { encoding: 'utf8' });
+  const render = spawnSync(process.execPath, [cli, 'render', 'dataflow', input, output, ...qualityArgs], { encoding: 'utf8', env });
   assert.equal(render.status, 0, render.stderr);
   return fs.readFileSync(output, 'utf8').match(/<svg\b[^]*?<\/svg>/)[0];
 }
+
+for (const [name, metaQuality, options] of [
+  ['CLI showcase without JSON profile', undefined, { quality: 'showcase' }],
+  ['CLI showcase overrides JSON standard', 'standard', { quality: 'showcase' }],
+  ['environment showcase overrides JSON standard', 'standard', { envQuality: 'showcase' }],
+  ['CLI showcase overrides environment standard', 'standard', { quality: 'showcase', envQuality: 'standard' }],
+]) {
+  test(`${name} enables the complete automatic showcase layout`, t => {
+    const diagram = pipeline();
+    if (metaQuality === undefined) delete diagram.meta.quality_profile;
+    else diagram.meta.quality_profile = metaQuality;
+    const svg = footprintSvg(t, diagram, options);
+    assert.match(svg, /viewBox="0 0 1068 512"/);
+    assert.match(svg, /data-reader-fit="intrinsic-height"/);
+    assert.ok(svg.includes(diagram.nodes[5].sublabel));
+    assert.equal(svg, footprintSvg(t, pipeline()), 'CLI/environment selection must match JSON showcase geometry');
+  });
+}
+
+function fiveStageDiagram(profile = 'standard') {
+  const diagram = pipeline();
+  diagram.meta.quality_profile = profile;
+  diagram.nodes = diagram.stages.map((_, stage) => ({ id: `n${stage}`, type: 'backend', label: 'Node', stage, row: 0 }));
+  diagram.flows = diagram.nodes.slice(1).map((node, index) => ({ id: `f${index}`, from: `n${index}`, to: node.id, label: 'd' }));
+  return diagram;
+}
+
+for (const [name, profile, options] of [
+  ['JSON standard fallback', 'standard', undefined],
+  ['missing profile standard default', undefined, undefined],
+  ['CLI standard overrides JSON showcase', 'showcase', { quality: 'standard' }],
+  ['environment standard overrides JSON showcase', 'showcase', { envQuality: 'standard' }],
+  ['CLI standard overrides environment showcase', 'showcase', { quality: 'standard', envQuality: 'showcase' }],
+]) {
+  test(`${name} fits five stages while preserving standard sizing and height`, t => {
+    const diagram = fiveStageDiagram(profile);
+    if (profile === undefined) delete diagram.meta.quality_profile;
+    const svg = footprintSvg(t, diagram, options);
+    assert.match(svg, /viewBox="0 0 1068 720"/);
+    assert.equal((svg.match(/width="112" height="58" rx="6" class="c-mask"/g) || []).length, 5);
+    assert.equal((svg.match(/data-composition-frame-kind="stage"/g) || []).length, 5);
+  });
+}
+
+for (const profile of ['standard', 'showcase']) {
+  test(`${profile} automatic width contains mixed authored and default node widths`, t => {
+    const diagram = fiveStageDiagram(profile);
+    diagram.nodes[0].width = 152;
+    diagram.nodes[4].width = 220;
+    const svg = footprintSvg(t, diagram);
+    assert.match(svg, /viewBox="0 0 1094 720"/);
+    assert.match(svg, /x="24" y="128" width="152" height="58"/);
+    assert.match(svg, /x="850" y="128" width="220" height="58"/);
+    assert.equal((svg.match(/width="112" height="58" rx="6" class="c-mask"/g) || []).length, 3);
+  });
+}
+
+test('an explicit insufficient canvas retains its width and bounds diagnostics', t => {
+  const diagram = fiveStageDiagram('showcase');
+  diagram.meta.viewBox = [940, 720];
+  const { result, receipt, input, output } = inspect(t, diagram, { quality: 'showcase' });
+  assert.equal(result.status, 1);
+  assert.ok(receipt.diagnostics.some(({ message }) => /Node "n4" exceeds the horizontal bounds/.test(message)));
+  assert.ok(receipt.diagnostics.some(({ message }) => /Stages exceed viewBox width/.test(message)));
+  const render = spawnSync(process.execPath, [cli, 'render', 'dataflow', input, output, '--quality', 'showcase'], { encoding: 'utf8' });
+  assert.equal(render.status, 1);
+  assert.equal(fs.existsSync(output), false, 'a fixed insufficient canvas must remain rejected');
+});
 
 test('straight ignores inactive channelY in both route and natural height', t => {
   const plain = footprintSvg(t, smallFootprintDiagram({ route: 'straight' }));

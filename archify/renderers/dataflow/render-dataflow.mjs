@@ -68,14 +68,18 @@ const layout = {
   labelH: 16
 };
 
-// Explicit geometry opts the whole diagram into the established layout. This
-// also preserves the spacing and typography around partially pinned nodes.
-const automaticShowcase = dataflow.meta?.quality_profile === 'showcase'
+// Explicit geometry preserves established node sizing, typography, height,
+// routing and label placement. An omitted canvas width still fits its content
+// in either profile, including authored node widths.
+const qualityProfile = process.env.ARCHIFY_QUALITY_PROFILE || dataflow.meta?.quality_profile;
+const automaticShowcase = qualityProfile === 'showcase'
   && dataflow.meta?.viewBox === undefined
   && !asArray(dataflow.nodes).some(node => node.width !== undefined);
 const stageRight = stageX(asArray(dataflow.stages).length - 1) + layout.stageW / 2;
+const nodeRights = asArray(dataflow.nodes).map(node =>
+  stageX(node.stage) + (node.width || layout.nodeW) / 2).filter(Number.isFinite);
 const viewBox = dataflow.meta?.viewBox || [
-  automaticShowcase ? Math.max(940, Math.ceil(stageRight + 24)) : 940,
+  Math.max(940, Math.ceil(Math.max(stageRight, ...nodeRights) + 24)),
   720,
 ];
 const contextFontMinimum = automaticShowcase
