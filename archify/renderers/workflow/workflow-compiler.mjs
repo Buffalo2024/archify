@@ -3361,7 +3361,38 @@ function labelRouteClearanceDeficit(edge, points, threshold = 8) {
   return deficit;
 }
 
-function routeClearsPlacedLabels(edge, points) {
+function placedLabelConflictEvidence(edge, candidateLabel, item, conflictType, points, segmentIndex, clearance) {
+  const edgeEvidence = (relation) => ({
+    edge: relation.id ?? null, from: relation.from, to: relation.to,
+    path: `/edges/${sourceIndexes.edges.get(relation)}`,
+  });
+  const labelEvidence = (relation, rect) => ({
+    label: relation.label,
+    rect: { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
+  });
+  return {
+    conflictType,
+    candidateEdge: edgeEvidence(edge),
+    otherEdge: edgeEvidence(item.edge),
+    ...(candidateLabel ? { candidateLabel: labelEvidence(edge, candidateLabel) } : {}),
+    ...(item.kind === 'label' ? { otherLabel: labelEvidence(item.edge, item.rect) } : {}),
+    ...(segmentIndex !== undefined ? {
+      segment: {
+        edge: conflictType === 'route-label' ? 'candidate' : 'other',
+        index: segmentIndex, from: [...points[segmentIndex]], to: [...points[segmentIndex + 1]],
+      },
+      measuredClearancePx: clearance, requiredClearancePx: 4,
+    } : {
+      rectangleMarginPx: -2,
+      overlapPx: {
+        x: Math.min(candidateLabel.x + candidateLabel.width, item.rect.x + item.rect.width) - Math.max(candidateLabel.x, item.rect.x),
+        y: Math.min(candidateLabel.y + candidateLabel.height, item.rect.y + item.rect.height) - Math.max(candidateLabel.y, item.rect.y),
+      },
+    }),
+  };
+}
+
+function routeClearsPlacedLabels(edge, points, evidence = null) {
   const candidateLabel = candidateLabelRect(edge, points);
   const candidateExtent = routeBounds(points);
   const queryBox = {
@@ -3377,7 +3408,10 @@ function routeClearsPlacedLabels(edge, points) {
   for (const item of obstacleGrid.query(queryBox)) {
     // A label may sit far from the route it annotates, so both boxes are queried.
     if (item.kind === 'label') {
-      if (candidateLabel && rectsOverlap(candidateLabel, item.rect, -2)) return false;
+      if (candidateLabel && rectsOverlap(candidateLabel, item.rect, -2)) {
+        if (evidence) Object.assign(evidence, placedLabelConflictEvidence(edge, candidateLabel, item, 'label-label'));
+        return false;
+      }
       const rect = item.rect;
       // Either axis further than the minimum clearance means no segment can reach it.
       if (Math.max(rect.x - candidateExtent.maxX, candidateExtent.minX - (rect.x + rect.width)) >= 4
@@ -3387,7 +3421,10 @@ function routeClearsPlacedLabels(edge, points) {
           start: points[index],
           end: points[index + 1],
         }, rect);
-        if (clearance != null && clearance + 0.0001 < 4) return false;
+        if (clearance != null && clearance + 0.0001 < 4) {
+          if (evidence) Object.assign(evidence, placedLabelConflictEvidence(edge, candidateLabel, item, 'route-label', points, index, clearance));
+          return false;
+        }
       }
     } else if (item.kind === 'route' && candidateLabel) {
       const otherBounds = item.bounds;
@@ -3399,7 +3436,10 @@ function routeClearsPlacedLabels(edge, points) {
           start: otherPoints[index],
           end: otherPoints[index + 1],
         }, candidateLabel);
-        if (clearance != null && clearance + 0.0001 < 4) return false;
+        if (clearance != null && clearance + 0.0001 < 4) {
+          if (evidence) Object.assign(evidence, placedLabelConflictEvidence(edge, candidateLabel, item, 'label-route', otherPoints, index, clearance));
+          return false;
+        }
       }
     }
   }
@@ -3527,6 +3567,11 @@ function readablePresetRejection(edge, points, from, to, fromSide, toSide) {
     ['route preset compatibility', () => routeMatchesPresetFamily(edge.route, points, from, to)],
   ];
   const invariant = checks.find(([, accepts]) => !accepts())?.[0];
+  if (invariant === 'placed edge-label clearance') {
+    const evidence = {};
+    routeClearsPlacedLabels(edge, points, evidence);
+    return { invariant, ...evidence };
+  }
   if (invariant === 'node clearance') {
     return { invariant, ...firstRouteNodeCollision(edge, points) };
   }
