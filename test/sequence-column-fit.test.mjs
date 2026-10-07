@@ -166,3 +166,16 @@ test('standard retains acceptance for parallel schema-v1 labels with legacy spac
   assert.equal(Number(plate[2]), 16);
   assert.equal(Number(plate[3]), 9);
 });
+
+// The Viewer fit declaration is independent of fixed/spread column geometry.
+test('automatic sequence declares width-first fit; authored viewBox does not', () => {
+  for (const columnFit of [undefined, 'fixed', 'spread']) {
+    const doc = wideSequence(columnFit);
+    delete doc.meta.viewBox;
+    const root = render(doc).match(/<svg\b[^>]*>/)?.[0];
+    assert.match(root, /data-reader-fit="width-first"/);
+    assert.match(root, new RegExp(`data-sequence-column-fit="${columnFit || 'fixed'}"`));
+    const authoredRoot = render(wideSequence(columnFit)).match(/<svg\b[^>]*>/)?.[0];
+    assert.doesNotMatch(authoredRoot, /data-reader-fit=/);
+  }
+});

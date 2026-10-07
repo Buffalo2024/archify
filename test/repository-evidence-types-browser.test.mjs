@@ -10,7 +10,7 @@ import { ChromeVisualBrowser, findChrome } from '../archify/bin/visual-check.mjs
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'archify');
 const chrome = Object.hasOwn(process.env, 'ARCHIFY_CHROME') ? findChrome() : null;
 
-test('verified sources remain in Focus and Finder without node badges or label mutations', {
+test('verified sources remain in Focus and Finder with accessible counts and no node badges', {
   skip: !chrome,
   timeout: 120000,
 }, async (t) => {
@@ -74,8 +74,8 @@ test('verified sources remain in Focus and Finder without node badges or label m
       expression: `(() => {
         const node = [...document.querySelectorAll('[data-node-id]')].find(n => n.dataset.nodeId === ${JSON.stringify(node.id)});
         const box = el => el && el.getBoundingClientRect();
-        const compatibilityResult = Archify.sourceEvidence.installBeacons();
-        const badgeCount = document.querySelectorAll('[data-source-evidence-beacon], [data-source-evidence-count], [data-source-evidence-original-label]').length;
+        const legacyMethodPresent = Object.hasOwn(Archify.sourceEvidence, 'installBeacons');
+        const badgeCount = document.querySelectorAll('[data-source-evidence-beacon]').length;
         const originalSvg = new DOMParser().parseFromString(${JSON.stringify(svg)}, 'image/svg+xml');
         const ariaChanges = [...document.querySelectorAll('.diagram-container svg [data-node-id]')].filter(actual => {
           const original = [...originalSvg.querySelectorAll('[data-node-id]')].find(n => n.getAttribute('data-node-id') === actual.getAttribute('data-node-id'));
@@ -104,7 +104,7 @@ test('verified sources remain in Focus and Finder without node badges or label m
         const finder = document.getElementById('node-finder-input');
         finder.value = 'source.js';
         finder.dispatchEvent(new Event('input', {bubbles:true}));
-        return { visible: !panel.hidden, badgeCount, ariaChanges, evidence, compatibilityResult, textCollisions, overflowingText,
+        return { visible: !panel.hidden, badgeCount, ariaChanges, evidence, legacyMethodPresent, sourceAria: node.getAttribute('aria-label'), textCollisions, overflowingText,
           nodeSize: ['width', 'height'].map(key => Number(node.querySelector('rect').getAttribute(key))),
           labelFont: Number(node.querySelector('text[data-node-label]').getAttribute('font-size')),
           hasBrand: !!node.querySelector('.brand-mark'),
@@ -116,8 +116,9 @@ test('verified sources remain in Focus and Finder without node badges or label m
     assert.equal(response.exceptionDetails, undefined, type);
     const result = response.result.value;
     assert.equal(result.badgeCount, 0, type);
-    assert.deepEqual(result.ariaChanges, [], `${type}: preserve authored node accessibility labels`);
-    assert.equal(result.compatibilityResult, 0, `${type}: legacy method remains inert`);
+    assert.deepEqual(result.ariaChanges, [node.id], `${type}: only source-backed nodes gain an accessibility hint`);
+    assert.match(result.sourceAria, /1 verified source reference/, type);
+    assert.equal(result.legacyMethodPresent, false, `${type}: obsolete beacon interface removed`);
     assert.equal(result.evidence.length, 1, `${type}: verified evidence lookup`);
     assert.equal(result.evidence[0].path, 'source.js', type);
     assert.equal(result.visible, true, type);

@@ -17,6 +17,9 @@
       var clipFrame = 0;
       var resizeFrame = 0;
       var autoScrollUntil = 0;
+      var originalFlowHeight = container.style.getPropertyValue('height');
+      var originalFlowHeightPriority = container.style.getPropertyPriority('height');
+      var compactPageFlow = false;
 
       var viewBox = svg.viewBox && svg.viewBox.baseVal;
 
@@ -132,12 +135,36 @@
           Math.abs(rendered.x - state.x) < 0.05 &&
           Math.abs(rendered.y - state.y) < 0.05;
       }
+      // CSS transforms keep the SVG's intrinsic layout size. Shrink only its
+      // outer page-flow box for long ordinary diagrams, never the SVG itself:
+      // changing its height would feed the smaller size back into camera math.
+      function syncPageFlow(camera) {
+        camera = camera || state;
+        var html = document.documentElement;
+        var height = svg.clientHeight;
+        var ordinary = html.getAttribute('data-embed') !== 'true' &&
+          html.getAttribute('data-present') !== 'true' &&
+          (!window.matchMedia || !window.matchMedia('print').matches);
+        if (ordinary && camera.scale < 1 && height > window.innerHeight) {
+          var style = getComputedStyle(container);
+          var chrome = ['paddingTop', 'paddingBottom', 'borderTopWidth', 'borderBottomWidth']
+            .reduce(function (total, key) { return total + (parseFloat(style[key]) || 0); }, 0);
+          var flowHeight = Math.ceil(height * camera.scale + Math.max(0, camera.y) + chrome) + 'px';
+          if (container.style.getPropertyValue('height') !== flowHeight) container.style.setProperty('height', flowHeight);
+          compactPageFlow = true;
+        } else if (compactPageFlow) {
+          if (originalFlowHeight) container.style.setProperty('height', originalFlowHeight, originalFlowHeightPriority);
+          else container.style.removeProperty('height');
+          compactPageFlow = false;
+        }
+      }
       function syncViewportClip() {
         if (clipFrame) cancelAnimationFrame(clipFrame);
         clipFrame = 0;
         function sample() {
           clipFrame = 0;
           var rendered = sampleRenderedState();
+          syncPageFlow(rendered);
           clipToViewport(rendered);
           if (Archify.readerLayout && typeof Archify.readerLayout.syncLegend === 'function') Archify.readerLayout.syncLegend();
           if (!cameraSettled(rendered)) clipFrame = requestAnimationFrame(sample);
@@ -524,6 +551,20 @@
           else apply();
         });
       });
+      // Reader width and Chrome reserve can change without a window resize.
+      // Observe their resulting sizes; the SVG remains intrinsically sized, so
+      // the outer flow height cannot feed back into its camera base.
+      if (typeof ResizeObserver === 'function') {
+        var flowObserver = new ResizeObserver(function () { syncPageFlow(sampleRenderedState()); });
+        flowObserver.observe(svg);
+        flowObserver.observe(container);
+      }
+      if (typeof MutationObserver === 'function') {
+        new MutationObserver(function () { syncPageFlow(sampleRenderedState()); })
+          .observe(document.documentElement, { attributes: true, attributeFilter: ['data-embed', 'data-present'] });
+      }
+      var printMedia = window.matchMedia && window.matchMedia('print');
+      if (printMedia && printMedia.addEventListener) printMedia.addEventListener('change', function () { syncPageFlow(sampleRenderedState()); });
       window.addEventListener('hashchange', function () { requestAnimationFrame(syncSemantic); });
       apply();
       pinControls();

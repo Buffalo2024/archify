@@ -9,9 +9,9 @@
       var cards = shell && shell.querySelector('.cards');
       var viewBox = svg && svg.viewBox && svg.viewBox.baseVal;
       var ratio = viewBox && viewBox.height > 0 ? viewBox.width / viewBox.height : 0;
-      var measuredHeightFit = svg && svg.getAttribute('data-reader-fit') === 'intrinsic-height';
-      var widthFirstReading = measuredHeightFit && svg &&
-        (svg.hasAttribute('data-sequence-column-fit') || svg.hasAttribute('data-waterfall-ui'));
+      var readerFit = svg && svg.getAttribute('data-reader-fit');
+      var widthFirstReading = readerFit === 'width-first';
+      var measuredHeightFit = readerFit === 'intrinsic-height' || widthFirstReading;
       var frame = 0;
       var settleFrame = 0;
       var lastWidth = 0;
@@ -171,6 +171,10 @@
         var rect = diagram.getBoundingClientRect();
         var style = window.getComputedStyle(diagram);
         var scale = Math.min(svg.clientWidth / viewBox.width, svg.clientHeight / viewBox.height);
+        if (!Number.isFinite(scale) || scale <= 0) {
+          clearLegend();
+          return;
+        }
         var left = rect.left + number(style.borderLeftWidth) + number(style.paddingLeft);
         var right = rect.right - number(style.borderRightWidth) - number(style.paddingRight);
         var bottom = rect.bottom - number(style.borderBottomWidth) - number(style.paddingBottom);

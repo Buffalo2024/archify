@@ -177,6 +177,12 @@ provider is part of Focus ownership, not a second initialization step.
 - Passport uses existing label/kind/detail/context/tag/brand/source metadata. The
   Source Evidence provider owns repository/node lookup; Finder searches source paths.
   Focus owns displaying or hiding evidence and building the existing safe links.
+  Source Evidence appends the localized verified source count to node ARIA
+  labels at initialization, preserving the original label for canonical export.
+  Only revision-verified payload sources contribute; zero counts add no hint.
+  Repeated initialization restores the original label first, so hints never
+  accumulate and disappeared evidence removes the old hint. This adds no SVG
+  badge, shape, or geometry and exposes no beacon installation interface.
   Relationship rows are grouped out/in/loop, retaining authored order within each
   group and deduplicating keys. Up/Down/Home/End clamp within the resulting rows.
   A diagram-container ResizeObserver requests the existing placement frame while
@@ -576,10 +582,16 @@ The source split narrows maintenance scope while preserving runtime dependencies
   Uncapped and ineligible measures clear these values
   and reset the recorded width. CSS consumes the width on `.container`.
   Reader never writes canonical SVG geometry, viewBox or semantic IDs.
-- Automatic (`intrinsic-height`) Sequence and Waterfall canvases use the
-  available desktop reading width and retain authored vertical page scroll;
+- Renderers declare fitting independently of their UI or column metadata:
+  `data-reader-fit="width-first"` selects available desktop reading width;
+  `data-reader-fit="intrinsic-height"` selects height fitting. Both declare
+  automatic canvases and share the existing readability and enlargement limits.
+  Automatic Sequence and Waterfall canvases declare `width-first` and retain
+  vertical page scroll;
   overflow settling must not shrink them back to fit the viewport height.
-  Other diagram families retain height fitting. All automatic canvases cap
+  Undeclared SVGs retain the ordinary ratio-based eligibility and fit; UI or
+  column attributes alone do not opt into either automatic fit. Other diagram
+  families retain height fitting. All automatic canvases cap
   enlargement at 1.5 times the authored SVG width without reducing the outer
   reading area. Capped SVGs are centered inside that area; uncapped diagrams
   retain their existing natural flow. In a capped reader area, the original
@@ -678,6 +690,14 @@ Map detail and no camera dragging apply; wide mobile layouts retain
 their contained horizontal scroll. Reset restores 100% overview. Semantic reveal
 and Radar centering retain their existing minimum of 100%. Canonical exports
 retain the original geometry regardless of the manual zoom.
+
+For long ordinary diagrams below 100%, Camera also reduces the container's
+page-flow height to the painted SVG height plus its existing padding/borders.
+The SVG retains its intrinsic client size, so zoom and layout cannot repeatedly
+shrink the camera base. Size observation follows Reader width and Chrome reserve
+changes without requiring a window resize. Reset, short diagrams, Embed, Present
+and print restore the original inline container height and priority. This outer
+layout state is absent from canonical SVG exports.
 
 `reveal` returns a transaction or false, with branch-specific side effects.
 Desktop empty/unknown targets can return before changing the camera. At widths
@@ -861,7 +881,7 @@ Viewer capability or changes the live DOM. No new `Archify` interface is exposed
 | Focus, relationship preview, reachability, Intent Trace | Remove selection/preview markers and runtime overlays; reset node `aria-pressed` using the existing rule. |
 | Route Probe | Remove picking, result and journey markers/overlays and route step styles. |
 | Semantic Lens and legend preview | Remove filtering/preview decorations and runtime legend accessibility attributes. |
-| Source Evidence | Remove beacons/counts; restore recorded original labels. Missing or empty original labels remove `aria-label`, as before. |
+| Source Evidence | Remove beacons/counts; restore recorded original labels. Missing original labels remove `aria-label`; an authored empty label remains an empty attribute. |
 | Previous Route/Reach share decoration | Remove before applying the current export's explicit snapshot. |
 
 Original content, node/edge identity, geometry and authored animation metadata

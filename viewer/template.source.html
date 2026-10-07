@@ -916,11 +916,29 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           if (parsed && parsed.verified === true && parsed.repository && parsed.nodes) payload = parsed;
         } catch (_) {}
       }
+      // Keep verified evidence discoverable to screen readers without adding
+      // visual marks. Restore first so repeated initialization never appends
+      // another count or retains one after evidence becomes unavailable.
+      var svg = document.querySelector('.diagram-container svg');
+      if (svg) Array.prototype.forEach.call(svg.querySelectorAll('[data-node-id]'), function (node) {
+        if (node.hasAttribute('data-source-evidence-count')) {
+          var savedLabel = node.getAttribute('data-source-evidence-original-label');
+          if (savedLabel == null) node.removeAttribute('aria-label');
+          else node.setAttribute('aria-label', savedLabel);
+          node.removeAttribute('data-source-evidence-count');
+          node.removeAttribute('data-source-evidence-original-label');
+        }
+        var sources = payload && payload.nodes[node.getAttribute('data-node-id')];
+        if (!Array.isArray(sources) || !sources.length) return;
+        var originalLabel = node.getAttribute('aria-label');
+        node.setAttribute('data-source-evidence-count', String(sources.length));
+        if (originalLabel != null) node.setAttribute('data-source-evidence-original-label', originalLabel);
+        node.setAttribute('aria-label', (originalLabel ? originalLabel + ', ' : '') +
+          viewerCount('viewer.passport.sourceCount', sources.length));
+      });
       return {
         available: function () { return Boolean(payload); },
         repository: function () { return payload ? payload.repository : null; },
-        // Compatibility only: sources are shown in the Focus card.
-        installBeacons: function () { return 0; },
         node: function (id) {
           var sources = payload && payload.nodes ? payload.nodes[id] : null;
           return Array.isArray(sources) ? sources.slice() : [];

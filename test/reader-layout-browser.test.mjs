@@ -352,6 +352,29 @@ test('Reader Layout preserves final-artifact behavior across its ownership bound
       assert.equal(constrained.legendCorner, false);
       assert.equal(constrained.legendTransformRuntime, '');
     });
+    await t.test('zero-size SVG clears corner legend placement and recovers without nonfinite transforms', async () => {
+      await load(compactErd, { width: 1440, height: 900 });
+      assert.equal((await snapshot('legend-size-initial')).legendCorner, true);
+      for (const collapse of ["svg.style.height = '0px'", "svg.style.width = '0px'; svg.style.minWidth = '0px'"]) {
+        const collapsed = await evaluate(`(() => {
+          const svg = document.querySelector('.diagram-container > svg');
+          ${collapse};
+          Archify.readerLayout.syncLegend();
+          const legend = svg.querySelector('[data-legend]');
+          return { width: svg.clientWidth, height: svg.clientHeight, corner: legend.hasAttribute('data-reader-legend-corner'),
+            transform: legend.style.getPropertyValue('--archify-reader-legend-transform') };
+        })()`);
+        assert.ok(collapsed.width === 0 || collapsed.height === 0);
+        assert.equal(collapsed.corner, false);
+        assert.equal(collapsed.transform, '');
+        records.push({ label: 'legend-size-collapsed', ...collapsed });
+        await evaluate(`(() => { const svg = document.querySelector('.diagram-container > svg');
+          svg.style.removeProperty('height'); svg.style.removeProperty('width'); svg.style.removeProperty('min-width');
+          Archify.readerLayout.syncLegend(); })()`);
+        await stable();
+        assert.equal((await snapshot('legend-size-restored')).legendCorner, true);
+      }
+    });
     await t.test('compact real ERD keeps the normal canvas while SVG enlargement remains capped', async () => {
       const original = fs.readFileSync(compactErd, 'utf8');
       const uncapped = path.join(scratch, 'compact-table-uncapped-control.html');
@@ -501,13 +524,13 @@ test('Reader Layout preserves final-artifact behavior across its ownership bound
         return file;
       }
       const samples = [
-        ['sequence', 1100, 2400, 'data-sequence-column-fit="fixed"'],
-        ['waterfall', 1100, 2400, 'data-waterfall-ui=""'],
-        ['small-erd', 456, 270, ''],
+        ['sequence', 1100, 2400, 'width-first'],
+        ['waterfall', 1100, 2400, 'width-first'],
+        ['small-erd', 456, 270, 'intrinsic-height'],
       ];
-      for (const [name, width, height, marker] of samples) {
+      for (const [name, width, height, fit] of samples) {
         const file = readerFixture(name, width, height,
-          `data-reader-fit="intrinsic-height" data-reader-min-text="7.5" ${marker}`);
+          `data-reader-fit="${fit}" data-reader-min-text="7.5"`);
         for (const [viewportWidth, viewportHeight] of [[1440, 900], [1600, 1000], [1920, 1080], [2048, 1320]]) {
           await load(file, { width: viewportWidth, height: viewportHeight });
           const before = await snapshot(`${name}-${viewportWidth}`);
@@ -565,14 +588,50 @@ test('Reader Layout preserves final-artifact behavior across its ownership bound
           assert.deepEqual((await snapshot(`${name}-${viewportWidth}-return`)).geometry, before.geometry);
         }
       }
-      // A sequence marker alone must not override an authored canvas's fit.
-      const authored = readerFixture('authored-sequence', 1100, 2400, 'data-sequence-column-fit="fixed"');
-      await load(authored);
-      inactive(await snapshot('authored-sequence'), false);
+      // UI and column metadata alone never declare automatic Reader fitting.
+      for (const marker of ['data-sequence-column-fit="fixed"', 'data-waterfall-ui=""', '']) {
+        const authored = readerFixture('undeclared-reader', 1100, 2400, marker);
+        await load(authored);
+        inactive(await snapshot('undeclared-reader'), false);
+        const heightFit = readerFixture('height-fit-reader', 1100, 2400, `data-reader-fit="intrinsic-height" ${marker}`);
+        await load(heightFit);
+        const state = await snapshot('height-fit-reader');
+        assert.equal(state.active, true);
+        assert.ok(state.receipt.width < 1200, 'intrinsic fitting stays independent of family markers');
+      }
       const authoredSmall = readerFixture('authored-small', 456, 270, '');
       await load(authoredSmall, { width: 2048, height: 1320 });
       assert.ok(await evaluate("document.querySelector('.diagram-container > svg').clientWidth > 456 * 1.5"),
         'an authored canvas retains its previous enlargement behavior');
+    });
+    await t.test('public renderers declare automatic reading width while undeclared canvases retain their fit', async () => {
+      const sequence = { schema_version: 1, diagram_type: 'sequence', meta: { title: 'Reader sequence', output: 'reader-sequence.html' },
+        participants: [{ id: 'a', type: 'external', label: 'Client' }, { id: 'b', type: 'backend', label: 'Server' }],
+        messages: [{ from: 'a', to: 'b', y: 160, label: 'ping' }] };
+      const waterfall = JSON.parse(fs.readFileSync(path.join(skillRoot, 'examples/checkout-request.waterfall.json'), 'utf8'));
+      for (const [mode, doc] of [['sequence', sequence], ['waterfall', waterfall]]) {
+        const input = path.join(scratch, `${mode}-automatic.json`);
+        const output = path.join(scratch, `${mode}-automatic.html`);
+        fs.writeFileSync(input, JSON.stringify(doc));
+        execFileSync(process.execPath, [path.join(skillRoot, 'bin/archify.mjs'), 'render', mode, input, output]);
+        const html = fs.readFileSync(output, 'utf8');
+        assert.match(html.match(/<svg\b[^>]*>/)[0], /data-reader-fit="width-first"/);
+        await load(output);
+        const declared = await snapshot(`${mode}-automatic`);
+        assert.equal(declared.active, true);
+        assert.equal(declared.readerFit, 'width-first');
+        const undeclared = path.join(scratch, `${mode}-undeclared.html`);
+        fs.writeFileSync(undeclared, html.replace(' data-reader-fit="width-first"', ''));
+        await load(undeclared);
+        const fallback = await snapshot(`${mode}-undeclared`);
+        assert.deepEqual(fallback.geometry, declared.geometry);
+        if (declared.receipt.ratio < 1.55) inactive(fallback, false);
+        else assert.ok(fallback.receipt.width <= declared.receipt.width);
+        for (const query of ['&embed=1', '&present=1']) {
+          await load(output, { query });
+          inactive(await snapshot(`${mode}-${query}`), declared.receipt.ratio >= 1.55);
+        }
+      }
     });
     await t.test('desktop budgets, extreme content and limited horizontal space preserve geometry', async () => {
       for (const [width, height] of [[1440, 900], [1600, 1000], [1920, 1080], [2048, 1320]]) {

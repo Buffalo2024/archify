@@ -76,8 +76,9 @@ test('Tree branches collapse in place, follow the keyboard, reveal selections, a
   await load(small);
   assert.equal(await run('Archify.treeBranches.active'), true);
   async function checkSources() {
-    assert.equal(await run(`document.querySelectorAll('[data-source-evidence-beacon], [data-source-evidence-count], [data-source-evidence-original-label]').length`), 0);
+    assert.equal(await run(`document.querySelectorAll('[data-source-evidence-beacon]').length`), 0);
     assert.deepEqual(await run(`['platform', 'payments', 'card_payment'].map(id => Archify.sourceEvidence.node(id).map(source => source.path))`), [['source.js'], ['source.js'], ['source.js']]);
+    assert.deepEqual(await run(`['platform', 'payments', 'card_payment'].map(id => document.querySelector('[data-node-id="' + id + '"]').getAttribute('data-source-evidence-count'))`), ['1', '1', '1']);
   }
   await checkSources();
   const before = await run(box('operations'));

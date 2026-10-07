@@ -68,7 +68,7 @@
         });
         Array.prototype.forEach.call(clone.querySelectorAll('[data-source-evidence-count]'), function (el) {
           var originalLabel = el.getAttribute('data-source-evidence-original-label');
-          if (originalLabel == null || originalLabel === '') el.removeAttribute('aria-label');
+          if (originalLabel == null) el.removeAttribute('aria-label');
           else el.setAttribute('aria-label', originalLabel);
           el.removeAttribute('data-source-evidence-count');
           el.removeAttribute('data-source-evidence-original-label');

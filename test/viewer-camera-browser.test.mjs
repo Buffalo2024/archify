@@ -167,7 +167,7 @@ test('Camera preserves transactions, rendered state and real caller handoffs', {
           percent: c.querySelector('[data-view-percent]').textContent,
           out: c.querySelector('[data-view="out"]').disabled,
           incoming: c.querySelector('[data-view="in"]').disabled,
-          pannable: c.classList.contains('is-pannable'), clip: s.style.clipPath,
+          pannable: c.classList.contains('is-pannable'), clip: s.style.clipPath, flowHeight: c.style.height,
           viewport: Archify.view.logicalViewport(), viewBox: s.getAttribute('viewBox') };
       })()`;
       let value = await run(inspect);
@@ -176,6 +176,7 @@ test('Camera preserves transactions, rendered state and real caller handoffs', {
       assert.equal(value.out, false);
       assert.equal(value.pannable, false);
       assert.equal(value.clip, '');
+      assert.equal(value.flowHeight, '', 'short diagrams retain their original flow box');
       assert.ok(Math.abs(value.state.x - value.scrollLeft - (value.visibleWidth - value.width * 0.75) / 2) < 0.1);
       assert.ok(Math.abs(value.state.y - value.height * 0.125) < 0.1);
       assert.equal(value.viewport.scale, 0.75);
@@ -221,31 +222,83 @@ test('Camera preserves transactions, rendered state and real caller handoffs', {
 
   await t.test('long sequences keep the first row visible below 100% and the final row reachable', async () => {
     await load('longSequence', { width: 1280, height: 800, reduced: true });
+    const initial = await run(`(() => {
+      const s = document.querySelector('.diagram-container > svg');
+      return { height: s.clientHeight, pageHeight: document.documentElement.scrollHeight,
+        viewBox: s.getAttribute('viewBox'), markup: s.innerHTML };
+    })()`);
     await run(`Archify.view.zoomOut(); Archify.view.zoomOut(); Archify.view.zoomOut()`);
     await stable();
     const value = await run(`(() => {
       const s = document.querySelector('.diagram-container > svg');
       const rows = [...s.querySelectorAll('[data-edge-from]')];
       const first = rows[0].getBoundingClientRect(), last = rows[rows.length - 1].getBoundingClientRect();
+      const c = s.parentNode, box = c.getBoundingClientRect(), svgBox = s.getBoundingClientRect(), style = getComputedStyle(c);
       return { height: s.clientHeight, state: Archify.view.state(), first: first.y, last: last.y,
-        scrollHeight: document.documentElement.scrollHeight, windowHeight: innerHeight };
+        scrollHeight: document.documentElement.scrollHeight, windowHeight: innerHeight,
+        blankTail: box.bottom - svgBox.bottom, bottomChrome: parseFloat(style.paddingBottom) + parseFloat(style.borderBottomWidth),
+        viewBox: s.getAttribute('viewBox'), markup: s.innerHTML };
     })()`);
     assert.ok(value.height > value.windowHeight);
     assert.equal(value.state.scale, 0.25);
     assert.equal(value.state.y, 0);
     assert.ok(value.first >= 0 && value.first < value.windowHeight, 'the first row remains on screen');
     assert.ok(value.last <= value.scrollHeight, 'the final row remains reachable by page scroll');
+    assert.equal(value.height, initial.height, 'zoom never feeds a reduced layout size back into the SVG');
+    assert.equal(value.viewBox, initial.viewBox);
+    assert.equal(value.markup, initial.markup, 'authored rows and geometry are unchanged');
+    assert.ok(value.blankTail <= value.bottomChrome + 2, JSON.stringify(value));
+    assert.ok(Math.abs(initial.pageHeight - value.scrollHeight - initial.height * 0.75) <= 3, 'page flow shrinks with the rendered rows');
+    records.push({ label: 'long-sequence-flow', initialHeight: initial.height, initialPageHeight: initial.pageHeight,
+      ...value, markup: undefined });
     await snapshot('long-sequence-25-top');
     await screenshot('long-sequence-25-top');
     await run(`window.scrollTo(0, ${Math.max(0, value.last - value.windowHeight / 2)})`);
     await stable();
     await snapshot('long-sequence-25-final');
     await screenshot('long-sequence-25-final');
+    // Reader/Chrome may alter stage width or reserve without window resize.
+    await run(`(() => { const c = document.querySelector('.diagram-container'); c.style.width = '75%'; })()`);
+    await stable();
+    const reflow = await run(`(() => {
+      const s = document.querySelector('.diagram-container > svg'), c = s.parentNode, style = getComputedStyle(c);
+      return { base: s.clientHeight, paint: s.getBoundingClientRect().height,
+        gap: c.getBoundingClientRect().bottom - s.getBoundingClientRect().bottom,
+        bottom: parseFloat(style.paddingBottom) + parseFloat(style.borderBottomWidth) };
+    })()`);
+    assert.ok(reflow.base < initial.height);
+    assert.ok(Math.abs(reflow.paint - reflow.base * 0.25) < 1);
+    assert.ok(reflow.gap <= reflow.bottom + 2, 'stage reflow refreshes flow height without a window resize');
+    await run(`document.querySelector('.diagram-container').style.removeProperty('width')`);
+    await stable();
+    await viewport(1440, 900);
+    await stable();
+    assert.equal(await run('Archify.view.state().scale'), 0.25);
+    const resized = await run(`(() => { const s = document.querySelector('.diagram-container > svg');
+      return { base: s.clientHeight, paint: s.getBoundingClientRect().height }; })()`);
+    assert.ok(Math.abs(resized.paint - resized.base * 0.25) < 1, 'resize must not shrink the base twice');
+    await viewport(1280, 800);
+    await stable();
+    for (const mode of ['embed', 'present', 'print']) {
+      if (mode === 'print') await send('Emulation.setEmulatedMedia', { media: 'print' });
+      else await run(`document.documentElement.setAttribute('data-${mode}', 'true')`);
+      await stable();
+      assert.equal(await run(`document.querySelector('.diagram-container').style.height`), '', mode + ' restores ordinary mode-owned height');
+      if (mode === 'print') await send('Emulation.setEmulatedMedia', { media: '' });
+      else await run(`document.documentElement.removeAttribute('data-${mode}')`);
+      await stable();
+      assert.notEqual(await run(`document.querySelector('.diagram-container').style.height`), '', 'ordinary long overview restores compact flow');
+    }
+    await run('Archify.view.reset()');
+    await stable();
+    assert.equal(await run(`document.querySelector('.diagram-container').style.height`), '');
+    assert.equal(await run(`document.querySelector('.diagram-container > svg').clientHeight`), initial.height);
+    assert.equal(await run(`document.documentElement.scrollHeight`), initial.pageHeight);
   });
 
   await t.test('long-diagram zoom preserves visible content from middle and bottom scroll positions', async () => {
     for (const position of [0.5, 0.85, 'page-bottom']) {
-      await load('longSequence', { width: 1280, height: 800, reduced: true });
+      await load('longSequence', { width: 1280, height: 800, reduced: position !== 'page-bottom' });
       const scrollTarget = position === 'page-bottom' ? 'document.documentElement.scrollHeight'
         : `document.querySelector('.diagram-container > svg').clientHeight * ${position}`;
       await run(`window.scrollTo(0, ${scrollTarget})`);
@@ -511,11 +564,12 @@ test('Camera preserves transactions, rendered state and real caller handoffs', {
   });
 
   await t.test('export removes camera transforms without mutating the live camera', async () => {
-    for (const [mode, setup] of [
-      ['semantic', `Archify.view.reveal(['api'], { instant: true })`],
-      ['75-percent', `Archify.view.zoomOut()`],
+    for (const [mode, diagram, setup] of [
+      ['semantic', 'architecture', `Archify.view.reveal(['api'], { instant: true })`],
+      ['75-percent', 'architecture', `Archify.view.zoomOut()`],
+      ['long-25-percent', 'longSequence', `Archify.view.zoomOut(); Archify.view.zoomOut(); Archify.view.zoomOut()`],
     ]) {
-      await load();
+      await load(diagram, { reduced: true });
       await run(setup);
       await stable();
       const live = await run(`(() => ({ scale: Archify.view.state().scale,
@@ -524,7 +578,7 @@ test('Camera preserves transactions, rendered state and real caller handoffs', {
         assert.ok(live.scale > 1, 'semantic export exercises zoomed camera clipping');
         assert.notEqual(live.clip, '');
       } else {
-        assert.equal(live.scale, 0.75);
+        assert.equal(live.scale, mode === 'long-25-percent' ? 0.25 : 0.75);
         assert.equal(live.clip, '');
       }
       const exported = await run(`(async () => {
