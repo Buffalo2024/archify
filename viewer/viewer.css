@@ -1954,17 +1954,18 @@ html[data-subarchitecture-open="true"] .toolbar { position: fixed; }
   background: color-mix(in srgb, var(--panel) 82%, var(--bg));
 }
 .subarchitecture-stage {
-  min-height: 22rem;
+  min-height: min(22rem, calc(100svh - 10rem));
   overflow: auto;
 }
 .subarchitecture-mount {
-  min-width: 64rem;
+  min-width: var(--subarchitecture-min-width, 64rem);
   padding: 0.7rem;
 }
 .subarchitecture-mount svg {
   display: block;
-  width: 100%;
+  width: var(--subarchitecture-svg-width, 100%);
   height: auto;
+  margin-inline: auto;
 }
 .subarchitecture-passport {
   align-self: stretch;

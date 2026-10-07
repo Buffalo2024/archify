@@ -14,7 +14,7 @@ Read this only when the user asks for a reader-facing capability. Ordinary gener
 - Direct Relationship Pin makes a unique compiled relationship operable while preserving the authored line and stable relationship identity. It must fail closed on conflicting source/target/label/ID metadata.
 - Route Probe resolves exactly two endpoints over authored directed relationships. It never infers a route from geometry.
 
-Authored subarchitectures expand below the main graph in the same page. Opening internals scrolls to that section and focuses its return control. Back, Close, and Escape restore the previous page position and parent focus. The parent keeps its reading layout while the child is open. Child SVGs retain their natural aspect ratio; a narrow stage scrolls horizontally, and component details do not shrink the graph.
+Authored subarchitectures expand below the main graph in the same page. Opening internals scrolls to that section and focuses its return control. Back, Close, and Escape restore the previous page position and parent focus. The parent keeps its reading layout while the child is open. Child SVGs retain their natural aspect ratio. On desktop, the child fits the available width and viewport height while preserving primary labels of at least 10 CSS pixels. Graphs that cannot fit at that reading size use page scrolling. A narrow stage scrolls horizontally, and component details do not shrink the graph. Window resizing and theme or preset changes recalculate the child size without changing its authored geometry or export dimensions.
 
 ## Motion and presentation
 

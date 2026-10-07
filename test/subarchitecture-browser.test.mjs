@@ -35,6 +35,25 @@ function renderFixture({ withSubarchitecture = true } = {}) {
   return output;
 }
 
+function renderBagel({ tall = false } = {}) {
+  const source = JSON.parse(fs.readFileSync(path.join(repoRoot, 'website', 'examples', 'bagel-inference.architecture.json'), 'utf8'));
+  // Exercise the checked-in geometry without fetching official code.
+  delete source.meta.repository;
+  for (const component of source.components) {
+    delete component.sources;
+    for (const local of component.subarchitecture?.components || []) {
+      delete local.sources;
+      if (tall && component.id === 'context') local.pos[1] *= 2;
+    }
+  }
+  const stem = tall ? 'bagel-tall-context' : 'bagel-context';
+  const input = path.join(scratch, stem + '.architecture.json');
+  const output = path.join(scratch, stem + '.html');
+  fs.writeFileSync(input, JSON.stringify(source));
+  execFileSync(process.execPath, [path.join(skillRoot, 'bin', 'archify.mjs'), 'render', 'architecture', input, output]);
+  return output;
+}
+
 async function evaluate(browser, sessionId, expression) {
   const response = await browser.cdp.send('Runtime.evaluate', {
     expression,
@@ -266,6 +285,76 @@ test('the representative child expands below the parent and restores laptop read
       assert.deepEqual({ ...receipt.openParent, scroll: receipt.before.scroll }, receipt.before);
       assert.deepEqual(receipt.after, receipt.before);
     }
+  } finally { await browser.close(); }
+});
+
+test('the BAGEL context child fits desktop height and adapts when the viewport changes', {
+  skip: chromePath ? false : 'Set ARCHIFY_CHROME to run the real browser regression.',
+}, async () => {
+  const artifact = renderBagel();
+  const browser = new ChromeVisualBrowser(chromePath);
+  try {
+    const sessionId = await load(browser, artifact, { width: 1366, height: 768 });
+    await evaluate(browser, sessionId, `Archify.focus.set('context', { toggle: false, updateUrl: false });
+      document.getElementById('btn-focus-internals').click();`);
+    let first = true;
+    for (const [width, height] of [[1366, 768], [1920, 1080], [1280, 720], [1366, 768]]) {
+      await browser.cdp.send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false }, sessionId);
+      const receipt = await evaluate(browser, sessionId, `(async function () {
+        await new Promise(function (resolve) { setTimeout(resolve, 80); });
+        await Archify.layoutStability.whenStable();
+        ${first ? '' : "document.getElementById('subarchitecture-drawer').scrollIntoView({ block: 'start', behavior: 'instant' });"}
+        await new Promise(function (resolve) { requestAnimationFrame(function () { requestAnimationFrame(resolve); }); });
+        var svg = document.querySelector('#subarchitecture-mount > svg');
+        var matrix = svg.getScreenCTM();
+        var rect = svg.getBoundingClientRect();
+        return {
+          visible: rect.top >= 0 && rect.bottom <= innerHeight && rect.left >= 0 && rect.right <= innerWidth,
+          primary: Math.min.apply(null, Array.from(svg.querySelectorAll('[data-node-label]')).map(function (label) {
+            return parseFloat(getComputedStyle(label).fontSize) * Math.hypot(matrix.a, matrix.b);
+          })),
+          pageWidth: document.documentElement.scrollWidth,
+          nodes: svg.querySelectorAll('[data-node-id]').length,
+          height: rect.height,
+          top: rect.top,
+          bottom: rect.bottom
+        };
+      })()`);
+      assert.equal(receipt.visible, true, `${width}x${height}: complete context child fits the viewport (${JSON.stringify(receipt)})`);
+      assert.ok(receipt.primary >= 10, `${width}x${height}: primary labels are ${receipt.primary}px`);
+      assert.ok(receipt.pageWidth <= width);
+      assert.equal(receipt.nodes, 8);
+      first = false;
+    }
+  } finally { await browser.close(); }
+});
+
+test('taller desktop children keep readable labels and allow page scrolling', {
+  skip: chromePath ? false : 'Set ARCHIFY_CHROME to run the real browser regression.',
+}, async () => {
+  const browser = new ChromeVisualBrowser(chromePath);
+  try {
+    const sessionId = await load(browser, renderBagel({ tall: true }), { width: 1366, height: 640 });
+    const receipt = await evaluate(browser, sessionId, `(async function () {
+      Archify.focus.set('context', { toggle: false, updateUrl: false });
+      document.getElementById('btn-focus-internals').click();
+      await Archify.layoutStability.whenStable();
+      var svg = document.querySelector('#subarchitecture-mount > svg');
+      var matrix = svg.getScreenCTM();
+      var primary = Math.min.apply(null, Array.from(svg.querySelectorAll('[data-node-label]')).map(function (label) {
+        return parseFloat(getComputedStyle(label).fontSize) * Math.hypot(matrix.a, matrix.b);
+      }));
+      var before = scrollY;
+      window.scrollBy({ top: 160, behavior: 'instant' });
+      var back = document.getElementById('subarchitecture-back').getBoundingClientRect();
+      return { primary: primary, scrolled: scrollY > before, backVisible: back.top >= 0 && back.bottom <= innerHeight,
+        pageWidth: document.documentElement.scrollWidth, graphHeight: svg.getBoundingClientRect().height };
+    })()`);
+    assert.ok(receipt.primary >= 10, JSON.stringify(receipt));
+    assert.equal(receipt.scrolled, true);
+    assert.equal(receipt.backVisible, true);
+    assert.ok(receipt.pageWidth <= 1366);
+    assert.ok(receipt.graphHeight > 500);
   } finally { await browser.close(); }
 });
 

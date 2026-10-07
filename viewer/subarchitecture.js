@@ -3,6 +3,7 @@
       var parentSvg = document.querySelector('.diagram-container > svg');
       var drawer = document.getElementById('subarchitecture-drawer');
       var mount = document.getElementById('subarchitecture-mount');
+      var stage = mount.parentElement;
       var drawerTitle = document.getElementById('subarchitecture-title');
       var trigger = document.getElementById('btn-focus-internals');
       var backBtn = document.getElementById('subarchitecture-back');
@@ -24,6 +25,9 @@
       var intentFocusedNode = null;
       var intentEnterTimer = null;
       var drawerFrame = 0;
+      var layoutFrame = 0;
+      var resizeObserver = null;
+      var themeObserver = null;
       var returnScroll = null;
       var listeners = [];
       var destroyed = false;
@@ -31,6 +35,43 @@
       function listen(target, type, handler, options) {
         target.addEventListener(type, handler, options);
         listeners.push({ target: target, type: type, handler: handler, options: options });
+      }
+
+      function number(value) { return parseFloat(value) || 0; }
+      function layoutChild() {
+        layoutFrame = 0;
+        if (!mountedSvg || window.innerWidth < 1024) {
+          mount.style.removeProperty('--subarchitecture-svg-width');
+          mount.style.removeProperty('--subarchitecture-min-width');
+          return;
+        }
+        var box = mountedSvg.viewBox.baseVal;
+        if (!box.width || !box.height) return;
+        var mountStyle = getComputedStyle(mount);
+        var contentStyle = getComputedStyle(mount.closest('.subarchitecture-drawer-content'));
+        var stageStyle = getComputedStyle(stage);
+        var paddingX = number(mountStyle.paddingLeft) + number(mountStyle.paddingRight);
+        var paddingY = number(mountStyle.paddingTop) + number(mountStyle.paddingBottom);
+        var primary = Math.min.apply(null, Array.from(mountedSvg.querySelectorAll('[data-node-label]')).map(function (label) {
+          return number(getComputedStyle(label).fontSize);
+        }).filter(function (size) { return size > 0; }));
+        var readableScale = Number.isFinite(primary) ? 10 / primary : 0;
+        var width = Math.max(1, stage.clientWidth - paddingX);
+        // Entry aligns the drawer below the fixed toolbar. Budget the whole
+        // graph against that position, rather than enlarging it to fill width.
+        // Keep authored geometry and readable labels when a taller graph
+        // cannot fit; ordinary page scrolling remains available in that case.
+        var height = Math.max(1, window.innerHeight
+          - number(getComputedStyle(drawer).scrollMarginTop)
+          - drawer.querySelector('.subarchitecture-drawer-head').getBoundingClientRect().height
+          - number(contentStyle.paddingTop) - paddingY
+          - number(stageStyle.borderTopWidth) - number(stageStyle.borderBottomWidth) - 12);
+        var scale = Math.max(readableScale, Math.min(width / box.width, height / box.height));
+        mount.style.setProperty('--subarchitecture-min-width', Math.ceil(box.width * readableScale + paddingX) + 'px');
+        mount.style.setProperty('--subarchitecture-svg-width', Math.ceil(box.width * scale) + 'px');
+      }
+      function scheduleChildLayout() {
+        if (!destroyed && mountedSvg && !layoutFrame) layoutFrame = requestAnimationFrame(layoutChild);
       }
 
       function templateFor(parentId) {
@@ -477,6 +518,7 @@
           Archify.exportMenu.syncTarget();
         }
         if (options.childId) focusLocal(options.childId, { updateUrl: false });
+        layoutChild();
         if (options.updateUrl !== false) updateHash();
         if (drawerFrame) cancelAnimationFrame(drawerFrame);
         drawerFrame = requestAnimationFrame(function () {
@@ -503,6 +545,10 @@
         intentFocusedNode = null;
         mount.replaceChildren();
         mountedSvg = null;
+        if (layoutFrame) cancelAnimationFrame(layoutFrame);
+        layoutFrame = 0;
+        mount.style.removeProperty('--subarchitecture-svg-width');
+        mount.style.removeProperty('--subarchitecture-min-width');
         activeParentId = null;
         drawer.hidden = true;
         html.removeAttribute('data-subarchitecture-open');
@@ -540,6 +586,10 @@
         if (destroyed) return;
         if (activeParentId) close({ updateUrl: false, restoreFocus: false });
         destroyed = true;
+        if (layoutFrame) cancelAnimationFrame(layoutFrame);
+        layoutFrame = 0;
+        if (resizeObserver) resizeObserver.disconnect();
+        if (themeObserver) themeObserver.disconnect();
         if (drawerFrame) cancelAnimationFrame(drawerFrame);
         drawerFrame = 0;
         clearLocalIntentTrace({ announce: false });
@@ -658,6 +708,16 @@
         }
       });
       listen(window, 'blur', function () { clearLocalIntentTrace({ announce: false }); });
+      listen(window, 'resize', scheduleChildLayout);
+      if (typeof ResizeObserver === 'function') {
+        resizeObserver = new ResizeObserver(scheduleChildLayout);
+        resizeObserver.observe(stage);
+      }
+      if (typeof MutationObserver === 'function') {
+        themeObserver = new MutationObserver(scheduleChildLayout);
+        themeObserver.observe(html, { attributes: true, attributeFilter: ['data-theme', 'data-preset'] });
+      }
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(scheduleChildLayout);
       listen(window, 'hashchange', syncFromHash);
       syncFromHash();
 
