@@ -259,8 +259,35 @@ function validateSequence() {
       problems.push(`Message "${message.label}" sits outside the readable timeline — keep y between ${layout.lifelineTop + 18} and ${layout.lifelineBottom - 18}.`);
     }
     if (participants.has(message.from) && participants.has(message.to)) {
-      const distance = Math.abs(participants.get(message.to).cx - participants.get(message.from).cx);
-      if (distance < 60) problems.push(`Message "${message.label}" spans ${Math.round(distance)}px (minimum 60px) — give its participants more column distance.`);
+      if (message.from === message.to) {
+        const problem = `Message "${message.label}" is a self-message on participant "${message.from}"; this Sequence renderer supports only messages between distinct participants. Participant spacing cannot repair it. Preserve the internal step's meaning and order in a supported representation such as a note on a real message or a card; do not invent a participant.`;
+        diagnostics.push({
+          code: 'sequence/self-message-unsupported', severity: 'error', message: problem,
+          subject: {
+            diagramType: 'sequence',
+            message: message.label,
+            collection: 'messages',
+            index: messageIndex,
+            path: `/messages/${messageIndex}`,
+            ...(message.id ? { id: message.id } : {}),
+            from: message.from,
+            to: message.to,
+            fromPath: `/messages/${messageIndex}/from`,
+            toPath: `/messages/${messageIndex}/to`,
+          },
+          evidence: {
+            participant: message.from,
+            participantPath: `/participants/${participantOrder.get(message.from)}`,
+            y: message.y,
+            supportedMessageGeometry: 'horizontal-between-distinct-participants',
+          },
+          supportedFixes: [],
+        });
+        problems.push(problem);
+      } else {
+        const distance = Math.abs(participants.get(message.to).cx - participants.get(message.from).cx);
+        if (distance < 60) problems.push(`Message "${message.label}" spans ${Math.round(distance)}px (minimum 60px) — give its participants more column distance.`);
+      }
     }
   }
 
