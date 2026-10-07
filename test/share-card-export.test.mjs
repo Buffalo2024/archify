@@ -62,14 +62,14 @@ test('Share Card uses contain-only canonical geometry with fixed safe areas', ()
   assert.match(html, /throw exportError\('viewer\.export\.error\.contextUnavailable'/);
   assert.match(html, /throw exportError\('viewer\.export\.error\.toBlobUnavailable'/);
   assert.match(html, /img\.onload = function \(\) \{\s*try \{/);
-  assert.match(html, /function renderShareCard\(options\)[\s\S]*?serializeSvg\(sourceScale, \{ routeSnapshot: routeSnapshot, reachSnapshot: reachSnapshot, figure: true \}\)/);
+  assert.match(html, /function renderShareCard\(options\)[\s\S]*?serializeSvg\(sourceScale, \{ sourceSvg: svg, routeSnapshot: routeSnapshot, reachSnapshot: reachSnapshot, figure: true \}\)/);
   assert.match(html, /fitCanvasText\(ctx, title, [^)]+\)/);
   assert.doesNotMatch(svgBlock(html), /share-card|Share Card|ARCHIFY ·/);
 });
 
 test('ordinary Copy PNG keeps its existing full-diagram raster path', () => {
   const html = render('sequence');
-  assert.match(html, /function runCopy\(\)[\s\S]*?var blobPromise = rasterize\('png'\);/);
+  assert.match(html, /function runCopy\(\)[\s\S]*?var blobPromise = rasterize\('png', descriptor\);/);
   assert.match(html, /runCopy\(\)[\s\S]*?writePngToClipboard\(blobPromise\)/);
   assert.doesNotMatch(svgBlock(html), /copy-share-card|Copy Share Card/);
 });
@@ -78,7 +78,7 @@ test('Share Card stays viewer-only and reuses export cleanup instead of source s
   const html = render('sequence');
   assert.match(html, /html\[data-embed="true"\] \.toolbar/);
   assert.match(html, /@media print[\s\S]*?\.toolbar/);
-  assert.match(html, /function renderShareCard\(options\)[\s\S]*?serializeSvg\(sourceScale, \{ routeSnapshot: routeSnapshot, reachSnapshot: reachSnapshot, figure: true \}\)/);
+  assert.match(html, /function renderShareCard\(options\)[\s\S]*?serializeSvg\(sourceScale, \{ sourceSvg: svg, routeSnapshot: routeSnapshot, reachSnapshot: reachSnapshot, figure: true \}\)/);
   assert.match(html, /if \(!data\.canonicalStateClean\) return Promise\.reject\(exportError\('viewer\.export\.error\.viewerState'\)\);/);
   assert.match(html, /canonicalStateClean/);
   assert.doesNotMatch(svgBlock(html), /data-last-export-|data-format="share-card"/);

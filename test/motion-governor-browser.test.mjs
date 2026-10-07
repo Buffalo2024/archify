@@ -51,6 +51,7 @@ test('Motion Governor preserves mode, ownership, ambient completion and real cal
   let startup;
   let navigationId = 0;
   let fixtureUrl;
+  let fixtureStorageKey = 'file:///';
   async function media(reduced) {
     await send('Emulation.setEmulatedMedia', { media: '', features: [
       { name: 'prefers-reduced-motion', value: reduced ? 'reduce' : 'no-preference' },
@@ -60,10 +61,14 @@ test('Motion Governor preserves mode, ownership, ambient completion and real cal
     const expectedNavigation = ++navigationId;
     if (!preserveStorage) {
       fixtureUrl = pathToFileURL(files[mode]).href + `?theme=${theme}&testNavigation=${expectedNavigation}${query}`;
-      // Reset the disposable browser profile before navigation. Touching
-      // localStorage in a new-document script can disturb file-backed storage
-      // in Chrome; leave startup and reload reads to the Viewer itself.
-      await send('Storage.clearDataForStorageKey', { storageKey: 'file:///', storageTypes: 'local_storage' });
+      // Leave the active file document before clearing its storage, so its
+      // cached storage area cannot survive the reset into the next fixture.
+      // Use Chrome's actual storage key; never touch localStorage from a
+      // new-document script. Same-file reloads bypass this reset entirely.
+      const leftFixture = browser.cdp.waitFor('Page.loadEventFired', session);
+      await send('Page.navigate', { url: 'about:blank' });
+      await leftFixture;
+      await send('Storage.clearDataForStorageKey', { storageKey: fixtureStorageKey, storageTypes: 'local_storage' });
     }
     if (startup) await send('Page.removeScriptToEvaluateOnNewDocument', { identifier: startup });
     ({ identifier: startup } = await send('Page.addScriptToEvaluateOnNewDocument', { source: `(() => {
@@ -104,6 +109,8 @@ test('Motion Governor preserves mode, ownership, ambient completion and real cal
     await loaded;
     await run('document.fonts.ready');
     assert.equal(await run('window.motionNavigation'), expectedNavigation, 'Motion fixture document identity');
+    const { frameTree } = await send('Page.getFrameTree');
+    ({ storageKey: fixtureStorageKey } = await send('Storage.getStorageKeyForFrame', { frameId: frameTree.frame.id }));
   }
   async function snapshot(label) {
     const value = await run(`(() => {

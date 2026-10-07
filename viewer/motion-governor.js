@@ -6,7 +6,7 @@
     Archify.motionGovernor = (function () {
       var STORAGE_KEY = 'archify-motion';
       var html = document.documentElement;
-      var svg = document.querySelector('.diagram-container svg');
+      var svg = canonicalDiagramSvg();
       var btn = document.getElementById('btn-motion');
       var label = document.getElementById('motion-label');
       var motionQuery = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;

@@ -4,6 +4,8 @@ Use this after actual visual review finds several tangled routes. A successful m
 
 ## Choose the repair scope
 
+For an Architecture input with optional subarchitectures, `--layout-json` compiles the main graph and every child. Main geometry remains at the top level. The `subarchitectures` array contains each child's layout result with `graphScope`, `parentId`, and `subjectBase`. Any failed compilation makes the overall result `ok: false` and returns a nonzero exit. Child diagnostics retain their local subjects and owning parent. Parent-only inputs retain the existing report shape.
+
 If the main and secondary chains already read clearly, repair the isolated defect locally. If a main chain is blocked, several routes tangle, or a local fix moves the defect onto another route, reflow the connected scene in one edit. Preserve all semantics and user-fixed geometry; agent-generated positions and route controls may change. After moving nodes, remove stale generated route overrides so automatic routing can use the new placement.
 
 The receipt's `directCorridorBlockers`, when present, names nodes between an edge's aligned endpoints. This is geometric evidence, not proof that the edge is the main path or a new validation failure. Trace the reader's actual main path first. When a listed blocker interrupts that path, reposition the connected group instead of adding another detour.

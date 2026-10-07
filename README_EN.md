@@ -43,6 +43,26 @@
 
 <p align="center"><a href="#sponsors"><strong>❤️ Partners & sponsors: Kimi Work · Supercode · OpenLux</strong></a></p>
 
+## Try subarchitecture in Labs
+
+The `labs/subarchitecture` branch adds optional views of component internals. The main diagram stays the overview. Select a component and choose **Open internal architecture** in Semantic Passport. Its child expands below the main diagram. **Back to model** restores your place and selection.
+
+In **Export**, choose **Main architecture** or **Current subarchitecture**. Each target produces its own file. A child export contains only that child's components. Diagrams without children keep the existing viewer and export behavior.
+
+| Example | Explore |
+| --- | --- |
+| [Transformer](https://puuuuup.github.io/archify/gallery/artifacts/transformer-layer.architecture.html) | Attention, feed-forward and residual paths |
+| [BAGEL](https://puuuuup.github.io/archify/gallery/artifacts/bagel-inference.architecture.html) | Context assembly and a MoT decoder layer from official code |
+| [Lance](https://puuuuup.github.io/archify/gallery/artifacts/lance-query.architecture.html) | A dataset query plan and the Arrow stream bridge from official code |
+
+<!-- archify-subarchitecture-video -->
+
+https://github.com/user-attachments/assets/f0e1f816-261c-41d2-a541-388f962c0a28
+
+English narration with English and Chinese subtitles. [Read the source pins, scope and regeneration steps](website/examples/README.md).
+
+This experiment supports one child level and up to 12 components per child. Taller graphs use scrolling. The BAGEL context view is one such example. Try it with real diagrams and share what works well.
+
 ## See Archify in action
 
 <!-- archify-launch-video -->

@@ -7,6 +7,7 @@ motion mode and ownership, `node-finder.js` for node search and endpoint picking
 `intent-trace.js` for hover/focus previews, `semantic-lens.js` for type selection
 and legend previews, `route-probe.js` for directed paths and Route Journey,
 `focus.js` for semantic selection, relationships, reachability and shared flow tokens,
+`subarchitecture.js` for one-level component internals and local navigation,
 `tree-branches.js` for hierarchy expand/collapse (active only on tree diagrams),
 `export.js` for export menus, serialization, images, cards, clipboard and WebM,
 `export-cleanup.js` for its private SVG clone cleanup, `viewer.css` for the
@@ -125,6 +126,8 @@ are part of the interface, not normalized by the extraction.
 | Recording background URL | Survives background loading and recording; released on image error, recorder-constructor failure or recorder cleanup |
 | Recording tracks/rAF | Constructor failure stops created tracks; recorder error/stop uses existing guarded cleanup to stop tracks and cancel the frame callback |
 | Recording/toast timers | Preserve existing bounded callbacks and state checks; extraction adds no cancellation protocol or shared busy flag |
+
+Download anchors carry `data-archify-download`. While a child is open, Focus treats those owned download clicks as an export action and preserves the parent selection. The actual click still propagates and starts the browser download. The parent-only outside-click behavior is unchanged. The subarchitecture browser regression downloads an SVG to disk without replacing the anchor's `click` method, then verifies selection and page position after returning.
 
 recordWebm retains duration/fps options, defaults, minimums, MIME selection,
 geometry-driven scene and encoder flush timing. This table describes existing

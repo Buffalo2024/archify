@@ -1,6 +1,6 @@
     Archify.view = (function () {
       var container = document.querySelector('.diagram-container');
-      var svg = container.querySelector('svg');
+      var svg = canonicalDiagramSvg();
       var outBtn = container.querySelector('[data-view="out"]');
       var resetBtn = container.querySelector('[data-view="reset"]');
       var resetDetailLabel = resetBtn.querySelector('[data-view-detail]');

@@ -7,6 +7,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { copySiteAssets } from './copy-site-assets.mjs';
 import { diagramTypeCopyReplacements } from './site-copy.mjs';
+import { verifiedGalleryArtifact } from './source-backed-gallery.mjs';
 
 import { CASES, renderCard } from '../website/src/data/gallery-presentation.mjs';
 
@@ -41,13 +42,16 @@ fs.mkdirSync(sourcesRoot, { recursive: true });
 
 const entries = [];
 for (const item of CASES) {
-  const inputPath = path.join(skillRoot, 'examples', item.input);
+  const exampleRoot = item.sourceBacked ? path.join(repoRoot, 'website', 'examples') : path.join(skillRoot, 'examples');
+  const inputPath = path.join(exampleRoot, item.input);
   const sourceBuffer = fs.readFileSync(inputPath);
   const source = JSON.parse(sourceBuffer.toString('utf8'));
   const artifactPath = path.join(artifactsRoot, item.output);
   const sourcePath = path.join(sourcesRoot, item.input);
 
-  execFileSync(process.execPath, [
+  if (item.sourceBacked) {
+    fs.writeFileSync(artifactPath, verifiedGalleryArtifact(exampleRoot, item, sourceBuffer));
+  } else execFileSync(process.execPath, [
     path.join(skillRoot, 'renderers', item.type, `render-${item.type}.mjs`),
     inputPath,
     artifactPath,

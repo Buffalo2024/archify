@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "architecture",
+  "quality": "showcase",
+  "specification": {
+    "sha256": "23ba0248842f14e2bb321bb414ced9739440e3f9c1909eb1e6631b38be25d403",
+    "bytes": 14199
+  },
+  "artifact": {
+    "sha256": "fab727f145009e53e4113d9afd9da79e4d45e57e2a35fff184eee03c16d44629",
+    "bytes": 860400
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "repository": {
+    "url": "https://github.com/ByteDance-Seed/Bagel",
+    "revision": "a2fa77dd8caeefc41e6607ae0ec17408d3f4ee9f"
+  },
+  "generatorCommit": "4114636795e5405bfd4fab82fd5326956fa514ab",
+  "method": "Archify finalize with the pinned official checkout and a real Chrome browser",
+  "visualReview": "not-requested"
+}

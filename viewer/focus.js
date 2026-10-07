@@ -3,10 +3,40 @@
        Renderer IDs become deep-linkable semantic hooks without turning the
        standalone artifact into a canvas editor.
        ============================================================ */
+    function inspectSubarchitectureTemplate(parentId) {
+      if (typeof parentId !== 'string' || !parentId) return null;
+      var matches = Array.prototype.filter.call(
+        document.querySelectorAll('template[data-subarchitecture-parent]'),
+        function (template) { return template.getAttribute('data-subarchitecture-parent') === parentId; }
+      );
+      if (matches.length !== 1) return null;
+      var template = matches[0];
+      var roots = Array.prototype.slice.call(template.content.children || []);
+      if (roots.length !== 1 || roots[0].namespaceURI !== 'http://www.w3.org/2000/svg' || roots[0].localName !== 'svg') {
+        return null;
+      }
+      var svg = roots[0];
+      var nodeIds = Object.create(null);
+      var nodes = Array.prototype.slice.call(svg.querySelectorAll('[data-node-id]'));
+      if (!nodes.length) return null;
+      for (var nodeIndex = 0; nodeIndex < nodes.length; nodeIndex += 1) {
+        var nodeId = nodes[nodeIndex].getAttribute('data-node-id');
+        if (!nodeId || nodeIds[nodeId]) return null;
+        nodeIds[nodeId] = true;
+      }
+      var edges = Array.prototype.slice.call(svg.querySelectorAll('[data-edge-from][data-edge-to]'));
+      for (var edgeIndex = 0; edgeIndex < edges.length; edgeIndex += 1) {
+        var from = edges[edgeIndex].getAttribute('data-edge-from');
+        var to = edges[edgeIndex].getAttribute('data-edge-to');
+        if (!from || !to || !nodeIds[from] || !nodeIds[to]) return null;
+      }
+      return { template: template, svg: svg };
+    }
+
     Archify.focus = (function () {
       var html = document.documentElement;
       var container = document.querySelector('.diagram-container');
-      var svg = container.querySelector('svg');
+      var svg = canonicalDiagramSvg();
       var chip = document.getElementById('focus-chip');
       var label = document.getElementById('focus-label');
       var detail = document.getElementById('focus-detail');
@@ -28,6 +58,7 @@
       var copyBtn = document.getElementById('btn-focus-copy');
       var relationsBtn = document.getElementById('btn-focus-relations');
       var clearBtn = document.getElementById('btn-focus-clear');
+      var internalsBtn = document.getElementById('btn-focus-internals');
       var moveBtn = document.getElementById('btn-focus-move');
       var activeIds = [];
       var hoveredRelationship = null;
@@ -55,6 +86,9 @@
       }
       function nodeLabel(node, fallback) {
         return node.getAttribute('data-node-label') || (node.getAttribute('aria-label') || fallback).replace(/^Focus\s+/, '');
+      }
+      function hasSubarchitectureTemplate(id) {
+        return Boolean(inspectSubarchitectureTemplate(id));
       }
       function reachabilityRelationships() {
         var seen = Object.create(null);
@@ -382,6 +416,13 @@
         setPassportValue(document.getElementById('focus-brand'), node.getAttribute('data-node-brand'));
         semanticId.textContent = id;
         semanticId.hidden = false;
+        var internalsAvailable = hasSubarchitectureTemplate(id);
+        internalsBtn.hidden = !internalsAvailable;
+        internalsBtn.disabled = !internalsAvailable;
+        if (internalsAvailable) internalsBtn.removeAttribute('title');
+        else internalsBtn.title = viewerText('viewer.subarchitecture.unavailable');
+        internalsBtn.setAttribute('aria-expanded', Archify.subarchitecture && Archify.subarchitecture.active() === id ? 'true' : 'false');
+        internalsBtn.setAttribute('aria-label', viewerText('viewer.subarchitecture.triggerFor', { label: nodeLabel(node, id) }));
         renderSourceEvidence(id);
       }
       function relationshipsFor(id, byId) {
@@ -1299,6 +1340,8 @@
         relationsBtn.textContent = viewerText('viewer.passport.relations');
         relationsBtn.setAttribute('aria-label', viewerText('viewer.passport.relations.show'));
         relationsBtn.setAttribute('aria-expanded', 'false');
+        internalsBtn.hidden = true;
+        internalsBtn.setAttribute('aria-expanded', 'false');
         chip.removeAttribute('data-relations-expanded');
         if (options.preserveLensPlacement !== true) resetLensPlacement({ reposition: false });
         if (options.preserveView !== true && Archify.view && typeof Archify.view.reset === 'function') {
@@ -1544,6 +1587,9 @@
         var target = event.target;
         if (chip.hidden || !target || typeof target.closest !== 'function' || chip.contains(target)) return;
         if (container.getAttribute('data-just-panned') === 'true') return;
+        if (target.closest('.subarchitecture-drawer')) return;
+        if (document.documentElement.getAttribute('data-subarchitecture-open') === 'true' &&
+            target.closest('.toolbar, a[data-archify-download]')) return;
         if (target.closest('[data-node-id], [data-relationship-hit-key], .overview-map')) return;
         clear();
       }, true);
@@ -1582,7 +1628,7 @@
               applyReachability(reach, { updateUrl: false, toggle: false, reveal: false });
             }
           }
-          else clear({ updateUrl: false });
+          else if (!params.get('subgraph')) clear({ updateUrl: false });
         } catch (_) {}
       }
 

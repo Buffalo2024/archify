@@ -6,7 +6,7 @@
     Archify.finder = (function () {
       var html = document.documentElement;
       var container = document.querySelector('.diagram-container');
-      var svg = container.querySelector('svg');
+      var svg = canonicalDiagramSvg();
       var trigger = document.getElementById('btn-node-finder');
       var panel = document.getElementById('node-finder');
       var heading = document.getElementById('node-finder-title');

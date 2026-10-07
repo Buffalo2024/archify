@@ -10,6 +10,7 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'
 const testFiles = [
   'finalize-browser.test.mjs',
   'desktop-reader-browser.test.mjs',
+  'subarchitecture-browser.test.mjs',
   'reader-readability-maintained-browser.test.mjs',
   'reader-layout-browser.test.mjs',
   'reader-layout-settle-browser.test.mjs',

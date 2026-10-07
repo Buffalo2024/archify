@@ -126,7 +126,7 @@ test('Route Share Card reuses one 1200x630 variant seam and publishes a truthful
   assert.match(html, /var snapshot = Archify\.routeProbe && Archify\.routeProbe\.exportSnapshot\(\)/);
   assert.match(html, /renderShareCard\(\{ routeSnapshot: snapshot \}\)/);
   assert.doesNotMatch(html, /function rasterizeRouteShareCard|routeShareCard:/);
-  assert.match(html, /var title = titleNode \? titleNode\.textContent : document\.title;/);
+  assert.match(html, /var title = options\.title != null \? String\(options\.title\) : titleNode \? titleNode\.textContent : document\.title;/);
   assert.match(html, /viewerCount\('viewer\.export\.card\.routeSummary', routeSnapshot\.hops/);
   assert.match(html, /source: routeSnapshot\.source\.label/);
   assert.match(html, /target: routeSnapshot\.target\.label/);

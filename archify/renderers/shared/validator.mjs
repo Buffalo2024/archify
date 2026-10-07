@@ -25,6 +25,18 @@ function annotatePath(instancePath, data) {
     : annotated.path;
 }
 
+// Schema composition uses unevaluatedProperties internally. Keep the existing
+// additionalProperties diagnostic and human-readable error contract.
+function publicSchemaError(error) {
+  if (error.keyword !== 'unevaluatedProperties') return error;
+  return {
+    ...error,
+    keyword: 'additionalProperties',
+    message: 'must NOT have additional properties',
+    params: { additionalProperty: error.params?.unevaluatedProperty },
+  };
+}
+
 function formatErrors(errors, data) {
   return errors.map((e) => {
     const where = annotatePath(e.instancePath, data);
@@ -41,20 +53,27 @@ export function validateSchema(diagramType, data) {
     throw new Error(`validateSchema: unknown diagram type "${diagramType}"`);
   }
   if (!validate(data)) {
-    const diagnostics = validate.errors.map((error) => {
+    const errors = validate.errors.map(publicSchemaError);
+    const diagnostics = errors.map((error) => {
       const annotated = annotatedPath(error.instancePath, data);
+      const diagnosticKeyword = error.keyword === 'unevaluatedProperties'
+        ? 'additionalProperties'
+        : error.keyword;
       const subject = {
         diagramType,
         path: annotated.path,
         ...(annotated.identity != null ? { identity: String(annotated.identity) } : {}),
       };
+      const unsupportedProperty = error.params?.additionalProperty
+        ?? error.params?.unevaluatedProperty;
       const evidence = {
-        keyword: error.keyword,
+        keyword: diagnosticKeyword,
         expected: error.schema,
         ...error.params,
+        ...(unsupportedProperty != null ? { additionalProperty: unsupportedProperty } : {}),
       };
       const supportedFixes = {
-        additionalProperties: [`remove unsupported property ${JSON.stringify(error.params?.additionalProperty)}`],
+        additionalProperties: [`remove unsupported property ${JSON.stringify(unsupportedProperty)}`],
         required: [`add required property ${JSON.stringify(error.params?.missingProperty)}`],
         type: [`use ${JSON.stringify(error.params?.type)} at ${annotated.path}`],
         enum: [`choose one of ${JSON.stringify(error.params?.allowedValues || [])}`],
@@ -65,12 +84,12 @@ export function validateSchema(diagramType, data) {
         maxItems: [`provide at most ${error.params?.limit} item(s)`],
         minLength: [`provide at least ${error.params?.limit} character(s)`],
         maxLength: [`provide at most ${error.params?.limit} character(s)`],
-      }[error.keyword] || [];
+      }[diagnosticKeyword] || [];
       const detail = error.params && Object.keys(error.params).length
         ? ` ${JSON.stringify(error.params)}`
         : '';
       return {
-        code: `schema/${error.keyword}`,
+        code: `schema/${diagnosticKeyword}`,
         severity: 'error',
         message: `${annotatePath(error.instancePath, data)} ${error.message}${detail}`,
         subject,
@@ -79,7 +98,7 @@ export function validateSchema(diagramType, data) {
       };
     });
     throwDiagnosticError(
-      `${diagramType} schema validation failed:\n${formatErrors(validate.errors, data)}`,
+      `${diagramType} schema validation failed:\n${formatErrors(errors, data)}`,
       diagnostics,
     );
   }

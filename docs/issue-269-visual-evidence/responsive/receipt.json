@@ -1,0 +1,350 @@
+{
+  "sourceCommit": "41798f5f6aab5c3b8e0b8dbf5ac5942b7939a503",
+  "receipts": [
+    {
+      "example": "transformer-layer",
+      "width": 1920,
+      "height": 1080,
+      "parent": "transformer",
+      "child": "transformer",
+      "visible": true,
+      "rect": {
+        "top": 438.65625,
+        "bottom": 901.859375,
+        "width": 1275,
+        "height": 463.203125
+      },
+      "minimumPrimaryPx": 12.866753472222223,
+      "sizeStable": true,
+      "pageWidth": 1920,
+      "originalScroll": [
+        0,
+        0
+      ],
+      "parentSelectionRestored": true,
+      "scrollRestored": true
+    },
+    {
+      "example": "bagel-inference",
+      "width": 1920,
+      "height": 1080,
+      "parent": "context",
+      "child": "context",
+      "visible": true,
+      "rect": {
+        "top": 163.125,
+        "bottom": 901.984375,
+        "width": 1435,
+        "height": 738.859375
+      },
+      "minimumPrimaryPx": 16.792258522727273,
+      "sizeStable": true,
+      "pageWidth": 1920,
+      "originalScroll": [
+        0,
+        0
+      ],
+      "parentSelectionRestored": true,
+      "scrollRestored": true
+    },
+    {
+      "example": "bagel-inference",
+      "width": 1920,
+      "height": 1080,
+      "parent": "mot",
+      "child": "mot",
+      "visible": true,
+      "rect": {
+        "top": 304.125,
+        "bottom": 870.9375,
+        "width": 1435,
+        "height": 566.8125
+      },
+      "minimumPrimaryPx": 13.153876582278482,
+      "sizeStable": true,
+      "pageWidth": 1920,
+      "originalScroll": [
+        0,
+        0
+      ],
+      "parentSelectionRestored": true,
+      "scrollRestored": true
+    },
+    {
+      "example": "lance-query",
+      "width": 1920,
+      "height": 1080,
+      "parent": "planner",
+      "child": "planner",
+      "visible": true,
+      "rect": {
+        "top": 307.796875,
+        "bottom": 871.453125,
+        "width": 1427,
+        "height": 563.65625
+      },
+      "minimumPrimaryPx": 13.080630274261603,
+      "sizeStable": true,
+      "pageWidth": 1920,
+      "originalScroll": [
+        0,
+        0
+      ],
+      "parentSelectionRestored": true,
+      "scrollRestored": true
+    },
+    {
+      "example": "lance-query",
+      "width": 1920,
+      "height": 1080,
+      "parent": "bridge",
+      "child": "bridge",
+      "visible": true,
+      "rect": {
+        "top": 453.796875,
+        "bottom": 871.28125,
+        "width": 1427,
+        "height": 417.484375
+      },
+      "minimumPrimaryPx": 12.97267831920904,
+      "sizeStable": true,
+      "pageWidth": 1920,
+      "originalScroll": [
+        0,
+        0
+      ],
+      "parentSelectionRestored": true,
+      "scrollRestored": true
+    },
+    {
+      "example": "transformer-layer",
+      "width": 1366,
+      "height": 768,
+      "parent": "transformer",
+      "child": "transformer",
+      "visible": true,
+      "rect": {
+        "top": 162.40625,
+        "bottom": 585.28125,
+        "width": 1164,
+        "height": 422.875
+      },
+      "minimumPrimaryPx": 11.746527777777777,
+      "sizeStable": true,
+      "pageWidth": 1366,
+      "originalScroll": [
+        0,
+        0
+      ],
+      "parentSelectionRestored": true,
+      "scrollRestored": true
+    },
+    {
+      "example": "bagel-inference",
+      "width": 1366,
+      "height": 768,
+      "parent": "context",
+      "child": "context",
+      "visible": true,
+      "rect": {
+        "top": 162.203125,
+        "bottom": 744.546875,
+        "width": 1131,
+        "height": 582.34375
+      },
+      "minimumPrimaryPx": 13.235085227272727,
+      "sizeStable": true,
+      "pageWidth": 1366,
+      "originalScroll": [
+        0,
+        0
+      ],
+      "parentSelectionRestored": true,
+      "scrollRestored": true
+    },
+    {
+      "example": "bagel-inference",
+      "width": 1366,
+      "height": 768,
+      "parent": "mot",
+      "child": "mot",
+      "visible": true,
+      "rect": {
+        "top": 162.203125,
+        "bottom": 654.765625,
+        "width": 1247,
+        "height": 492.5625
+      },
+      "minimumPrimaryPx": 11.430775316455696,
+      "sizeStable": true,
+      "pageWidth": 1366,
+      "originalScroll": [
+        0,
+        0
+      ],
+      "parentSelectionRestored": true,
+      "scrollRestored": true
+    },
+    {
+      "example": "lance-query",
+      "width": 1366,
+      "height": 768,
+      "parent": "planner",
+      "child": "planner",
+      "visible": true,
+      "rect": {
+        "top": 162.453125,
+        "bottom": 655.015625,
+        "width": 1247,
+        "height": 492.5625
+      },
+      "minimumPrimaryPx": 11.430775316455696,
+      "sizeStable": true,
+      "pageWidth": 1366,
+      "originalScroll": [
+        0,
+        0
+      ],
+      "parentSelectionRestored": true,
+      "scrollRestored": true
+    },
+    {
+      "example": "lance-query",
+      "width": 1366,
+      "height": 768,
+      "parent": "bridge",
+      "child": "bridge",
+      "visible": true,
+      "rect": {
+        "top": 162.453125,
+        "bottom": 527.265625,
+        "width": 1247,
+        "height": 364.8125
+      },
+      "minimumPrimaryPx": 11.33598163841808,
+      "sizeStable": true,
+      "pageWidth": 1366,
+      "originalScroll": [
+        0,
+        0
+      ],
+      "parentSelectionRestored": true,
+      "scrollRestored": true
+    },
+    {
+      "example": "transformer-layer",
+      "width": 1280,
+      "height": 720,
+      "parent": "transformer",
+      "child": "transformer",
+      "visible": true,
+      "rect": {
+        "top": 162.40625,
+        "bottom": 551.5,
+        "width": 1071,
+        "height": 389.09375
+      },
+      "minimumPrimaryPx": 10.808159722222221,
+      "sizeStable": true,
+      "pageWidth": 1280,
+      "originalScroll": [
+        0,
+        0
+      ],
+      "parentSelectionRestored": true,
+      "scrollRestored": true
+    },
+    {
+      "example": "bagel-inference",
+      "width": 1280,
+      "height": 720,
+      "parent": "context",
+      "child": "context",
+      "visible": true,
+      "rect": {
+        "top": 162.5,
+        "bottom": 696.953125,
+        "width": 1038,
+        "height": 534.453125
+      },
+      "minimumPrimaryPx": 12.146661931818183,
+      "sizeStable": true,
+      "pageWidth": 1280,
+      "originalScroll": [
+        0,
+        0
+      ],
+      "parentSelectionRestored": true,
+      "scrollRestored": true
+    },
+    {
+      "example": "bagel-inference",
+      "width": 1280,
+      "height": 720,
+      "parent": "mot",
+      "child": "mot",
+      "visible": true,
+      "rect": {
+        "top": 162.5,
+        "bottom": 621.09375,
+        "width": 1161,
+        "height": 458.59375
+      },
+      "minimumPrimaryPx": 10.642470991561181,
+      "sizeStable": true,
+      "pageWidth": 1280,
+      "originalScroll": [
+        0,
+        0
+      ],
+      "parentSelectionRestored": true,
+      "scrollRestored": true
+    },
+    {
+      "example": "lance-query",
+      "width": 1280,
+      "height": 720,
+      "parent": "planner",
+      "child": "planner",
+      "visible": true,
+      "rect": {
+        "top": 162.765625,
+        "bottom": 621.359375,
+        "width": 1161,
+        "height": 458.59375
+      },
+      "minimumPrimaryPx": 10.642470991561181,
+      "sizeStable": true,
+      "pageWidth": 1280,
+      "originalScroll": [
+        0,
+        0
+      ],
+      "parentSelectionRestored": true,
+      "scrollRestored": true
+    },
+    {
+      "example": "lance-query",
+      "width": 1280,
+      "height": 720,
+      "parent": "bridge",
+      "child": "bridge",
+      "visible": true,
+      "rect": {
+        "top": 162.765625,
+        "bottom": 502.421875,
+        "width": 1161,
+        "height": 339.65625
+      },
+      "minimumPrimaryPx": 10.554290254237287,
+      "sizeStable": true,
+      "pageWidth": 1280,
+      "originalScroll": [
+        0,
+        0
+      ],
+      "parentSelectionRestored": true,
+      "scrollRestored": true
+    }
+  ]
+}

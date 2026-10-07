@@ -20,7 +20,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const skillRoot = path.resolve(__dirname, '..', 'archify');
 const template = fs.readFileSync(path.join(skillRoot, 'assets', 'template.html'), 'utf8');
 const skill = fs.readFileSync(path.join(skillRoot, 'references/authoring-defaults.md'), 'utf8');
-const architectureRenderer = fs.readFileSync(path.join(skillRoot, 'renderers', 'architecture', 'render-architecture.mjs'), 'utf8');
+const architectureRenderer = fs.readFileSync(path.join(skillRoot, 'renderers', 'architecture', 'architecture-compiler.mjs'), 'utf8');
 const reader = template.slice(
   template.indexOf('Adaptive Reader Shell'),
   template.indexOf('Archify.view = (function ()'),

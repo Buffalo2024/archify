@@ -1,3 +1,4 @@
+import { iterateArchitectureComponents } from './architecture-components.mjs';
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -139,7 +140,9 @@ const EVIDENCE_NODE_COLLECTIONS = {
 function evidenceNodes(diagramType, diagram) {
   const collection = EVIDENCE_NODE_COLLECTIONS[diagramType];
   if (!collection) return null;
-  return { collection, nodes: Array.isArray(diagram?.[collection]) ? diagram[collection] : [] };
+  return { collection, nodes: diagramType === 'architecture'
+    ? [...iterateArchitectureComponents(diagram)].map(({ component, parentId, path }) => ({ ...component, evidenceParentId: parentId, evidencePath: path }))
+    : Array.isArray(diagram?.[collection]) ? diagram[collection] : [] };
 }
 
 export function hasRepositoryEvidence(diagramType, diagram) {
@@ -252,7 +255,7 @@ export function verifyRepositoryEvidence(diagramType, diagram, repoRootInput) {
   for (const [nodeIndex, node] of authoredNodes.entries()) {
     if (!Array.isArray(node.sources) || node.sources.length === 0) continue;
     for (const [sourceIndex, authored] of node.sources.entries()) {
-      const at = `/${collection}/${nodeIndex}/sources/${sourceIndex}`;
+      const at = `${node.evidencePath || `/${collection}/${nodeIndex}`}/sources/${sourceIndex}`;
       let sourcePath;
       try {
         sourcePath = withDiagnosticRecordingSuppressed(() => verifiedSourcePath(authored.path, `${at}/path`));
@@ -266,17 +269,18 @@ export function verifyRepositoryEvidence(diagramType, diagram, repoRootInput) {
   const prefetchedBlobs = prefetchBlobs(realRoot, citedObjects);
 
   const nodes = Object.create(null);
+  const subgraphs = Object.create(null);
   let referenceCount = 0;
   for (const [nodeIndex, node] of authoredNodes.entries()) {
     if (!Array.isArray(node.sources) || node.sources.length === 0) continue;
     // `componentId` shipped with the architecture-only path; keep it beside the
     // type-neutral `nodeId` so existing agent handling stays valid.
     const nodeSubject = collection === 'components'
-      ? { diagramType, collection, nodeId: node.id, componentId: node.id }
+      ? { diagramType, collection, nodeId: node.id, componentId: node.id, ...(node.evidenceParentId != null ? { parentId: node.evidenceParentId } : {}) }
       : { diagramType, collection, nodeId: node.id };
     const verified = [];
     for (const [sourceIndex, authored] of node.sources.entries()) {
-      const at = `/${collection}/${nodeIndex}/sources/${sourceIndex}`;
+      const at = `${node.evidencePath || `/${collection}/${nodeIndex}`}/sources/${sourceIndex}`;
       const where = `${at}/path`;
       const source = {
         path: verifiedSourcePath(authored.path, where),
@@ -334,7 +338,12 @@ export function verifyRepositoryEvidence(diagramType, diagram, repoRootInput) {
       verified.push({ ...source, ...(linkMode === 'web' ? { href: repositorySourceHref(location.provider, location.url, revision, source) } : {}) });
       referenceCount += 1;
     }
-    nodes[node.id] = verified;
+    if (node.evidenceParentId == null) nodes[node.id] = verified;
+    else {
+      const subgraph = subgraphs[node.evidenceParentId] || { nodes: Object.create(null) };
+      subgraph.nodes[node.id] = verified;
+      subgraphs[node.evidenceParentId] = subgraph;
+    }
   }
   if (referenceCount === 0) {
     evidenceFailure('repository-evidence/source-required', `/meta/repository requires at least one /${collection} source reference.`, {
@@ -355,5 +364,6 @@ export function verifyRepositoryEvidence(diagramType, diagram, repoRootInput) {
     },
     referenceCount,
     nodes,
+    ...(Object.keys(subgraphs).length ? { subgraphs } : {}),
   };
 }

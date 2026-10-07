@@ -248,6 +248,11 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           <div><strong>{{i18n:viewer.export.diagram}}</strong><span>{{i18n:viewer.export.subtitle}}</span></div>
           <kbd>E</kbd>
         </div>
+        <div class="export-target-selector" id="export-target-selector" role="group" aria-label="{{i18n:viewer.export.target}}" hidden>
+          <span class="export-menu-heading" aria-hidden="true">{{i18n:viewer.export.target}}</span>
+          <button data-export-target="main" type="button" role="menuitemradio" aria-checked="true" tabindex="-1" hidden><span class="export-item-copy"><strong>{{i18n:viewer.export.target.main}}</strong><small class="hint">{{i18n:viewer.export.target.main.hint}}</small></span></button>
+          <button data-export-target="subarchitecture" type="button" role="menuitemradio" aria-checked="false" tabindex="-1" hidden><span class="export-item-copy"><strong>{{i18n:viewer.export.target.subarchitecture}}</strong><small class="hint">{{i18n:viewer.export.target.subarchitecture.hint}}</small></span></button>
+        </div>
         <div class="export-menu-section" role="group" aria-label="{{i18n:viewer.export.share}}">
           <span class="export-menu-heading" aria-hidden="true">{{i18n:viewer.export.share}}</span>
           <button data-action="route-share-card" type="button" role="menuitem" tabindex="-1" hidden disabled><span class="export-item-copy"><strong>{{i18n:viewer.export.routeShareCard}}</strong><small class="hint">1200&times;630 PNG</small></span></button>
@@ -515,6 +520,9 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
               <div class="semantic-passport-evidence-links" id="focus-evidence-links"></div>
             </div>
             <span class="relationship-lens-summary" id="focus-summary" aria-live="polite"></span>
+            <button class="focus-internals-cta" id="btn-focus-internals" type="button" aria-expanded="false" aria-controls="subarchitecture-drawer" hidden>
+              <span>{{i18n:viewer.subarchitecture.trigger}}</span><strong aria-hidden="true">&#8594;</strong>
+            </button>
             <div class="semantic-passport-reach" id="focus-reach" hidden>
               <span class="semantic-passport-reach-label">{{i18n:viewer.passport.reach}}</span>
               <div class="semantic-passport-reach-actions" role="group" aria-label="{{i18n:viewer.passport.reach.trace}}">
@@ -604,6 +612,44 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <button data-view="in" type="button" aria-label="{{i18n:viewer.nav.zoomIn}}" title="{{i18n:viewer.nav.zoomIn.title}}"><span class="diagram-nav-icon plus" aria-hidden="true"></span></button>
       </div>
     </div>
+
+    <!-- ARCHIFY:SUBARCHITECTURES_SLOT_START -->
+    <!-- ARCHIFY:SUBARCHITECTURES_SLOT_END -->
+
+    <section class="subarchitecture-drawer no-print" id="subarchitecture-drawer" hidden role="region" aria-labelledby="subarchitecture-title">
+      <header class="subarchitecture-drawer-head">
+        <div>
+          <span class="subarchitecture-eyebrow">{{i18n:viewer.subarchitecture.eyebrow}}</span>
+          <h2 id="subarchitecture-title">{{i18n:viewer.subarchitecture.title}}</h2>
+        </div>
+        <div class="subarchitecture-drawer-actions">
+          <button id="subarchitecture-back" type="button">{{i18n:viewer.subarchitecture.back}}</button>
+          <button id="subarchitecture-close" type="button" aria-label="{{i18n:viewer.subarchitecture.close}}">&#215;</button>
+        </div>
+      </header>
+      <div class="subarchitecture-drawer-content">
+        <div class="subarchitecture-stage" aria-label="{{i18n:viewer.subarchitecture.stage}}">
+          <div class="subarchitecture-mount" id="subarchitecture-mount"></div>
+          <p class="intent-trace-status no-print" id="subarchitecture-intent-trace-status" role="status" aria-live="polite" aria-atomic="true"></p>
+        </div>
+        <aside class="subarchitecture-passport" id="subarchitecture-passport" aria-live="polite">
+          <span class="relationship-lens-eyebrow">{{i18n:viewer.passport.eyebrow}}</span>
+          <strong class="subarchitecture-passport-title" id="subarchitecture-passport-title">{{i18n:viewer.subarchitecture.passport.emptyTitle}}</strong>
+          <span class="semantic-passport-detail" id="subarchitecture-passport-detail" hidden></span>
+          <div class="semantic-passport-meta" aria-label="{{i18n:viewer.subarchitecture.passport.metadata}}">
+            <span data-local-passport="kind" hidden></span>
+            <span data-local-passport="context" hidden></span>
+            <span data-local-passport="tag" hidden></span>
+            <span data-local-passport="brand" hidden></span>
+            <code data-local-passport="id" hidden></code>
+          </div>
+          <p class="subarchitecture-passport-empty" id="subarchitecture-passport-empty">{{i18n:viewer.subarchitecture.passport.empty}}</p>
+          <p class="relationship-lens-summary" id="subarchitecture-passport-summary"></p>
+          <button class="subarchitecture-copy" id="subarchitecture-copy" type="button" hidden>{{i18n:viewer.subarchitecture.passport.copy}}</button>
+          <div class="relationship-lens-list subarchitecture-relations" id="subarchitecture-relations" aria-label="{{i18n:viewer.subarchitecture.passport.relations}}"></div>
+        </aside>
+      </div>
+    </section>
 
     <aside class="reader-rail" id="reader-rail">
     <div class="rail-controls no-print" role="toolbar" aria-label="{{i18n:viewer.rail.controls}}">
@@ -724,6 +770,10 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
        live page and canonical SVG together, but never rewrites the source,
        URL, or a later diagram's authored default.
        ============================================================ */
+    function canonicalDiagramSvg() {
+      return document.querySelector('.diagram-container > svg');
+    }
+
     Archify.preset = (function () {
       var PRESETS = ['classic', 'signal-flow', 'blueprint', 'editorial'];
       var LABELS = {
@@ -733,7 +783,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         editorial: viewerText('viewer.preset.editorial')
       };
       var html = document.documentElement;
-      var svg = document.querySelector('.diagram-container svg');
+      var svg = canonicalDiagramSvg();
       var btn = document.getElementById('btn-preset');
       var label = document.getElementById('preset-label');
       var menu = document.getElementById('preset-menu');
@@ -756,6 +806,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         if (PRESETS.indexOf(preset) < 0) return false;
         html.setAttribute('data-preset', preset);
         svg.setAttribute('data-preset', preset);
+        var localSvg = document.querySelector('#subarchitecture-mount > svg');
+        if (localSvg) localSvg.setAttribute('data-preset', preset);
         btn.setAttribute('data-preset-option', preset);
         label.textContent = LABELS[preset];
         btn.setAttribute('aria-label', viewerText('viewer.preset.current', { style: LABELS[preset] }));
@@ -871,6 +923,10 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 
       function apply(theme) {
         html.setAttribute('data-theme', theme);
+        Array.prototype.forEach.call(
+          document.querySelectorAll('.diagram-container > svg, #subarchitecture-mount > svg'),
+          function (diagramSvg) { diagramSvg.setAttribute('data-theme', theme); }
+        );
         label.textContent = viewerText(theme === 'dark' ? 'viewer.theme.dark' : 'viewer.theme.light');
         btn.setAttribute('aria-pressed', theme === 'light' ? 'true' : 'false');
       }
@@ -919,7 +975,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       }
       function installBeacons() {
         if (!payload) return 0;
-        var svg = document.querySelector('.diagram-container svg');
+        var svg = canonicalDiagramSvg();
         if (!svg) return 0;
         var installed = 0;
         Array.prototype.forEach.call(svg.querySelectorAll('[data-node-id]'), function (node) {
@@ -991,6 +1047,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 /* ARCHIFY:TREE_BRANCHES */
 
 /* ARCHIFY:FOCUS */
+/* ARCHIFY:SUBARCHITECTURE */
 
 /* ARCHIFY:INTENT_TRACE */
 
@@ -1410,15 +1467,18 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       } else if (e.key === 'Escape' && Archify.semanticLens.isOpen()) {
         e.preventDefault();
         Archify.semanticLens.close({ restoreFocus: true });
-      } else if (e.key === 'Escape' && Archify.semanticLens.active()) {
-        e.preventDefault();
-        Archify.semanticLens.clear({ preserveView: true });
       } else if (e.key === 'Escape' && Archify.guide.isOpen()) {
         e.preventDefault();
         Archify.guide.close({ restoreFocus: true });
       } else if (e.key === 'Escape' && Archify.radar.isOpen()) {
         e.preventDefault();
         Archify.radar.close({ restoreFocus: true });
+      } else if (e.key === 'Escape' && Archify.subarchitecture.active()) {
+        e.preventDefault();
+        Archify.subarchitecture.escape();
+      } else if (e.key === 'Escape' && Archify.semanticLens.active()) {
+        e.preventDefault();
+        Archify.semanticLens.clear({ preserveView: true });
       } else if (e.key === 'Escape' && Archify.routeProbe.active()) {
         e.preventDefault();
         Archify.routeProbe.escape({ restoreFocus: true });

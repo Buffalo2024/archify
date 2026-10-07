@@ -261,3 +261,18 @@ workflow schema validation failed:
 
 Schemas catch shape errors (types, enums, ranges, unknown fields); geometry
 problems such as overlaps and label collisions are the renderers' job.
+
+An Architecture component may optionally define one `subarchitecture` with a
+required title and 1–12 local components, plus optional local layout, boundaries,
+and connections. The local component shape deliberately omits `subarchitecture`,
+so nesting stops after one level. Runtime semantic validation rejects duplicate
+local component or connection IDs within a parent, unknown local endpoints or
+boundary members, and every parent/child or sibling-scope reference. Local IDs
+may be reused under different parents because deep links always carry both the
+parent and local ID. The standalone Viewer treats the precompiled child graph as
+inert input, validates its runtime structure before cloning it, and fails closed
+if that input is missing, duplicated, malformed, or tampered with. The canonical
+parent SVG remains the only print and embed surface. Export defaults to the main
+architecture; while a child graph is open, an explicit current-subarchitecture
+target may export that exact mounted child graph. A combined parent-and-child
+export is not supported.

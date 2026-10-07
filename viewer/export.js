@@ -18,6 +18,7 @@
       var SHARE_CARD_HEIGHT = 630;
       var SHARE_CARD_PADDING = 40;
       var SHARE_CARD_HEADER = 124;
+      var exportTarget = 'main';
 
       function exportError(key, values) {
         var error = new Error(viewerText(key, values));
@@ -39,6 +40,61 @@
         return title.replace(/[^a-z0-9_\-]+/gi, '-')
                     .toLowerCase()
                     .replace(/^-+|-+$/g, '') || 'diagram';
+      }
+
+      function filenameSegment(value, fallback) {
+        var segment = String(value || '')
+          .replace(/[^a-z0-9_\-]+/gi, '-')
+          .toLowerCase()
+          .replace(/^-+|-+$/g, '');
+        return segment || fallback;
+      }
+
+      function mainExportDescriptor() {
+        var titleNode = document.querySelector('.header h1');
+        var subtitleNode = document.querySelector('.header .subtitle');
+        return {
+          target: 'main',
+          sourceSvg: canonicalDiagramSvg(),
+          filename: diagramFilename(),
+          title: titleNode ? titleNode.textContent : document.title,
+          subtitle: subtitleNode ? subtitleNode.textContent : ''
+        };
+      }
+
+      function subarchitectureExportDescriptor() {
+        var drawer = document.getElementById('subarchitecture-drawer');
+        var mount = document.getElementById('subarchitecture-mount');
+        var roots = mount ? Array.prototype.slice.call(mount.querySelectorAll(':scope > svg')) : [];
+        var activeParentId = Archify.subarchitecture && typeof Archify.subarchitecture.active === 'function'
+          ? Archify.subarchitecture.active()
+          : null;
+        if (!drawer || drawer.hidden || document.documentElement.getAttribute('data-subarchitecture-open') !== 'true' ||
+            typeof activeParentId !== 'string' || !activeParentId || !mount || mount.children.length !== 1 ||
+            roots.length !== 1 || !roots[0].isConnected) return null;
+        var titleNode = document.getElementById('subarchitecture-title');
+        var mainBase = diagramFilename();
+        var parentSegment = filenameSegment(activeParentId, 'subarchitecture');
+        var filename = mainBase === parentSegment || mainBase.slice(-(parentSegment.length + 1)) === '-' + parentSegment
+          ? mainBase + '-internals'
+          : mainBase + '-' + parentSegment + '-internals';
+        return {
+          target: 'subarchitecture',
+          sourceSvg: roots[0],
+          filename: filename,
+          title: titleNode ? titleNode.textContent : viewerText('viewer.subarchitecture.title'),
+          subtitle: viewerText('viewer.export.target.subarchitecture.hint'),
+          parentId: activeParentId
+        };
+      }
+
+      function captureExportDescriptor() {
+        if (exportTarget === 'subarchitecture') {
+          var descriptor = subarchitectureExportDescriptor();
+          if (!descriptor) throw exportError('viewer.export.error.subarchitectureUnavailable');
+          return descriptor;
+        }
+        return mainExportDescriptor();
       }
 
       function currentBg() {
@@ -235,12 +291,15 @@
           throw new Error('Unsupported SVG theme: ' + requestedTheme);
         }
         var autoTheme = requestedTheme === 'auto';
-        var svg = document.querySelector('.diagram-container svg');
+        var svg = opts.sourceSvg || canonicalDiagramSvg();
         var clone = svg.cloneNode(true);
 
         var canonicalStateClean = cleanExportClone(clone);
 
         var vb = svg.viewBox.baseVal;
+        var exportPadding = Math.max(0, Number(opts.padding) || 0);
+        var exportWidth = vb.width + exportPadding * 2;
+        var exportHeight = vb.height + exportPadding * 2;
         var finiteSvgDimensions = Number.isFinite(vb.x) && Number.isFinite(vb.y) &&
           Number.isFinite(vb.width) && Number.isFinite(vb.height) && vb.width > 0 && vb.height > 0;
         var routeStateClean = opts.routeSnapshot
@@ -429,6 +488,7 @@
         var a = document.createElement('a');
         a.href = url;
         a.download = filename;
+        a.setAttribute('data-archify-download', '');
         document.body.appendChild(a);
         a.click();
         a.remove();
@@ -458,14 +518,15 @@
       var FIGURE_TITLE_SIZE = 24;
       var FIGURE_SUBTITLE_SIZE = 14;
 
-      function figureLayout(vb) {
+      function figureLayout(vb, options) {
+        options = options || {};
         var titleNode = document.querySelector('.header h1');
         var subtitleNode = document.querySelector('.header .subtitle');
         var container = document.querySelector('.diagram-container');
         var root = getComputedStyle(document.documentElement);
         var card = container ? getComputedStyle(container) : null;
-        var title = titleNode ? titleNode.textContent.trim() : '';
-        var subtitle = subtitleNode ? subtitleNode.textContent.trim() : '';
+        var title = options.title != null ? String(options.title) : titleNode ? titleNode.textContent.trim() : '';
+        var subtitle = options.subtitle != null ? String(options.subtitle) : subtitleNode ? subtitleNode.textContent.trim() : '';
         var header = title ? 32 + (subtitle ? 24 : 0) + 18 : 0;
         var cardWidth = vb.width + FIGURE_CARD_PADDING * 2;
         var cardHeight = vb.height + FIGURE_CARD_PADDING * 2;
@@ -549,16 +610,18 @@
         return { x: x + FIGURE_CARD_PADDING, y: y + FIGURE_CARD_PADDING };
       }
 
-      function rasterize(format) {
+      function rasterize(format, opts) {
+        opts = opts || {};
         // Serialize at a safe scale (RASTER_SCALE=4 by default, reduced if the
         // resulting canvas would exceed MAX_CANVAS_PIXELS). The SVG itself is
         // rasterized at target resolution natively; drawImage draws at natural
         // size — no upsampling blur.
-        var svg = document.querySelector('.diagram-container svg');
+        var svg = opts.sourceSvg || canonicalDiagramSvg();
         var vb = svg.viewBox.baseVal;
-        var layout = figureLayout(vb);
+        var childOnly = opts.target === 'subarchitecture';
+        var layout = childOnly ? { width: vb.width, height: vb.height } : figureLayout(vb);
         var scale = pickSafeScale(layout.width, layout.height);
-        var data = serializeSvg(scale, { figure: true });
+        var data = serializeSvg(scale, { ...opts, figure: true });
         var svgBlob = new Blob([data.svgString], { type: 'image/svg+xml;charset=utf-8' });
         var svgUrl = URL.createObjectURL(svgBlob);
 
@@ -573,7 +636,11 @@
               // Paint in CSS pixels; the SVG image is already rendered at scale,
               // so drawing it at CSS size under this transform stays 1:1.
               ctx.setTransform(scale, 0, 0, scale, 0, 0);
-              var origin = paintFigure(ctx, layout);
+              var origin = childOnly ? { x: 0, y: 0 } : paintFigure(ctx, layout);
+              if (childOnly) {
+                ctx.fillStyle = currentBg();
+                ctx.fillRect(0, 0, vb.width, vb.height);
+              }
               ctx.drawImage(img, origin.x, origin.y, vb.width, vb.height);
               ctx.setTransform(1, 0, 0, 1, 0, 0);
               URL.revokeObjectURL(svgUrl);
@@ -629,10 +696,10 @@
         var routeSnapshot = options.routeSnapshot || null;
         var reachSnapshot = options.reachSnapshot || null;
         if (routeSnapshot && reachSnapshot) return Promise.reject(exportError('viewer.export.error.variantsCombined'));
-        var svg = document.querySelector('.diagram-container svg');
+        var svg = options.sourceSvg || canonicalDiagramSvg();
         var vb = svg.viewBox.baseVal;
         var sourceScale = Math.min(2, pickSafeScale(vb.width, vb.height));
-        var data = serializeSvg(sourceScale, { routeSnapshot: routeSnapshot, reachSnapshot: reachSnapshot, figure: true });
+        var data = serializeSvg(sourceScale, { sourceSvg: svg, routeSnapshot: routeSnapshot, reachSnapshot: reachSnapshot, figure: true });
         if (!data.canonicalStateClean) return Promise.reject(exportError('viewer.export.error.viewerState'));
         if (routeSnapshot && !data.routeStateClean) return Promise.reject(exportError('viewer.export.error.routeState'));
         if (reachSnapshot && !data.reachStateClean) return Promise.reject(exportError('viewer.export.error.reachState'));
@@ -657,7 +724,7 @@
                 : '--frontend-stroke';
               var accent = computed.getPropertyValue(accentProperty).trim() || '#22d3ee';
               var titleNode = document.querySelector('.header h1');
-              var title = titleNode ? titleNode.textContent : document.title;
+              var title = options.title != null ? String(options.title) : titleNode ? titleNode.textContent : document.title;
               var directionLabel = reachSnapshot
                 ? viewerText('viewer.export.direction.' + reachSnapshot.direction)
                 : '';
@@ -666,18 +733,19 @@
                     source: routeSnapshot.source.label,
                     target: routeSnapshot.target.label
                   })
-                : viewerText('viewer.export.card.reachSummary', {
+                : reachSnapshot ? viewerText('viewer.export.card.reachSummary', {
                     direction: directionLabel,
                     origin: reachSnapshot.origin.label,
                     nodes: viewerCount('viewer.export.card.node', reachSnapshot.nodeIds.length - 1),
                     links: viewerCount('viewer.export.card.link', reachSnapshot.edges.length),
                     hops: viewerCount('viewer.export.card.hop', reachSnapshot.maxDepth)
-                  });
+                  }) : String(options.subtitle || '');
               var cardLabel = routeSnapshot
                 ? viewerText('viewer.export.card.routeBadge', {
                     hops: viewerCount('viewer.export.card.hop', routeSnapshot.hops).toUpperCase()
                   })
-                : viewerText('viewer.export.card.reachBadge', { direction: directionLabel.toUpperCase() });
+                : reachSnapshot ? viewerText('viewer.export.card.reachBadge', { direction: directionLabel.toUpperCase() })
+                  : viewerText('viewer.export.target.subarchitecture');
 
               var family = titleNode ? getComputedStyle(titleNode).fontFamily : 'sans-serif';
               var panelFill = bg;
@@ -747,6 +815,9 @@
 
       function rasterizeShareCard(options) {
         options = options || {};
+        if (!options.variant && exportTarget === 'subarchitecture') {
+          return renderShareCard(captureExportDescriptor());
+        }
         if (options.variant !== 'route' && options.variant !== 'reach') {
           return Promise.reject(exportError('viewer.export.unknownVariant', { variant: options.variant }));
         }
@@ -776,7 +847,7 @@
       }
 
       function canRecordMotion() {
-        var svg = document.querySelector('.diagram-container svg');
+        var svg = canonicalDiagramSvg();
         return !!(svg && svg.getAttribute('data-animation') === 'trace' &&
           typeof MediaRecorder !== 'undefined' && motionMimeType() &&
           typeof HTMLCanvasElement !== 'undefined' &&
@@ -796,7 +867,7 @@
         }
         var duration = Math.max(250, Number(options.duration) || MOTION_DURATION);
         var fps = Math.max(1, Number(options.fps) || MOTION_FPS);
-        var svg = document.querySelector('.diagram-container svg');
+        var svg = canonicalDiagramSvg();
         var vb = svg.viewBox.baseVal;
         var scale = Math.min(1, 1280 / vb.width);
         var data = serializeSvg(scale);
@@ -1029,14 +1100,18 @@
 
       var menu = document.getElementById('export-menu');
       var btn = document.getElementById('btn-export');
+      var targetSelector = document.getElementById('export-target-selector');
+      var mainTargetItem = targetSelector.querySelector('button[data-export-target="main"]');
+      var subarchitectureTargetItem = targetSelector.querySelector('button[data-export-target="subarchitecture"]');
       var routeShareItem = menu.querySelector('button[data-action="route-share-card"]');
       var reachShareItem = menu.querySelector('button[data-action="reach-share-card"]');
+      var motionItem = menu.querySelector('button[data-format="webm"]');
       var items = function () {
-        return Array.prototype.slice.call(menu.querySelectorAll('button[role="menuitem"]'));
+        return Array.prototype.slice.call(menu.querySelectorAll('button[role^="menuitem"]'));
       };
 
       function syncRouteShareItem() {
-        var snapshot = Archify.routeProbe && typeof Archify.routeProbe.exportSnapshot === 'function'
+        var snapshot = exportTarget === 'main' && Archify.routeProbe && typeof Archify.routeProbe.exportSnapshot === 'function'
           ? Archify.routeProbe.exportSnapshot()
           : null;
         routeShareItem.hidden = !snapshot;
@@ -1045,12 +1120,59 @@
       }
 
       function syncReachShareItem() {
-        var snapshot = Archify.focus && typeof Archify.focus.reachabilitySnapshot === 'function'
+        var snapshot = exportTarget === 'main' && Archify.focus && typeof Archify.focus.reachabilitySnapshot === 'function'
           ? Archify.focus.reachabilitySnapshot()
           : null;
         reachShareItem.hidden = !snapshot;
         reachShareItem.disabled = !snapshot;
         return snapshot;
+      }
+
+      function syncMotionItem() {
+        if (!motionItem) return false;
+        var available = exportTarget === 'main' && !motionItem.hasAttribute('data-runtime-disabled') && canRecordMotion();
+        motionItem.disabled = !available;
+        motionItem.title = available ? '' : viewerText('viewer.export.motionUnavailable');
+        motionItem.style.opacity = available ? '' : '0.5';
+        return available;
+      }
+
+      function syncExportTarget() {
+        var subarchitecture = subarchitectureExportDescriptor();
+        var available = !!subarchitecture;
+        targetSelector.hidden = !available;
+        mainTargetItem.hidden = !available;
+        subarchitectureTargetItem.hidden = !available;
+        subarchitectureTargetItem.disabled = !available;
+        subarchitectureTargetItem.title = available
+          ? ''
+          : viewerText('viewer.export.target.subarchitectureUnavailable');
+        if (!available && exportTarget === 'subarchitecture') exportTarget = 'main';
+        mainTargetItem.setAttribute('aria-checked', exportTarget === 'main' ? 'true' : 'false');
+        subarchitectureTargetItem.setAttribute('aria-checked', exportTarget === 'subarchitecture' ? 'true' : 'false');
+        var childShare = document.getElementById('subarchitecture-share-card');
+        if (exportTarget === 'subarchitecture' && !childShare) {
+          childShare = document.createElement('button');
+          childShare.id = 'subarchitecture-share-card';
+          childShare.type = 'button';
+          childShare.setAttribute('data-format', 'share-card');
+          childShare.setAttribute('role', 'menuitem');
+          childShare.tabIndex = -1;
+          childShare.textContent = viewerText('viewer.export.shareCard') + ' · 1200×630 PNG';
+          routeShareItem.parentNode.insertBefore(childShare, routeShareItem);
+        } else if (exportTarget !== 'subarchitecture' && childShare) childShare.remove();
+        syncRouteShareItem();
+        syncReachShareItem();
+        syncMotionItem();
+        return exportTarget;
+      }
+
+      function selectExportTarget(target) {
+        if (target !== 'main' && target !== 'subarchitecture') return false;
+        if (target === 'subarchitecture' && !subarchitectureExportDescriptor()) return false;
+        exportTarget = target;
+        syncExportTarget();
+        return true;
       }
 
       // ---- Clipboard support ----------------------------------------------
@@ -1085,6 +1207,7 @@
           it.title = viewerText('viewer.export.clipboardUnsupported');
         }
       });
+      syncExportTarget();
 
       // ---- Toast ----------------------------------------------------------
       // A live region only announces CHANGES to an existing node, so the toast
@@ -1109,8 +1232,7 @@
         if (Archify.preset && Archify.preset.isOpen()) Archify.preset.close(false);
         if (Archify.semanticLens && typeof Archify.semanticLens.clearPreview === 'function') Archify.semanticLens.clearPreview();
         if (Archify.semanticLens && Archify.semanticLens.isOpen()) Archify.semanticLens.close({ restoreFocus: false });
-        syncRouteShareItem();
-        syncReachShareItem();
+        syncExportTarget();
         menu.classList.add('open');
         btn.setAttribute('aria-expanded', 'true');
         var available = items().filter(function (i) { return !i.hidden && !i.disabled; });
@@ -1170,42 +1292,54 @@
       });
 
       function runExport(format) {
-        if (['svg', 'svg-light', 'svg-dark', 'png', 'jpeg', 'webp', 'webm'].indexOf(format) === -1) {
+        if (['svg', 'svg-light', 'svg-dark', 'png', 'jpeg', 'webp', 'webm'].indexOf(format) === -1 &&
+            !(format === 'share-card' && exportTarget === 'subarchitecture')) {
           return Promise.reject(exportError('viewer.export.unsupported'));
         }
-        var base = diagramFilename();
+        var descriptor;
+        try { descriptor = captureExportDescriptor(); } catch (_) { descriptor = null; }
+        var base = descriptor ? descriptor.filename : diagramFilename();
         var svgTheme = format === 'svg' ? 'auto' :
           format === 'svg-light' ? 'light' :
           format === 'svg-dark' ? 'dark' : null;
         close(true);
         clearExportReceipt();
         if (format === 'webm') toast(viewerText('viewer.export.recording'));
-        return (svgTheme
-          ? Promise.resolve(serializeSvg(1, { theme: svgTheme })).then(function (d) {
+        var operation = descriptor ? (format === 'share-card'
+          ? renderShareCard(descriptor).then(function (blob) {
+              recordExportReceipt('share-card', blob, true, { width: SHARE_CARD_WIDTH, height: SHARE_CARD_HEIGHT }, null, false, false, descriptor.target);
+              download(blob, base + '-share-card.png');
+            })
+          : svgTheme
+          ? Promise.resolve(serializeSvg(1, { theme: svgTheme, sourceSvg: descriptor.sourceSvg })).then(function (d) {
               var blob = new Blob([d.svgString], { type: 'image/svg+xml;charset=utf-8' });
-              recordExportReceipt('svg', blob, d.canonicalStateClean);
+              recordExportReceipt('svg', blob, d.canonicalStateClean, null, null, false, false, descriptor.target);
               download(blob, base + (svgTheme === 'auto' ? '' : '-' + svgTheme) + '.svg');
             })
           : format === 'webm'
-            ? recordWebm().then(function (blob) {
+            ? (descriptor.target === 'main'
+              ? recordWebm()
+              : Promise.reject(exportError('viewer.export.error.webmRequirements'))).then(function (blob) {
                 document.documentElement.setAttribute('data-last-motion-bytes', String(blob.size));
-                recordExportReceipt('webm', blob, true);
+                recordExportReceipt('webm', blob, true, null, null, false, false, descriptor.target);
                 download(blob, base + '.webm');
                 toast(viewerText('viewer.export.downloadedWebm'));
               })
-          : rasterize(format).then(function (blob) {
-              recordExportReceipt(format, blob, true);
+          : rasterize(format, descriptor).then(function (blob) {
+              recordExportReceipt(format, blob, true, null, null, false, false, descriptor.target);
               download(blob, base + '.' + format);
             })
-        ).catch(function (err) {
+        )
+          : Promise.reject(exportError('viewer.export.error.subarchitectureUnavailable'));
+        return operation.catch(function (err) {
           console.error(err);
           var technicalMessage = err && err.message ? err.message : format;
           var message = exportMessage(err);
           document.documentElement.setAttribute('data-last-export-error-format', format);
           document.documentElement.setAttribute('data-last-export-error', technicalMessage);
           if (format === 'webm') {
-            var motionItem = menu.querySelector('button[data-format="webm"]');
-            if (motionItem) {
+            if (motionItem && descriptor && descriptor.target === 'main') {
+              motionItem.setAttribute('data-runtime-disabled', '');
               motionItem.disabled = true;
               motionItem.title = viewerText('viewer.export.motionUnavailable');
               motionItem.style.opacity = '0.5';
@@ -1266,10 +1400,11 @@
       // A compact, machine-readable receipt for local QA and generated proof
       // galleries. It exposes no diagram contents, only the completed format,
       // byte count, and whether temporary viewer state was excluded.
-      function recordExportReceipt(format, blob, canonical, dimensions, variant, routeStateClean, reachStateClean) {
+      function recordExportReceipt(format, blob, canonical, dimensions, variant, routeStateClean, reachStateClean, target) {
         document.documentElement.setAttribute('data-last-export-format', format);
         document.documentElement.setAttribute('data-last-export-bytes', String(blob.size));
         document.documentElement.setAttribute('data-last-export-canonical', canonical ? 'true' : 'false');
+        document.documentElement.setAttribute('data-last-export-target', target === 'subarchitecture' ? 'subarchitecture' : 'main');
         if (variant) {
           document.documentElement.setAttribute('data-last-export-variant', variant);
         } else {
@@ -1298,6 +1433,7 @@
         document.documentElement.removeAttribute('data-last-export-format');
         document.documentElement.removeAttribute('data-last-export-bytes');
         document.documentElement.removeAttribute('data-last-export-canonical');
+        document.documentElement.removeAttribute('data-last-export-target');
         document.documentElement.removeAttribute('data-last-export-width');
         document.documentElement.removeAttribute('data-last-export-height');
         document.documentElement.removeAttribute('data-last-export-variant');
@@ -1321,15 +1457,26 @@
       }
 
       function runCopy() {
+        var descriptor;
+        try { descriptor = captureExportDescriptor(); }
+        catch (error) {
+          alert(viewerText('viewer.export.copyFailed', { message: exportMessage(error) }));
+          return;
+        }
         close(true);
         clearExportReceipt();
         if (!canCopyImage()) {
           alert(viewerText('viewer.export.clipboardUnsupported.short'));
           return;
         }
-        var blobPromise = rasterize('png');
+        var blobPromise = rasterize('png', descriptor);
         return writePngToClipboard(blobPromise).then(function () {
-          toast(viewerText('viewer.export.copiedPng'));
+          return blobPromise.then(function (blob) {
+            if (descriptor.target === 'subarchitecture') {
+              recordExportReceipt('png', blob, true, null, null, false, false, descriptor.target);
+            }
+            toast(viewerText('viewer.export.copiedPng'));
+          });
         }).catch(function (err) {
           console.error(err);
           alert(viewerText('viewer.export.copyFailed', {
@@ -1339,6 +1486,13 @@
       }
 
       menu.addEventListener('click', function (e) {
+        var targetBtn = e.target.closest('button[data-export-target]');
+        if (targetBtn && !targetBtn.disabled && !targetBtn.hidden) {
+          selectExportTarget(targetBtn.getAttribute('data-export-target'));
+          targetBtn.focus();
+          return;
+        }
+
         var routeShareCardBtn = e.target.closest('button[data-action="route-share-card"]');
         if (routeShareCardBtn && !routeShareCardBtn.disabled && !routeShareCardBtn.hidden) { runRouteShareCard(); return; }
 
@@ -1362,7 +1516,10 @@
         downloadRouteShareCard: runRouteShareCard,
         downloadReachShareCard: runReachShareCard,
         syncRouteShare: syncRouteShareItem,
-        syncReachShare: syncReachShareItem
+        syncReachShare: syncReachShareItem,
+        syncTarget: syncExportTarget,
+        selectTarget: selectExportTarget,
+        target: function () { return exportTarget; }
       };
 
       // Auto-open on page load for demo/screenshot purposes: ?openExport=1
