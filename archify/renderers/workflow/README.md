@@ -196,6 +196,12 @@ silently moved. `fromSide` and `toSide` remain direction constraints. A route
 preset restricts the automatic candidate family but is not itself an absolute
 coordinate pin. When either endpoint side is omitted, the v2 compiler chooses
 a feasible side; an authored side restricts that endpoint to the named port.
+An infeasible preset returns `workflow/route-preset-conflict` with the actual
+rejected `evidence.invariant`. For node clearance it also identifies the node,
+segment, endpoint role, and required clearance. Use that obstacle to revise
+the connected placement or route constraints, then revalidate; minimum segment
+lengths alone do not establish a clear path. Advertised `supportedFixes` are
+verified against the complete workflow.
 
 ## Design Rules
 
