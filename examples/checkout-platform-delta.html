@@ -14944,6 +14944,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         var legendRect = legend ? legend.getBoundingClientRect() : { top: 0, left: 0 };
         return [
           reserve,
+          lift,
           Math.round(containerRect.width * 100) / 100,
           Math.round(containerRect.height * 100) / 100,
           Math.round(navRect.left * 100) / 100,
@@ -14954,7 +14955,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           lastReceipt ? lastReceipt.stageGap : &#39;&#39;
         ].join(&#39;|&#39;);
       }
-      function layoutPending() { return Boolean(frame || settleFrame || probingBaseline); }
+      function layoutPending() { return Boolean(frame || settleFrame || liftFrame || probingBaseline); }
       function whenStable() {
         return Archify.waitForStableLayout({
           schedule: schedule,
@@ -14974,6 +14975,10 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       if (typeof ResizeObserver === &#39;function&#39;) {
         var resizeObserver = new ResizeObserver(schedule);
         [nav, svg, legend].forEach(function (element) { if (element) resizeObserver.observe(element); });
+        // Camera zoom changes outer page flow without changing intrinsic SVG
+        // size. Follow that box for dock placement, independently of scrolling
+        // and the baseline stage-rail measurement.
+        new ResizeObserver(scheduleLift).observe(container);
       }
       if (typeof MutationObserver === &#39;function&#39;) {
         var contentObserver = new MutationObserver(function (records) {
@@ -15195,7 +15200,10 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         var ordinary = html.getAttribute(&#39;data-embed&#39;) !== &#39;true&#39; &amp;&amp;
           html.getAttribute(&#39;data-present&#39;) !== &#39;true&#39; &amp;&amp;
           (!window.matchMedia || !window.matchMedia(&#39;print&#39;).matches);
-        if (ordinary &amp;&amp; camera.scale &lt; 1 &amp;&amp; height &gt; window.innerHeight) {
+        // Restore ordinary flow as soon as the target reaches 100%. Chrome
+        // uses that target to resume baseline rail measurement; retaining a
+        // partially shrunk box during the CSS transition would inflate reserve.
+        if (ordinary &amp;&amp; state.scale &lt; 1 &amp;&amp; camera.scale &lt; 1 &amp;&amp; height &gt; window.innerHeight) {
           var style = getComputedStyle(container);
           var chrome = [&#39;paddingTop&#39;, &#39;paddingBottom&#39;, &#39;borderTopWidth&#39;, &#39;borderBottomWidth&#39;]
             .reduce(function (total, key) { return total + (parseFloat(style[key]) || 0); }, 0);
@@ -29266,6 +29274,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         var legendRect = legend ? legend.getBoundingClientRect() : { top: 0, left: 0 };
         return [
           reserve,
+          lift,
           Math.round(containerRect.width * 100) / 100,
           Math.round(containerRect.height * 100) / 100,
           Math.round(navRect.left * 100) / 100,
@@ -29276,7 +29285,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           lastReceipt ? lastReceipt.stageGap : &#39;&#39;
         ].join(&#39;|&#39;);
       }
-      function layoutPending() { return Boolean(frame || settleFrame || probingBaseline); }
+      function layoutPending() { return Boolean(frame || settleFrame || liftFrame || probingBaseline); }
       function whenStable() {
         return Archify.waitForStableLayout({
           schedule: schedule,
@@ -29296,6 +29305,10 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       if (typeof ResizeObserver === &#39;function&#39;) {
         var resizeObserver = new ResizeObserver(schedule);
         [nav, svg, legend].forEach(function (element) { if (element) resizeObserver.observe(element); });
+        // Camera zoom changes outer page flow without changing intrinsic SVG
+        // size. Follow that box for dock placement, independently of scrolling
+        // and the baseline stage-rail measurement.
+        new ResizeObserver(scheduleLift).observe(container);
       }
       if (typeof MutationObserver === &#39;function&#39;) {
         var contentObserver = new MutationObserver(function (records) {
@@ -29517,7 +29530,10 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         var ordinary = html.getAttribute(&#39;data-embed&#39;) !== &#39;true&#39; &amp;&amp;
           html.getAttribute(&#39;data-present&#39;) !== &#39;true&#39; &amp;&amp;
           (!window.matchMedia || !window.matchMedia(&#39;print&#39;).matches);
-        if (ordinary &amp;&amp; camera.scale &lt; 1 &amp;&amp; height &gt; window.innerHeight) {
+        // Restore ordinary flow as soon as the target reaches 100%. Chrome
+        // uses that target to resume baseline rail measurement; retaining a
+        // partially shrunk box during the CSS transition would inflate reserve.
+        if (ordinary &amp;&amp; state.scale &lt; 1 &amp;&amp; camera.scale &lt; 1 &amp;&amp; height &gt; window.innerHeight) {
           var style = getComputedStyle(container);
           var chrome = [&#39;paddingTop&#39;, &#39;paddingBottom&#39;, &#39;borderTopWidth&#39;, &#39;borderBottomWidth&#39;]
             .reduce(function (total, key) { return total + (parseFloat(style[key]) || 0); }, 0);
