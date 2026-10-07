@@ -179,6 +179,71 @@ test('a reciprocal pair still lands just above and below the shared edge', () =>
   assert.deepEqual(points(result.svg, 'f', 'w').map((point) => point[1]), [cy + 10, cy + 10]);
 });
 
+test('dense neighbour transitions keep every label and note clear in its own lane', () => {
+  const cases = [
+    ['five short labels', 'abcde'.split('').map((label) => ({ from: 'w', to: 'f', label }))],
+    ['four labels with notes', Array.from({ length: 4 }, (_, index) => ({ from: 'w', to: 'f', label: `way ${index}`, note: `note ${index}` }))],
+    ['five mixed directions and label heights', [
+      { from: 'w', to: 'f', label: 'one', note: 'first note' },
+      { from: 'f', to: 'w', label: 'two' },
+      { from: 'w', to: 'f', note: 'third note' },
+      { from: 'f', to: 'w', label: 'four', note: 'fourth note' },
+      { from: 'w', to: 'f', label: 'five' },
+    ]],
+    ['five unlabelled transitions', Array.from({ length: 5 }, () => ({ from: 'w', to: 'f' }))],
+  ];
+  for (const [name, extra] of cases) {
+    const doc = neighbourCase(extra);
+    // A following row must move down with the enlarged neighbour row.
+    doc.states.push(state('next', 'success'));
+    doc.transitions.push({ from: 'f', to: 'next' });
+    const result = render(doc);
+    assert.equal(result.code, 0, `${name}: ${result.stderr}`);
+    assert.equal(result.check.ok, true, `${name}: ${JSON.stringify(result.check.composition.issues)}`);
+    const routes = [...allPoints(result.svg, 'w', 'f'), ...allPoints(result.svg, 'f', 'w')];
+    assert.equal(routes.length, extra.length, name);
+    assert.equal(new Set(routes.map((route) => route[0][1])).size, extra.length, name);
+    const lower = box(result.svg, 'w');
+    const partner = box(result.svg, 'f');
+    assert.equal(box(result.svg, 'a').height, 64, `${name}: main path retains its height`);
+    assert.equal(box(result.svg, 'next').height, 64, `${name}: following row retains its height`);
+    if (extra.every((transition) => !transition.label && !transition.note)) {
+      assert.equal(lower.height, 64, `${name}: no label footprint needs extra height`);
+    }
+    assert.equal(lower.height, partner.height, `${name}: one lower row keeps aligned bounds`);
+    assert.ok(routes.every((route) => route.every(([, y]) => y > lower.y && y < lower.y + lower.height)),
+      `${name}: every arrow attaches inside the state side`);
+    assert.ok(box(result.svg, 'next').y > lower.y + lower.height, `${name}: following row clears the full state height`);
+    const edgeLabels = [...result.svg.matchAll(/<g data-detail="(?:context|fine)" [^>]*data-edge-from="(?:w|f)" data-edge-to="(?:w|f)"[^>]*>[\s\S]*?<\/g>/g)]
+      .map((match) => match[0]).join('');
+    for (const transition of extra) {
+      for (const text of [transition.label, transition.note].filter(Boolean)) {
+        assert.equal(edgeLabels.split(`>${text}</text>`).length - 1, 1, `${name}: preserves ${text}`);
+      }
+    }
+  }
+});
+
+test('one lower row accommodates the tallest of several parallel neighbour groups', () => {
+  const doc = neighbourCase('abcde'.split('').map((label) => ({ from: 'w', to: 'f', label })));
+  doc.states.push(state('g', 'waiting'));
+  doc.transitions.push({ from: 'b', to: 'g' }, ...Array.from({ length: 4 }, (_, index) => ({
+    from: 'f', to: 'g', label: `way ${index}`, note: `note ${index}`,
+  })));
+  const result = render(doc);
+  assert.equal(result.code, 0, result.stderr);
+  assert.equal(result.check.ok, true, JSON.stringify(result.check.composition.issues));
+  const boxes = ['w', 'f', 'g'].map((id) => box(result.svg, id));
+  assert.equal(new Set(boxes.map((state) => state.y)).size, 1, 'all partners stay in one row');
+  assert.equal(new Set(boxes.map((state) => state.height)).size, 1, 'all partners retain the same centre and bottom');
+  const centre = boxes[0].y + boxes[0].height / 2;
+  for (const [from, to, count] of [['w', 'f', 5], ['f', 'g', 4]]) {
+    const routes = allPoints(result.svg, from, to);
+    assert.equal(routes.length, count);
+    assert.equal((routes[0][0][1] + routes.at(-1)[0][1]) / 2, centre, 'each group fans around the common row centre');
+  }
+});
+
 test('more than five parallel transitions between neighbours are a typed error', () => {
   const result = render(neighbourCase(Array.from({ length: 6 }, (_, index) => ({ from: 'w', to: 'f', label: `way ${index}` }))));
   assert.notEqual(result.code, 0);

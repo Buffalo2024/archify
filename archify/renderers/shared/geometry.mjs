@@ -702,8 +702,9 @@ export function cleanCrossingProblems({
 // The counterflow-only opt-in serves older workflow exports without a root
 // readable-v2 contract; full shared-endpoint checking takes precedence.
 // Relationships a renderer declares on one junction (a Lifecycle exit bracket)
-// may share that junction's horizontal bus and, when they end at the same
-// state, the merged drop into it; other overlaps between them count.
+// may share that junction's horizontal bus, the first tick from a common
+// source port and, when they end at the same state, the merged drop into it;
+// other overlaps between them count.
 // Tiny overlaps below the route rhythm
 // floor are ignored to avoid turning sub-pixel rounding into a quality debt.
 export function collectAmbiguousCorridors({
@@ -748,9 +749,15 @@ export function collectAmbiguousCorridors({
           );
           if (!overlap || overlap.length + 0.0001 < minOverlapPx) continue;
           if (allowShortWorkflowTrunks && shortWorkflowTrunk(left, right, leftSegment, rightSegment, overlap.length)) continue;
-          // Only the horizontal bus itself is shared — and, for two bracket
-          // relations ending at the same state, their merged drop into it.
-          if (sharedBus && (Math.abs(overlap.start[1] - overlap.end[1]) < 0.0001 || left.relation.to === right.relation.to)) continue;
+          // A multi-target bracket repeats its source tick for each target.
+          // Limit that exemption to the first segment at the same source port:
+          // a common source identity cannot waive an interior vertical overlap.
+          const sharedSourceTick = left.sourceEndpoint !== false && right.sourceEndpoint !== false
+            && left.relation.from === right.relation.from && leftSegment === 0 && rightSegment === 0
+            && Math.abs(left.points[0][0] - right.points[0][0]) < 0.0001
+            && Math.abs(left.points[0][1] - right.points[0][1]) < 0.0001;
+          if (sharedBus && (Math.abs(overlap.start[1] - overlap.end[1]) < 0.0001
+              || left.relation.to === right.relation.to || sharedSourceTick)) continue;
           if (counterflowOnly) {
             const leftDelta = left.points[leftSegment + 1].map((value, axis) => value - left.points[leftSegment][axis]);
             const rightDelta = right.points[rightSegment + 1].map((value, axis) => value - right.points[rightSegment][axis]);

@@ -273,6 +273,40 @@ function layout({ spineGap, rowGap, drop, firstTrack, ports: portMode }) {
   const adjacent = (transition) => transition.from !== transition.to
     && Math.abs(rowOrder[depthOf(transition.from)].indexOf(transition.from) - rowOrder[depthOf(transition.from)].indexOf(transition.to)) === 1;
   const sides = ofKind('same').filter(adjacent);
+  // Side labels ride on the line for groups of three or more. Reserve their
+  // actual height before placing rows: horizontal gap growth cannot clear a
+  // label trapped between two full-width parallel strokes.
+  const sideGroups = new Map();
+  for (const transition of sides) {
+    const key = [transition.from, transition.to].sort().join('\u0000');
+    if (!sideGroups.has(key)) sideGroups.set(key, []);
+    sideGroups.get(key).push(transition);
+  }
+  const sideLanes = [];
+  const rowHeights = rows.map(() => STATE_H);
+  for (const group of sideGroups.values()) {
+    const rightward = (transition) => states.get(transition.from).x < states.get(transition.to).x;
+    const ordered = [...group.filter(rightward), ...group.filter((transition) => !rightward(transition))];
+    if (ordered.length > 5) {
+      const message = `${ordered.length} transitions between the neighbouring states "${ordered[0].from}" and "${ordered[0].to}" cannot spread apart on the shared edge; at most five stay legible.`;
+      throwDiagnosticProblems('Lifecycle validation failed', [message], {
+        subject: { diagramType: 'lifecycle' },
+        diagnostics: [structureProblem('lifecycle/crowded-side-transitions', message,
+          { collection: 'transitions', from: ordered[0].from, to: ordered[0].to },
+          ['merge the triggers into one transition label'])],
+      });
+    }
+    let step = Math.min(20, 48 / (ordered.length - 1));
+    if (ordered.length > 2) {
+      const heights = ordered.map((transition) => hasLabel(transition) ? labelBox(transition).height : 0);
+      step = Math.max(step, ...heights.map((height) => height ? height / 2 + CLEARANCE : 0),
+        ...heights.slice(1).map((height, index) => height && heights[index] ? (height + heights[index]) / 2 + 4 : 0));
+      const row = depthOf(ordered[0].from);
+      // Keep every side port eight pixels inside the rounded state corners.
+      rowHeights[row] = Math.max(rowHeights[row], step * (ordered.length - 1) + 16);
+    }
+    sideLanes.push({ ordered, step });
+  }
   for (const transition of ofKind('same').filter((transition) => !adjacent(transition))) {
     connectors.push({ kind: 'loop', transition, gap: depthOf(transition.from), order: transitions.indexOf(transition) });
   }
@@ -336,14 +370,15 @@ function layout({ spineGap, rowGap, drop, firstTrack, ports: portMode }) {
   for (let row = 0; row < rowCount; row += 1) {
     for (const state of rows[row]) {
       state.y = rowTop[row];
-      state.cy = rowTop[row] + STATE_H / 2;
+      state.height = rowHeights[row];
+      state.cy = rowTop[row] + state.height / 2;
     }
-    const bottom = rowTop[row] + STATE_H;
+    const bottom = rowTop[row] + rowHeights[row];
     const count = assignTracks(runs.filter((run) => run.connector.gap === row));
     trackY[row] = (track) => bottom + firstTrack + track * TRACK_STEP;
     if (row + 1 < rowCount) rowTop.push((count ? trackY[row](count - 1) : bottom + firstTrack) + drop);
   }
-  const rowBottom = (row) => rowTop[row] + STATE_H;
+  const rowBottom = (row) => rowTop[row] + rowHeights[row];
 
   // Routes, keyed by transition.
   const routes = new Map();
@@ -405,25 +440,7 @@ function layout({ spineGap, rowGap, drop, firstTrack, ports: portMode }) {
   }
   // Parallel transitions between two neighbours spread symmetrically around
   // the shared edge, left-to-right ones first; a reciprocal pair lands at ±10.
-  const sideGroups = new Map();
-  for (const transition of sides) {
-    const key = [transition.from, transition.to].sort().join('\u0000');
-    if (!sideGroups.has(key)) sideGroups.set(key, []);
-    sideGroups.get(key).push(transition);
-  }
-  for (const group of sideGroups.values()) {
-    const rightward = (transition) => states.get(transition.from).x < states.get(transition.to).x;
-    const ordered = [...group.filter(rightward), ...group.filter((transition) => !rightward(transition))];
-    const step = Math.min(20, 48 / (ordered.length - 1));
-    if (step < 12) {
-      const message = `${ordered.length} transitions between the neighbouring states "${ordered[0].from}" and "${ordered[0].to}" cannot spread apart on the shared edge; at most five stay legible.`;
-      throwDiagnosticProblems('Lifecycle validation failed', [message], {
-        subject: { diagramType: 'lifecycle' },
-        diagnostics: [structureProblem('lifecycle/crowded-side-transitions', message,
-          { collection: 'transitions', from: ordered[0].from, to: ordered[0].to },
-          ['merge the triggers into one transition label'])],
-      });
-    }
+  for (const { ordered, step } of sideLanes) {
     ordered.forEach((transition, index) => {
       const from = states.get(transition.from);
       const to = states.get(transition.to);
@@ -924,9 +941,10 @@ function renderState(state) {
   const { label: labelFont, sublabel: sublabelFont, tag: tagFont } = fonts(state, state.width);
   // Baselines keep each row's full glyph box (ascent and descent) separate.
   const [labelY, sublabelY, tagY] = hasSub && state.tag ? [23, 40, 55] : hasSub ? [27, 45] : state.tag ? [29, 0, 50] : [37];
-  const rows = [{ text: state.label, font: labelFont, y: labelY }];
-  if (hasSub) rows.push({ text: state.sublabel, font: sublabelFont, y: sublabelY });
-  if (state.tag) rows.push({ text: state.tag, font: tagFont, y: tagY });
+  const textOffset = (state.height - STATE_H) / 2;
+  const rows = [{ text: state.label, font: labelFont, y: labelY + textOffset }];
+  if (hasSub) rows.push({ text: state.sublabel, font: sublabelFont, y: sublabelY + textOffset });
+  if (state.tag) rows.push({ text: state.tag, font: tagFont, y: tagY + textOffset });
   const labelLayout = nodeLabelLayout({
     width: state.width, height: state.height, rows,
     brand: Boolean(brandMarkFor(state)), source: Boolean(sourceEvidence?.nodes?.[state.id]?.length), side: 'left', step: state.step,
