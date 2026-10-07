@@ -102,6 +102,12 @@ test('Motion Governor preserves mode, ownership, ambient completion and real cal
       assert.ok(navigation.loaderId, 'Motion fixture must load a new document.');
     }
     await loaded;
+    if (!preserveStorage) {
+      // Chrome's file-backed storage can outlive Storage.clearDataForStorageKey
+      // between fresh fixture navigations. Remove only this test preference
+      // after the new document has loaded so each fixture starts cleanly.
+      await run('localStorage.removeItem("archify-motion")');
+    }
     await run('document.fonts.ready');
     assert.equal(await run('window.motionNavigation'), expectedNavigation, 'Motion fixture document identity');
   }
