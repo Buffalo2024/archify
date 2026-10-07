@@ -23,7 +23,7 @@
     "url": "https://github.com/ByteDance-Seed/Bagel",
     "revision": "a2fa77dd8caeefc41e6607ae0ec17408d3f4ee9f"
   },
-  "generatorCommit": "0cd2b672464ed80df27481a27206afaa8bbe11fd",
+  "generatorCommit": "41798f5f6aab5c3b8e0b8dbf5ac5942b7939a503",
   "method": "Archify finalize with the pinned official checkout and a real Chrome browser",
   "visualReview": "not-requested"
 }

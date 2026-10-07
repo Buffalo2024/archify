@@ -12,7 +12,7 @@ All three examples and their five children were checked in real Chrome at 1920 �
 | 1366 × 768 | 13.2 CSS pixels |
 | 1280 × 720 | 12.1 CSS pixels |
 
-[The receipt](receipt.json) records all 15 checks against source commit `b6e0ad361a0323d04e22dd14fadf0f8f712e7c2a`. Screenshots show the whole context graph without a child selection.
+[The receipt](receipt.json) records all 15 checks against source commit `41798f5f6aab5c3b8e0b8dbf5ac5942b7939a503`. This revision combines the desktop sizing correction and the maintainer's review fixes. Screenshots show the whole context graph without a child selection.
 
 ![BAGEL context at 1366 × 768](1366x768-bagel-context.png)
 
