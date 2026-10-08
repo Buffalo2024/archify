@@ -7,7 +7,7 @@ import { parse } from 'parse5';
 // Check the deployable files, not only the build configuration. Pages needs a
 // top-level 404 to disable its implicit single-page-app fallback.
 export function checkCloudflareOutput(root) {
-  const pages = ['index.html', 'gallery.html', 'guide.html', 'start.html', 'community.html', '404.html'];
+  const pages = ['index.html', 'gallery.html', 'guide.html', 'start.html', 'community.html', 'zh.html', 'zh/gallery.html', 'zh/guide.html', 'zh/start.html', 'zh/community.html', '404.html'];
   let fileCount = 0;
   const checkAssets = directory => {
     for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
@@ -27,10 +27,16 @@ export function checkCloudflareOutput(root) {
   }
   for (const page of pages) {
     const source = fs.readFileSync(path.join(root, page), 'utf8');
+    const document = parse(source);
+    const findBase = node => node.tagName === 'base'
+      ? node.attrs?.find(attribute => attribute.name === 'href')?.value
+      : (node.childNodes ?? []).map(findBase).find(Boolean);
+    const documentUrl = `https://archify.si/${page}`;
+    const baseUrl = new URL(findBase(document) || documentUrl, documentUrl);
     const visit = node => {
       for (const { name, value } of node.attrs ?? []) {
         if (!['src', 'href'].includes(name) || !value || value.startsWith('#')) continue;
-        const url = new URL(value, `https://archify.si/${page}`);
+        const url = new URL(value, baseUrl);
         if (url.origin !== 'https://archify.si') continue;
         const pathname = decodeURIComponent(url.pathname);
         assert.ok(!/^\/archify(?:\/|$)/.test(pathname), `${page}: legacy base URL ${value}`);
@@ -43,8 +49,24 @@ export function checkCloudflareOutput(root) {
       }
       for (const child of node.childNodes ?? []) visit(child);
     };
-    visit(parse(source));
+    visit(document);
   }
+  const sitemap = fs.readFileSync(path.join(root, 'sitemap.xml'), 'utf8');
+  const locations = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map(match => match[1]);
+  assert.ok(locations.length >= 10, 'Sitemap must include both languages');
+  assert.equal(new Set(locations).size, locations.length, 'Duplicate sitemap URL');
+  for (const location of locations) {
+    const url = new URL(location);
+    assert.equal(url.origin, 'https://archify.si');
+    assert.ok(!url.search && !url.hash && !/\.html$/.test(url.pathname), `Noncanonical sitemap URL: ${location}`);
+    const relative = url.pathname.slice(1);
+    const file = !relative || relative.endsWith('/') ? `${relative}index.html` : `${relative}.html`;
+    const html = fs.readFileSync(path.join(root, file), 'utf8');
+    assert.ok(html.includes(`rel="canonical" href="${location}"`), `Missing matching canonical: ${location}`);
+    assert.ok(!/<meta[^>]+(?:name="robots"[^>]+content="[^"]*noindex|content="[^"]*noindex[^>]+name="robots")/i.test(html), `Noindex sitemap page: ${location}`);
+  }
+  assert.equal(fs.readFileSync(path.join(root, 'robots.txt'), 'utf8').includes('Sitemap: https://archify.si/sitemap.xml'), true);
+  assert.match(fs.readFileSync(path.join(root, '_headers'), 'utf8'), /\/\*\.json\n  X-Robots-Tag: noindex/);
   const builtManifest = fs.readFileSync(path.join(root, 'skill-updates/archify/stable.json'));
   const canonicalManifest = fs.readFileSync(new URL('../../docs/skill-updates/archify/stable.json', import.meta.url));
   assert.ok(builtManifest.equals(canonicalManifest), 'The static site must retain the exact stable update manifest');
