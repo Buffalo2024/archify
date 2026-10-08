@@ -318,9 +318,13 @@ not settle viewport fit. These are repair directions, not guaranteed coordinates
 
 Participants are ordered by conversation role. Messages own their vertical order. Use return/async/security variants for meaning, not decoration; sequence does not use Automatic Port Spread. A segment's `from`/`to` edges must stay at least 4px off every message arrow (`message.y`): an edge along an arrow leaves the reader unable to tell which phase the message belongs to, and the renderer reports it.
 
+First-draft shape: every message needs an `id`, `from`, `to`, `label`, and integer `y` at least 160. Optional phase bands are `segments[]` with only `from`, `to`, and `label` (no segment `id`). Inventing `pos`/`size` on participants fails schema validation — order alone places them.
+
 ### Dataflow
 
 Stages express transformation or custody. Rows separate parallel streams. Label only data contracts, classifications, or cross-boundary movement that is not obvious.
+
+First-draft shape: declare `stages[]` (each a `{label}`), then place every node with integer `stage` and `row` — not `pos`/`size`. Flows are `flows[]` with `from`, `to`, and optional `label`.
 
 Omit `meta.viewBox` to fit canvas width to all stages and nodes in either quality
 profile, including explicit node widths. The 940px minimum and 24px right padding
@@ -447,6 +451,11 @@ with a single triangle. Members never truncate: a type grows to its widest
 member up to `layout.typeMaxW` and longer members wrap at parameter boundaries.
 See [`../renderers/class/README.md`](../renderers/class/README.md).
 
+First-draft shape: types use `row`/`col` (not `pos`/`size`), fields go in
+`attributes[]`, operations in `methods[]` with `parameters` as one string such as
+`"msg: Message"` (not an array of objects). Enum members are attributes with only
+`name`. Relationships need an `id`, `from`, `to`, and `kind`.
+
 ### Timeline
 
 A timeline answers "when did what happen, and how far apart?". Every event
@@ -459,7 +468,8 @@ invented or approximate times as observed, and never fill gaps with events the
 input does not contain.
 
 Use `lanes` for sources or categories (release, monitoring, response); every
-event then names one. `kind` (`default`, `change`, `alert`, `action`, `recovery`) only
+event then names one. Each event's visible text is `title` (not `label`). `kind`
+(`default`, `change`, `alert`, `action`, `recovery`) only
 colours the card; inventing values such as `milestone` fails schema validation. Events are drawn in time order whatever the authored order;
 simultaneous and close events stack. By default a quiet period longer than 8×
 the median gap and 10% of the span is drawn as a fixed-width break labelled
