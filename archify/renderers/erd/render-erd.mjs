@@ -1066,7 +1066,7 @@ function validateEr() {
     const offGrid = domain.offGrid.map((id) => `"${id}"`).join(', ');
     const message = domain.reason === 'no-grid'
       ? `Domain "${domain.tag}" is named but cannot be drawn: ${offGrid} have no grid cells, and a band is measured from them. Give every member row/col cells, or drop the tag.`
-      : `Domain "${domain.tag}" is named but cannot be drawn: ${listed} do not fill a solid block of grid cells, and a band around them would enclose cells the domain does not own. Move them into one block, or split the tag.`;
+      : `Domain "${domain.tag}" is named but cannot be drawn: ${listed} do not fill a solid rectangle of grid cells (a row, a column, or a filled block — not an L or diagonal), and a band around them would enclose cells the domain does not own. Move them into one block, or split the tag.`;
     problems.push(message);
     domainDetails.push({
       code: 'erd/domain-not-drawn', severity: 'error', message,
@@ -1074,7 +1074,7 @@ function validateEr() {
       evidence: { domain: domain.tag, entities: members, reason: domain.reason, offGrid: domain.offGrid },
       supportedFixes: domain.reason === 'no-grid'
         ? ['Give every domain member row/col cells.', 'Drop the tag to group nothing.']
-        : ['Give the domain members one solid block of grid cells.', 'Split the tag so each domain can be drawn as a band.', 'Drop the tag to group nothing.'],
+        : ['Give the domain members one solid rectangle of grid cells (a row, a column, or a filled block — not an L).', 'Split the tag so each domain can be drawn as a band.', 'Drop the tag to group nothing.'],
     });
   }
   // The band draws the domain name, so a band the canvas cannot show would put

@@ -636,7 +636,7 @@ test('a contiguous domain draws a band and a scattered tag does not', () => {
   const scattered = render(scatteredDiagram, scatteredDirectory);
   assert.notEqual(scattered.status, 0, 'a tag split across the canvas must not render');
   assert.match(scattered.stderr + scattered.stdout, /erd\/domain-not-drawn/);
-  assert.match(scattered.stderr + scattered.stdout, /"alpha", "delta" do not fill a solid block/);
+  assert.match(scattered.stderr + scattered.stdout, /"alpha", "delta" do not fill a solid rectangle/);
   assert.equal(fs.existsSync(scattered.output), false, 'the diagram is not written at all');
 });
 
@@ -1073,7 +1073,7 @@ test('a domain that cannot be drawn as a band stops the render instead of losing
   const ellRun = render(ell, ellDirectory);
   assert.notEqual(ellRun.status, 0, 'an L-shaped domain must not be banded');
   assert.match(ellRun.stderr + ellRun.stdout, /erd\/domain-not-drawn/);
-  assert.match(ellRun.stderr + ellRun.stdout, /"a", "b", "c" do not fill a solid block/);
+  assert.match(ellRun.stderr + ellRun.stdout, /"a", "b", "c" do not fill a solid rectangle/);
   assert.equal(fs.existsSync(ellRun.output), false, 'nothing is written when a domain cannot be named');
 
   // Absolute coordinates have no cells to group, so a tag cannot be drawn there.
@@ -1097,7 +1097,7 @@ test('a domain that cannot be drawn as a band stops the render instead of losing
   const sharedRun = render(shared, sharedDirectory);
   assert.notEqual(sharedRun.status, 0, 'two tables in one cell must not render');
   assert.match(sharedRun.stderr + sharedRun.stdout, /share grid cell/);
-  assert.doesNotMatch(sharedRun.stderr + sharedRun.stdout, /do not fill a solid block/,
+  assert.doesNotMatch(sharedRun.stderr + sharedRun.stdout, /do not fill a solid rectangle/,
     'the domain check defers to the placement error instead of blaming the block');
 
   // A table with no tag groups nothing and stays placeable by coordinates.
