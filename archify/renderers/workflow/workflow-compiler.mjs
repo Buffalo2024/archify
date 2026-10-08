@@ -2276,6 +2276,12 @@ function routeContainsChannelPin(points, field, value) {
 
 function hasClearStraightAutomaticRoute(edge) {
   if (!independentAutomaticRoute(edge) || edge.from === edge.to) return false;
+  // Relative label pins are not absolute, but they still participate in
+  // placed-label conflict evidence. Reserving a straight path for them first
+  // can change which edge owns the corridor and scramble supportedFixes.
+  if (edge.labelDx !== undefined || edge.labelDy !== undefined || edge.labelSegment !== undefined) {
+    return false;
+  }
   const from = nodes.get(edge.from);
   const to = nodes.get(edge.to);
   const start = anchor(from, defaultFromSide(from, to));
@@ -2300,7 +2306,15 @@ function validateReadablePinnedGeometry() {
   // Skip during discoverFixes probes (discoverFixes === false): those probes
   // strip labelAt/via and would otherwise look "automatic", recreating the pin
   // geometry and shrinking causal pin sets (round-23 regression).
-  if (discoverFixes) {
+  // Skip when any edge carries a relative/absolute label pin: straight-first
+  // would reorder corridors and scramble placed-label conflict evidence.
+  const hasLabelPins = workflow.edges.some((edge) => (
+    edge.labelAt !== undefined
+    || edge.labelDx !== undefined
+    || edge.labelDy !== undefined
+    || edge.labelSegment !== undefined
+  ));
+  if (discoverFixes && !hasLabelPins) {
     for (const edge of workflow.edges) {
       if (!nodes.has(edge.from) || !nodes.has(edge.to) || !hasClearStraightAutomaticRoute(edge)) continue;
       validateReadableRouteControls(edge);

@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { esc, renderDefinitions, renderSemanticSigil, textUnits } from '../shared/utils.mjs';
 import { animateAttr, focusEdgeAttrs, focusNodeAttrs, focusNodeTitle, loadDiagramWithBrandMarks, writeDiagram, svgAccessibleText, svgRootAttrs } from '../shared/cli.mjs';
 import { throwDiagnosticProblems } from '../shared/diagnostics.mjs';
-import { resolveLegend, renderLegend as renderResolvedLegend } from '../shared/legend.mjs';
+import { resolveLegend, renderLegend as renderResolvedLegend, legendFootprint } from '../shared/legend.mjs';
 import { availableNodeTextWidth, fittedNodeFontSize, minimumNodeTextWidth, nodeLabelLayout } from '../shared/text-fit.mjs';
 import { brandLabelFitWidth, brandMarkFor, brandMetadataFor, brandTopRailProblem, renderBrandMark } from '../shared/brand-marks.mjs';
 import { translateMessage as i18nText } from '../shared/i18n.mjs';
@@ -811,7 +811,26 @@ function renderLegend() {
   });
 }
 
+function ensureAutoLegendFits() {
+  // Narrow auto canvases can wrap the legend onto extra rows. Stage frames
+  // fill the canvas height, so growing height alone does not free a legend
+  // band — widen just enough for a one-row pack instead.
+  if (dataflow.meta?.viewBox) return;
+  const presentKinds = new Set(asArray(dataflow.flows).map((flow) => flow.variant || 'default'));
+  if ([...nodes.values()].some((node) => node.type === 'database')) presentKinds.add('database');
+  const entries = resolveLegend(dataflow.meta?.legend, LEGEND_CATALOG, presentKinds);
+  if (!entries.length) return;
+  if (legendFootprint(entries, { width: Math.max(1, viewBox[0] - 80) }).extraHeight <= 0) return;
+  let width = viewBox[0];
+  while (width < 1600
+    && legendFootprint(entries, { width: Math.max(1, width - 80) }).extraHeight > 0) {
+    width += 40;
+  }
+  viewBox[0] = width;
+}
+
 function renderSvg() {
+  ensureAutoLegendFits();
   // Same default-canvas contract as lifecycle: 940x720 is below the 1.55 wide
   // ratio, so without intrinsic-height the desktop Reader can neither narrow
   // nor scroll it and every default dataflow fails the browser gate.
