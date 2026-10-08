@@ -1751,9 +1751,9 @@ test('readable-v2 classifies a side-only authored route sharing an automatic cor
   assertExplicitPinConflict(result, 'side-only route sharing an automatic corridor');
   const diagnostic = result.diagnostics[0];
   assert.equal(diagnostic.evidence.invariant, 'explicit route-route corridor clearance');
-  assert.deepEqual(diagnostic.evidence.overlapStart, [214, 161]);
-  assert.deepEqual(diagnostic.evidence.overlapEnd, [334, 161]);
-  assert.equal(diagnostic.evidence.overlapLengthPx, 120);
+  assert.deepEqual(diagnostic.evidence.overlapStart, [218, 161]);
+  assert.deepEqual(diagnostic.evidence.overlapEnd, [342, 161]);
+  assert.equal(diagnostic.evidence.overlapLengthPx, 124);
   assert.ok(diagnostic.evidence.conflictingPins.length > 0);
   assert.ok(diagnostic.evidence.conflictingPins.every(({ edge, field, path, value }) => (
     edge === 'z-side'
@@ -1773,7 +1773,9 @@ test('readable-v2 classifies a side-only authored route sharing an automatic cor
   }
 });
 
-test('readable-v2 classifies a preset-only route sharing an automatic corridor', () => {
+test('readable-v2 routes an automatic edge clear of a preset channel', () => {
+  // The column gap leaves the automatic edge a corridor of its own, so it no
+  // longer shares the bottom channel the preset route claims.
   const document = workflow({
     lanes: [{ id: 'l0', label: 'l0' }, { id: 'l1', label: 'l1' }],
     nodes: [
@@ -1790,33 +1792,11 @@ test('readable-v2 classifies a preset-only route sharing an automatic corridor',
   document.meta.quality_profile = 'showcase';
 
   const result = compileWorkflow({ workflow: document });
-  assertExplicitPinConflict(result, 'preset-only route sharing an automatic corridor');
-  const diagnostic = result.diagnostics[0];
-  assert.equal(diagnostic.evidence.invariant, 'explicit route-route corridor clearance');
-  assert.deepEqual(diagnostic.subject, {
-    diagramType: 'workflow',
-    edge: 'z-route',
-    from: 'n01',
-    to: 'n02',
-    path: '/edges/1/route',
-  });
-  assert.deepEqual(diagnostic.evidence.conflictingPins, [{
-    edge: 'z-route',
-    field: 'route',
-    path: '/edges/1/route',
-    value: 'bottom-channel',
-  }]);
-  assert.deepEqual(diagnostic.evidence.overlapStart, [214, 166]);
-  assert.deepEqual(diagnostic.evidence.overlapEnd, [214, 177]);
-  assert.equal(diagnostic.evidence.overlapLengthPx, 11);
-  assert.deepEqual(diagnostic.supportedFixes, [
-    'remove route from edge "z-route" so readable-v2 can replan the remaining authored route assertions',
-  ]);
-
-  const repaired = clone(document);
-  delete repaired.edges[1].route;
-  const verified = compileWorkflow({ workflow: repaired });
-  assert.equal(verified.ok, true, JSON.stringify(verified.diagnostics, null, 2));
+  assert.equal(result.ok, true, JSON.stringify(result.diagnostics, null, 2));
+  const auto = result.receipt.edges.find(({ id }) => id === 'a-auto');
+  const preset = result.receipt.edges.find(({ id }) => id === 'z-route');
+  const presetLeft = Math.min(...preset.points.map(([x]) => x));
+  assert.ok(auto.points.every(([x]) => x < presetLeft), JSON.stringify({ auto: auto.points, preset: preset.points }));
 });
 
 test('readable-v2 reports unknown edge endpoints with a precise semantic diagnostic', () => {
