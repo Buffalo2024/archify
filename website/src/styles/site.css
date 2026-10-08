@@ -10,9 +10,9 @@
       --fg-rgb:18,20,23; --bg-rgb:245,246,243; --accent-rgb:226,80,14; --emerald-rgb:5,150,105; --signal-rgb:13,148,136; --glow-rgb:226,80,14;
       --shadow-rgb:24,28,34; --shadow-k:.16;
       --bg:#f5f6f3; --bg-2:#eef0ec; --surface:#ffffff; --surface-2:#f0f2ee; --sunken:#eceee9; --plate:#fbfbf9;
-      --text:#121417; --text-2:rgba(18,20,23,.68); --text-3:rgba(18,20,23,.48);
+      --text:#121417; --text-2:rgba(18,20,23,.68); --text-3:rgba(18,20,23,.62);
       --line:rgba(18,20,23,.09); --line-hi:rgba(18,20,23,.16); --line-strong:rgba(18,20,23,.4);
-      --accent:#e2500e; --accent-hover:#c94408; --accent-soft:rgba(226,80,14,.09); --on-accent:#fff;
+      --accent:#e2500e; --accent-text:#b83e08; --signal-text:#0f766e; --accent-hover:#c94408; --accent-soft:rgba(226,80,14,.09); --on-accent:#fff;
       --btn-bg:#121417; --btn-fg:#ffffff; --btn-hover:#000000;
       --title-top:#0b0c0e; --title-end:rgba(18,20,23,.72); --grad-a:#f08a4b; --grad-c:#d6264f; --glint:#e2500e;
       --emerald:#059669; --signal:#0d9488; --rose:#e11d48; --violet:#7c3aed;
@@ -25,9 +25,9 @@
       --fg-rgb:238,241,243; --bg-rgb:7,8,10; --accent-rgb:255,106,43; --emerald-rgb:52,211,153; --signal-rgb:94,234,212; --glow-rgb:255,170,120;
       --shadow-rgb:0,0,0; --shadow-k:1;
       --bg:#07080a; --bg-2:#0b0d10; --surface:#0c0f13; --surface-2:#13171d; --sunken:#08090c; --plate:#0a0d12;
-      --text:#eef1f3; --text-2:rgba(238,241,243,.66); --text-3:rgba(238,241,243,.42);
+      --text:#eef1f3; --text-2:rgba(238,241,243,.66); --text-3:rgba(238,241,243,.56);
       --line:rgba(238,241,243,.08); --line-hi:rgba(238,241,243,.15); --line-strong:rgba(238,241,243,.38);
-      --accent:#ff6a2b; --accent-hover:#ff7d45; --accent-soft:rgba(255,106,43,.1); --on-accent:#fff;
+      --accent:#ff6a2b; --accent-text:var(--accent); --signal-text:var(--signal); --accent-hover:#ff7d45; --accent-soft:rgba(255,106,43,.1); --on-accent:#fff;
       --btn-bg:#eef1f3; --btn-fg:#0a0b0d; --btn-hover:#ffffff;
       --title-top:#ffffff; --title-end:rgba(238,241,243,.7); --grad-a:#ffb38a; --grad-c:#ff3d6e; --glint:#ffffff;
       --emerald:#34d399; --signal:#5eead4; --rose:#fb7185; --violet:#a78bfa;
