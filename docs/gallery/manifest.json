@@ -155,9 +155,9 @@
       "nodeCount": 12,
       "edgeCount": 12,
       "artifactBytes": 786448,
-      "artifactSha256": "c82f1ed470a2856f6d5ee6837e9d22a4be61651164fe785cb9e81bd288d08b66",
+      "artifactSha256": "e9f5bdaa095dc900ffe4760838568bd83a1ab5024b46289adcc2d8b5c0bab5f8",
       "sourceBytes": 4734,
-      "sourceSha256": "cb54bad2dfd0c2d02aa5b496bde6839789a0f07f23062343c4458b8d38806c13",
+      "sourceSha256": "610a5614667e8f108bdcf1769c9d7af5c3ce0fb62be3ea50550b10eb752e4bda",
       "checks": [
         {
           "name": "single_svg",
@@ -221,7 +221,7 @@
           "maxStretch": 1.098,
           "routesOverSuggestedStretch": 0,
           "minSegmentPx": 20,
-          "minInteriorSegmentPx": 74,
+          "minInteriorSegmentPx": 104,
           "shortSegmentCount": 0,
           "shortEndpointSegmentCount": 0,
           "shortInteriorSegmentCount": 0,
@@ -240,10 +240,10 @@
         "leadingSpace": {
           "measured": true,
           "emptyTopPx": 85,
-          "emptyTopRatio": 0.117,
+          "emptyTopRatio": 0.108,
           "occupiedTop": 85,
           "viewBoxTop": 0,
-          "canvasHeight": 728,
+          "canvasHeight": 790,
           "typicalNodeHeight": 62,
           "reviewSuggested": false
         },
