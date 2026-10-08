@@ -1576,8 +1576,8 @@
       "engineeringProfile": null,
       "nodeCount": 6,
       "edgeCount": 5,
-      "artifactBytes": 792756,
-      "artifactSha256": "68ad0148bddcdee5c2d5ad403fd1c3b8629b547bd7c4ad93419c68c8f871385f",
+      "artifactBytes": 792774,
+      "artifactSha256": "d1f3bd878a9af715e4db96732a4f2b5b191f3cfc8bb1ba57ef6d8a09b2057bfd",
       "sourceBytes": 7321,
       "sourceSha256": "1777a374647084466f4d7ce3a968004be6ab70ac9cf82459b96bed7c556cdfdd",
       "checks": [
@@ -1637,7 +1637,7 @@
           "minLabelRouteClearance": 225,
           "desktopReadabilityIssues": 0,
           "viewportHeightIssues": 0,
-          "minProjectedNodeTextPx": 8.773584905660378,
+          "minProjectedNodeTextPx": 8.378378378378379,
           "maxBends": 2,
           "routesOverSuggestedBends": 0,
           "maxStretch": 1,
@@ -1681,7 +1681,7 @@
             "id": "customer"
           },
           "minimumSourceTextPx": 9,
-          "minimumProjectedTextPx": 8.773584905660378,
+          "minimumProjectedTextPx": 8.378378378378379,
           "semanticTextCount": 92
         },
         "issues": []
