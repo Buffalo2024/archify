@@ -1,0 +1,10 @@
+{
+  "templateVersion": 1,
+  "repository": "tt-a1i/archify",
+  "number": 768,
+  "author": "tt-a1i",
+  "title": "feat(website): migrate stable website to Cloudflare Pages",
+  "mergedAt": "2026-10-08T15:13:49Z",
+  "mergeCommit": "0efb22b2167e3b1295d778d1cfa33e944d2b7a18",
+  "url": "https://github.com/tt-a1i/archify/pull/768"
+}
