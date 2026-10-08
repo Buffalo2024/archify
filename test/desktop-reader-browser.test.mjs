@@ -414,6 +414,32 @@ test('offline intrinsic workflows fit while authored overflow still identifies l
   }
 });
 
+// Every unpinned three-lane, five-column workflow measures 528 viewBox units
+// tall. Width-first reading enlarges it to 1.5x, so the 1600x1000 page ends
+// 1px past the viewport. The Reader ignored overflow up to 1px while
+// visual-check rejects any rounded-up remainder, so browser-check failed
+// a first draft that every earlier gate had accepted.
+test('a 1px width-first remainder is declared instead of failing browser containment', {
+  skip: chromePath ? false : 'Set ARCHIFY_CHROME to run the real browser regression.',
+}, async () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'archify-reader-remainder-'));
+  try {
+    const artifact = path.join(tmp, 'three-lane-remainder.html');
+    execFileSync(process.execPath, [path.join(skillRoot, 'bin/archify.mjs'), 'deliver', 'workflow',
+      path.join(skillRoot, '..', 'test', 'fixtures/workflow-viewport/three-lane-remainder.workflow.json'),
+      artifact, '--quality', 'showcase', '--json'], { cwd: skillRoot });
+    assert.match(fs.readFileSync(artifact, 'utf8'), /viewBox="0 0 \d+ 528" data-reader-fit="width-first"/);
+    const result = await runVisualCheck({ artifactPath: artifact, chromePath });
+    assert.equal(result.exitCode, 0, JSON.stringify(result.receipt));
+    assert.equal(result.receipt.containment.status, 'pass');
+    const tall = result.receipt.containment.viewports.find(({ width, height }) => width === 1600 && height === 1000);
+    assert.ok(tall, JSON.stringify(result.receipt.containment));
+    assert.ok(tall.scrollHeight <= tall.innerHeight || tall.readerOverflow === 'authored', JSON.stringify(tall));
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
 test('issue #250 tall intrinsic workflow uses reading width and permits readable page scroll', {
   skip: chromePath ? false : 'Set ARCHIFY_CHROME to run the real browser regression.',
 }, async () => {
