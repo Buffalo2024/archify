@@ -319,7 +319,7 @@ not settle viewport fit. These are repair directions, not guaranteed coordinates
 
 Participants are ordered by conversation role. Messages own their vertical order. Use return/async/security variants for meaning, not decoration; sequence does not use Automatic Port Spread. A segment's `from`/`to` edges must stay at least 4px off every message arrow (`message.y`): an edge along an arrow leaves the reader unable to tell which phase the message belongs to, and the renderer reports it.
 
-First-draft shape: every message needs an `id`, `from`, `to`, `label`, and integer `y` at least 160. `from` and `to` must be different participants — self-messages are unsupported (`sequence/self-message-unsupported`). Optional phase bands are `segments[]` with only `from`, `to`, and `label` (no segment `id`). Inventing `pos`/`size` on participants fails schema validation — order alone places them.
+First-draft shape: every message needs an `id`, `from`, `to`, `label`, and integer `y` at least 160. `from` and `to` must be different participants — self-messages are unsupported (`sequence/self-message-unsupported`). Optional phase bands are `segments[]` with only `from`, `to`, and `label` (no segment `id`). Inventing `pos`/`size` on participants fails schema validation — order alone places them. Omit `meta.viewBox` so automatic height fits the timeline + legend (minimum 327px readable band) instead of a fixed 760px floor.
 
 ### Dataflow
 
@@ -328,9 +328,9 @@ Stages express transformation or custody. Rows separate parallel streams. Label 
 First-draft shape: declare `stages[]` (each a `{label}`), then place every node with integer `stage` and `row` — not `pos`/`size`. Flows are `flows[]` with `from`, `to`, and optional `label`.
 
 Omit `meta.viewBox` to fit canvas width to all stages and nodes in either quality
-profile, including explicit node widths. The 940px minimum and 24px right padding
-remain; left-edge overflow still needs a node repair. An authored viewBox stays
-fixed. Showcase node growth, readable typography, content height, port bridges
+profile, including explicit node widths. Width uses content + 24px right padding
+with a 480px minimum (five default stages still need ~1068); left-edge overflow
+still needs a node repair. An authored viewBox stays fixed. Showcase node growth, readable typography, content height, port bridges
 and bounded label placement apply only when the canvas and all node widths are
 omitted. `--quality` overrides `meta.quality_profile`; without it, the renderer
 uses `ARCHIFY_QUALITY_PROFILE` when set, otherwise the JSON profile.
