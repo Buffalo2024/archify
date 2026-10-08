@@ -45,6 +45,11 @@ import { shortestOrthogonalGridRoute } from '../shared/route-quality.mjs';
  * @param {(context: {conn: object, from: object, to: object, start: number[], end: number[], fromSide: string, toSide: string}) => number[][][]} [options.preferredCandidates]
  *   candidate families tried before the shared ones, so a type-owned corridor
  *   (a bundled trunk, a dedicated lane) wins over the generic midpoint
+ * @param {boolean} [options.crossingFreeGridFirst = false] before the obstacle
+ *   grid search that may cross earlier routes, try one that treats every
+ *   unrelated resolved route as a wall. A type whose showcase gate rejects any
+ *   proper crossing (erd) opts in so a later relationship takes a clear detour
+ *   instead of the shorter crossing the gate would refuse.
  * @param {boolean} [options.compositionFloors = true] hold every automatic
  *   route to the rhythm floors the showcase gate enforces, so the planner never
  *   accepts a route the gate will reject. A type that draws a route differently
@@ -64,6 +69,7 @@ export function createRouter(components, connections = [], {
   maxPortSpacing = null,
   preferredCandidates = null,
   compositionFloors = true,
+  crossingFreeGridFirst = false,
 } = {}) {
   const frameBorders = frames.flatMap((frame) => frameBorderSegments(frame));
   const LABEL_CLEARANCE = 4;
@@ -591,6 +597,41 @@ export function createRouter(components, connections = [], {
         // ambiguous shared corridors without forcing the model to hand-route
         // a sprawling perimeter detour. Cheap candidates above still prefer a
         // genuinely crossing-free path whenever one is available.
+        if (crossingFreeGridFirst) {
+          const unrelatedSegments = unrelatedResolvedRoutes(conn, resolvedRoutes)
+            .flatMap((entry) => entry.points.slice(1).map((end, index) => ({ start: entry.points[index], end })));
+          if (unrelatedSegments.length) {
+            planningMetrics.gridSearchCount += 1;
+            const strict = shortestOrthogonalGridRoute({
+              start,
+              end,
+              points: [start, end],
+              obstacles: [...components.values(), ...reservedLabelObstacles(2)],
+              fromSide,
+              toSide,
+              clearance: 2,
+              maximumObstacleCount: 80,
+              endpointStubPx: 24,
+              maximumGridNodes: 4096,
+              avoidedSegments: unrelatedSegments,
+              allowAvoidedCrossings: false,
+              minimumAvoidedOverlapPx: 8,
+              routeSeparationPx: 8,
+              minimumSegmentPx: interiorSegmentPx,
+              borderSegments: frameBorders,
+              bendPenaltyPx: 48,
+            });
+            if (strict
+                && routeClearsEndpointComponents(strict.points, from, to)
+                && routeClearsComponents(conn, strict.points)
+                && !routeConflictsWithResolved(conn, strict.points, resolvedRoutes)
+                && !routeOverlapsResolved(conn, strict.points, resolvedRoutes)
+                && routeMeetsCompositionFloors(strict.points)) {
+              planningMetrics.gridRoutedCount += 1;
+              return strict.points.slice(1, -1);
+            }
+          }
+        }
         const avoidedSegments = resolvedRoutes
           .filter((entry) => distinctAutomaticPorts && relationshipsShareEndpoint(conn, entry.conn)
             && !hasAuthoredRouteGeometry(entry.conn) && !entry.conn.labelAt && !conn.labelAt)
@@ -1058,11 +1099,11 @@ export function createRouter(components, connections = [], {
         const paired = new Set();
         for (const first of resolvedRoutes) {
           const conn = first.conn;
-          if (paired.has(conn) || hasAuthoredRouteGeometry(conn) || hasAuthoredLabelPlacement(conn)
+          if (paired.has(conn) || typeOwned.has(conn) || hasAuthoredRouteGeometry(conn) || hasAuthoredLabelPlacement(conn)
               || (conn.fromSide && conn.fromSide !== 'auto')
               || (conn.toSide && conn.toSide !== 'auto')) continue;
           const second = resolvedRoutes.find((entry) => entry !== first
-            && entry.conn.from === conn.to && entry.conn.to === conn.from
+            && entry.conn.from === conn.to && entry.conn.to === conn.from && !typeOwned.has(entry.conn)
             && !hasAuthoredRouteGeometry(entry.conn) && !hasAuthoredLabelPlacement(entry.conn)
             && (!entry.conn.fromSide || entry.conn.fromSide === 'auto')
             && (!entry.conn.toSide || entry.conn.toSide === 'auto'));
@@ -1156,12 +1197,31 @@ export function createRouter(components, connections = [], {
           }
         }
       }
+      // A type-owned corridor (an erd bundled trunk or dedicated lane) is the
+      // route its renderer draws around; the generic sweep must not trade it
+      // for a shorter lane and leave the bus without its branch.
+      const followsPreferredCorridor = (entry) => {
+        if (!preferredCandidates) return false;
+        const sides = selectedSides.get(entry.conn);
+        if (!sides) return false;
+        const interior = JSON.stringify(entry.points.slice(1, -1));
+        return (preferredCandidates({
+          conn: entry.conn,
+          from: components.get(entry.conn.from),
+          to: components.get(entry.conn.to),
+          start: entry.points[0],
+          end: entry.points.at(-1),
+          fromSide: sides.fromSide,
+          toSide: sides.toSide,
+        }) || []).some((candidate) => JSON.stringify(candidate) === interior);
+      };
+      const typeOwned = new Set(resolvedRoutes.filter(followsPreferredCorridor).map((entry) => entry.conn));
       allowGridSearch = false;
       try {
         improveReciprocalPairs();
         for (const entry of resolvedRoutes) {
           const { conn } = entry;
-          if (jointlyImproved.has(conn) || hasAuthoredRouteGeometry(conn) || hasAuthoredLabelPlacement(conn)) continue;
+          if (jointlyImproved.has(conn) || typeOwned.has(conn) || hasAuthoredRouteGeometry(conn) || hasAuthoredLabelPlacement(conn)) continue;
           const others = resolvedRoutes.filter((other) => other !== entry);
           // Preserve uncomplicated routes and their established inferred sides.
           // Spend the comparison budget where the complete scene has a reading
@@ -1200,7 +1260,7 @@ export function createRouter(components, connections = [], {
         // stays fixed, and the straight lane must pass the same checks.
         for (const entry of resolvedRoutes) {
           const { conn } = entry;
-          if (entry.points.length < 4 || jointlyImproved.has(conn)
+          if (entry.points.length < 4 || jointlyImproved.has(conn) || typeOwned.has(conn)
               || hasAuthoredRouteGeometry(conn) || hasAuthoredLabelPlacement(conn)) continue;
           const from = components.get(conn.from);
           const to = components.get(conn.to);

@@ -677,7 +677,9 @@ test('same-side ports clear the marker glyph and the markers carry the stronger 
 // obstacle the legend measures are one rectangle. When the checks measured a
 // narrower box than the ink, a label could sit on a table edge with nothing
 // reported: this corridor is 60 units wide and the label's drawn mask is 65.8,
-// an overlap the old 8-unit measurement (58.0) did not see.
+// an overlap the old 8-unit measurement (58.0) did not see. Absolute positions
+// keep the corridor at 60 (a grid-owned layout would widen it for the label),
+// and a zero labelDx pins the label so the automatic placer leaves it there.
 test('relationship labels are drawn and checked with one measured box', () => {
   const diagram = {
     schema_version: 1,
@@ -685,11 +687,11 @@ test('relationship labels are drawn and checked with one measured box', () => {
     meta: { title: 'Label corridor', locale: 'en' },
     layout: { mode: 'grid', gapX: 60, gapY: 44 },
     entities: [
-      { id: 'left', label: 'left', row: 0, col: 0, attributes: [{ name: 'id', type: 'bigint', key: 'pk' }] },
-      { id: 'right', label: 'right', row: 0, col: 1, attributes: [{ name: 'id', type: 'bigint', key: 'pk' }, { name: 'left_id', type: 'bigint', key: 'fk', references: 'left.id' }] },
+      { id: 'left', label: 'left', pos: [32, 40], attributes: [{ name: 'id', type: 'bigint', key: 'pk' }] },
+      { id: 'right', label: 'right', pos: [332, 40], attributes: [{ name: 'id', type: 'bigint', key: 'pk' }, { name: 'left_id', type: 'bigint', key: 'fk', references: 'left.id' }] },
     ],
     relationships: [
-      { id: 'right_left', from: 'right', to: 'left', fromCardinality: 'many', toCardinality: 'one', label: 'settles by' },
+      { id: 'right_left', from: 'right', to: 'left', fromCardinality: 'many', toCardinality: 'one', label: 'settles by', labelDx: 0 },
     ],
   };
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'archify-er-label-box-'));
@@ -701,7 +703,7 @@ test('relationship labels are drawn and checked with one measured box', () => {
   // The same corridor with room for the drawn mask is accepted, and the mask the
   // renderer writes is the measured box.
   const roomy = clone(diagram);
-  roomy.layout.gapX = 88;
+  roomy.entities[1].pos = [360, 40];
   const accepted = render(roomy, directory);
   assert.equal(accepted.status, 0, accepted.stdout + accepted.stderr);
   const html = fs.readFileSync(accepted.output, 'utf8');
