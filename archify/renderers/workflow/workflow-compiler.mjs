@@ -2285,6 +2285,14 @@ function validateReadablePinnedGeometry() {
     validateReadableRouteControls(edge);
     pathFor(edge);
   }
+  // Routing order feedback: an automatic edge that an earlier automatic edge
+  // forced into a shared corridor or crossing is planned first on a retry.
+  for (const index of asArray(layoutFeedback.routeFirst)) {
+    // Diagnostics name source indexes; the canonical edge order differs.
+    const edge = workflow.edges.find((candidate) => sourceIndexes.edges.get(candidate) === index);
+    if (!edge || !nodes.has(edge.from) || !nodes.has(edge.to) || !independentAutomaticRoute(edge)) continue;
+    pathFor(edge);
+  }
   for (const edge of workflow.edges) {
     if (!nodes.has(edge.from) || !nodes.has(edge.to)) continue;
     validateReadableRouteControls(edge);
@@ -5076,11 +5084,58 @@ function feedbackFailure(request) {
   return compilerFailure('readable-v2', diagnostics, message);
 }
 
+const ROUTE_ORDER_CODES = new Set(['composition/ambiguous-corridor', 'composition/proper-crossing']);
+const MAX_ROUTE_ORDER_RETRIES = 3;
+
+// Automatic routes are planned in source order, each against those already
+// placed, so an earlier edge can take the only clear corridor of a later one
+// (a long cross-lane branch dropping between two same-lane neighbours). When
+// the readable result fails only because two automatic edges share a corridor
+// or cross, plan the later edge first and keep the retry only if it removes
+// errors; the document itself is never changed.
+function errorCount(result) {
+  return result.ok ? 0 : result.diagnostics.filter((diagnostic) => diagnostic.severity !== 'warning').length;
+}
+function routeOrderRetryIndex(result, layoutFeedback) {
+  if (result.ok || !Array.isArray(result.diagnostics)) return null;
+  const errors = result.diagnostics.filter((diagnostic) => diagnostic.severity !== 'warning');
+  if (!errors.length || !errors.every((diagnostic) => ROUTE_ORDER_CODES.has(diagnostic.code))) return null;
+  const tried = new Set(asArray(layoutFeedback.routeFirst));
+  for (const diagnostic of errors) {
+    const indexes = [diagnostic.subject?.index, diagnostic.evidence?.otherRelationship?.index]
+      .filter(Number.isInteger);
+    if (indexes.length !== 2) continue;
+    const later = Math.max(...indexes);
+    if (!tried.has(later)) return later;
+  }
+  return null;
+}
+function compileWithRouteOrderFeedback(options) {
+  const first = compileWorkflowInternal(options);
+  if (options.workflow?.schema_version !== 2) return first;
+  let best = first;
+  let current = first;
+  let layoutFeedback = options.layoutFeedback;
+  for (let retry = 0; retry < MAX_ROUTE_ORDER_RETRIES && errorCount(best) > 0; retry += 1) {
+    const index = routeOrderRetryIndex(current, layoutFeedback);
+    if (index === null) break;
+    layoutFeedback = { ...layoutFeedback, routeFirst: [...asArray(layoutFeedback.routeFirst), index] };
+    try {
+      current = compileWorkflowInternal({ ...options, layoutFeedback });
+    } catch (error) {
+      if (error instanceof WorkflowLayoutFeedback) break;
+      throw error;
+    }
+    if (errorCount(current) < errorCount(best)) best = current;
+  }
+  return best;
+}
+
 function compileWorkflowWithFeedback({ workflow, qualityProfile, sourceEvidence, discoverFixes = true } = {}) {
   let layoutFeedback = {};
   for (let attempt = 0; attempt <= MAX_READABLE_LAYOUT_FEEDBACK_ROUNDS; attempt += 1) {
     try {
-      return compileWorkflowInternal({
+      return compileWithRouteOrderFeedback({
         workflow,
         qualityProfile,
         sourceEvidence,
