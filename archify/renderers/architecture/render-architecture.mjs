@@ -668,7 +668,7 @@ function validateArchitecture() {
       for (const component of components.values()) {
         if (members.has(component.id) || !rectContains(b, component)) continue;
         const message = `Component "${component.id}" is not wrapped by boundary "${b.label}" but sits inside its frame — `
-          + 'move it outside the frame, place the wrapped members in one compact block, or add it to wraps only when it truly belongs there.';
+          + 'move it outside the frame, place the wrapped members in one compact axis-aligned cluster (no empty bay for a non-member), or add it to wraps only when it truly belongs there.';
         problems.push(message);
         diagnostics.push({
           code: 'layout/boundary-encloses-non-member',
@@ -681,7 +681,7 @@ function validateArchitecture() {
           },
           supportedFixes: [
             `move "${component.id}" outside the boundary frame`,
-            'reposition the wrapped members into one compact block that leaves non-members outside',
+            'reposition the wrapped members into one compact axis-aligned cluster (no empty bay) that leaves non-members outside',
           ],
         });
       }
