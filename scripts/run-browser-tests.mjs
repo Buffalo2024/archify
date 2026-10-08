@@ -41,6 +41,7 @@ const testFiles = [
   'repository-evidence-types-browser.test.mjs',
   'tree-branches-browser.test.mjs',
   'class-motion-browser.test.mjs',
+  'dataflow-label-visibility-browser.test.mjs',
 ];
 
 let options;

@@ -482,14 +482,27 @@ function pathFor(flow) {
 }
 
 const resolvedLabelPoints = new Map();
+const twoLineOcclusions = new Set();
 const initialLabelRects = asArray(dataflow.flows).flatMap((flow, relationIndex) => {
   if (!flow.label || !nodes.has(flow.from) || !nodes.has(flow.to)) return [];
   const [lx, ly] = labelPoint(flow, pathFor(flow).points);
   const { width, height } = flowLabelSize(flow);
   // The shared placer uses a 10px baseline inset; Dataflow masks use 11px.
   // Adapt the baseline so it tests exactly the rectangle we later render.
-  return [{ relation: flow, relationIndex, label: flow.label,
-    x: lx - width / 2, y: ly - 11, width, height, lx, ly: ly - 1 }];
+  const rect = { relation: flow, relationIndex, label: flow.label,
+    x: lx - width / 2, y: ly - 11, width, height, lx, ly: ly - 1 };
+  // Only repair the additional footprint of an unpinned second line. A
+  // single-line plate may intentionally interrupt its own route, especially
+  // on a vertical segment; that established placement remains authoritative.
+  if (flow.classification && !['labelAt', 'labelDx', 'labelDy', 'labelSegment'].some(key => flow[key] !== undefined)) {
+    const points = pathFor(flow).points;
+    const segments = points.slice(1).map((end, index) => ({ start: points[index], end }));
+    if (segments.some(segment => segmentIntersectsRect(segment, rect))
+      && !segments.some(segment => segmentIntersectsRect(segment, { ...rect, height: layout.labelH }))) {
+      twoLineOcclusions.add(flow);
+    }
+  }
+  return [rect];
 });
 // Routing depends on node geometry and canvas width, so its actual footprint
 // can determine height without another copy of routeVia's preset rules.
@@ -527,6 +540,60 @@ const resolvedLabelRects = (automaticShowcase ? placeAutomaticLabels({
   if (automaticShowcase) resolvedLabelPoints.set(rect.relation, [resolved.lx, resolved.ly]);
   return resolved;
 });
+
+// The ordinary shared placer allows a plate to interrupt its own connector.
+// For the second-line defect above, keep the complete plate beside the route
+// instead. This local search freezes all other labels and authored geometry,
+// and uses the same node/title/label/other-route checks as ordinary placement.
+for (const [index, rect] of resolvedLabelRects.entries()) {
+  if (!twoLineOcclusions.has(rect.relation)) continue;
+  const ownPoints = pathFor(rect.relation).points;
+  if (!ownPoints.slice(1).some((end, segmentIndex) => segmentIntersectsRect({ start: ownPoints[segmentIndex], end }, rect))) continue;
+  const original = initialLabelRects.find(label => label.relation === rect.relation);
+  const extraHeight = original.height - layout.labelH;
+  const preferred = { ...original, y: original.y - extraHeight, ly: original.ly - extraHeight };
+  const ownRouteBands = ownPoints.slice(1).map((end, segmentIndex) => {
+    const start = ownPoints[segmentIndex];
+    return {
+      x: Math.min(start[0], end[0]) - 2, y: Math.min(start[1], end[1]) - 2,
+      width: Math.abs(end[0] - start[0]) + 4, height: Math.abs(end[1] - start[1]) + 4,
+    };
+  });
+  const labels = resolvedLabelRects.map((other, otherIndex) => otherIndex === index ? preferred : {
+    ...other, ly: other.ly - 1,
+    relation: { ...other.relation, labelAt: [other.lx, other.ly] },
+  });
+  const routes = asArray(dataflow.flows).flatMap((flow, relationIndex) => (
+    nodes.has(flow.from) && nodes.has(flow.to) ? [{ relationIndex, points: pathFor(flow).points }] : []
+  ));
+  const titles = compositionFrames.map(frame => ({ ...frame, height: layout.stageH }));
+  const replacement = placeAutomaticLabels({
+    labels, routes,
+    components: [...nodes.values(), ...ownRouteBands],
+    titles,
+    viewBox,
+    placementBottom: viewBox[1] - layout.stageBottomPad,
+    keepFallbackNearRoute: true,
+  })[index];
+  // An exhausted shared search returns its supplied preferred rect. That is
+  // not proof of a safe replacement: preserve the previously accepted label
+  // if the complete footprint cannot fit near its connector without collisions.
+  const clear = replacement.x >= 0 && replacement.y >= 0
+    && replacement.x + replacement.width <= viewBox[0]
+    && replacement.y + replacement.height <= viewBox[1] - layout.stageBottomPad
+    && ![...nodes.values(), ...titles].some(obstacle => rectsOverlap(replacement, obstacle, 2))
+    && !resolvedLabelRects.some((other, otherIndex) => otherIndex !== index && rectsOverlap(replacement, other, 2))
+    && routes.every(route => route.points.slice(1).every((end, segmentIndex) => (
+      segmentRectClearanceWithin({ start: route.points[segmentIndex], end }, replacement, 4) >= 4
+    )))
+    && ownPoints.slice(1).some((end, segmentIndex) => (
+      segmentRectClearanceWithin({ start: ownPoints[segmentIndex], end }, replacement, 36) <= 36
+    ));
+  if (!clear) continue;
+  const resolved = { ...replacement, ly: replacement.ly + 1 };
+  resolvedLabelRects[index] = resolved;
+  resolvedLabelPoints.set(rect.relation, [resolved.lx, resolved.ly]);
+}
 
 // A bounded label move may extend below the initial route footprint. Include
 // its final rendered plate before drawing the stage frames and legend.
