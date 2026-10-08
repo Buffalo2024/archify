@@ -8,6 +8,8 @@ import { createCommunityFixture, payload, websiteRoot } from './helpers/communit
 
 const integrationEnabled = process.env.ARCHIFY_SITE_INTEGRATION === '1';
 const chrome = integrationEnabled ? findChrome() : null;
+const siteRoot = process.env.ARCHIFY_SITE_ROOT ? path.resolve(process.env.ARCHIFY_SITE_ROOT) : path.join(websiteRoot, 'dist');
+const siteBase = process.env.ARCHIFY_SITE_BASE ?? '/archify';
 
 test('real Chrome: community metadata remains text through language, filter and navigation changes', {
   skip: integrationEnabled ? false : 'Set ARCHIFY_SITE_INTEGRATION=1 and ARCHIFY_CHROME to run the community browser regression.',
@@ -22,8 +24,10 @@ test('real Chrome: community metadata remains text through language, filter and 
     assert.equal(built.status, 0, built.stdout + built.stderr);
     server = http.createServer((request, response) => {
       const url = new URL(request.url, 'http://127.0.0.1');
-      const root = url.pathname.startsWith('/fixture/') ? fixture.dist : path.join(websiteRoot, 'dist');
-      const relative = url.pathname.replace(/^\/(?:fixture|archify)\//, '');
+      const isFixture = url.pathname.startsWith('/fixture/');
+      const root = isFixture ? fixture.dist : siteRoot;
+      if (!isFixture && siteBase && !url.pathname.startsWith(`${siteBase}/`)) return response.writeHead(404).end();
+      const relative = url.pathname.slice(isFixture ? '/fixture/'.length : siteBase.length).replace(/^\/+/, '');
       const file = path.resolve(root, relative);
       if (!file.startsWith(`${root}${path.sep}`)) return response.writeHead(404).end();
       try {
@@ -81,12 +85,12 @@ test('real Chrome: community metadata remains text through language, filter and 
       await navigate(`${base}/fixture/community.html?type=skill&lang=en`);
       assert.equal(await evaluate("document.querySelector('[data-filter=skill]').getAttribute('aria-pressed')"), 'true');
       assert.equal(await evaluate("document.querySelector('.package-card').hidden"), false);
-      await navigate(`${base}/archify/index.html?lang=zh`);
+      await navigate(`${base}${siteBase}/index.html?lang=zh`);
       const loaded = browser.cdp.waitFor('Page.loadEventFired', session);
       await evaluate("document.querySelector('footer a[href=\"community.html\"]').click()");
       await loaded;
       assert.equal(await evaluate('document.documentElement.lang'), 'zh-CN');
-      assert.equal(await evaluate('location.pathname'), '/archify/community.html');
+      assert.equal(await evaluate('location.pathname'), `${siteBase}/community.html`);
     }
   } finally {
     if (browser) await browser.close();

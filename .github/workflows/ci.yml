@@ -363,11 +363,31 @@ jobs:
           ARCHIFY_SITE_INTEGRATION: '1'
           ARCHIFY_CHROME: ${{ steps.website-chrome.outputs.chrome-path }}
           ARCHIFY_CHROME_NO_SANDBOX: '1'
+      - name: Build and validate the Cloudflare static website
+        run: npm run build && node scripts/check-cloudflare-output.mjs && node --test test/deployment-target.test.mjs
+        working-directory: website
+        env:
+          ARCHIFY_SITE_TARGET: cloudflare
+      - name: Verify Cloudflare navigation and language continuity
+        run: npm run test:browser
+        working-directory: website
+        env:
+          ARCHIFY_SITE_ROOT: ${{ github.workspace }}/website/dist-cloudflare
+          ARCHIFY_SITE_BASE: ''
+          ARCHIFY_SITE_INTEGRATION: '1'
+          ARCHIFY_CHROME: ${{ steps.website-chrome.outputs.chrome-path }}
+          ARCHIFY_CHROME_NO_SANDBOX: '1'
       - uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
         with:
           name: website-dist
           path: website/dist
           include-hidden-files: true
+      - uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
+        with:
+          name: website-cloudflare-dist
+          path: website/dist-cloudflare
+          include-hidden-files: true
+          if-no-files-found: error
 
   windows-test-portability:
     needs: scope
@@ -458,3 +478,63 @@ jobs:
         if: steps.deployment-head.outputs.current == 'true'
         id: deployment
         uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5.0.0
+
+  # Enable after configuring a Pages project with production branch main.
+  # Disable Git-connected automatic deployments so they cannot bypass these gates.
+  deploy-cloudflare:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.CLOUDFLARE_PAGES_PROJECT != ''
+    needs: [test, webm-artifact, zip-freshness, published-update-manifest, package-smoke, windows-test-portability, website]
+    runs-on: ubuntu-latest
+    concurrency:
+      group: cloudflare-pages
+      cancel-in-progress: false
+    permissions:
+      contents: read
+    environment:
+      name: cloudflare-pages
+      url: ${{ steps.deployment.outputs.deployment-url }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: 22
+      - name: Validate Cloudflare destination
+        env:
+          CLOUDFLARE_PAGES_PROJECT: ${{ vars.CLOUDFLARE_PAGES_PROJECT }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+        shell: bash
+        run: |
+          [[ "$CLOUDFLARE_PAGES_PROJECT" =~ ^[a-z0-9][a-z0-9-]{0,57}[a-z0-9]$ ]] || exit 1
+          [[ "$CLOUDFLARE_ACCOUNT_ID" =~ ^[0-9a-f]{32}$ ]] || exit 1
+          # Wrangler also discovers Functions relative to its working directory.
+          test ! -e functions
+      - name: Download verified Cloudflare website build
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: website-cloudflare-dist
+          path: website/dist-cloudflare
+      - name: Reject an obsolete deployment run
+        id: deployment-head
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          current_main="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/main" --jq '.object.sha')"
+          if [[ "$current_main" == "$GITHUB_SHA" ]]; then
+            echo 'current=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'current=false' >> "$GITHUB_OUTPUT"
+            echo "::notice::Skipping obsolete Cloudflare deployment for ${GITHUB_SHA}; main is ${current_main}"
+          fi
+      - name: Deploy verified Cloudflare website
+        if: steps.deployment-head.outputs.current == 'true'
+        id: deployment
+        uses: cloudflare/wrangler-action@953926a2e2182532811c01a25e53647d93bf07c0 # v4.1.3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: '4.148.0'
+          packageManager: npm
+          command: pages deploy website/dist-cloudflare --project-name=${{ vars.CLOUDFLARE_PAGES_PROJECT }} --branch=main --commit-hash=${{ github.sha }}

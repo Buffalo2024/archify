@@ -386,7 +386,7 @@ test('real Chrome preserves language through entry, navigation, selection, refre
   timeout: 120000,
 }, async () => {
   const docsRoot = process.env.ARCHIFY_SITE_ROOT ? path.resolve(process.env.ARCHIFY_SITE_ROOT) : path.join(repoRoot, 'docs');
-  const basePath = process.env.ARCHIFY_SITE_ROOT ? '/archify' : '';
+  const basePath = process.env.ARCHIFY_SITE_ROOT ? (process.env.ARCHIFY_SITE_BASE ?? '/archify') : '';
   const server = startStaticServer(docsRoot, basePath);
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
   const address = server.address();
