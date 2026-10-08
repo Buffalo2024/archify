@@ -288,10 +288,11 @@ Grid placement is preferred when the schema supports it. Free positions are appr
 ### Workflow
 
 Lanes express responsibility or phase. Columns `0..5` express logical
-progression. Start new workflows on `readable-v2`; retain `fixed-v1` only for
-legacy geometry compatibility. Keep the happy path monotonic, preserve semantic
-edge labels, and route retries and exception returns outside the main lane
-corridor.
+progression. Each `(lane, col)` hosts at most one node — two nodes in the same
+cell fail with `workflow/node-overlap`. Start new workflows on `readable-v2`;
+retain `fixed-v1` only for legacy geometry compatibility. Keep the happy path
+monotonic, preserve semantic edge labels, and route retries and exception
+returns outside the main lane corridor.
 
 #### Workflow viewport repair
 
