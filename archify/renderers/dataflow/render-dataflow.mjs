@@ -9,6 +9,7 @@ import { brandLabelFitWidth, brandMarkFor, brandMetadataFor, brandTopRailProblem
 import { translateMessage as i18nText } from '../shared/i18n.mjs';
 import { minimumReadableSourceTextPx } from '../shared/desktop-readability.mjs';
 import { placeAutomaticLabels } from '../shared/automatic-labels.mjs';
+import { shortestOrthogonalGridRoute } from '../shared/route-quality.mjs';
 import {
   asArray,
   isFinitePoint,
@@ -40,7 +41,8 @@ import {
   componentFill,
   componentText,
   arrowClassMap,
-  edgeLabelAccent
+  edgeLabelAccent,
+  properSegmentIntersection
 } from '../shared/geometry.mjs';
 
 const nodeTextFit = {
@@ -479,6 +481,72 @@ function pathFor(flow) {
   const routed = { d: polylinePath(points), points };
   pathCache.set(flow, routed);
   return routed;
+}
+
+// The preset auto routes are planned one flow at a time and know nothing of
+// each other, so a flow skipping a stage can cut straight through a vertical
+// flow inside that stage. The showcase gate rejects every proper crossing, so
+// for an unpinned showcase draft a crossing auto route is re-planned on the
+// shared obstacle grid with every unrelated flow treated as a wall. The
+// detour is used only when it crosses nothing; otherwise the preset route and
+// its crossing diagnostic stay.
+if (automaticShowcase) {
+  const routable = asArray(dataflow.flows).filter(flow => nodes.has(flow.from) && nodes.has(flow.to));
+  const segmentsOf = points => points.slice(1).map((end, index) => ({ start: points[index], end }));
+  const related = (left, right) => [left.from, left.to].some(id => id === right.from || id === right.to);
+  const crosses = (left, right) => segmentsOf(pathFor(left).points).some(a => segmentsOf(pathFor(right).points).some(b => (
+    properSegmentIntersection(a.start, a.end, b.start, b.end))));
+  const pinned = flow => flow.via || (flow.route && flow.route !== 'auto') || flow.channelX !== undefined || flow.channelY !== undefined;
+  const unrelated = flow => routable.filter(other => other !== flow && !related(flow, other));
+  const length = points => segmentsOf(points).reduce((sum, { start, end }) => sum + Math.abs(end[0] - start[0]) + Math.abs(end[1] - start[1]), 0);
+  const DETOUR_NODE_GAP = 12;
+  function detourFor(flow) {
+    const { points } = pathFor(flow);
+    const { fromSide, toSide } = flowSides(flow);
+    const others = unrelated(flow);
+    const detour = shortestOrthogonalGridRoute({
+      start: points[0],
+      end: points.at(-1),
+      points: [points[0], points.at(-1)],
+      // Keep a detour a readable gap away from the nodes it passes; only its
+      // own endpoints are held to the grid's 2-unit clearance.
+      obstacles: [...nodes.values()].map(node => (node.id === flow.from || node.id === flow.to ? node : {
+        x: node.x - DETOUR_NODE_GAP, y: node.y - DETOUR_NODE_GAP,
+        width: node.width + DETOUR_NODE_GAP * 2, height: node.height + DETOUR_NODE_GAP * 2,
+      })),
+      fromSide,
+      toSide,
+      clearance: 2,
+      maximumObstacleCount: 80,
+      endpointStubPx: 24,
+      maximumGridNodes: 4096,
+      avoidedSegments: others.flatMap(other => segmentsOf(pathFor(other).points)),
+      allowAvoidedCrossings: false,
+      minimumAvoidedOverlapPx: 8,
+      routeSeparationPx: 8,
+      minimumSegmentPx: 16,
+      bendPenaltyPx: 48,
+    });
+    if (!detour) return null;
+    const normalized = normalizeRoutePoints(detour.points);
+    return { flow, routed: { d: polylinePath(normalized), points: normalized }, cost: length(normalized) - length(points) };
+  }
+  // Of the flows in a crossing, re-plan the one whose clear detour adds the
+  // least length, so a short straight flow is not bent around a long one.
+  for (let pass = 0; pass < routable.length; pass += 1) {
+    const crossing = routable.filter(flow => !pinned(flow) && unrelated(flow).some(other => crosses(flow, other)));
+    const options = crossing.map(detourFor).filter(Boolean).sort((left, right) => left.cost - right.cost);
+    const before = routable.filter(flow => unrelated(flow).some(other => crosses(flow, other))).length;
+    const chosen = options.find(({ flow, routed }) => {
+      const previous = pathCache.get(flow);
+      pathCache.set(flow, routed);
+      const after = routable.filter(other => unrelated(other).some(next => crosses(other, next))).length;
+      if (after < before) return true;
+      pathCache.set(flow, previous);
+      return false;
+    });
+    if (!chosen) break;
+  }
 }
 
 const resolvedLabelPoints = new Map();
