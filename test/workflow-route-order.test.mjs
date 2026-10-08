@@ -39,3 +39,16 @@ test('pinned geometry keeps its own diagnostic: only automatic edges are re-orde
   assert.equal(pinned.ok, false);
   assert.deepEqual(pinned.diagnostics.map((diagnostic) => diagnostic.code), ['workflow/explicit-pin-conflict']);
 });
+
+// The "customer impact" edge runs from the on-call lane down to the comms lane,
+// and its one horizontal stretch is shorter than its 82px label. Keeping
+// the label there made the planner detour the edge into a U below its target.
+const incident = path.join(__dirname, 'fixtures', 'workflow-first-draft', 'incident-response.workflow.json');
+
+test('a label that does not fit its preferred stretch moves to a run that clears every node, so the edge does not detour to make room', () => {
+  const validation = spawnSync(process.execPath, [cli, 'validate', 'workflow', incident, '--quality', 'showcase', '--json'], { encoding: 'utf8' });
+  assert.equal(validation.status, 0, validation.stdout + validation.stderr);
+  const result = compileWorkflow({ workflow: JSON.parse(fs.readFileSync(incident, 'utf8')) });
+  const edge = result.receipt.edges.find((entry) => entry.from === 'triage' && entry.to === 'status');
+  assert.deepEqual(edge.points, [[388.6, 269], [388.6, 491], [455.6, 491]]);
+});

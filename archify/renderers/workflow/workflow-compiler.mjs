@@ -4177,10 +4177,36 @@ function workflowEdgeLabelPoint(edge, points) {
     || right.length - left.length
     || left.index - right.index
   ));
-  const labelSegment = segments[0]?.index ?? 0;
-  const point = labelPoint({ ...edge, labelSegment }, points);
-  if (points[labelSegment][0] === points[labelSegment + 1][0]) point[1] += 10;
-  return point;
+  const pointOn = (labelSegment) => {
+    const point = labelPoint({ ...edge, labelSegment }, points);
+    if (points[labelSegment][0] === points[labelSegment + 1][0]) point[1] += 10;
+    return point;
+  };
+  // The longest horizontal run is the preferred home, but a run shorter than
+  // its label pushes the label onto a node, and the planner then detours the
+  // whole edge to manufacture a longer run. When the preferred run is that
+  // short, use the next run that keeps the label clear of every node and
+  // inside one lane, off the lane dividers, before giving up on it.
+  const width = workflowLabelWidth(edge.label);
+  const clearOfNodes = ([lx, ly]) => {
+    const rect = { x: lx - width / 2, y: ly - 10, width, height: 14 };
+    return ![...nodes.values()].some((node) => rectsOverlap(rect, node, -2));
+  };
+  const insideOneLane = ([lx, ly]) => lx - width / 2 >= layout.laneX + 4
+    && lx + width / 2 <= layout.laneX + layout.laneW - 4
+    && asArray(workflow.lanes).some((lane, index) => {
+    const top = laneTop(lane.id);
+    return ly - 10 >= top + 4 && ly + 4 <= top + laneHeight(index) - 4;
+  });
+  const preferred = pointOn(segments[0]?.index ?? 0);
+  if (!edge.label || !segments[0]?.horizontal || segments[0].length >= width + 8
+      || clearOfNodes(preferred)) return preferred;
+  for (const segment of segments.slice(1)) {
+    if (segment.length < 28) continue;
+    const point = pointOn(segment.index);
+    if (clearOfNodes(point) && insideOneLane(point)) return point;
+  }
+  return preferred;
 }
 
 function edgeSides(edge) {
