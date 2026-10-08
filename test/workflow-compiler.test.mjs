@@ -926,12 +926,26 @@ test('readable-v2 shifts top-side routes beyond lane header text deterministical
   );
 });
 
-test('explicit viewBox width is containment capacity and never stretches readable-v2 geometry', () => {
+test('an authored historical workflow canvas retains its valid rank plan', () => {
+  const document = readJson(path.join(__dirname, 'fixtures/workflow-viewport/order-overflow.workflow.json'));
+  document.meta.viewBox = [860, 786];
+  const before = JSON.stringify(document);
+  const result = compileSuccessfully(document, 'showcase');
+  assert.deepEqual(result.receipt.viewBox, [860, 786]);
+  assert.deepEqual(result.receipt.requiredViewBox, [860, 786]);
+  assert.equal(JSON.stringify(document), before);
+  assert.doesNotMatch(result.svg.match(/<svg[^>]*>/)[0], /data-reader-fit=/);
+});
+
+test('explicit viewBox width is containment capacity and never stretches its historical readable-v2 geometry', () => {
   for (const qualityProfile of ['standard', 'showcase']) {
     for (let fromCol = 0; fromCol < 5; fromCol += 1) {
+      // Compare authored capacities against the same historical rank plan.
+      // Unpinned drafts may reserve larger optional routing corridors.
       const intrinsic = compileSuccessfully(adjacentWorkflow({
         fromCol,
         label: 'liga',
+        viewBox: [1600, 420],
       }), qualityProfile);
       const expectedGeometry = {
         columns: intrinsic.receipt.columns,
@@ -959,7 +973,7 @@ test('explicit viewBox width is containment capacity and never stretches readabl
   }
 });
 
-test('capacity-only viewBox failures preserve the intrinsic routes, labels, and requirement', () => {
+test('capacity-only viewBox failures preserve historical routes, labels, and requirement', () => {
   const document = {
     schema_version: 2,
     diagram_type: 'workflow',
@@ -981,7 +995,10 @@ test('capacity-only viewBox failures preserve the intrinsic routes, labels, and 
       },
     ],
   };
-  const intrinsic = compileSuccessfully(clone(document), 'showcase');
+  const referenceDocument = clone(document);
+  referenceDocument.meta.viewBox = [1600, 1000];
+  const intrinsic = compileSuccessfully(referenceDocument, 'showcase');
+  assert.deepEqual(intrinsic.receipt.requiredViewBox, [1034, 404]);
 
   const insufficientDocument = clone(document);
   insufficientDocument.meta.viewBox = [900, 1000];
@@ -1311,13 +1328,17 @@ test('readable-v2 measures multi-row legends into intrinsic and explicit viewBox
   const sufficient = compileSuccessfully(sufficientDocument, 'showcase');
   assert.deepEqual(sufficient.receipt.viewBox, intrinsic.receipt.requiredViewBox);
 
+  const referenceDocument = clone(workflow);
+  referenceDocument.meta.viewBox = [1600, 1000];
+  const reference = compileSuccessfully(referenceDocument, 'showcase');
+  assert.deepEqual(reference.receipt.requiredViewBox, [768, 302]);
   const expectedGeometry = {
-    requiredViewBox: intrinsic.receipt.requiredViewBox,
-    columns: intrinsic.receipt.columns,
-    nodes: intrinsic.receipt.nodes,
-    edges: intrinsic.receipt.edges,
-    labels: intrinsic.receipt.labels,
-    legend: legendGeometry(intrinsic.svg),
+    requiredViewBox: reference.receipt.requiredViewBox,
+    columns: reference.receipt.columns,
+    nodes: reference.receipt.nodes,
+    edges: reference.receipt.edges,
+    labels: reference.receipt.labels,
+    legend: legendGeometry(reference.svg),
   };
   for (const width of [900, 1400]) {
     const explicitDocument = clone(workflow);

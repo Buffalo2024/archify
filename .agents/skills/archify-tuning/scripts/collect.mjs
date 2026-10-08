@@ -13,11 +13,24 @@ import path from 'node:path';
 import { DIAGRAM_TYPES, authoredControls, benchmarkDocument, contentLost, finalizeStatus, tuningHome } from './lib.mjs';
 
 const args = process.argv.slice(2);
-const option = (name, fallback) => {
-  const index = args.indexOf(name);
-  return index === -1 ? fallback : args[index + 1];
-};
-const target = args.find((arg, index) => !arg.startsWith('--') && !args[index - 1]?.startsWith('--')) || '';
+const valueOptions = new Set(['--round', '--trace-export']);
+const booleanOptions = new Set(['--dump', '--no-bench']);
+const values = new Map();
+const positional = [];
+let invalidArgs = false;
+for (let index = 0; index < args.length; index += 1) {
+  const arg = args[index];
+  if (valueOptions.has(arg)) {
+    const value = args[++index];
+    if (!value || value.startsWith('--')) invalidArgs = true;
+    else values.set(arg, value);
+  } else if (booleanOptions.has(arg)) {
+    // Boolean options never consume the following round path.
+  } else if (arg.startsWith('--')) invalidArgs = true;
+  else positional.push(arg);
+}
+const option = (name, fallback) => values.has(name) ? values.get(name) : fallback;
+const target = !invalidArgs && positional.length === 1 ? positional[0] : '';
 const root = fs.existsSync(path.resolve(target)) ? path.resolve(target) : path.join(tuningHome(), 'rounds', target);
 if (!target || !fs.existsSync(root)) {
   console.error('Usage: node collect.mjs <round-name-or-path> [--round <name>] [--no-bench] [--dump] [--trace-export <file>]');

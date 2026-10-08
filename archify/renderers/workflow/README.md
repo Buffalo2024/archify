@@ -149,9 +149,10 @@ a verified migration-to-v2 repair; v1 never falls through to adaptive layout.
 
 Unpinned v2 drafts reserve 32px between overlapping same-lane nodes for routes,
 and omitted node widths may grow from 92px to 200px to fit their text. Documents
-with absolute `via`, `labelAt`, `channelX`, or `channelY` pins retain the existing
-width defaults and 8px rank-clearance constraint, in both compilation and
-migration planning. Authored widths remain authoritative.
+with an explicit `meta.viewBox` or absolute `via`, `labelAt`, `channelX`, or
+`channelY` pins retain the existing width defaults and 8px rank-clearance
+constraint, in both compilation and migration planning. Authored widths remain
+authoritative.
 
 Automatic showcase canvases check sublabels against the desktop reading floor
 without enlarging text beyond its existing 8px slot. If the canvas cannot keep

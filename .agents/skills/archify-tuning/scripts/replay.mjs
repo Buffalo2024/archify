@@ -66,14 +66,22 @@ function render(tree, side, entry) {
     child.stdout.on('data', (chunk) => { log += chunk; });
     child.stderr.on('data', (chunk) => { log += chunk; });
     child.on('close', (code) => {
-      const ok = code === 0 && fs.existsSync(output);
+      let ok = code === 0 && fs.existsSync(output);
+      let geometry = null;
       const problems = log.split('\n').filter((line) => line.startsWith('- '));
+      if (ok) {
+        try { geometry = renderedSvgFingerprint(fs.readFileSync(output, 'utf8')); }
+        catch (error) {
+          ok = false;
+          problems.push(`- [artifact/rendered-svg-invalid] ${error.message}`);
+        }
+      }
       resolve({
         ok,
         problems: problems.length,
         codes: [...new Set(problems.map((line) => (line.match(/^- \[([^\]]+)\]/) || [])[1] || 'other'))],
         first: ok ? '' : (problems[0] || log.trim().split('\n')[0] || '').slice(0, 160),
-        geometry: ok ? renderedSvgFingerprint(fs.readFileSync(output, 'utf8')) : null,
+        geometry,
       });
     });
   });

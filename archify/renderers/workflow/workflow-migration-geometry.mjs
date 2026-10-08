@@ -2,12 +2,14 @@ const TARGET_SCHEMA_VERSION = 2;
 
 // Planning removes absolute route assertions, but must keep the same rank
 // policy as the document whose coordinates will be mapped into that plan.
+// An authored canvas likewise keeps its established plan: draft-only optional
+// corridor growth must not consume space that a valid fixed canvas lacks.
 const absoluteGeometryPolicy = Symbol('workflow absolute geometry policy');
 export function preservesWorkflowAbsoluteGeometry(workflow) {
-  return workflow[absoluteGeometryPolicy] ?? (workflow.edges || []).some((edge) => (
+  return workflow[absoluteGeometryPolicy] ?? (Array.isArray(workflow.meta?.viewBox) || (workflow.edges || []).some((edge) => (
     Array.isArray(edge.via) || Array.isArray(edge.labelAt)
     || edge.channelX !== undefined || edge.channelY !== undefined
-  ));
+  )));
 }
 
 function clone(value) {
