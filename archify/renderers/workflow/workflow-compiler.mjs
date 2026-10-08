@@ -153,8 +153,17 @@ function usesIndependentLaneMeasurement(workflow) {
     && !hasAbsoluteWorkflowPins(workflow);
 }
 
+// A readable-v2 node without an authored width grows to fit its label, up to
+// 200px; longer labels still fail the label check. Keyed by the node object so
+// the authored document is never rewritten.
+const automaticNodeWidths = new WeakMap();
+function automaticNodeWidth(node) {
+  const fitted = Math.ceil((textUnits(node.label) * 6.8 - 6) / 4) * 4;
+  return fitted > 92 ? Math.min(200, fitted) : null;
+}
+
 function authoredNodeWidth(node) {
-  return Number.isFinite(node?.width) ? node.width : 92;
+  return Number.isFinite(node?.width) ? node.width : automaticNodeWidths.get(node) ?? 92;
 }
 
 function nodeWidthContributor(node) {
@@ -670,6 +679,10 @@ function cloneWorkflow(value) {
 
 function canonicalReadableWorkflow(workflow) {
   if (workflow.schema_version !== 2) return workflow;
+  for (const node of asArray(workflow.nodes)) {
+    const width = !Number.isFinite(node.width) && automaticNodeWidth(node);
+    if (width) automaticNodeWidths.set(node, width);
+  }
   const laneOrder = new Map(asArray(workflow.lanes).map((lane, index) => [lane.id, index]));
   const nodes = [...asArray(workflow.nodes)].sort((left, right) => (
     (laneOrder.get(left.lane) ?? Number.MAX_SAFE_INTEGER) - (laneOrder.get(right.lane) ?? Number.MAX_SAFE_INTEGER)
@@ -948,7 +961,7 @@ function createWorkflowLaneGeometry(workflow, layout, legendExtraHeight, minimum
 function measureWorkflowNodes(workflow, layout, laneGeometry) {
   const { laneHeight, laneGroupHeaderH, laneGroupFooterH, laneTop } = laneGeometry;
   function measureNode(node) {
-    const width = node.width || layout.nodeW;
+    const width = node.width || automaticNodeWidths.get(node) || layout.nodeW;
     const height = node.height || (node.tag ? 68 : layout.nodeH);
     const cx = layout.colXs[node.col];
     const groupHeaderH = laneGroupHeaderH(node.lane);

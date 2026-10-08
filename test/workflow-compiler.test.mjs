@@ -491,6 +491,15 @@ test('an automatic readable-v2 vertical stack opts into width-first reader fitti
   assert.equal(attribute(svgRoot, 'data-reader-fit'), 'width-first');
 });
 
+test('a readable-v2 node without an authored width grows to fit its label', () => {
+  const workflow = adjacentWorkflow({ widths: [undefined, undefined], nodeLabels: ['Start', 'TOOL_RESULT 策略'] });
+  const before = JSON.stringify(workflow);
+  const result = compileSuccessfully(workflow);
+  const width = Number(result.svg.match(/data-node-id="b"[\s\S]*?<rect[^>]*width="([\d.]+)"/)[1]);
+  assert.equal(JSON.stringify(workflow), before, 'the authored document is not rewritten');
+  assert.equal(width, 104);
+});
+
 test('an automatic readable-v2 canvas too tall for the desktop page reads at page width', () => {
   const workflow = adjacentWorkflow();
   workflow.lanes = Array.from({ length: 6 }, (_, index) => ({ id: `lane-${index}`, label: `Lane ${index}` }));
