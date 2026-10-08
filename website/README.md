@@ -45,4 +45,34 @@ npm run test:browser
 
 CI builds/tests the website when website inputs change and on every main push. It uploads `website-dist`; the existing protected Pages deployment downloads that exact verified artifact. Build output, caches and staged assets are ignored by Git. Existing GitHub required checks and obsolete-deployment protection remain in place.
 
+## Cloudflare Pages migration
+
+The same source can build a second static site for `https://archify.si/`:
+
+```sh
+ARCHIFY_SITE_TARGET=cloudflare npm run build
+ARCHIFY_SITE_TARGET=cloudflare node --test test/deployment-target.test.mjs
+node scripts/check-cloudflare-output.mjs
+ARCHIFY_SITE_ROOT="$PWD/dist-cloudflare" ARCHIFY_SITE_BASE='' \
+ARCHIFY_SITE_INTEGRATION=1 ARCHIFY_CHROME="/path/to/chrome" npm run test:browser
+```
+
+This writes `dist-cloudflare/`; the default build still writes `dist/` for GitHub Pages. Cloudflare uses root asset paths, formal-domain sharing/canonical URLs, and a top-level `404.html` so unknown URLs do not silently return the homepage. Keep file-format pages: changing to directory-format pages would change the base used by relative proof and asset links. Pages redirects `.html` routes to extensionless routes; verify the actual Pages preview, especially `/gallery`, `/gallery.html`, `/gallery/`, standalone diagrams, query strings and fragments.
+
+The `website` CI job verifies both artifacts. The optional `deploy-cloudflare` job runs only on `main` after the same test/package/manifest gates as GitHub Pages, rejects an obsolete source revision, and uploads the verified `website-cloudflare-dist` artifact. Enable it with repository variables `CLOUDFLARE_PAGES_PROJECT` and `CLOUDFLARE_ACCOUNT_ID`, plus secret `CLOUDFLARE_API_TOKEN` restricted to **Account / Cloudflare Pages / Edit** on the selected account. Never commit the token or put it in build artifacts.
+
+When using a Git-connected Pages project, disable automatic production and preview deployments before enabling CI uploads, so Cloudflare does not publish an unchecked parallel build. A Direct Upload project can also receive these GitHub Actions uploads, but cannot later be converted to Git integration. Both approaches retain GitHub as the source and provide automatic deployment from the gated workflow. See [Git integration](https://developers.cloudflare.com/pages/get-started/git-integration/) and [CI uploads](https://developers.cloudflare.com/pages/how-to/use-direct-upload-with-continuous-integration/).
+
+Cut over in this order:
+
+1. Review the migration on `dev`, then promote only the reviewed migration to stable `main`; do not deploy the unrelated development feature batch as part of a hosting change. Record the stable source SHA and tested artifact.
+2. Deploy and check the Pages preview: all five pages, mobile navigation, language/theme state, proof iframes and links, images, installation/download destinations and real missing-route 404s. Static hosting uses the free plan; no Functions, server, or paid China Network is required.
+3. Add `archify.si` as a free Cloudflare zone. Inventory existing DNS records (including MX/TXT), registrar DNSSEC and DS records before changing nameservers; preserve records used by other services. Bind the root domain inside the Pages project, not only by adding DNS records.
+4. Change only `archify.si`'s nameservers at Dynadot to the two assigned by Cloudflare. Keep registration and renewal at Dynadot. Verify authoritative DNS, active zone/domain status and HTTPS certificate issuance before changing public links.
+5. Configure `www.archify.si` to redirect permanently to the root domain, preserving paths and query strings. Check both HTTP and HTTPS and avoid redirect loops. Keep the Pages preview available until formal-domain acceptance is complete.
+6. Test the formal domain through actual mainland networks without a proxy. Record operator, location, time and observed page/resource behavior; tests through a local proxy or an overseas runner do not establish mainland availability. The current site also uses Google Fonts and links to GitHub, so validate the full user journey.
+7. Only after acceptance, update README and repository website metadata. Social profile edits are a separate account action. Keep GitHub Pages and the old `skill-updates/archify/stable.json` endpoint available: existing installed Skills still request that URL. Do not change the Skill updater or install/update live Skills as part of this migration.
+
+For rollback, disable the Cloudflare deployment variable and roll back to the last verified Pages deployment; keep the old GitHub site available. Record DNS before any cutover so changes can be reversed deliberately. Removing a project is not a rollback: first detach custom domains and their DNS records to avoid dangling destinations.
+
 The migration visual receipt is in `test/evidence/visual-parity.json`. Full-page comparisons use identical browser/viewports and wait for fonts. Animation is frozen and iframe pixels are hidden in both versions; iframe files are instead verified byte-for-byte, and unmasked pages are inspected separately.

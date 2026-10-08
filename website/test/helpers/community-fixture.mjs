@@ -17,7 +17,7 @@ export function createCommunityFixture() {
   };
   // Compile the actual page, loader, validator and language script, without
   // modifying the checked-out registry or running any community package code.
-  for (const relative of ['website/src', 'website/astro.config.mjs', 'website/package.json',
+  for (const relative of ['website/src', 'website/astro.config.mjs', 'website/scripts/site-target.mjs', 'website/package.json',
     'archify/package.json', 'archify/recipes', 'scripts/site-copy.mjs',
     'scripts/check-community-packages.mjs', 'docs/gallery/manifest.json']) copy(relative);
   const pages = path.join(root, 'website/src/pages');
@@ -47,6 +47,7 @@ export function createCommunityFixture() {
       fs.rmSync(path.join(root, 'website/dist'), { recursive: true, force: true });
       return spawnSync(process.execPath, [path.join(websiteRoot, 'node_modules/astro/bin/astro.mjs'), 'build'], {
         cwd: path.join(root, 'website'), encoding: 'utf8', timeout: 60000,
+        env: { ...process.env, ARCHIFY_SITE_TARGET: 'github' },
       });
     },
     close() { fs.rmSync(root, { recursive: true, force: true }); },
