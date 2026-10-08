@@ -479,7 +479,8 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5.0.0
 
-  # Enable only after creating a Direct Upload project with production branch main.
+  # Enable after configuring a Pages project with production branch main.
+  # Disable Git-connected automatic deployments so they cannot bypass these gates.
   deploy-cloudflare:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.CLOUDFLARE_PAGES_PROJECT != ''
     needs: [test, webm-artifact, zip-freshness, published-update-manifest, package-smoke, windows-test-portability, website]
