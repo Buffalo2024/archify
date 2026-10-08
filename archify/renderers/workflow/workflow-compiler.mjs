@@ -25,10 +25,12 @@ import {
 import { availableNodeTextWidth, fittedNodeFontSize, minimumNodeTextWidth, nodeLabelLayout } from '../shared/text-fit.mjs';
 import { brandLabelFitWidth, brandMarkFor, brandMetadataFor, brandTopRailProblem, renderBrandMark } from '../shared/brand-marks.mjs';
 import { translateMessage as i18nText } from '../shared/i18n.mjs';
+import { DESKTOP_READER_DIAGRAM_WIDTH, MIN_PROJECTED_NODE_TEXT_PX, minimumReadableSourceTextPx, predictedFixedWidthOverflow } from '../shared/desktop-readability.mjs';
 import {
   createMappedWorkflowCandidate,
   intrinsicWorkflow,
   planningWorkflow,
+  preservesWorkflowAbsoluteGeometry,
 } from './workflow-migration-geometry.mjs';
 import {
   joinRoutePoints,
@@ -152,8 +154,22 @@ function usesIndependentLaneMeasurement(workflow) {
     && !hasAbsoluteWorkflowPins(workflow);
 }
 
+// A readable-v2 node without an authored width grows to fit its label, up to
+// 200px; longer labels still fail the label check. A sublabel or tag that
+// would not fit even at 6px also grows the node to fit it at its preferred 8px
+// or 7px. Keyed by the node object so the authored document is never rewritten.
+const automaticNodeWidths = new WeakMap();
+function automaticNodeWidth(node) {
+  const labelWidth = Math.max(92, Math.ceil((textUnits(node.label) * 6.8 - 6) / 4) * 4);
+  const secondaryWidths = [[node.sublabel, 8], [node.tag, 7]]
+    .filter(([text]) => text && minimumNodeTextWidth(text, 6) > availableNodeTextWidth(labelWidth))
+    .map(([text, size]) => Math.ceil((minimumNodeTextWidth(text, size) + labelWidth - availableNodeTextWidth(labelWidth)) / 4) * 4);
+  const fitted = Math.max(labelWidth, ...secondaryWidths);
+  return fitted > 92 ? Math.min(200, fitted) : null;
+}
+
 function authoredNodeWidth(node) {
-  return Number.isFinite(node?.width) ? node.width : 92;
+  return Number.isFinite(node?.width) ? node.width : automaticNodeWidths.get(node) ?? 92;
 }
 
 function nodeWidthContributor(node) {
@@ -217,6 +233,7 @@ function createReadableLayout(workflow, layoutFeedback = {}) {
   const widthContributors = new Set();
   const heightContributors = new Set();
   const nodes = asArray(workflow.nodes);
+  const nodeClearance = preservesWorkflowAbsoluteGeometry(workflow) ? 8 : 32;
   const nodesById = new Map(nodes.map((node) => [node.id, node]));
 
   for (let col = 0; col < columnCount - 1; col += 1) {
@@ -241,10 +258,12 @@ function createReadableLayout(workflow, layoutFeedback = {}) {
       if (!verticalIntervalsOverlap(leftNode, rightNode, 8)) continue;
       const fromNode = leftNode.col < rightNode.col ? leftNode : rightNode;
       const toNode = fromNode === leftNode ? rightNode : leftNode;
+      // Unpinned drafts reserve a route corridor; absolute assertions keep
+      // their existing rank plan, including migration planning projections.
       constraints.push({
         from: fromNode.col,
         to: toNode.col,
-        minimum: authoredNodeWidth(fromNode) / 2 + 8 + authoredNodeWidth(toNode) / 2,
+        minimum: authoredNodeWidth(fromNode) / 2 + nodeClearance + authoredNodeWidth(toNode) / 2,
         contributors: [
           `rank ${fromNode.col}→${toNode.col} node width clearance`,
           nodeWidthContributor(fromNode),
@@ -669,6 +688,12 @@ function cloneWorkflow(value) {
 
 function canonicalReadableWorkflow(workflow) {
   if (workflow.schema_version !== 2) return workflow;
+  for (const node of asArray(workflow.nodes)) {
+    const width = !preservesWorkflowAbsoluteGeometry(workflow)
+      && !Number.isFinite(node.width) && automaticNodeWidth(node);
+    if (width) automaticNodeWidths.set(node, width);
+    else automaticNodeWidths.delete(node);
+  }
   const laneOrder = new Map(asArray(workflow.lanes).map((lane, index) => [lane.id, index]));
   const nodes = [...asArray(workflow.nodes)].sort((left, right) => (
     (laneOrder.get(left.lane) ?? Number.MAX_SAFE_INTEGER) - (laneOrder.get(right.lane) ?? Number.MAX_SAFE_INTEGER)
@@ -947,7 +972,7 @@ function createWorkflowLaneGeometry(workflow, layout, legendExtraHeight, minimum
 function measureWorkflowNodes(workflow, layout, laneGeometry) {
   const { laneHeight, laneGroupHeaderH, laneGroupFooterH, laneTop } = laneGeometry;
   function measureNode(node) {
-    const width = node.width || layout.nodeW;
+    const width = node.width || (workflow.schema_version === 2 && automaticNodeWidths.get(node)) || layout.nodeW;
     const height = node.height || (node.tag ? 68 : layout.nodeH);
     const cx = layout.colXs[node.col];
     const groupHeaderH = laneGroupHeaderH(node.lane);
@@ -2535,6 +2560,8 @@ function validateReadablePinnedGeometry() {
 }
 
 function validateWorkflow() {
+  // Report edges by their authored index; the canonical order is internal.
+  const authoredEdges = asArray(qualityResolvedWorkflow.edges);
   const problems = [];
   if (workflow.schema_version !== 1 && workflow.schema_version !== 2) {
     problems.push('Workflow files must set "schema_version" to 1 or 2.');
@@ -2707,7 +2734,7 @@ function validateWorkflow() {
   }
 
   problems.push(...cleanEndpointSideProblems({
-    relations: workflow.edges,
+    relations: authoredEdges,
     endpointIds: new Set(nodes.keys()),
     pathFor,
     diagramType: 'workflow',
@@ -2717,7 +2744,7 @@ function validateWorkflow() {
     routeHint: 'keep automatic routing, or choose fromSide/toSide and via points whose first and final segments cross node borders perpendicularly',
   }));
   problems.push(...cleanFlowProblems({
-    relations: workflow.edges,
+    relations: authoredEdges,
     obstacles: nodes.values(),
     pathFor,
     diagramType: 'workflow',
@@ -2726,7 +2753,7 @@ function validateWorkflow() {
     routeHint: 'adjust fromSide/toSide, set route/via or channel coordinates, or move the node to a clearer lane/column'
   }));
   problems.push(...cleanCrossingProblems({
-    relations: workflow.edges,
+    relations: authoredEdges,
     endpointIds: new Set(nodes.keys()),
     pathFor,
     diagramType: 'workflow',
@@ -2740,7 +2767,7 @@ function validateWorkflow() {
     routeHint: 'adjust route/via, bias, or channel coordinates so the edges use separate lane corridors'
   }));
   problems.push(...cleanAmbiguousCorridorProblems({
-    relations: workflow.edges,
+    relations: authoredEdges,
     endpointIds: new Set(nodes.keys()),
     pathFor,
     diagramType: 'workflow',
@@ -2771,7 +2798,7 @@ function validateWorkflow() {
     }
   }
   problems.push(...cleanBorderRunProblems({
-    relations: workflow.edges,
+    relations: authoredEdges,
     endpointIds: new Set(nodes.keys()),
     frames: workflowCompositionFrames(),
     pathFor,
@@ -2782,7 +2809,7 @@ function validateWorkflow() {
     routeHint: 'adjust route/via, bias, or channel coordinates so the edge crosses the lane or group perpendicularly instead of following its border'
   }));
   problems.push(...cleanRouteRhythmProblems({
-    relations: workflow.edges,
+    relations: authoredEdges,
     endpointIds: new Set(nodes.keys()),
     pathFor,
     diagramType: 'workflow',
@@ -2856,7 +2883,7 @@ function validateWorkflow() {
     }
   }
   problems.push(...cleanLabelRouteClearanceProblems({
-    relations: workflow.edges,
+    relations: authoredEdges,
     labels: labelRects,
     endpointIds: new Set(nodes.keys()),
     pathFor,
@@ -3771,6 +3798,11 @@ function readableAutomaticCandidateSet(
     { family: 'outside-right', via: corridorViaX(start, end, fromSide, toSide, outsideRight) },
     { family: 'top-corridor', via: corridorViaY(start, end, fromSide, toSide, topY) },
     { family: 'bottom-corridor', via: corridorViaY(start, end, fromSide, toSide, bottomY) },
+    // Offset tracks let several routes through one gap run side by side.
+    ...[-12, 12, -24, 24].flatMap((offset) => [
+      { family: 'lane-gap-corridor', via: corridorViaY(start, end, fromSide, toSide, laneGapY + offset) },
+      { family: 'column-gap-corridor', via: corridorViaX(start, end, fromSide, toSide, midX + offset) },
+    ]),
   ];
   const candidates = rawCandidates.map((candidate, ordinal) => ({
     ...candidate,
@@ -4827,12 +4859,61 @@ function renderGroup(group, index) {
         <text x="${span.x + 10}" y="${labelY}" class="${textClass}" font-size="7" font-weight="600">${esc(group.label)}</text>`;
 }
 
+// Automatic showcase canvases stop sublabel shrinking at the desktop floor.
+// Standard and authored canvases retain the established text-fitting contract;
+// the preferred font remains the maximum supported by the fixed text rows.
+function readableSublabelMinimum() {
+  const minimum = nodeTextFit.sublabelMinimum;
+  if (workflow.schema_version !== 2 || resolvedQualityProfile !== 'showcase'
+      || workflow.meta?.viewBox) return minimum;
+  return Math.max(minimum, Math.ceil(minimumReadableSourceTextPx(viewBox[0]) * 10) / 10);
+}
+
+function validateReadableNodeText() {
+  const diagnostics = [];
+  const minimum = readableSublabelMinimum();
+  for (const node of nodes.values()) {
+    if (!node.sublabel) continue;
+    const maximumCanvasWidth = Math.floor(DESKTOP_READER_DIAGRAM_WIDTH
+      * nodeTextFit.sublabelPreferred / MIN_PROJECTED_NODE_TEXT_PX);
+    const fontBudgetExceeded = minimum > nodeTextFit.sublabelPreferred;
+    const minimumW = minimumNodeTextWidth(node.sublabel, minimum);
+    if (!fontBudgetExceeded && minimumW <= availableNodeTextWidth(node.width)) continue;
+    const message = fontBudgetExceeded
+      ? `Sublabel "${node.sublabel}" needs a ${minimum}px minimum that stays readable on this ${viewBox[0]}px canvas, above the supported ${nodeTextFit.sublabelPreferred}px text row — compact the column spacing or node widths so the canvas is at most ${maximumCanvasWidth}px wide; preserve the sublabel's role or protocol.`
+      : `Sublabel "${node.sublabel}" needs ~${Math.ceil(minimumW)}px at the ${minimum}px minimum that stays readable on this ${viewBox[0]}px canvas, but node "${node.id}" provides ${availableNodeTextWidth(node.width)}px — shorten the sublabel while preserving its role or protocol.`;
+    const authoredNode = workflow.nodes.find((authored) => authored.id === node.id);
+    diagnostics.push({
+      code: 'workflow/sublabel-readability',
+      severity: 'error',
+      message,
+      subject: {
+        diagramType: 'workflow', node: node.id,
+        path: `/nodes/${sourceIndexes.nodes.get(authoredNode)}/sublabel`,
+      },
+      evidence: {
+        requiredFontPx: minimum,
+        maximumSlotFontPx: nodeTextFit.sublabelPreferred,
+        canvasWidthPx: viewBox[0],
+        maximumCanvasWidthPx: maximumCanvasWidth,
+        requiredTextWidthPx: minimumW,
+        availableTextWidthPx: availableNodeTextWidth(node.width),
+      },
+      supportedFixes: fontBudgetExceeded
+        ? [`compact column spacing or node widths until the implicit canvas is at most ${maximumCanvasWidth}px wide, preserving every node and relationship`]
+        : [`shorten node "${node.id}" sublabel while preserving its role or protocol; move supplementary facts into a card`],
+    });
+  }
+  if (diagnostics.length) throwDiagnosticError('Workflow layout validation failed', diagnostics);
+}
+
 function renderNode(node) {
   const fill = componentFill[node.type] || 'c-external';
   const accent = componentText[node.type] || 't-muted';
   const hasSub = node.sublabel != null && node.sublabel !== '';
   const labelFontSize = fittedNodeFontSize(node.label, brandLabelFitWidth(node, node.width), nodeTextFit.labelPreferred, nodeTextFit.labelMinimum);
-  const sublabelFontSize = fittedNodeFontSize(node.sublabel, node.width, nodeTextFit.sublabelPreferred, nodeTextFit.sublabelMinimum);
+  const sublabelMinimum = Math.min(nodeTextFit.sublabelPreferred, readableSublabelMinimum());
+  const sublabelFontSize = fittedNodeFontSize(node.sublabel, node.width, nodeTextFit.sublabelPreferred, sublabelMinimum);
   const tagFontSize = fittedNodeFontSize(node.tag, node.width, nodeTextFit.tagPreferred, nodeTextFit.tagMinimum);
   const textRows = [{ text: node.label, font: labelFontSize, y: 21 }];
   if (hasSub) textRows.push({ text: node.sublabel, font: sublabelFontSize, y: 38 });
@@ -4892,10 +4973,12 @@ function renderLegend() {
 }
 
 function renderSvg() {
+  // A renderer-sized canvas that would overflow the desktop page at full
+  // width reads at page width with vertical scroll, like a tall stack.
   const readerFit = workflow.schema_version === 2
     && !workflow.meta?.viewBox
-    && hasVerticalStack(workflow)
-    && asArray(layout.laneHeights).some((height) => height > 104)
+    && ((hasVerticalStack(workflow) && asArray(layout.laneHeights).some((height) => height > 104))
+      || predictedFixedWidthOverflow({ viewBoxWidth: viewBox[0], viewBoxHeight: viewBox[1], diagramType: 'workflow' }))
     ? ' data-reader-fit="width-first"'
     : '';
   const contract = workflow.schema_version === 2 ? ' data-layout-contract="readable-v2"' : '';
@@ -4935,6 +5018,7 @@ ${renderLegend()}
     validateReadablePinnedGeometry();
     validateWorkflow();
     finalizeReadableViewBox();
+    validateReadableNodeText();
     const svg = renderSvg();
     const receipt = {
       contract: layout.contract,

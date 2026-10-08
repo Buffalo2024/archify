@@ -28,6 +28,8 @@ import {
   automaticPortRhythmBridge,
   segmentIntersectsRect,
   segmentRectClearanceWithin,
+  routeHonorsEndpointSides,
+  normalizeRoutePoints,
   legacyDefaultFromSide as defaultFromSide,
   legacyDefaultToSide as defaultToSide,
   chosenSide,
@@ -394,6 +396,26 @@ function routeVia(flow, from, to, start, end) {
         });
         if (bridge) return bridge.slice(1, -1);
       }
+      if (fromVertical !== toVertical) {
+        // Perpendicular sides meet at one corner when both endpoints face it;
+        // otherwise each leaves through a short stub before the corner.
+        const outward = { left: [-24, 0], right: [24, 0], top: [0, -24], bottom: [0, 24] };
+        const stub = (point, side) => [point[0] + outward[side][0], point[1] + outward[side][1]];
+        const startStub = stub(start, fromSide);
+        const endStub = stub(end, toSide);
+        const route = [
+          [fromVertical ? [start[0], end[1]] : [end[0], start[1]]],
+          [startStub, [startStub[0], endStub[1]], endStub],
+          [startStub, [endStub[0], startStub[1]], endStub],
+        ].find(candidate => {
+          const points = normalizeRoutePoints([start, ...candidate, end]);
+          return routeHonorsEndpointSides(points, fromSide, toSide)
+            && ![...nodes.values()].some(node => points.slice(1).some((point, index) => (
+              segmentIntersectsRect({ start: points[index], end: point }, node, 2)
+              && !((node.id === from.id && index === 0) || (node.id === to.id && index === points.length - 2)))));
+        });
+        if (route) return route;
+      }
       if (automaticShowcase && fromVertical && toVertical) {
         if (Math.abs(start[0] - end[0]) < 0.0001) return [];
         const midY = (start[1] + end[1]) / 2;
@@ -401,7 +423,17 @@ function routeVia(flow, from, to, start, end) {
       }
       if (Math.abs(start[1] - end[1]) < 4) return [];
       const midX = start[0] + (end[0] - start[0]) / 2;
-      return [[midX, start[1]], [midX, end[1]]];
+      // Across several stages the midpoint can fall inside a middle stage's
+      // node; then turn in the clear inter-stage gap nearest to it.
+      const gapXs = asArray(dataflow.stages).slice(1).map((_, index) => (stageX(index) + stageX(index + 1)) / 2)
+        .filter((x) => x > Math.min(start[0], end[0]) && x < Math.max(start[0], end[0]))
+        .sort((left, right) => Math.abs(left - midX) - Math.abs(right - midX));
+      const turnX = [midX, ...gapXs].find((x) => {
+        const points = [start, [x, start[1]], [x, end[1]], end];
+        return ![...nodes.values()].some((node) => node.id !== from.id && node.id !== to.id
+          && points.slice(1).some((point, index) => segmentIntersectsRect({ start: points[index], end: point }, node, 2)));
+      }) ?? midX;
+      return [[turnX, start[1]], [turnX, end[1]]];
     }
   }
 }
