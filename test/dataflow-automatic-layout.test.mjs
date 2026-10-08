@@ -322,14 +322,15 @@ for (const [name, flow, expectedPoints, expectedHeight] of [
   });
 }
 
-// Frozen public SVG bytes from dev e23fc2c5. The complete HTML/receipt byte
+// Frozen public SVG bytes from dev e23fc2c5, with only the legend row
+// re-measured at its rendered font size. The complete HTML/receipt byte
 // comparison is recorded in the PR evidence; SVG isolates renderer behavior
 // from unrelated future Viewer-template changes.
 for (const [name, mutate, expectedSha256] of [
-  ['standard-auto', diagram => { diagram.meta.quality_profile = 'standard'; }, 'e0755ef81c30e0f0065b4766d586910f8d98354145ba7958776c3932ea40fc09'],
-  ['explicit-viewbox', diagram => { diagram.meta.viewBox = [1080, 720]; }, '0517c0d97ba67919a6e3a0150abd4467fdcec0b01f32b667d086bba6be373e23'],
-  ['explicit-one-width', diagram => { diagram.nodes[0].width = 152; }, 'd463001a31326170def94dce37c21967d24bc558ee404004cc9e29054db6cb36'],
-  ['explicit-both', diagram => { diagram.meta.viewBox = [1080, 720]; diagram.nodes[0].width = 152; }, '258cb1e9c70c4e5377b69f4c7ef1dd04b964cc298f5061f963148f91037d9a61'],
+  ['standard-auto', diagram => { diagram.meta.quality_profile = 'standard'; }, '2665e15fb2ee1a9d21b653c9acc9417e6988def98bf45d22630c47f434ae907a'],
+  ['explicit-viewbox', diagram => { diagram.meta.viewBox = [1080, 720]; }, 'd738f4c38e336886aaf86bc769ea8b401e540da0f9566330b559408340968879'],
+  ['explicit-one-width', diagram => { diagram.nodes[0].width = 152; }, 'e5006801fe5137e2b204d4d168a76571bb83dc52e94a0261b14e6b889ab7c08d'],
+  ['explicit-both', diagram => { diagram.meta.viewBox = [1080, 720]; diagram.nodes[0].width = 152; }, '0d2ee82e89eeb9e1c83e2002f72b004adfe876fb6d50dc91d465f8e778d3e8dd'],
 ]) {
   test(`dev byte compatibility for ${name}`, t => {
     const diagram = smallFootprintDiagram({ id: 'f' });
@@ -343,3 +344,24 @@ for (const [name, mutate, expectedSha256] of [
     assert.equal(crypto.createHash('sha256').update(svg).digest('hex'), expectedSha256);
   });
 }
+
+test('automatic dataflow routes honor perpendicular pinned sides', t => {
+  const diagram = {
+    schema_version: 1, diagram_type: 'dataflow',
+    meta: { title: 'Pinned sides', output: 'diagram.html', quality_profile: 'showcase' },
+    stages: [{ label: 'A' }, { label: 'B' }],
+    nodes: [
+      { id: 'source', type: 'backend', label: 'Source', stage: 0, row: 1 },
+      { id: 'target', type: 'backend', label: 'Target', stage: 1, row: 0 },
+    ],
+    flows: [{ id: 'push', from: 'source', to: 'target', label: 'push', fromSide: 'right', toSide: 'bottom' }],
+  };
+  const { result, receipt, input, output, env } = inspect(t, diagram);
+  assert.equal(result.status, 0, JSON.stringify(receipt.diagnostics));
+  const render = spawnSync(process.execPath, [cli, 'render', 'dataflow', input, output], { encoding: 'utf8', env });
+  assert.equal(render.status, 0, render.stderr);
+  const points = fs.readFileSync(output, 'utf8').match(/data-composition-points="([^"]+)"/)[1]
+    .split(';').map(point => point.split(',').map(Number));
+  assert.equal(points.length, 3, JSON.stringify(points));
+  assert.ok(points[1][1] > points[2][1], 'final segment rises into the bottom side');
+});
