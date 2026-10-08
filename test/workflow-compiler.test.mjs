@@ -357,7 +357,7 @@ test('readable-v2 separates approval branches in the checked-in workflow example
     // approval-denied and approved-tool previously shared a mixed-style trunk.
     // Node geometry, labels, all other paths and v1 baselines are unchanged.
     sha256(result.svg.replace(/ data-(?:composition-routing|edge-role|layout-contract)="[^"]*"/g, '')),
-    'ee6a341d43479ac4b79deaef11513b4fac00cd984a376bf93b7ccd3a13b7e9a9',
+    'cf98dc4bf3104e98dee7b69e1875206cc78cd9e322142e8432219c1784dae886',
   );
 });
 
@@ -498,6 +498,18 @@ test('a readable-v2 node without an authored width grows to fit its label', () =
   const width = Number(result.svg.match(/data-node-id="b"[\s\S]*?<rect[^>]*width="([\d.]+)"/)[1]);
   assert.equal(JSON.stringify(workflow), before, 'the authored document is not rewritten');
   assert.equal(width, 104);
+});
+
+test('readable-v2 sublabels must fit at the size that stays readable on the final canvas', () => {
+  const workflow = adjacentWorkflow({ widths: [132, 200] });
+  workflow.nodes[1].col = 5;
+  workflow.nodes[0].sublabel = 'chain / debate / synthesis 调度';
+  for (const col of [0, 2, 3, 4]) {
+    workflow.nodes.push({ id: `wide-${col}`, lane: 'main', col, type: 'backend', label: `Step ${col}`, width: 200 });
+  }
+  const result = compileWorkflow({ workflow });
+  assert.equal(result.ok, false, 'expected a readable-size failure on a canvas wider than the reader');
+  assert.match(JSON.stringify(result.diagnostics), /minimum that stays readable on this \d+px canvas/);
 });
 
 test('an automatic readable-v2 canvas too tall for the desktop page reads at page width', () => {

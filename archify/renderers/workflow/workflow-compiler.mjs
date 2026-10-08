@@ -25,7 +25,7 @@ import {
 import { availableNodeTextWidth, fittedNodeFontSize, minimumNodeTextWidth, nodeLabelLayout } from '../shared/text-fit.mjs';
 import { brandLabelFitWidth, brandMarkFor, brandMetadataFor, brandTopRailProblem, renderBrandMark } from '../shared/brand-marks.mjs';
 import { translateMessage as i18nText } from '../shared/i18n.mjs';
-import { predictedFixedWidthOverflow } from '../shared/desktop-readability.mjs';
+import { minimumReadableSourceTextPx, predictedFixedWidthOverflow } from '../shared/desktop-readability.mjs';
 import {
   createMappedWorkflowCandidate,
   intrinsicWorkflow,
@@ -4841,13 +4841,38 @@ function renderGroup(group, index) {
         <text x="${span.x + 10}" y="${labelY}" class="${textClass}" font-size="7" font-weight="600">${esc(group.label)}</text>`;
 }
 
+// Shrink-to-fit stops where node text still reads on the desktop at the final
+// canvas width, so an overflow is reported here rather than by the browser gate.
+function readableTextMinimum(minimum) {
+  if (workflow.schema_version !== 2) return minimum;
+  return Math.max(minimum, Math.ceil(minimumReadableSourceTextPx(viewBox[0]) * 10) / 10);
+}
+
+function validateReadableNodeText() {
+  const problems = [];
+  for (const node of nodes.values()) {
+    for (const [field, value, minimum] of [
+      ['Sublabel', node.sublabel, readableTextMinimum(nodeTextFit.sublabelMinimum)],
+      ['Tag', node.tag, readableTextMinimum(nodeTextFit.tagMinimum)],
+    ]) {
+      const minimumW = value ? minimumNodeTextWidth(value, minimum) : 0;
+      if (minimumW > availableNodeTextWidth(node.width)) {
+        problems.push(`${field} "${value}" needs ~${Math.ceil(minimumW)}px at the ${minimum}px minimum that stays readable on this ${viewBox[0]}px canvas, but node "${node.id}" provides ${availableNodeTextWidth(node.width)}px — shorten the ${field.toLowerCase()}; a wider node or canvas lowers every projected font.`);
+      }
+    }
+  }
+  if (problems.length) throwDiagnosticProblems('Workflow layout validation failed', problems, { subject: { diagramType: 'workflow' } });
+}
+
 function renderNode(node) {
   const fill = componentFill[node.type] || 'c-external';
   const accent = componentText[node.type] || 't-muted';
   const hasSub = node.sublabel != null && node.sublabel !== '';
   const labelFontSize = fittedNodeFontSize(node.label, brandLabelFitWidth(node, node.width), nodeTextFit.labelPreferred, nodeTextFit.labelMinimum);
-  const sublabelFontSize = fittedNodeFontSize(node.sublabel, node.width, nodeTextFit.sublabelPreferred, nodeTextFit.sublabelMinimum);
-  const tagFontSize = fittedNodeFontSize(node.tag, node.width, nodeTextFit.tagPreferred, nodeTextFit.tagMinimum);
+  const sublabelMinimum = readableTextMinimum(nodeTextFit.sublabelMinimum);
+  const tagMinimum = readableTextMinimum(nodeTextFit.tagMinimum);
+  const sublabelFontSize = fittedNodeFontSize(node.sublabel, node.width, Math.max(nodeTextFit.sublabelPreferred, sublabelMinimum), sublabelMinimum);
+  const tagFontSize = fittedNodeFontSize(node.tag, node.width, Math.max(nodeTextFit.tagPreferred, tagMinimum), tagMinimum);
   const textRows = [{ text: node.label, font: labelFontSize, y: 21 }];
   if (hasSub) textRows.push({ text: node.sublabel, font: sublabelFontSize, y: 38 });
   if (node.tag) textRows.push({ text: node.tag, font: tagFontSize, y: node.height - 12 });
@@ -4951,6 +4976,7 @@ ${renderLegend()}
     validateReadablePinnedGeometry();
     validateWorkflow();
     finalizeReadableViewBox();
+    validateReadableNodeText();
     const svg = renderSvg();
     const receipt = {
       contract: layout.contract,

@@ -8,7 +8,7 @@ import { componentFill, arrowClassMap, rectsOverlap, cleanFlowProblems, cleanCro
 import { availableNodeTextWidth, fittedNodeFontSize, minimumNodeTextWidth } from '../shared/text-fit.mjs';
 import { brandLabelFitWidth, brandMetadataFor, brandTopRailProblem, renderBrandMark } from '../shared/brand-marks.mjs';
 import { translateMessage as i18nText } from '../shared/i18n.mjs';
-import { DESKTOP_READER_DIAGRAM_WIDTH, MIN_PROJECTED_NODE_TEXT_PX } from '../shared/desktop-readability.mjs';
+import { DESKTOP_READER_DIAGRAM_WIDTH, MIN_PROJECTED_NODE_TEXT_PX, minimumReadableSourceTextPx } from '../shared/desktop-readability.mjs';
 
 const participantTextFit = {
   sublabelPreferred: 7,
@@ -123,6 +123,12 @@ const layout = {
   colGap,
   labelH: readableMessages ? 18 : 16
 };
+
+// Shrink-to-fit must stop where the text still reads on the desktop at this
+// canvas width; a smaller fit only defers the failure to the browser gate.
+const readableSublabelMinimum = Math.max(participantTextFit.sublabelMinimum,
+  Math.ceil(minimumReadableSourceTextPx(viewBox[0]) * 10) / 10);
+const readableSublabelPreferred = Math.max(participantTextFit.sublabelPreferred, readableSublabelMinimum);
 
 const participantBoxWidthNote = automaticWidth
   ? `participant boxes are ${participantW}px: the automatic ${viewBox[0]}px canvas cannot widen further without its 7px sublabels falling below the desktop reading minimum, so keep meta.viewBox omitted`
@@ -243,9 +249,9 @@ function validateSequence() {
     // ordinary case, this rejects what it cannot rescue.
     if (participant.sublabel) {
       const availableTextW = availableNodeTextWidth(layout.participantW);
-      const minimumW = minimumNodeTextWidth(participant.sublabel, participantTextFit.sublabelMinimum);
+      const minimumW = minimumNodeTextWidth(participant.sublabel, readableSublabelMinimum);
       if (minimumW > availableTextW) {
-        problems.push(`Sublabel "${participant.sublabel}" needs ~${Math.ceil(minimumW)}px at the ${participantTextFit.sublabelMinimum}px legible minimum, but participant "${participant.id}" provides ${availableTextW}px — shorten the sublabel (${participantBoxWidthNote}).`);
+        problems.push(`Sublabel "${participant.sublabel}" needs ~${Math.ceil(minimumW)}px at the ${readableSublabelMinimum}px minimum that stays readable on this ${viewBox[0]}px canvas, but participant "${participant.id}" provides ${availableTextW}px — shorten the sublabel (${participantBoxWidthNote}).`);
       }
     }
   }
@@ -460,7 +466,7 @@ function renderParticipant(participant) {
   const fill = componentFill[participant.type] || 'c-external';
   const hasSub = participant.sublabel != null && participant.sublabel !== '';
   const sub = hasSub
-    ? `\n          <text data-detail="context" x="${participant.cx}" y="${layout.topY + layout.participantSublabelY}" class="t-muted" font-size="${fittedNodeFontSize(participant.sublabel, layout.participantW, participantTextFit.sublabelPreferred, participantTextFit.sublabelMinimum)}" text-anchor="middle">${esc(participant.sublabel)}</text>`
+    ? `\n          <text data-detail="context" x="${participant.cx}" y="${layout.topY + layout.participantSublabelY}" class="t-muted" font-size="${fittedNodeFontSize(participant.sublabel, layout.participantW, readableSublabelPreferred, readableSublabelMinimum)}" text-anchor="middle">${esc(participant.sublabel)}</text>`
     : '';
   const brand = renderBrandMark(participant, { x: participant.x + layout.participantW - 22, y: layout.topY + 6 });
   const labelFontSize = fittedNodeFontSize(participant.label, brandLabelFitWidth(participant, layout.participantW), 11, 8);

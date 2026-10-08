@@ -283,3 +283,20 @@ test('automatic spread canvas widens for participant labels up to the readable w
   assert.notEqual(crowded.code, 0);
   assert.match(crowded.stderr, /shorten it to at most \d+ text units[^]*keep meta\.viewBox omitted/);
 });
+
+test('a widened automatic canvas reports sublabels at the size that stays readable there', () => {
+  const participant = (id, label, sublabel) => ({ id, type: 'backend', label, ...(sublabel ? { sublabel } : {}) });
+  const doc = {
+    schema_version: 1,
+    diagram_type: 'sequence',
+    meta: { title: 'Readable sublabel', quality_profile: 'showcase' },
+    participants: [
+      participant('a', 'Web UI'), participant('b', 'Orchestrator'), participant('c', 'team CLI'), participant('d', 'Runtime'),
+      participant('e', 'Team operations'), participant('f', 'SQLite'), participant('g', 'Stdin queue', 'tmp 或 reports/review'), participant('h', 'Worker'),
+    ],
+    messages: [{ from: 'a', to: 'h', label: 'send', y: 180 }],
+  };
+  const outcome = renderOutcome(doc);
+  assert.notEqual(outcome.code, 0);
+  assert.match(outcome.stderr, /Sublabel "tmp 或 reports\/review" needs ~\d+px at the [\d.]+px minimum that stays readable on this \d+px canvas/);
+});
