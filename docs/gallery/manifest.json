@@ -19,8 +19,8 @@
       "engineeringProfile": null,
       "nodeCount": 12,
       "edgeCount": 11,
-      "artifactBytes": 783573,
-      "artifactSha256": "3d2d925435e2a4d7a16f4cf41f5181aa0a8a5fe13a68c007d29f8a54b1cf80ea",
+      "artifactBytes": 783577,
+      "artifactSha256": "57447c528d98eb5f17836fc783f2027022c6b43ac28a0f8af7d3833f24a755eb",
       "sourceBytes": 4939,
       "sourceSha256": "d67965d50872c97e4ff3476271e645bf19fab6b3ab44e111bdb44b063e3aa36f",
       "checks": [
@@ -80,7 +80,7 @@
           "minLabelRouteClearance": 29,
           "desktopReadabilityIssues": 0,
           "viewportHeightIssues": 0,
-          "minProjectedNodeTextPx": 6.788321167883212,
+          "minProjectedNodeTextPx": 6.714801444043322,
           "maxBends": 3,
           "routesOverSuggestedBends": 1,
           "maxStretch": 1.225,
@@ -134,7 +134,7 @@
             "id": "user"
           },
           "minimumSourceTextPx": 8,
-          "minimumProjectedTextPx": 6.788321167883212,
+          "minimumProjectedTextPx": 6.714801444043322,
           "semanticTextCount": 29
         },
         "issues": []
