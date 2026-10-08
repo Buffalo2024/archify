@@ -687,7 +687,7 @@ export function compactFinalizeReceipt(receipt) {
       candidate: receipt.specification?.path,
       constraint: receipt.type === 'architecture' && (receipt.diagnostics || []).some((entry) => ROUTE_DIAGNOSTIC.test(entry.code || ''))
         ? 'Preserve all semantics and user-fixed geometry. Use references/architecture-layout-repair.md to choose a local repair or connected-scene reflow; edit the existing candidate.'
-        : 'Preserve unaffected semantics and geometry; apply each diagnostic\'s own supportedFixes and do not replace the whole candidate.',
+        : 'Preserve unaffected semantics and geometry; apply each diagnostic\'s supportedFixes, or the fix its message names, and do not replace the whole candidate.',
       then: 'finalize-once',
     };
   }

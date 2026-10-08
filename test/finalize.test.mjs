@@ -234,7 +234,7 @@ test('finalize stops at the failed gate and persists actionable failure evidence
   assert.deepEqual(finalized.summary.nextAction, {
     action: 'edit-in-place',
     candidate: input,
-    constraint: 'Preserve unaffected semantics and geometry; apply each diagnostic\'s own supportedFixes and do not replace the whole candidate.',
+    constraint: 'Preserve unaffected semantics and geometry; apply each diagnostic\'s supportedFixes, or the fix its message names, and do not replace the whole candidate.',
     then: 'finalize-once',
   });
   assert.equal(finalized.receipt.diagnostics[0].evidence.intersection[1], 40);
