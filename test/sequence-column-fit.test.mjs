@@ -242,7 +242,7 @@ test('eight participants fit the automatic 920px canvas with default and explici
   assert.equal(boxes[0].x, 62);
   assert.equal(boxes.at(-1).x + boxes.at(-1).width, 880);
   for (let i = 1; i < boxes.length; i++) assert.ok(boxes[i].x - boxes[i - 1].x - boxes[i - 1].width >= 16);
-  assert.match(html, /viewBox="0 0 920 760"/);
+  assert.match(html, /viewBox="0 0 920 327"/);
   assert.deepEqual(doc, original);
   assert.equal(html, render({ ...doc, meta: { ...doc.meta, column_fit: 'spread' } }, true));
   const fixedBoxes = participantBoxes(render({ ...doc, meta: { ...doc.meta, column_fit: 'fixed' } }, true));

@@ -55,7 +55,8 @@ not create edge facts.
 
 The legend sits below all timeline content: the last message and its note,
 activation bars, and segment frames, with a 12px gap. Without `meta.viewBox`
-the canvas grows to keep that gap. With an authored `viewBox` that is too short,
+the canvas height fits that content (no fixed 760px floor) and grows when late
+messages need more room. With an authored `viewBox` that is too short,
 `showcase` fails with the exact height to set, and `standard` hides the implicit
 legend rather than drawing it over content. Lifelines stop above the legend.
 Message labels use their line's color; gray default and return lines keep the
@@ -65,7 +66,7 @@ muted text color.
 
 | Constant | Value |
 |----------|-------|
-| viewBox | default `[920, 760]`, taller when late content needs legend room; schema minimum `[480, 480]` |
+| viewBox | automatic height fits content + legend (minimum 327px readable band); taller when late content needs more room; width defaults to 920 (wider for crowded spread). Schema minimum `[480, 480]` |
 | Participant boxes | `spread` (default): viewBox-relative width from 86px up to 190px; `fixed`: 86px wide; both 60px tall at y 72 |
 | Participant columns | `fixed`: centers at x = 62 + index×108; `spread`: columns distribute across the available viewBox width with at least a 16px card gutter |
 | Participant count | the last box must end at or before width − 40; layouts that cannot fit fail closed |

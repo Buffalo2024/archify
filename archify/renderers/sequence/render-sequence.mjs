@@ -78,10 +78,15 @@ function automaticCanvasWidth() {
   const count = Math.max(1, asArray(sequence.participants).length);
   return Math.min(readableCanvasWidth, Math.max(920, Math.ceil((Math.min(190, needed) + 25) * count + 124)));
 }
-// A renderer-sized canvas grows to keep the legend clear of late messages;
-// an authored viewBox is honored and validated below.
+// A renderer-sized canvas grows to keep the legend clear of late messages and
+// shrinks when the timeline is short: the old 760px floor left ~600px of empty
+// lifeline under typical 4–8 message drafts. Keep a readable minimum band
+// (lifelineTop 142 + 120px timeline + 65px footer = 327) so short diagrams stay
+// usable; an authored viewBox is honored and validated below.
+const SEQUENCE_MIN_AUTO_HEIGHT = 327;
 const automaticWidth = sequence.meta?.viewBox ? null : automaticCanvasWidth();
-const viewBox = sequence.meta?.viewBox || [automaticWidth, Math.max(760, legendRequiredHeight(automaticWidth))];
+const automaticHeight = Math.max(SEQUENCE_MIN_AUTO_HEIGHT, legendRequiredHeight(automaticWidth));
+const viewBox = sequence.meta?.viewBox || [automaticWidth, automaticHeight];
 // The timeline scales with viewBox height: a taller viewBox gains message room,
 // a shorter one shrinks the readable band (validated below) instead of clipping.
 // `column_fit: "spread"` widens the lanes with the viewBox instead of keeping
