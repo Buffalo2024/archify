@@ -1,6 +1,6 @@
-# Repository-backed architecture authoring
+# Repository-backed authoring
 
-Use this reference when a diagram must explain a real repository. The source is
+Use this reference when a diagram of any type must explain a real repository. The source is
 the authority for responsibilities, calls, boundaries, and persistence. The
 diagram is complete when the requested meaning is covered and every asserted
 fact has supporting source evidence.
@@ -69,6 +69,20 @@ Batch independent relevant files when known. Each additional read should answer
 an unresolved question that can change the diagram. Reuse concise facts and
 their source ranges already verified in this task; across revisions, recheck
 the affected entry points, configuration, dependencies, and evidence.
+
+## Evidence by diagram type
+
+Only the primary elements carry `sources`, at most three ranges each:
+Architecture components, Workflow, Dataflow and Tree nodes, Sequence
+participants, Lifecycle states, ERD entities, Class types, Timeline events and
+Waterfall spans. Relationships, messages, flows and transitions have none: cite
+the call, write or transition site on the element that owns it (the caller, the
+writer, the state being left) and keep further evidence in a note or card. A
+folder node cites its own README or entry file. A Timeline event cites a file at
+the pinned revision that records it, such as a changelog entry; a tag or commit
+outside that history is not citable, so say so in a card. A Waterfall without a
+recorded trace uses `meta.evidence: "illustrative"` and keeps its durations
+labelled as such; do not run the project only to time it.
 
 ## Choose an example by structure
 
