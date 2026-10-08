@@ -75,7 +75,11 @@ test('waterfall: small fractional values keep nonzero duration labels', () => {
     const durationText = `${String(duration).replace('.', '\\.')} ms`;
     assert.match(html, new RegExp(durationText));
     assert.match(html, new RegExp(`data-node-id="request"[^>]*aria-label="[^"]*${durationText}[^"]*"`));
-    const tickLabels = [...html.matchAll(/class="t-muted wf-num"[^>]*>([^<]+)<\/text>/g)].map((match) => match[1]);
+    const tickLabels = [...html.matchAll(/class="t-muted wf-num"[^>]*text-anchor="middle">([^<]+)<\/text>/g)].map((match) => match[1]);
+    assert.ok(tickLabels.length > 1, 'axis must render tick labels');
+    for (let i = 1; i < tickLabels.length; i += 1) {
+      assert.notEqual(tickLabels[i], tickLabels[i - 1], 'adjacent ticks must have distinct labels');
+    }
     assert.ok(new Set(tickLabels).size > 1, 'distinct positive ticks must not all round to zero');
     const report = layoutOf(diagram);
     assert.notEqual(report.rows[0].label, '0 ms');
