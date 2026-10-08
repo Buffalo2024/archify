@@ -213,9 +213,13 @@ function segmentLabelBox(segment) {
   // behind the participant headers or into the previous segment, where it
   // names the wrong phase. Its own frame's top-left corner, clear of messages,
   // names the right one.
+  // Another segment's title normally sits on that segment's own top border,
+  // so its strip is taken too.
+  const otherTitles = asArray(sequence.segments).filter((other) => other !== segment)
+    .map((other) => ({ x: 56, y: other.from - 22, width: Math.max(42, textUnits(other.label) * 5.2 + 14), height: 18 }));
   const inside = { x: 56, y: segment.from + 4, width: labelW, height: 18 };
   for (let attempt = 0; attempt < 4 && inside.y + inside.height <= segment.to - 2; attempt += 1) {
-    if (!occupied.some((rect) => rectsOverlap(inside, rect, 2))) return inside;
+    if (![...occupied, ...otherTitles].some((rect) => rectsOverlap(inside, rect, 2))) return inside;
     inside.y += 22;
   }
   return label;
@@ -468,7 +472,26 @@ function validateSequence() {
     if (segment.from < layout.topY || segment.to > layout.lifelineBottom + 20) {
       problems.push(`Segment "${segment.label}" extends outside the canvas — keep its y range between ${layout.topY} and ${layout.lifelineBottom + 20}.`);
     }
+    // A frame edge may pass behind a masked message label, but an edge that
+    // runs along the arrow itself leaves the reader unable to tell which phase
+    // the message belongs to.
+    if (sequence.meta?.quality_profile) {
+      for (const edge of ['from', 'to']) {
+        const border = segment[edge];
+        const cut = asArray(sequence.messages).filter((message) => typeof message.y === 'number'
+          && Math.abs(border - message.y) < 4);
+        for (const message of cut) {
+          problems.push(`Segment "${segment.label}" ${edge === 'from' ? 'top' : 'bottom'} edge at y ${border} runs along message "${message.label}" (arrow at y ${message.y}) — move the edge to at least ${message.y + 4} to leave the message above it, or to at most ${message.y - 4} to leave it below.`);
+        }
+      }
+    }
     const labelBox = segmentLabelBox(segment);
+    for (const other of asArray(sequence.segments)) {
+      if (other === segment || asArray(sequence.segments).indexOf(other) < asArray(sequence.segments).indexOf(segment)) continue;
+      if (rectsOverlap(labelBox, segmentLabelBox(other), 0)) {
+        problems.push(`Segment labels "${segment.label}" and "${other.label}" overlap — leave more room between the segments' messages near their shared border, or shorten a label.`);
+      }
+    }
     const availableWidth = Math.max(0, viewBox[0] - 48 - labelBox.x);
     if (labelBox.x + labelBox.width > viewBox[0] - 48) {
       const requiredWidth = Math.ceil(labelBox.x + labelBox.width + 48);

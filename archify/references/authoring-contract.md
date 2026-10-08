@@ -316,7 +316,7 @@ not settle viewport fit. These are repair directions, not guaranteed coordinates
 
 ### Sequence
 
-Participants are ordered by conversation role. Messages own their vertical order. Use return/async/security variants for meaning, not decoration; sequence does not use Automatic Port Spread.
+Participants are ordered by conversation role. Messages own their vertical order. Use return/async/security variants for meaning, not decoration; sequence does not use Automatic Port Spread. A segment's `from`/`to` edges must stay at least 4px off every message arrow (`message.y`): an edge along an arrow leaves the reader unable to tell which phase the message belongs to, and the renderer reports it.
 
 ### Dataflow
 

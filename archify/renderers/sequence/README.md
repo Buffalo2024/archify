@@ -118,7 +118,7 @@ for the bounded authoring repair and explicit-fixed preservation rules.
 - Use `security` for auth, consent, permission, and policy calls.
 - Use `return` for quiet response messages.
 - Use `dashed` for async trace, event, logging, and non-blocking work.
-- Use segments as light background guides; keep segment labels short.
+- Use segments as light background guides; keep segment labels short and keep each frame edge at least 4px off every message arrow.
 - Keep labels concise, but try `meta.column_fit: "spread"` before shortening a
   meaningful participant label just to fit the fixed boxes.
 
