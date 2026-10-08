@@ -85,3 +85,27 @@ test('architecture straightens a dogleg between facing nodes that overlap across
   assert.equal(points[0][1], points[1][1]);
   assert.ok(points[0][1] >= 146 && points[0][1] <= 164, JSON.stringify(points));
 });
+
+test('showcase slides a boundary title off a route that crosses its rail', t => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'archify-title-route-'));
+  t.after(() => fs.rmSync(directory, { recursive: true, force: true }));
+  const input = path.join(directory, 'diagram.json');
+  const output = path.join(directory, 'diagram.html');
+  fs.writeFileSync(input, JSON.stringify({
+    schema_version: 1,
+    diagram_type: 'architecture',
+    meta: { title: 'Title', output: 'diagram.html', quality_profile: 'showcase' },
+    components: [
+      { id: 'cache', type: 'database', label: 'Cache', pos: [40, 40], size: [100, 64] },
+      { id: 'api', type: 'backend', label: 'API', pos: [60, 220], size: [260, 80] },
+    ],
+    connections: [{ id: 'read', from: 'api', to: 'cache' }],
+    boundaries: [{ kind: 'region', label: 'Backend services', wraps: ['api'] }],
+  }));
+  const result = spawnSync(process.execPath, [cli, 'render', 'architecture', input, output, '--quality', 'showcase'], { cwd: directory, encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  const html = fs.readFileSync(output, 'utf8');
+  const [, x, width] = html.match(/structural-frame-label-mask" x="([\d.]+)" y="[\d.]+" width="([\d.]+)"/).map(Number);
+  const routeX = Number(html.match(/data-edge-id="read"[^>]*data-composition-points="([\d.]+),/)[1]);
+  assert.ok(routeX < x - 2 || routeX > x + width + 2, JSON.stringify({ x, width, routeX }));
+});

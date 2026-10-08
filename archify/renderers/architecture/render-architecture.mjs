@@ -17,6 +17,7 @@ import {
   asArray,
   isFinitePoint,
   rectsOverlap,
+  segmentIntersectsRect,
   cleanEndpointSideProblems,
   cleanFlowProblems,
   cleanCrossingProblems,
@@ -252,6 +253,37 @@ function horizontalOverlap(left, right) {
   return left.x < right.x + right.width && left.x + left.width > right.x;
 }
 
+// A route through a title disappears under its mask and reads as struck-through
+// text. Keep the left rail position when it is clear; otherwise slide the title
+// along its rail to the nearest clear position inside the frame.
+let titleRouteSegments = null;
+function slideTitleOffRoutes(boundary, title, placedTitles) {
+  if (!enforcesBoundaryTitleComposition) return;
+  titleRouteSegments ||= asArray(arch.connections)
+    .filter((conn) => components.has(conn.from) && components.has(conn.to))
+    .flatMap((conn) => {
+      const points = pathFor(conn).points;
+      return points.slice(1).map((end, index) => ({ start: points[index], end }));
+    });
+  const clear = (x) => {
+    const rect = { ...title, x };
+    return !titleRouteSegments.some((segment) => segmentIntersectsRect(segment, rect, 2))
+      && ![...placedTitles, ...components.values()].some((other) => rectsOverlap(rect, other));
+  };
+  if (clear(title.x)) return;
+  const left = boundary.x + layout.boundaryLabelFrameInset;
+  const right = boundary.x + boundary.width - layout.boundaryLabelFrameInset - title.width;
+  const band = titleRouteSegments.filter(({ start, end }) => (
+    Math.max(start[1], end[1]) >= title.y - 2 && Math.min(start[1], end[1]) <= title.y + title.height + 2
+  ));
+  const x = [right, ...band.flatMap(({ start, end }) => [
+    Math.max(start[0], end[0]) + 8, Math.min(start[0], end[0]) - 8 - title.width,
+  ])].filter((value) => value >= left && value <= right)
+    .sort((a, b) => a - b)
+    .find(clear);
+  if (x !== undefined) title.x = x;
+}
+
 function layoutBoundaryTitles(rawBoundaries, minimumFontSize) {
   const placedTitles = [];
   const measured = new Map();
@@ -280,6 +312,7 @@ function layoutBoundaryTitles(rawBoundaries, minimumFontSize) {
         Infinity,
       );
     }
+    slideTitleOffRoutes(boundary, title, placedTitles);
     placedTitles.push(title);
     measured.set(index, { boundary, title });
   }
