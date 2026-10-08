@@ -1,0 +1,50 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { checkCloudflareOutput } from '../website/scripts/check-cloudflare-output.mjs';
+
+function fixture(t) {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'archify-cloudflare-output-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  for (const name of ['index', 'gallery', 'guide', 'start', 'community', '404']) {
+    fs.writeFileSync(path.join(root, `${name}.html`), '<!doctype html><title>Archify</title>');
+  }
+  fs.writeFileSync(path.join(root, 'site.css'), 'body { color: black; }');
+  fs.appendFileSync(path.join(root, 'index.html'), '<link href="site.css" rel="stylesheet"><a href="/guide?lang=zh#install">Guide</a>');
+  const manifest = path.join(root, 'skill-updates/archify/stable.json');
+  fs.mkdirSync(path.dirname(manifest), { recursive: true });
+  fs.copyFileSync(new URL('../docs/skill-updates/archify/stable.json', import.meta.url), manifest);
+  return root;
+}
+
+test('Cloudflare output accepts static files and extensionless canonical routes', t => {
+  assert.equal(checkCloudflareOutput(fixture(t)), 6);
+});
+
+test('Cloudflare output rejects a missing 404 before implicit SPA fallback can ship', t => {
+  const root = fixture(t);
+  fs.rmSync(path.join(root, '404.html'));
+  assert.throws(() => checkCloudflareOutput(root), /ENOENT.*404\.html/);
+});
+
+test('Cloudflare output rejects a referenced asset missing from the deployment', t => {
+  const root = fixture(t);
+  fs.rmSync(path.join(root, 'site.css'));
+  assert.throws(() => checkCloudflareOutput(root), /index\.html: missing local target site\.css/);
+});
+
+test('Cloudflare output rejects a Worker accidentally bundled into the static site', t => {
+  const root = fixture(t);
+  fs.writeFileSync(path.join(root, '_worker.js'), 'export default {};');
+  assert.throws(() => checkCloudflareOutput(root), /Static deployment must not contain _worker\.js/);
+});
+
+test('Cloudflare output rejects an asset exceeding the Pages upload limit', t => {
+  const root = fixture(t);
+  const asset = path.join(root, 'oversize.bin');
+  fs.writeFileSync(asset, '');
+  fs.truncateSync(asset, 25 * 1024 * 1024 + 1);
+  assert.throws(() => checkCloudflareOutput(root), /asset exceeds 25 MiB/);
+});

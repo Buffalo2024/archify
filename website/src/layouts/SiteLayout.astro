@@ -3,11 +3,18 @@ import '../styles/utilities.css';
 import siteCss from '../styles/site.css?raw';
 interface Props { head: string; css: string }
 const { head, css } = Astro.props;
+const cloudflare = Astro.site?.origin === 'https://archify.si';
+const pagePath = Astro.url.pathname.replace(/\/index\.html$/, '/').replace(/\.html$/, '').replace(/\/$/, '') || '/';
+const canonical = cloudflare ? new URL(pagePath, Astro.site).href : undefined;
+const pageHead = cloudflare
+  ? head.replaceAll('https://tt-a1i.github.io/archify/', 'https://archify.si/').replace(/(<meta property="og:url" content=")[^"]*(")/, `$1${canonical}$2`)
+  : head;
 ---
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <Fragment set:html={head} />
+  <Fragment set:html={pageHead} />
+  {canonical && <link rel="canonical" href={canonical} />}
   <script is:inline>(function () { var t = 'light'; try { t = localStorage.getItem('archify-site-theme') || 'light'; } catch (_) {} document.documentElement.setAttribute('data-theme', t === 'dark' ? 'dark' : 'light'); })();</script>
   <style is:inline set:html={siteCss + css}></style>
 </head>
