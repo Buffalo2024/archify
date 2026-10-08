@@ -19,7 +19,7 @@ A change that makes gates pass while the diagram reads worse, or that makes agen
 
 - **The first draft is the unit of measure.** Bundled examples carry hand-tuned widths and routes, so they hide defects that every fresh draft hits.
 - **Deleted content is the accuracy signal.** A pass reached by removing an error state or merging lanes is a failure that looks like a success.
-- **Automatic layout must pass its own gates.** When a fully automatic draft (no `via`, sides, channels or label coordinates) fails composition checks, the renderer is at fault, not the agent.
+- **Separate route controls from placement.** A draft without route controls can still have authored positions, dimensions or a fixed canvas. Reproduce a failure with valid placement and constraints before attributing it to automatic layout.
 - **Early diagnostics must match the browser gate.** A compile-time check stricter than `browser-check` is a false failure; a looser one defers the failure to the most expensive stage.
 - **Traces explain more than outcomes.** Read where a diagnostic or document misled the agent, not only whether it passed.
 
@@ -27,34 +27,34 @@ A change that makes gates pass while the diagram reads worse, or that makes agen
 
 | Level | Measure | Source |
 |---|---|---|
-| Primary | Benchmark first-draft pass rate, per type | `replay.mjs` |
-| Primary | Content kept from first draft to final | `collect.mjs`, "lost" column |
+| Primary | Benchmark first-draft render pass rate, per type | `replay.mjs`; excludes finalize and browser gates |
+| Primary | Content changes from first draft to final | `collect.mjs`, "lost" column, then semantic comparison |
 | Secondary | Finalize failures and tool calls per diagram | `collect.mjs` on a new round |
 | Visual | Crossings, bends, shared corridors and text size, then screenshots | Receipts, `shots.mjs` |
 | Guard | No benchmark draft that passed on base fails on head; every changed output inspected | `replay.mjs`, golden, Gallery |
 
-A new round on a new project finds problems and shows a change broke nothing. It does not prove improvement, because projects differ too much: prove improvement on the benchmark, or by repeating one project two or three times.
+A round on a new project discovers problems; it does not establish improvement or absence of regressions. Compare fixed inputs for renderer changes. Evaluate authoring-instruction changes with comparable new generations on the same project, preserving first attempts, repairs and failures.
 
 ## Setup
 
 - **Tuning home**: `$ARCHIFY_TUNING_HOME`, default `~/.local/share/archify-tuning`. It holds `journal.md`, `bench/`, `rounds/` and `replays/`. It stays outside the repository because drafts carry content from source projects, which may be private: never commit it.
 - **Journal**: read `<tuning-home>/journal.md` before starting. It records the branch under tuning, the latest benchmark result, the open problems with evidence and the decisions already taken. Update it at the end of every iteration.
-- **Head**: the worktree you change, in a durable directory. Run `npm ci` there so the full test suite can run.
+- **Head**: the worktree you change, in a durable directory. Follow [Local setup and verification](../../../CONTRIBUTING.md#local-setup-and-verification) for dependencies and test selection.
 - **Base**: a separate worktree of the comparison point, usually `dev`: `git worktree add <dir> origin/dev`. Pass its `archify` directory as `--base`.
-- **Tools**: Node 22.13 or later (`collect.mjs` uses `node:sqlite` on Devin CLI session history; other agents need their own trace export) and Chrome or Chromium for `shots.mjs` (`ARCHIFY_CHROME` overrides discovery).
+- **Tools**: Node 22.13 or later and Chrome or Chromium for `shots.mjs` (`ARCHIFY_CHROME` overrides discovery). The collector accepts Devin CLI history or a [normalized trace export](references/trace-export.md) from another agent. It does not read other agents' private history databases.
 
-Scripts live in `.agents/skills/archify-tuning/scripts/`. `round`, `collect` and `replay` print their usage when run without arguments; `shots` uses the latest replay.
+Run the commands below from the repository root. `round`, `collect` and `replay` print their usage when run without arguments; pass an explicit replay directory to `shots` when retaining an acceptance receipt.
 
 ## Loop
 
-1. **Baseline.** `node scripts/replay.mjs --base <base>/archify` and record the per-type pass rate in the journal.
-2. **Generate.** Pick a project not used before (see the journal). `node scripts/round.mjs <project-path> [--types ...]` creates `<tuning-home>/rounds/<round>/` and `prompts.json`. Start each prompt as its own background subagent, unchanged. The Archify tree they use must stay untouched until every subagent finishes: experiment in a separate worktree meanwhile.
-3. **Collect.** `node scripts/collect.mjs <round> --dump` prints, per type, tool calls, finalize runs and failures, whether the first draft was fully automatic (`draft`), what the final candidate dropped (`lost`) and the diagnostic codes. It writes `<type>.trace.txt` and `<type>/first-draft.json`, and adds each first draft to the benchmark. Cross-check its counts with the subagents' reports.
+1. **Baseline.** `node .agents/skills/archify-tuning/scripts/replay.mjs --base <base>/archify` and record the per-type render pass rate and revision receipt in the journal.
+2. **Generate.** Pick a project not used before (see the journal). `node .agents/skills/archify-tuning/scripts/round.mjs <project-path> [--types ...]` creates `<tuning-home>/rounds/<round>/` and `prompts.json`. Start each prompt as its own background subagent, unchanged. The Archify tree they use must stay untouched until every subagent finishes: experiment in a separate worktree meanwhile.
+3. **Collect.** `node .agents/skills/archify-tuning/scripts/collect.mjs <round> --dump` reads Devin history; add `--trace-export <file.json>` for another agent's normalized export. It records tool calls, finalize outcomes, authored route controls, content-change signals and diagnostic codes; it also retains traces and first drafts. Cross-check counts with the subagents' reports. Compare labels, conditions, sources and meaning manually: a zero loss count is not proof of semantic preservation.
 4. **Attribute** every failure to exactly one cause, using [Trace signals](references/trace-signals.md):
 
    | Cause | Test | Response |
    |---|---|---|
-   | Renderer defect | A fully automatic draft fails its own composition checks | Fix the renderer |
+   | Renderer defect | Valid placement and authored constraints reproduce an automatic layout failure | Fix the renderer |
    | Misleading diagnostic | Following the message fails or edits the wrong element | Fix its fix text or evidence |
    | Documentation gap | The agent needs a fact found only outside the required reads | Move the fact into a required read, with numbers |
    | Authoring error | The required reads already say it | Nothing, or one sentence |
@@ -63,8 +63,8 @@ Scripts live in `.agents/skills/archify-tuning/scripts/`. `round`, `collect` and
 6. **Fix** the root cause once, in the shared path. Preserve authored geometry and pins; when the renderer cannot repair a draft itself, return a verified, actionable fix. Reject a change that only moves a metric, such as trading crossings for shared corridors.
 7. **Verify.**
    - Add a minimal test that fails before the fix.
-   - Replay: `node scripts/replay.mjs --base <base>/archify`. Any REGRESSED entry blocks the change; investigate every FIXED and changed entry.
-   - `node scripts/shots.mjs` and look at every pair it captures.
+   - Replay: `node .agents/skills/archify-tuning/scripts/replay.mjs --base <base>/archify`. Any REGRESSED entry blocks the change; investigate every FIXED and changed entry. A render pass does not replace finalization or browser acceptance.
+   - Run `node .agents/skills/archify-tuning/scripts/shots.mjs <replay-dir>` and inspect every changed output. Treat capture failures as missing evidence; compare identical inputs, viewport, theme and page state. Use `--all` for a broader visual pass.
    - Find affected tests by searching for the changed functions and message text, not by file name, and run them. Regenerate examples and Gallery when output changes, then run golden.
 8. **Record.** Commit code, regenerated outputs and documentation separately. Update the journal: benchmark result, problems closed and opened, approaches rejected. Integrate regularly through [CONTRIBUTING.md](../../../CONTRIBUTING.md) so the full suite and CI run. This skill does not authorise pushing, opening pull requests or installing Archify.
 

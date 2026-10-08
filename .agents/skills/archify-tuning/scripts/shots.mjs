@@ -27,28 +27,62 @@ if (!target || !fs.existsSync(path.join(target, 'replay.json')) || !chrome) {
   process.exit(2);
 }
 const height = Number(option('--height', 1100));
+if (!Number.isInteger(height) || height < 1) { console.error('--height must be a positive integer'); process.exit(2); }
 const { results } = JSON.parse(fs.readFileSync(path.join(target, 'replay.json'), 'utf8'));
 const picked = results.filter((result) => (args.includes('--all') || result.note) && (!option('--type') || result.type === option('--type')));
 const shots = path.join(target, 'shots');
 fs.mkdirSync(shots, { recursive: true });
 const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'archify-shots-'));
+const staging = fs.mkdtempSync(path.join(shots, '.pending-'));
 
+const captures = [];
+const escape = (value) => String(value).replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
 function capture(side, result) {
   const html = path.join(target, side, result.type, `${result.name}.html`);
-  if (!fs.existsSync(html)) return null;
   const png = path.join(shots, `${result.type}-${result.name}-${side}.png`);
-  spawnSync(chrome, ['--headless=new', '--disable-gpu', '--hide-scrollbars', `--user-data-dir=${profile}`,
-    `--window-size=1440,${height}`, `--screenshot=${png}`, pathToFileURL(html).href], { stdio: 'ignore', timeout: 60_000 });
-  return fs.existsSync(png) ? path.basename(png) : null;
+  // A failed retry must never display evidence left by an earlier invocation.
+  fs.rmSync(png, { force: true });
+  if (!fs.existsSync(html)) {
+    const expected = result[side]?.ok === false;
+    const entry = { type: result.type, name: result.name, side, status: expected ? 'not-rendered' : 'fail', reason: 'render-missing' };
+    captures.push(entry);
+    return entry;
+  }
+  const pending = path.join(staging, `${result.type}-${result.name}-${side}.png`);
+  const run = spawnSync(chrome, ['--headless=new', '--disable-gpu', '--hide-scrollbars', `--user-data-dir=${profile}`,
+    `--window-size=1440,${height}`, `--screenshot=${pending}`, pathToFileURL(html).href], { encoding: 'utf8', timeout: 60_000 });
+  let reason = run.error?.message || (run.status !== 0 ? `Chrome exited ${run.status ?? run.signal}` : '');
+  if (!reason) {
+    const bytes = fs.existsSync(pending) ? fs.readFileSync(pending) : Buffer.alloc(0);
+    const valid = bytes.length >= 45 && bytes.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))
+      && bytes.toString('ascii', 12, 16) === 'IHDR' && bytes.readUInt32BE(16) > 0 && bytes.readUInt32BE(20) > 0
+      && bytes.toString('ascii', bytes.length - 8, bytes.length - 4) === 'IEND';
+    if (!valid) reason = 'Chrome did not produce a PNG screenshot';
+  }
+  const entry = { type: result.type, name: result.name, side, status: reason ? 'fail' : 'pass',
+    ...(reason ? { reason, exitCode: run.status, stderr: (run.stderr || '').slice(-2000) } : { file: path.basename(png) }) };
+  if (!reason) fs.renameSync(pending, png);
+  captures.push(entry);
+  return entry;
 }
 
-const rows = picked.map((result) => {
-  const [base, head] = [capture('base', result), capture('head', result)];
-  const cell = (file, side) => (file ? `<img src="${file}" alt="${side}">` : `<p>${side}: no render (${result[side].first || 'failed'})</p>`);
-  return `<h2>${result.type}/${result.name} ${result.note || ''}</h2><div class="pair">${cell(base, 'base')}${cell(head, 'head')}</div>`;
-});
-fs.rmSync(profile, { recursive: true, force: true });
+let rows;
+try {
+  rows = picked.map((result) => {
+    const [base, head] = [capture('base', result), capture('head', result)];
+    const cell = (entry) => entry.status === 'pass' ? `<img src="${escape(entry.file)}" alt="${entry.side}">`
+      : `<p>${entry.side}: ${escape(entry.status)} (${escape(entry.reason)})</p>`;
+    return `<h2>${escape(result.type)}/${escape(result.name)} ${escape(result.note || '')}</h2><div class="pair">${cell(base)}${cell(head)}</div>`;
+  });
+} finally {
+  fs.rmSync(profile, { recursive: true, force: true });
+  fs.rmSync(staging, { recursive: true, force: true });
+}
+const failed = captures.filter((entry) => entry.status === 'fail');
+const passed = captures.filter((entry) => entry.status === 'pass');
+fs.writeFileSync(path.join(shots, 'capture.json'), `${JSON.stringify({ schemaVersion: 1, replay: path.join(target, 'replay.json'), viewport: { width: 1440, height }, captures }, null, 2)}\n`);
 fs.writeFileSync(path.join(shots, 'index.html'), `<!doctype html><meta charset="utf-8"><title>Replay shots</title>
 <style>body{font:14px system-ui;margin:16px;background:#111;color:#ddd}.pair{display:grid;grid-template-columns:1fr 1fr;gap:8px}img{width:100%;border:1px solid #333}</style>
-<p>Left: base. Right: head. ${picked.length} entries from ${target}</p>${rows.join('\n')}\n`);
-console.log(`${picked.length} pairs: ${path.join(shots, 'index.html')}`);
+<p>Left: base. Right: head. ${picked.length} entries, ${passed.length} screenshots captured, ${failed.length} capture failures, from ${escape(target)}</p>${rows.join('\n')}\n`);
+console.log(`${picked.length} entries; ${passed.length} screenshots captured; ${failed.length} capture failures: ${path.join(shots, 'index.html')}`);
+process.exitCode = failed.length ? 1 : 0;

@@ -25,11 +25,12 @@ import {
 import { availableNodeTextWidth, fittedNodeFontSize, minimumNodeTextWidth, nodeLabelLayout } from '../shared/text-fit.mjs';
 import { brandLabelFitWidth, brandMarkFor, brandMetadataFor, brandTopRailProblem, renderBrandMark } from '../shared/brand-marks.mjs';
 import { translateMessage as i18nText } from '../shared/i18n.mjs';
-import { minimumReadableSourceTextPx, predictedFixedWidthOverflow } from '../shared/desktop-readability.mjs';
+import { DESKTOP_READER_DIAGRAM_WIDTH, MIN_PROJECTED_NODE_TEXT_PX, minimumReadableSourceTextPx, predictedFixedWidthOverflow } from '../shared/desktop-readability.mjs';
 import {
   createMappedWorkflowCandidate,
   intrinsicWorkflow,
   planningWorkflow,
+  preservesWorkflowAbsoluteGeometry,
 } from './workflow-migration-geometry.mjs';
 import {
   joinRoutePoints,
@@ -232,6 +233,7 @@ function createReadableLayout(workflow, layoutFeedback = {}) {
   const widthContributors = new Set();
   const heightContributors = new Set();
   const nodes = asArray(workflow.nodes);
+  const nodeClearance = preservesWorkflowAbsoluteGeometry(workflow) ? 8 : 32;
   const nodesById = new Map(nodes.map((node) => [node.id, node]));
 
   for (let col = 0; col < columnCount - 1; col += 1) {
@@ -256,11 +258,12 @@ function createReadableLayout(workflow, layoutFeedback = {}) {
       if (!verticalIntervalsOverlap(leftNode, rightNode, 8)) continue;
       const fromNode = leftNode.col < rightNode.col ? leftNode : rightNode;
       const toNode = fromNode === leftNode ? rightNode : leftNode;
-      // Leave room for a vertical route corridor between neighbouring nodes.
+      // Unpinned drafts reserve a route corridor; absolute assertions keep
+      // their existing rank plan, including migration planning projections.
       constraints.push({
         from: fromNode.col,
         to: toNode.col,
-        minimum: authoredNodeWidth(fromNode) / 2 + 32 + authoredNodeWidth(toNode) / 2,
+        minimum: authoredNodeWidth(fromNode) / 2 + nodeClearance + authoredNodeWidth(toNode) / 2,
         contributors: [
           `rank ${fromNode.col}→${toNode.col} node width clearance`,
           nodeWidthContributor(fromNode),
@@ -686,8 +689,10 @@ function cloneWorkflow(value) {
 function canonicalReadableWorkflow(workflow) {
   if (workflow.schema_version !== 2) return workflow;
   for (const node of asArray(workflow.nodes)) {
-    const width = !Number.isFinite(node.width) && automaticNodeWidth(node);
+    const width = !preservesWorkflowAbsoluteGeometry(workflow)
+      && !Number.isFinite(node.width) && automaticNodeWidth(node);
     if (width) automaticNodeWidths.set(node, width);
+    else automaticNodeWidths.delete(node);
   }
   const laneOrder = new Map(asArray(workflow.lanes).map((lane, index) => [lane.id, index]));
   const nodes = [...asArray(workflow.nodes)].sort((left, right) => (
@@ -967,7 +972,7 @@ function createWorkflowLaneGeometry(workflow, layout, legendExtraHeight, minimum
 function measureWorkflowNodes(workflow, layout, laneGeometry) {
   const { laneHeight, laneGroupHeaderH, laneGroupFooterH, laneTop } = laneGeometry;
   function measureNode(node) {
-    const width = node.width || automaticNodeWidths.get(node) || layout.nodeW;
+    const width = node.width || (workflow.schema_version === 2 && automaticNodeWidths.get(node)) || layout.nodeW;
     const height = node.height || (node.tag ? 68 : layout.nodeH);
     const cx = layout.colXs[node.col];
     const groupHeaderH = laneGroupHeaderH(node.lane);
@@ -4854,25 +4859,52 @@ function renderGroup(group, index) {
         <text x="${span.x + 10}" y="${labelY}" class="${textClass}" font-size="7" font-weight="600">${esc(group.label)}</text>`;
 }
 
-// Sublabel shrink-to-fit stops where it still reads on the desktop at the final
-// canvas width, so an overflow is reported here rather than by the browser gate.
-// The gate exempts fine tags, which keep their fixed legible minimum.
+// Automatic showcase canvases stop sublabel shrinking at the desktop floor.
+// Standard and authored canvases retain the established text-fitting contract;
+// the preferred font remains the maximum supported by the fixed text rows.
 function readableSublabelMinimum() {
   const minimum = nodeTextFit.sublabelMinimum;
-  if (workflow.schema_version !== 2) return minimum;
+  if (workflow.schema_version !== 2 || resolvedQualityProfile !== 'showcase'
+      || workflow.meta?.viewBox) return minimum;
   return Math.max(minimum, Math.ceil(minimumReadableSourceTextPx(viewBox[0]) * 10) / 10);
 }
 
 function validateReadableNodeText() {
-  const problems = [];
+  const diagnostics = [];
   const minimum = readableSublabelMinimum();
   for (const node of nodes.values()) {
-    const minimumW = node.sublabel ? minimumNodeTextWidth(node.sublabel, minimum) : 0;
-    if (minimumW > availableNodeTextWidth(node.width)) {
-      problems.push(`Sublabel "${node.sublabel}" needs ~${Math.ceil(minimumW)}px at the ${minimum}px minimum that stays readable on this ${viewBox[0]}px canvas, but node "${node.id}" provides ${availableNodeTextWidth(node.width)}px — shorten the sublabel; a wider node or canvas lowers every projected font.`);
-    }
+    if (!node.sublabel) continue;
+    const maximumCanvasWidth = Math.floor(DESKTOP_READER_DIAGRAM_WIDTH
+      * nodeTextFit.sublabelPreferred / MIN_PROJECTED_NODE_TEXT_PX);
+    const fontBudgetExceeded = minimum > nodeTextFit.sublabelPreferred;
+    const minimumW = minimumNodeTextWidth(node.sublabel, minimum);
+    if (!fontBudgetExceeded && minimumW <= availableNodeTextWidth(node.width)) continue;
+    const message = fontBudgetExceeded
+      ? `Sublabel "${node.sublabel}" needs a ${minimum}px minimum that stays readable on this ${viewBox[0]}px canvas, above the supported ${nodeTextFit.sublabelPreferred}px text row — compact the column spacing or node widths so the canvas is at most ${maximumCanvasWidth}px wide; preserve the sublabel's role or protocol.`
+      : `Sublabel "${node.sublabel}" needs ~${Math.ceil(minimumW)}px at the ${minimum}px minimum that stays readable on this ${viewBox[0]}px canvas, but node "${node.id}" provides ${availableNodeTextWidth(node.width)}px — shorten the sublabel while preserving its role or protocol.`;
+    const authoredNode = workflow.nodes.find((authored) => authored.id === node.id);
+    diagnostics.push({
+      code: 'workflow/sublabel-readability',
+      severity: 'error',
+      message,
+      subject: {
+        diagramType: 'workflow', node: node.id,
+        path: `/nodes/${sourceIndexes.nodes.get(authoredNode)}/sublabel`,
+      },
+      evidence: {
+        requiredFontPx: minimum,
+        maximumSlotFontPx: nodeTextFit.sublabelPreferred,
+        canvasWidthPx: viewBox[0],
+        maximumCanvasWidthPx: maximumCanvasWidth,
+        requiredTextWidthPx: minimumW,
+        availableTextWidthPx: availableNodeTextWidth(node.width),
+      },
+      supportedFixes: fontBudgetExceeded
+        ? [`compact column spacing or node widths until the implicit canvas is at most ${maximumCanvasWidth}px wide, preserving every node and relationship`]
+        : [`shorten node "${node.id}" sublabel while preserving its role or protocol; move supplementary facts into a card`],
+    });
   }
-  if (problems.length) throwDiagnosticProblems('Workflow layout validation failed', problems, { subject: { diagramType: 'workflow' } });
+  if (diagnostics.length) throwDiagnosticError('Workflow layout validation failed', diagnostics);
 }
 
 function renderNode(node) {
@@ -4880,8 +4912,8 @@ function renderNode(node) {
   const accent = componentText[node.type] || 't-muted';
   const hasSub = node.sublabel != null && node.sublabel !== '';
   const labelFontSize = fittedNodeFontSize(node.label, brandLabelFitWidth(node, node.width), nodeTextFit.labelPreferred, nodeTextFit.labelMinimum);
-  const sublabelMinimum = readableSublabelMinimum();
-  const sublabelFontSize = fittedNodeFontSize(node.sublabel, node.width, Math.max(nodeTextFit.sublabelPreferred, sublabelMinimum), sublabelMinimum);
+  const sublabelMinimum = Math.min(nodeTextFit.sublabelPreferred, readableSublabelMinimum());
+  const sublabelFontSize = fittedNodeFontSize(node.sublabel, node.width, nodeTextFit.sublabelPreferred, sublabelMinimum);
   const tagFontSize = fittedNodeFontSize(node.tag, node.width, nodeTextFit.tagPreferred, nodeTextFit.tagMinimum);
   const textRows = [{ text: node.label, font: labelFontSize, y: 21 }];
   if (hasSub) textRows.push({ text: node.sublabel, font: sublabelFontSize, y: 38 });

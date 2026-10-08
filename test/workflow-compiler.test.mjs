@@ -500,6 +500,46 @@ test('a readable-v2 node without an authored width grows to fit its label', () =
   assert.equal(width, 104);
 });
 
+test('automatic widths are recomputed after editing the same workflow object', () => {
+  const document = adjacentWorkflow({ widths: [undefined, undefined], nodeLabels: ['Start', 'a'.repeat(29)] });
+  document.nodes[1].col = 5;
+  const expanded = compileSuccessfully(document);
+  assert.equal(expanded.receipt.nodes.find(({ id }) => id === 'b').width, 192);
+  document.nodes[1].label = 'A';
+  document.meta.viewBox = [768, 420];
+  const reused = compileSuccessfully(document);
+  const fresh = compileSuccessfully(clone(document));
+  assert.equal(reused.receipt.nodes.find(({ id }) => id === 'b').width, 92);
+  assert.equal(reused.svg, fresh.svg);
+  assert.deepEqual(reused.receipt, fresh.receipt);
+});
+
+test('switching an edited document to fixed-v1 does not reuse automatic widths', () => {
+  const document = adjacentWorkflow({ widths: [undefined, undefined], nodeLabels: ['Start', 'a'.repeat(29)] });
+  document.nodes[1].col = 5;
+  compileSuccessfully(document);
+  document.nodes[1].label = 'A';
+  document.schema_version = 1;
+  const reused = compileSuccessfully(document);
+  const fresh = compileSuccessfully(clone(document));
+  assert.equal(reused.receipt.nodes.find(({ id }) => id === 'b').width, 92);
+  assert.equal(reused.svg, fresh.svg);
+});
+
+test('authored canvases and standard workflows preserve bounded sublabel fonts', () => {
+  for (const qualityProfile of ['standard', 'showcase']) {
+    const document = adjacentWorkflow({ widths: [92, 92], viewBox: [10000, 420] });
+    document.nodes[0].sublabel = 'x';
+    const result = compileSuccessfully(document, qualityProfile);
+    assert.match(result.svg, /data-detail="context"[^>]*font-size="8"[^>]*>x<\/text>/);
+  }
+  const document = adjacentWorkflow({ widths: [132, 200] });
+  document.nodes[1].col = 5;
+  document.nodes[0].sublabel = 'chain / debate / synthesis 调度';
+  for (const col of [0, 2, 3, 4]) document.nodes.push({ id: `wide-${col}`, lane: 'main', col, type: 'backend', label: `Step ${col}`, width: 200 });
+  compileSuccessfully(document, 'standard');
+});
+
 test('readable-v2 sublabels must fit at the size that stays readable on the final canvas', () => {
   const workflow = adjacentWorkflow({ widths: [132, 200] });
   workflow.nodes[1].col = 5;
@@ -507,9 +547,25 @@ test('readable-v2 sublabels must fit at the size that stays readable on the fina
   for (const col of [0, 2, 3, 4]) {
     workflow.nodes.push({ id: `wide-${col}`, lane: 'main', col, type: 'backend', label: `Step ${col}`, width: 200 });
   }
-  const result = compileWorkflow({ workflow });
+  const result = compileWorkflow({ workflow, qualityProfile: 'showcase' });
   assert.equal(result.ok, false, 'expected a readable-size failure on a canvas wider than the reader');
   assert.match(JSON.stringify(result.diagnostics), /minimum that stays readable on this \d+px canvas/);
+});
+
+test('automatic showcase rejects a sublabel floor above the fixed row font budget', () => {
+  const workflow = adjacentWorkflow({ fromCol: 0, widths: [400, 400] });
+  workflow.nodes[0].sublabel = 'x';
+  workflow.nodes[1].col = 5;
+  for (const col of [2, 3, 4]) workflow.nodes.push({ id: `wide-${col}`, lane: 'main', col, type: 'backend', label: `Step ${col}`, width: 400 });
+  const result = compileWorkflow({ workflow, qualityProfile: 'showcase' });
+  assert.equal(result.ok, false);
+  assert.match(JSON.stringify(result.diagnostics), /above the supported 8px text row/);
+  const diagnostic = result.diagnostics.find(({ code }) => code === 'workflow/sublabel-readability');
+  assert.equal(diagnostic.subject.path, '/nodes/0/sublabel');
+  assert.ok(diagnostic.evidence.requiredFontPx > diagnostic.evidence.maximumSlotFontPx);
+  assert.equal(diagnostic.evidence.maximumSlotFontPx, 8);
+  assert.ok(diagnostic.supportedFixes.some(fix => /compact column spacing/.test(fix)));
+  compileSuccessfully(workflow, 'standard');
 });
 
 test('an automatic readable-v2 canvas too tall for the desktop page reads at page width', () => {

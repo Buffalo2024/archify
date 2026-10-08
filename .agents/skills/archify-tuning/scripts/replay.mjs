@@ -4,15 +4,15 @@
 // Renders every benchmark first draft with two Archify trees (each the
 // directory holding bin/archify.mjs; head defaults to this repository) and
 // reports, per type, how many drafts pass on each side, which flipped and
-// which passing drafts changed geometry. Renders and replay.json go to
+// which passing drafts changed their rendered SVG or styles. Renders and replay.json go to
 // <tuning-home>/replays/<timestamp> unless --out. Exits 1 when a draft that
 // passes on base fails on head. Rendering skips finalize's browser gate.
-import { spawn } from 'node:child_process';
+import { spawn, execFileSync } from 'node:child_process';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { DIAGRAM_TYPES, tuningHome } from './lib.mjs';
+import { DIAGRAM_TYPES, tuningHome, renderedSvgFingerprint } from './lib.mjs';
 
 const args = process.argv.slice(2);
 const option = (name, fallback) => {
@@ -20,7 +20,8 @@ const option = (name, fallback) => {
   return index === -1 ? fallback : args[index + 1];
 };
 const here = path.dirname(fileURLToPath(import.meta.url));
-const base = option('--base');
+const baseOption = option('--base');
+const base = baseOption ? path.resolve(baseOption) : null;
 const head = path.resolve(option('--head', path.join(here, '../../../../archify')));
 const bench = path.resolve(option('--bench', path.join(tuningHome(), 'bench')));
 const out = path.resolve(option('--out', path.join(tuningHome(), 'replays', new Date().toISOString().replace(/[:.]/g, '-'))));
@@ -37,11 +38,21 @@ const entries = DIAGRAM_TYPES.filter((type) => !onlyType || type === onlyType).f
     : [];
 });
 
-// Geometry a renderer change can move: routed points and the canvas.
-function geometry(html) {
-  const points = html.match(/data-composition-points="[^"]*"|viewBox="[^"]*"/g) || [];
-  return crypto.createHash('sha256').update(points.join('\n')).digest('hex').slice(0, 12);
+if (!entries.length) {
+  console.error('No benchmark drafts selected; collect drafts first or choose a populated --bench/--type.');
+  process.exit(2);
 }
+function treeIdentity(tree) {
+  try {
+    const git = (...args) => execFileSync('git', ['-C', tree, ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+    return { path: tree, revision: git('rev-parse', 'HEAD'), dirty: git('status', '--porcelain').split('\n').filter(Boolean) };
+  } catch { return { path: tree, revision: null, dirty: null }; }
+}
+const inventory = entries.map(({ type, name, file }) => ({ type, name, sha256: crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex') }));
+const provenance = {
+  base: treeIdentity(base), head: treeIdentity(head),
+  benchmark: { inventory, sha256: crypto.createHash('sha256').update(JSON.stringify(inventory)).digest('hex') },
+};
 
 function render(tree, side, entry) {
   const document = JSON.parse(fs.readFileSync(entry.file, 'utf8'));
@@ -62,7 +73,7 @@ function render(tree, side, entry) {
         problems: problems.length,
         codes: [...new Set(problems.map((line) => (line.match(/^- \[([^\]]+)\]/) || [])[1] || 'other'))],
         first: ok ? '' : (problems[0] || log.trim().split('\n')[0] || '').slice(0, 160),
-        geometry: ok ? geometry(fs.readFileSync(output, 'utf8')) : null,
+        geometry: ok ? renderedSvgFingerprint(fs.readFileSync(output, 'utf8')) : null,
       });
     });
   });
@@ -86,7 +97,7 @@ for (const result of results) {
   result.note = note;
   console.log(`${`${result.type}/${result.name}`.padEnd(32)} base ${tag(result.base).padEnd(10)} head ${tag(result.head).padEnd(10)} ${note.padEnd(9)} ${result.head.ok ? '' : result.head.codes.join(',')}`);
 }
-console.log('\nfirst-draft pass rate by type (base -> head)');
+console.log('\nfirst-draft render pass rate by type (base -> head; browser gate not run)');
 for (const type of DIAGRAM_TYPES) {
   const own = results.filter((result) => result.type === type);
   if (!own.length) continue;
@@ -95,5 +106,5 @@ for (const type of DIAGRAM_TYPES) {
 }
 const regressed = results.filter((result) => result.base.ok && !result.head.ok);
 console.log(`total ${results.filter((result) => result.base.ok).length}/${results.length} -> ${results.filter((result) => result.head.ok).length}/${results.length}; regressed ${regressed.length}; renders in ${out}`);
-fs.writeFileSync(path.join(out, 'replay.json'), `${JSON.stringify({ base: path.resolve(base), head, bench, results }, null, 2)}\n`);
+fs.writeFileSync(path.join(out, 'replay.json'), `${JSON.stringify({ schemaVersion: 1, base, head, bench, provenance, results }, null, 2)}\n`);
 process.exit(regressed.length ? 1 : 0);

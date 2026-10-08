@@ -565,7 +565,7 @@ function placementHints({ crossings = [], detours = [], crowdedSides = [] }) {
 }
 
 // Route failures call for a connected-scene repair; size and text failures do not.
-const ROUTE_DIAGNOSTIC = /^(clean-flow\/|composition\/(proper-crossing|ambiguous-corridor|border-run|container-border-run|excessive-route-detour|route-rhythm|arrowhead-collision|pinned-reply-detour))/;
+const ROUTE_DIAGNOSTIC = /^(clean-flow\/|composition\/(proper-crossing|ambiguous-corridor|border-run|container-border-run|excessive-route-detour|route-rhythm|arrowhead-collision))/;
 
 export function compactFinalizeReceipt(receipt) {
   const gates = {};

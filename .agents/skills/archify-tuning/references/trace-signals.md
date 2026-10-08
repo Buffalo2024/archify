@@ -5,7 +5,7 @@ Read `<round>/<type>.trace.txt` with the subagent's own report. Each signal belo
 | Signal in the trace | Likely cause | Check |
 |---|---|---|
 | The final candidate dropped nodes, edges or lanes the first draft had | The agent bought a pass with content | `collect.mjs` "lost" column, then compare the drafts. Highest priority |
-| A fully automatic draft (`draft: auto`) fails crossing, corridor, through-node or label checks | Renderer defect | Render the first draft at `--quality standard` and look at the routes |
+| A draft without route controls fails crossing, corridor, through-node or label checks | Possible layout defect or authored placement constraint | Inspect node placement, dimensions and canvas first; render a scratch copy at `standard` to inspect routes, keeping the original failure |
 | A crossing or corridor failure, then side pins, then `explicit-pin-conflict`, then a restructure | The router has no legal route the agent can request | Same as above; the hint that suggested pins is also wrong |
 | The same code survives a focused repair | The fix text names a change that cannot help | Apply the advertised fix to the draft and rerun |
 | Width or gap values oscillate across runs, such as `gapX` 64, 108, 72 | The diagnostic omits the target value | Make it state the required width, gap or character budget |
@@ -20,7 +20,7 @@ Read `<round>/<type>.trace.txt` with the subagent's own report. Each signal belo
 
 Use these as patterns; each was confirmed by replaying the first draft.
 
-- Workflow same-lane neighbours were placed 8px apart, so no route could pass between columns. Fully automatic drafts failed on crossings and shared corridors, and agents removed lanes and nodes. Neighbours now keep a 32px corridor and routes may take offset tracks.
+- Workflow same-lane neighbours were placed 8px apart, leaving little route space. Automatic drafts failed on crossings and shared corridors, and agents removed lanes and nodes. Unpinned drafts now use a 32px corridor and may take offset tracks; absolute route pins retain their existing geometry contract.
 - Dataflow flows across several stages turned at their midpoint, inside a middle stage's node. Agents deleted nodes. They now turn in the nearest clear gap.
 - Dataflow ignored perpendicular pinned sides, so agents hand-wrote `via` points.
 - Sequence canvases stayed 920px wide whatever the participant labels needed, and the message suggested widening `viewBox`, which the readability budget forbids.

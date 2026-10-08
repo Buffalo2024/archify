@@ -147,6 +147,18 @@ a verified migration-to-v2 repair; v1 never falls through to adaptive layout.
 | Explicit viewBox | containment capacity; too-small input reports exact `requiredViewBox` and contributors |
 | Lane measurement | A same-column vertical stack (two or more distinct `yOffset` values) opts an implicit, unpinned workflow into per-lane measurement. Explicit `meta.viewBox`, `via`, `labelAt`, `channelX`, or `channelY`, and workflows without a stack retain shared-height v2 geometry for compatibility. |
 
+Unpinned v2 drafts reserve 32px between overlapping same-lane nodes for routes,
+and omitted node widths may grow from 92px to 200px to fit their text. Documents
+with absolute `via`, `labelAt`, `channelX`, or `channelY` pins retain the existing
+width defaults and 8px rank-clearance constraint, in both compilation and
+migration planning. Authored widths remain authoritative.
+
+Automatic showcase canvases check sublabels against the desktop reading floor
+without enlarging text beyond its existing 8px slot. If the canvas cannot keep
+that slot readable, `workflow/sublabel-readability` reports the required font
+and canvas width. Standard quality and explicit canvases retain their previous
+text-fitting behavior and the existing composition/browser quality checks.
+
 The compiler applies constraints only to actual related or overlapping
 same-lane nodes, so a wide node in an unrelated lane does not expand every
 rank. Legacy centers are a soft preference after correctness constraints, not

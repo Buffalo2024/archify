@@ -251,7 +251,7 @@ const CASES = [
     ['exceeds the segment frame\'s available width', 'increase meta.viewBox[0]']],
   ['sequence: participant sublabel wider than its legible minimum', 'sequence',
     (d) => { d.participants[0].sublabel = 'This supporting sentence is far too long for one sequence participant'; },
-    ['Sublabel', 'readable', 'shorten the sublabel']],
+    ['sequence/participant-sublabel-overflow', 'Sublabel', 'legible', 'shorten the sublabel']],
 
   // ---- dataflow layout rules ----
   ['dataflow: flow missing label', 'dataflow',
@@ -356,6 +356,31 @@ for (const [name, mode, mutate, expected] of CASES) {
     }
   });
 }
+
+test('workflow: exact 8px clearance retains the floating-point tolerance (#583)', () => {
+  // A label pin retains the compatibility rank policy. The historical pair
+  // is therefore still checked at the validator's 8px boundary.
+  const doc = {
+    schema_version: 2, diagram_type: 'workflow',
+    meta: { title: 'Pinned clearance rounding', quality_profile: 'showcase' },
+    lanes: [{ id: 'upper', label: 'Upper: the first lane' }, { id: 'lower', label: 'Lower lane: second lane' }],
+    nodes: [
+      { id: 's0', lane: 'lower', col: 0, type: 'backend', label: 'Start', width: 160 },
+      ...[1, 2, 3, 4, 5].map(col => ({ id: `a${col}`, lane: 'upper', col, type: 'backend', label: `Step ${col}`, width: 160 })),
+    ],
+    edges: [
+      { id: 's0-a1', from: 's0', to: 'a1', fromSide: 'top', toSide: 'left' },
+      { id: 'a3-a4', from: 'a3', to: 'a4', label: 'next', labelAt: [870, 82] },
+    ],
+  };
+  const rendered = render('workflow', doc);
+  assert.equal(rendered.code, 0, rendered.stderr);
+  const html = fs.readFileSync(rendered.outPath, 'utf8');
+  const left = workflowNodeRect(html, 'a4');
+  const right = workflowNodeRect(html, 'a5');
+  assert.ok(Math.abs(right.x - (left.x + left.width) - 8) < 1e-6);
+  assert.ok(left.x + left.width + 8 > right.x, 'the pair must need the floating-point tolerance');
+});
 
 test('workflow: same-lane nodes the solver separated by its exact minimum keep passing (#583)', () => {
   // Redacted reproduction from #583: the neighbour constraint produced a column
@@ -621,9 +646,27 @@ test('architecture: boundary title masks cannot obscure connection labels', () =
     }],
   };
 
+  const repaired = render('architecture', d);
+  assert.equal(repaired.code, 0, repaired.stderr);
+  const html = fs.readFileSync(repaired.outPath, 'utf8');
+  const match = html.match(/<g data-detail="context" data-edge-from="source" data-edge-to="target"[^>]*>[\s\S]*?<rect x="([^"]+)" y="([^"]+)" width="([^"]+)" height="([^"]+)"/);
+  assert.ok(match, 'expected the authored connection label mask');
+  const [, x, y, width, height] = match.map(Number);
+  const connectionMask = { x, y, width, height };
+  const titleMasks = boundaryTitleMasks(html);
+  assert.equal(titleMasks.length, 1);
+  for (const titleMask of titleMasks) {
+    assert.equal(rectanglesOverlap(titleMask, connectionMask), false);
+  }
+  assert.match(html, /<text x="270" y="88"[^>]*>Route label<\/text>/);
+
+  // A mask covering the complete rail cannot be repaired by sliding the title.
+  // Retain rejection and executable author guidance for that real collision.
+  d.connections[0].label = 'Route label across complete frame';
+  d.connections[0].labelAt = [310, 88];
   const { code, stderr } = render('architecture', d);
   assert.notEqual(code, 0);
-  assert.match(stderr, /Boundary label "Runtime scope" overlaps connection label "Route label"/);
+  assert.match(stderr, /Boundary label "Runtime scope" overlaps connection label "Route label across complete frame"/);
   assert.match(stderr, /labelAt\/labelDx\/labelDy\/labelSegment/);
 });
 

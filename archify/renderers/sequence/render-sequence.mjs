@@ -124,10 +124,13 @@ const layout = {
   labelH: readableMessages ? 18 : 16
 };
 
-// Shrink-to-fit must stop where the text still reads on the desktop at this
-// canvas width; a smaller fit only defers the failure to the browser gate.
-const readableSublabelMinimum = Math.max(participantTextFit.sublabelMinimum,
-  Math.ceil(minimumReadableSourceTextPx(viewBox[0]) * 10) / 10);
+// Automatic showcase spread can guarantee a readable fit within its bounded
+// canvas. Standard, fixed columns and authored canvases retain historical text
+// sizing; composition reports their projected readability under its own policy.
+const readableAutomaticSublabel = readableMessages && automaticWidth !== null && columnFit === 'spread';
+const readableSublabelMinimum = readableAutomaticSublabel
+  ? Math.max(participantTextFit.sublabelMinimum, Math.ceil(minimumReadableSourceTextPx(viewBox[0]) * 10) / 10)
+  : participantTextFit.sublabelMinimum;
 const readableSublabelPreferred = Math.max(participantTextFit.sublabelPreferred, readableSublabelMinimum);
 
 const participantBoxWidthNote = automaticWidth
@@ -237,11 +240,23 @@ function validateSequence() {
   }
 
   for (const participant of participants.values()) {
+    const participantIndex = asArray(sequence.participants).findIndex((entry) => entry.id === participant.id);
+    const participantProblem = (field, message, evidence, supportedFixes) => {
+      problems.push(message);
+      diagnostics.push({
+        code: `sequence/participant-${field}-overflow`, severity: 'error', message,
+        subject: { diagramType: 'sequence', nodeId: participant.id, path: `/participants/${participantIndex}/${field}` },
+        evidence: { viewBoxWidth: viewBox[0], participantWidth: layout.participantW, ...evidence },
+        supportedFixes,
+      });
+    };
     const estLabelW = textUnits(participant.label) * 6.8;
     if (estLabelW > layout.participantW + 6) {
-      problems.push(automaticWidth
+      const message = automaticWidth
         ? `Label "${participant.label}" (~${Math.round(estLabelW)}px) is wider than component "${participant.id}" — shorten it to at most ${Math.floor((layout.participantW + 6) / 6.8)} text units (CJK counts 2; ${participantBoxWidthNote}).`
-        : `Label "${participant.label}" (~${Math.round(estLabelW)}px) is wider than component "${participant.id}" (${layout.participantW}px) — shorten the label or widen the participant box.`);
+        : `Label "${participant.label}" (~${Math.round(estLabelW)}px) is wider than component "${participant.id}" (${layout.participantW}px) — shorten the label or widen the participant box.`;
+      participantProblem('label', message, { text: participant.label, requiredWidth: estLabelW, availableWidth: layout.participantW + 6 },
+        ['shorten the participant label while preserving its role', ...(columnFit === 'fixed' ? ['set meta.column_fit to "spread" if fixed coordinates are not required'] : [])]);
     }
     const brandRailProblem = brandTopRailProblem(participant, layout.participantW, 8, 'Participant');
     if (brandRailProblem) problems.push(brandRailProblem);
@@ -251,7 +266,12 @@ function validateSequence() {
       const availableTextW = availableNodeTextWidth(layout.participantW);
       const minimumW = minimumNodeTextWidth(participant.sublabel, readableSublabelMinimum);
       if (minimumW > availableTextW) {
-        problems.push(`Sublabel "${participant.sublabel}" needs ~${Math.ceil(minimumW)}px at the ${readableSublabelMinimum}px minimum that stays readable on this ${viewBox[0]}px canvas, but participant "${participant.id}" provides ${availableTextW}px — shorten the sublabel (${participantBoxWidthNote}).`);
+        const minimumDescription = readableAutomaticSublabel
+          ? `${readableSublabelMinimum}px minimum that stays readable on this ${viewBox[0]}px canvas`
+          : `${readableSublabelMinimum}px legible minimum`;
+        const message = `Sublabel "${participant.sublabel}" needs ~${Math.ceil(minimumW)}px at the ${minimumDescription}, but participant "${participant.id}" provides ${availableTextW}px — shorten the sublabel (${participantBoxWidthNote}).`;
+        participantProblem('sublabel', message, { text: participant.sublabel, requiredWidth: minimumW, availableWidth: availableTextW, minimumFontPx: readableSublabelMinimum },
+          ['shorten the participant sublabel while preserving its role or protocol; move supplementary detail into a card', ...(columnFit === 'fixed' ? ['set meta.column_fit to "spread" if fixed coordinates are not required'] : [])]);
       }
     }
   }

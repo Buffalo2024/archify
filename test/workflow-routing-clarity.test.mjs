@@ -120,7 +120,7 @@ test('readable-v2 preserves authored sides, routes, channels, vias, and label po
     { route: 'straight' },
     { route: 'bottom-channel' },
     { channelY: 425 },
-    { via: [[716.8, 425], [840.8, 425]], fromSide: 'bottom', toSide: 'bottom' },
+    { via: [[716.8, 425], [836.8, 425]], fromSide: 'bottom', toSide: 'bottom' },
     { labelAt: [776.8, 415] },
   ];
   for (const authored of cases) {
