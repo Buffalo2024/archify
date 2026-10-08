@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
 import { parse } from 'parse5';
 import { stagePublic } from '../scripts/stage-public.mjs';
@@ -47,7 +48,7 @@ test('local font declarations preserve the original families, weights and swap b
 test('tracked public staging ships authentic WOFF2 bytes, licenses and the CSS references', () => {
   const output = fs.mkdtempSync(path.join(os.tmpdir(), 'archify-local-fonts-'));
   try {
-    stagePublic(path.resolve(repo.pathname), output);
+    stagePublic(fileURLToPath(repo), output);
     assert.equal(manifest.fonts.length, 5);
     assert.equal(manifest.licenses.length, 4);
     assert.deepEqual(fs.readFileSync(path.join(output, 'fonts/fonts.css')), fs.readFileSync(new URL('fonts.css', fonts)));
