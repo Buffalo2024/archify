@@ -260,3 +260,26 @@ test('automatic sequence declares width-first fit; authored viewBox does not', (
     assert.doesNotMatch(authoredRoot, /data-reader-fit=/);
   }
 });
+
+test('automatic spread canvas widens for participant labels up to the readable width', () => {
+  const participant = (id, label) => ({ id, type: 'backend', label });
+  const doc = {
+    schema_version: 1,
+    diagram_type: 'sequence',
+    meta: { title: 'Automatic width', quality_profile: 'showcase' },
+    participants: [
+      participant('a', 'Web UI'), participant('b', 'Orchestrator'), participant('c', 'team CLI'), participant('d', 'Runtime'),
+      participant('e', 'Team operations'), participant('f', 'SQLite'), participant('g', 'Stdin queue'), participant('h', 'Worker'),
+    ],
+    messages: [{ from: 'a', to: 'h', label: 'send', y: 180 }],
+  };
+  const html = render(doc);
+  const width = Number(html.match(/<svg viewBox="0 0 (\d+) /)[1]);
+  assert.ok(width > 920 && width <= 1085, String(width));
+  for (const box of participantBoxes(html)) assert.ok(box.width + 6 >= textUnits('Team operations') * 6.8, JSON.stringify(box));
+
+  doc.participants[6].label = 'Stdin dispatcher queue';
+  const crowded = renderOutcome(doc);
+  assert.notEqual(crowded.code, 0);
+  assert.match(crowded.stderr, /shorten it to at most \d+ text units[^]*keep meta\.viewBox omitted/);
+});

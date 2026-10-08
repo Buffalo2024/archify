@@ -8,6 +8,7 @@ import { componentFill, arrowClassMap, rectsOverlap, cleanFlowProblems, cleanCro
 import { availableNodeTextWidth, fittedNodeFontSize, minimumNodeTextWidth } from '../shared/text-fit.mjs';
 import { brandLabelFitWidth, brandMetadataFor, brandTopRailProblem, renderBrandMark } from '../shared/brand-marks.mjs';
 import { translateMessage as i18nText } from '../shared/i18n.mjs';
+import { DESKTOP_READER_DIAGRAM_WIDTH, MIN_PROJECTED_NODE_TEXT_PX } from '../shared/desktop-readability.mjs';
 
 const participantTextFit = {
   sublabelPreferred: 7,
@@ -58,9 +59,29 @@ function legendRequiredHeight(width) {
   return Math.ceil(contentBottom + LEGEND_CONTENT_GAP + LEGEND_BLOCK_HEIGHT
     + legendFootprint(entries, { width: width - 80 }).extraHeight);
 }
+// A renderer-sized spread canvas widens until every participant label fits,
+// but never past the width where 7px sublabels would project below the
+// desktop reading minimum; an inherently crowded row still fails below.
+const spreadParticipantWidth = (canvasWidth) => Math.max(86,
+  Math.min(190, Math.round((canvasWidth - 124) / Math.max(1, asArray(sequence.participants).length)) - 24));
+const readableCanvasWidth = Math.floor(DESKTOP_READER_DIAGRAM_WIDTH * participantTextFit.sublabelPreferred / MIN_PROJECTED_NODE_TEXT_PX);
+function automaticCanvasWidth() {
+  const participantsFit = (width) => asArray(sequence.participants).every((participant) => (
+    textUnits(participant.label) * 6.8 <= width + 6
+    && (!participant.sublabel || minimumNodeTextWidth(participant.sublabel, participantTextFit.sublabelMinimum) <= availableNodeTextWidth(width))
+  ));
+  if ((sequence.meta?.column_fit || 'spread') !== 'spread' || participantsFit(spreadParticipantWidth(920))) return 920;
+  const needed = Math.max(...asArray(sequence.participants).map((participant) => Math.max(
+    textUnits(participant.label) * 6.8 - 6,
+    participant.sublabel ? minimumNodeTextWidth(participant.sublabel, participantTextFit.sublabelPreferred) + 86 - availableNodeTextWidth(86) : 0,
+  )));
+  const count = Math.max(1, asArray(sequence.participants).length);
+  return Math.min(readableCanvasWidth, Math.max(920, Math.ceil((Math.min(190, needed) + 25) * count + 124)));
+}
 // A renderer-sized canvas grows to keep the legend clear of late messages;
 // an authored viewBox is honored and validated below.
-const viewBox = sequence.meta?.viewBox || [920, Math.max(760, legendRequiredHeight(920))];
+const automaticWidth = sequence.meta?.viewBox ? null : automaticCanvasWidth();
+const viewBox = sequence.meta?.viewBox || [automaticWidth, Math.max(760, legendRequiredHeight(automaticWidth))];
 // The timeline scales with viewBox height: a taller viewBox gains message room,
 // a shorter one shrinks the readable band (validated below) instead of clipping.
 // `column_fit: "spread"` widens the lanes with the viewBox instead of keeping
@@ -70,9 +91,7 @@ const viewBox = sequence.meta?.viewBox || [920, Math.max(760, legendRequiredHeig
 const columnFit = sequence.meta?.column_fit || 'spread';
 const participantCount = Math.max(1, asArray(sequence.participants).length);
 const preferredSideMargin = 62;
-const participantW = columnFit === 'spread'
-  ? Math.max(86, Math.min(190, Math.round((viewBox[0] - preferredSideMargin * 2) / participantCount) - 24))
-  : 86;
+const participantW = columnFit === 'spread' ? spreadParticipantWidth(viewBox[0]) : 86;
 // Narrow feasible frames can reduce the left margin, while ordinary frames
 // keep 62px. Compute card width first so this does not change its sizing rule.
 const minimumParticipantSpan = participantCount * participantW + (participantCount - 1) * 16;
@@ -105,9 +124,11 @@ const layout = {
   labelH: readableMessages ? 18 : 16
 };
 
-const participantBoxWidthNote = columnFit === 'spread'
-  ? `participant boxes are ${participantW}px for this viewBox width and ${participantCount} participants`
-  : `participant boxes are a fixed ${participantW}px unless meta.column_fit is "spread"`;
+const participantBoxWidthNote = automaticWidth
+  ? `participant boxes are ${participantW}px: the automatic ${viewBox[0]}px canvas cannot widen further without its 7px sublabels falling below the desktop reading minimum, so keep meta.viewBox omitted`
+  : columnFit === 'spread'
+    ? `participant boxes are ${participantW}px for this viewBox width and ${participantCount} participants`
+    : `participant boxes are a fixed ${participantW}px unless meta.column_fit is "spread"`;
 
 const arrowClass = {
   ...arrowClassMap,
@@ -212,7 +233,9 @@ function validateSequence() {
   for (const participant of participants.values()) {
     const estLabelW = textUnits(participant.label) * 6.8;
     if (estLabelW > layout.participantW + 6) {
-      problems.push(`Label "${participant.label}" (~${Math.round(estLabelW)}px) is wider than component "${participant.id}" (${layout.participantW}px) — shorten the label or widen the participant box.`);
+      problems.push(automaticWidth
+        ? `Label "${participant.label}" (~${Math.round(estLabelW)}px) is wider than component "${participant.id}" — shorten it to at most ${Math.floor((layout.participantW + 6) / 6.8)} text units (CJK counts 2; ${participantBoxWidthNote}).`
+        : `Label "${participant.label}" (~${Math.round(estLabelW)}px) is wider than component "${participant.id}" (${layout.participantW}px) — shorten the label or widen the participant box.`);
     }
     const brandRailProblem = brandTopRailProblem(participant, layout.participantW, 8, 'Participant');
     if (brandRailProblem) problems.push(brandRailProblem);
