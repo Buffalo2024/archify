@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
+import { sameEntry } from '../archify/renderers/shared/path-semantics.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const mode = /^(architecture|workflow|sequence|dataflow|lifecycle|erd|class|tree|timeline|waterfall)-/;
@@ -28,7 +29,7 @@ export function selectAffectedTests(owners, changed, available) {
               : name.startsWith(`${owner}-`) || shared.test(name));
   }).sort();
 }
-if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (process.argv[1] && sameEntry(process.argv[1], fileURLToPath(import.meta.url)).status === 'match') {
   const available = fs.readdirSync(path.join(root, 'test')).filter(name => name.endsWith('.test.mjs')).map(name => `test/${name}`);
   const files = selectAffectedTests(JSON.parse(process.env.CI_TEST_OWNERS || '[]'), JSON.parse(process.env.CI_CHANGED_TESTS || '[]'), available);
   if (files.length) {
