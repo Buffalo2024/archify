@@ -1249,7 +1249,7 @@ function validateEr() {
     diagramType: 'erd',
     relationCollection: 'relationships',
     profile: er.meta?.quality_profile,
-    routeHint: 'move the entities so unrelated relationships use separate corridors',
+    routeHint: 'move the entities so unrelated relationships use separate corridors — put a junction beside both parents inside one solid domain rectangle',
   }));
   problems.push(...cleanAmbiguousCorridorProblems({
     relations: routableRelationships,
