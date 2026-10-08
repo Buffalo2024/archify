@@ -60,9 +60,18 @@ test('Motion Governor preserves mode, ownership, ambient completion and real cal
     const expectedNavigation = ++navigationId;
     if (!preserveStorage) {
       fixtureUrl = pathToFileURL(files[mode]).href + `?theme=${theme}&testNavigation=${expectedNavigation}${query}`;
-      // Reset the disposable browser profile before navigation. Touching
-      // localStorage in a new-document script can disturb file-backed storage
-      // in Chrome; leave startup and reload reads to the Viewer itself.
+      // End the old document before resetting this disposable profile. A
+      // backend clear while the old file document still owns its Storage area
+      // is not an isolation boundary for its pending work or unload handlers.
+      // Keep startup/reload reads in the real Viewer, outside injected scripts.
+      const frame = (await send('Page.getFrameTree')).frameTree.frame;
+      if (frame.url !== 'about:blank') {
+        const detached = browser.cdp.waitFor('Page.loadEventFired', session);
+        const navigation = await send('Page.navigate', { url: 'about:blank' });
+        assert.ok(navigation.loaderId, 'Fresh fixture reset must end the prior document.');
+        await detached;
+        assert.equal(await run('location.href'), 'about:blank', 'Storage reset requires the neutral document.');
+      }
       await send('Storage.clearDataForStorageKey', { storageKey: 'file:///', storageTypes: 'local_storage' });
     }
     if (startup) await send('Page.removeScriptToEvaluateOnNewDocument', { identifier: startup });
