@@ -451,8 +451,12 @@ function flowSides(flow) {
   };
 }
 
+// The shared default of 14px packs two 10px arrowheads on top of each other.
+// Raise the ceiling so a side that has room spreads them; a short side still
+// clamps to usable/(n-1) and keeps the previous layout.
 const automaticPorts = automaticPortSpread(dataflow.flows, nodes, {
   sideFor: (flow, endpoint) => flowSides(flow)[endpoint === 'source' ? 'fromSide' : 'toSide'],
+  maxSpacing: 18,
 });
 
 function pathFor(flow) {

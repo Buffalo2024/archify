@@ -67,3 +67,15 @@ test('a pinned dataflow route keeps its geometry and its crossing diagnostic', (
   assert.notEqual(result.status, 0);
   assert.match(result.stdout + result.stderr, /proper-crossing/);
 });
+
+test('two automatic arrivals on one side of a tall node keep at least 16px between their ports', () => {
+  const diagram = JSON.parse(fs.readFileSync(fixture, 'utf8'));
+  const result = render(diagram);
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+  const arrivals = routes(result.html).filter((route) => route.to === 'fe').map((route) => route.points.at(-1));
+  assert.ok(arrivals.length >= 2, `expected at least two arrivals into fe, got ${arrivals.length}`);
+  const ys = arrivals.map((point) => point[1]).sort((a, b) => a - b);
+  for (let index = 1; index < ys.length; index += 1) {
+    assert.ok(ys[index] - ys[index - 1] >= 16, `ports ${ys[index - 1]} and ${ys[index]} are only ${ys[index] - ys[index - 1]}px apart`);
+  }
+});
