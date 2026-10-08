@@ -92,6 +92,7 @@ function assertOnlyLabelDefects(receipt) {
   for (const issue of receipt.diagnostics) {
     assert.ok(issue.code === 'composition/label-gap'
       || issue.code === 'composition/label-route-clearance'
+      || issue.code === 'layout/boundary-encloses-non-member'
       || /^Label ".*" overlaps component /.test(issue.message), JSON.stringify(issue));
   }
 }
@@ -160,4 +161,18 @@ test('workflow: every overlapping node pair of a first draft is reported in one 
   const pairs = overlaps.map((entry) => entry.evidence.nodes.map((node) => node.id).join('>'));
   assert.ok(pairs.includes('test_join>staging_deploy'));
   assert.ok(pairs.includes('metric_gate>rollback_stable'));
+});
+
+// The same study's queue draft placed the tenant auth component, which only the
+// integration boundary wraps, inside the gateway-process frame as well. The
+// picture claimed a membership the source never stated.
+test('architecture: a component inside a boundary frame it is not wrapped by is reported', () => {
+  const { status, receipt } = validate('architecture', path.join(fixtures, 'queue-sol.architecture.json'));
+  assert.equal(status, 1);
+  const issue = receipt.diagnostics.find((entry) => entry.code === 'layout/boundary-encloses-non-member');
+  assert.ok(issue, JSON.stringify(receipt.diagnostics, null, 2));
+  assert.equal(issue.subject.component, 'auth');
+  assert.equal(issue.subject.boundary.label, 'Queue gateway process');
+  const example = validate('architecture', path.join(skillRoot, 'examples', 'production-deployment.architecture.json'));
+  assert.equal(example.status, 0, JSON.stringify(example.receipt?.diagnostics));
 });
