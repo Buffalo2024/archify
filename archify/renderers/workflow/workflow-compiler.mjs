@@ -4245,7 +4245,7 @@ function automaticPortCandidates(edge, node, side, preferred, counterpart) {
       const ownWidth = edge.width || (edge.variant === 'emphasis' ? 1.8 : 1.4);
       const otherWidth = other.width || (other.variant === 'emphasis' ? 1.8 : 1.4);
       if (Math.abs(point[1 - axis] - center[1 - axis]) < 0.0001) {
-        occupied.push({ coordinate: point[axis], clearance: Math.max(12, 3.5 * (ownWidth + otherWidth)) });
+        occupied.push({ coordinate: point[axis], clearance: Math.max(16, 3.5 * (ownWidth + otherWidth)) });
       }
     }
   }

@@ -52,3 +52,21 @@ test('a label that does not fit its preferred stretch moves to a run that clears
   const edge = result.receipt.edges.find((entry) => entry.from === 'triage' && entry.to === 'status');
   assert.deepEqual(edge.points, [[388.6, 269], [388.6, 491], [455.6, 491]]);
 });
+
+// Two error edges into Denied used to share a 12px port gap (arrowheads
+// overlapping). Raising the same-side clearance floor to 16px separates them.
+const refund = path.join(__dirname, 'fixtures', 'workflow-first-draft', 'customer-refund.workflow.json');
+
+test('two automatic arrivals on one side of a node keep at least 16px between their ports', () => {
+  const result = compileWorkflow({ workflow: JSON.parse(fs.readFileSync(refund, 'utf8')) });
+  assert.equal(result.ok, true, result.error);
+  const ends = result.receipt.edges
+    .filter((edge) => edge.to === 'deny')
+    .map((edge) => edge.points.at(-1));
+  assert.ok(ends.length >= 2);
+  const axis = Math.abs(ends[0][0] - ends[1][0]) >= Math.abs(ends[0][1] - ends[1][1]) ? 0 : 1;
+  const values = ends.map((point) => point[axis]).sort((a, b) => a - b);
+  for (let index = 1; index < values.length; index += 1) {
+    assert.ok(values[index] - values[index - 1] >= 16, `ports ${values[index - 1]} and ${values[index]} are only ${values[index] - values[index - 1]}px apart`);
+  }
+});
