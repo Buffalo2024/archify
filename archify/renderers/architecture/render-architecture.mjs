@@ -311,7 +311,7 @@ function layoutBoundaryTitles(rawBoundaries, minimumFontSize) {
 // automatic route never borrows a frame border as its corridor), never the
 // title-expanded frames or the viewBox.
 const rawBoundaries = asArray(arch.boundaries).map(boundaryRect).filter(Boolean);
-const { pathFor, connectionSides, connectionEndpointSide } = createRouter(components, arch.connections, {
+const routerOptions = {
   distinctAutomaticPorts: true,
   preferReadableRoutes: true,
   frames: rawBoundaries.map((boundary) => ({
@@ -325,7 +325,8 @@ const { pathFor, connectionSides, connectionEndpointSide } = createRouter(compon
     labels,
     components: [...components.values()],
   }) : null),
-});
+};
+const { pathFor, connectionSides, connectionEndpointSide } = createRouter(components, arch.connections, routerOptions);
 function hasAutomaticRouteGeometry(connection) {
   return !Array.isArray(connection?.via)
     && (!connection?.route || connection.route === 'auto')
@@ -777,6 +778,30 @@ function validateArchitecture() {
     relationCollection: 'connections',
     profile: arch.meta?.quality_profile,
   }));
+  // A reply pinned to leave and enter one side detours around both nodes,
+  // although an unpinned reciprocal pair renders as two straight lanes.
+  if ((process.env.ARCHIFY_QUALITY_PROFILE || arch.meta?.quality_profile) === 'showcase') {
+    const relations = asArray(arch.connections);
+    const reported = new Set();
+    for (const [index, conn] of relations.entries()) {
+      if (reported.has(conn) || !components.has(conn.from) || !components.has(conn.to)
+          || !hasAutomaticRouteGeometry(conn) || !conn.fromSide || conn.fromSide === 'auto' || conn.fromSide !== conn.toSide) continue;
+      const reply = relations.find((other) => other.from === conn.to && other.to === conn.from && hasAutomaticRouteGeometry(other));
+      if (!reply) continue;
+      const unpinned = new Map([conn, reply].map((relation) => [relation, { ...relation, fromSide: undefined, toSide: undefined }]));
+      const trial = createRouter(components, relations.map((relation) => unpinned.get(relation) || relation), routerOptions);
+      if (![...unpinned.values()].every((relation) => trial.pathFor(relation).points.length === 2)) continue;
+      reported.add(conn).add(reply);
+      const message = `[composition/pinned-reply-detour] architecture connections[${index}]${conn.id ? ` id "${conn.id}"` : ''} "${conn.from}" -> "${conn.to}" is pinned to leave and enter the ${conn.fromSide} side, so it detours around both nodes; without fromSide/toSide it and its reply "${reply.id || `${reply.from}->${reply.to}`}" render as two parallel straight lines — remove fromSide and toSide from both.`;
+      problems.push(message);
+      diagnostics.push({
+        code: 'composition/pinned-reply-detour', severity: 'error', message,
+        subject: { diagramType: 'architecture', collection: 'connections', id: conn.id, from: conn.from, to: conn.to },
+        evidence: { side: conn.fromSide, replyId: reply.id, points: pathFor(conn).points, unpinnedPoints: [...unpinned.values()].map((relation) => trial.pathFor(relation).points) },
+        supportedFixes: [`remove fromSide and toSide from "${conn.id || `${conn.from}->${conn.to}`}" and its reply`],
+      });
+    }
+  }
 
   // Connection labels must not land on top of components.
   const labelRects = connectionLabels;
