@@ -70,12 +70,26 @@ function automaticCanvasWidth() {
     textUnits(participant.label) * 6.8 <= width + 6
     && (!participant.sublabel || minimumNodeTextWidth(participant.sublabel, participantTextFit.sublabelMinimum) <= availableNodeTextWidth(width))
   ));
-  if ((sequence.meta?.column_fit || 'spread') !== 'spread' || participantsFit(spreadParticipantWidth(920))) return 920;
+  const count = Math.max(1, asArray(sequence.participants).length);
+  const columnFitMode = sequence.meta?.column_fit || 'spread';
+  if (columnFitMode !== 'spread') return 920;
+  if (participantsFit(spreadParticipantWidth(920))) {
+    // Few-participant automatic canvases: keep readable box sizes but drop the
+    // empty gutters a 920px spread leaves beside 2–3 lifelines. Authored
+    // viewBoxes and the widen-for-labels path below are unchanged.
+    if (count <= 3) {
+      for (const candidate of [560, 640, 720, 800, 920]) {
+        const box = spreadParticipantWidth(candidate);
+        const span = count * box + (count - 1) * 16;
+        if (box >= 86 && participantsFit(box) && candidate - 80 >= span) return candidate;
+      }
+    }
+    return 920;
+  }
   const needed = Math.max(...asArray(sequence.participants).map((participant) => Math.max(
     textUnits(participant.label) * 6.8 - 6,
     participant.sublabel ? minimumNodeTextWidth(participant.sublabel, participantTextFit.sublabelPreferred) + 86 - availableNodeTextWidth(86) : 0,
   )));
-  const count = Math.max(1, asArray(sequence.participants).length);
   return Math.min(readableCanvasWidth, Math.max(920, Math.ceil((Math.min(190, needed) + 25) * count + 124)));
 }
 // A renderer-sized canvas grows to keep the legend clear of late messages and

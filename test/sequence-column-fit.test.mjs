@@ -229,6 +229,34 @@ test('narrow authored canvases reduce only the spread left margin to retain feas
 });
 
 
+test('few-participant automatic spread packs below 920px when labels fit', () => {
+  for (const count of [2, 3]) {
+    const doc = {
+      schema_version: 1, diagram_type: 'sequence',
+      meta: { title: `${count} participants`, quality_profile: 'showcase' },
+      participants: Array.from({ length: count }, (_, index) => ({
+        id: `p${index}`, type: 'backend', label: `P${index}`,
+      })),
+      messages: [{ id: 'm0', from: 'p0', to: `p${count - 1}`, y: 200, label: 'ping' }],
+    };
+    const html = render(doc, true);
+    const width = Number(html.match(/<svg viewBox="0 0 (\d+) /)[1]);
+    assert.equal(width, 560, `${count}p should pack to 560, got ${width}`);
+    assert.match(html, /data-sequence-column-fit="spread"/);
+  }
+  // Four participants retain the established 920px spread contract.
+  const four = {
+    schema_version: 1, diagram_type: 'sequence',
+    meta: { title: 'Four participants', quality_profile: 'showcase' },
+    participants: Array.from({ length: 4 }, (_, index) => ({
+      id: `p${index}`, type: 'backend', label: `P${index}`,
+    })),
+    messages: [{ id: 'm0', from: 'p0', to: 'p3', y: 200, label: 'ping' }],
+  };
+  const fourHtml = render(four, true);
+  assert.match(fourHtml, /viewBox="0 0 920 /);
+});
+
 test('eight participants fit the automatic 920px canvas with default and explicit spread', () => {
   const doc = {
     schema_version: 1, diagram_type: 'sequence', meta: { title: 'Eight participants' },
