@@ -357,7 +357,7 @@ test('readable-v2 separates approval branches in the checked-in workflow example
     // approval-denied and approved-tool previously shared a mixed-style trunk.
     // Node geometry, labels, all other paths and v1 baselines are unchanged.
     sha256(result.svg.replace(/ data-(?:composition-routing|edge-role|layout-contract)="[^"]*"/g, '')),
-    '7a4effe6000ef4d5c8e2e933186ff225f6398d76216d916600e51f8e05a7e139',
+    'ee6a341d43479ac4b79deaef11513b4fac00cd984a376bf93b7ccd3a13b7e9a9',
   );
 });
 
