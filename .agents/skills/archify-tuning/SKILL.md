@@ -18,6 +18,7 @@ A change that makes gates pass while the diagram reads worse, or that makes agen
 ## Principles
 
 - **The first draft is the unit of measure.** Bundled examples carry hand-tuned widths and routes, so they hide defects that every fresh draft hits.
+- Keep synthetic regressions in repository tests, separate from the frozen first-draft benchmark and its pass-rate denominator.
 - **Deleted content is the accuracy signal.** A pass reached by removing an error state or merging lanes is a failure that looks like a success.
 - **Separate route controls from placement.** A draft without route controls can still have authored positions, dimensions or a fixed canvas. Reproduce a failure with valid placement and constraints before attributing it to automatic layout.
 - **Early diagnostics must match the browser gate.** A compile-time check stricter than `browser-check` is a false failure; a looser one defers the failure to the most expensive stage.
@@ -64,7 +65,7 @@ Run the commands below from the repository root. `round`, `collect` and `replay`
 7. **Verify.**
    - Add a minimal test that fails before the fix.
    - Replay: `node .agents/skills/archify-tuning/scripts/replay.mjs --base <base>/archify`. Any REGRESSED entry blocks the change; investigate every FIXED and changed entry. A render pass does not replace finalization or browser acceptance.
-   - Run `node .agents/skills/archify-tuning/scripts/shots.mjs <replay-dir>` and inspect every changed output. Treat capture failures as missing evidence; compare identical inputs, viewport, theme and page state. Use `--all` for a broader visual pass.
+   - Run `node .agents/skills/archify-tuning/scripts/shots.mjs <replay-dir>` and inspect every changed output. Treat capture failures as missing evidence; compare identical inputs, viewport, theme and page state. Check that every connection remains distinguishable from the background, including beneath label masks and beside arrowheads, in the affected detail modes and themes. Use `--all` for a broader visual pass.
    - Find affected tests by searching for the changed functions and message text, not by file name, and run them. Regenerate examples and Gallery when output changes, then run golden.
 8. **Record.** Commit code, regenerated outputs and documentation separately. Update the journal: benchmark result, problems closed and opened, approaches rejected. Integrate regularly through [CONTRIBUTING.md](../../../CONTRIBUTING.md) so the full suite and CI run. This skill does not authorise pushing, opening pull requests or installing Archify.
 
