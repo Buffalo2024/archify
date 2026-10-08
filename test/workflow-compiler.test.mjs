@@ -998,10 +998,10 @@ test('capacity-only viewBox failures preserve historical routes, labels, and req
   const referenceDocument = clone(document);
   referenceDocument.meta.viewBox = [1600, 1000];
   const intrinsic = compileSuccessfully(referenceDocument, 'showcase');
-  assert.deepEqual(intrinsic.receipt.requiredViewBox, [1034, 404]);
+  assert.deepEqual(intrinsic.receipt.requiredViewBox, [768, 404]);
 
   const insufficientDocument = clone(document);
-  insufficientDocument.meta.viewBox = [900, 1000];
+  insufficientDocument.meta.viewBox = [700, 1000];
   const insufficient = compileWorkflow({
     workflow: insufficientDocument,
     qualityProfile: 'showcase',
@@ -1011,7 +1011,7 @@ test('capacity-only viewBox failures preserve historical routes, labels, and req
   assert.equal(insufficient.diagnostics.length, 1, JSON.stringify(insufficient.diagnostics, null, 2));
   const [capacity] = insufficient.diagnostics;
   assert.equal(capacity.code, 'workflow/viewbox-capacity');
-  assert.deepEqual(capacity.evidence.actualViewBox, [900, 1000]);
+  assert.deepEqual(capacity.evidence.actualViewBox, [700, 1000]);
   assert.deepEqual(capacity.evidence.requiredViewBox, intrinsic.receipt.requiredViewBox);
 
   const sufficientDocument = clone(document);

@@ -2274,6 +2274,16 @@ function routeContainsChannelPin(points, field, value) {
   });
 }
 
+function hasClearStraightAutomaticRoute(edge) {
+  if (!independentAutomaticRoute(edge) || edge.from === edge.to) return false;
+  const from = nodes.get(edge.from);
+  const to = nodes.get(edge.to);
+  const start = anchor(from, defaultFromSide(from, to));
+  const end = anchor(to, defaultToSide(from, to));
+  const aligned = Math.abs(start[0] - end[0]) < 0.0001 || Math.abs(start[1] - end[1]) < 0.0001;
+  return aligned && routeClearsUnrelatedNodes(edge, [start, end]);
+}
+
 function validateReadablePinnedGeometry() {
   if (workflow.schema_version !== 2) return;
   // Reserve absolute geometry at contested nodes before automatic routing,
@@ -2284,6 +2294,18 @@ function validateReadablePinnedGeometry() {
       && [edge.from, edge.to].some(id => id === other.from || id === other.to))) continue;
     validateReadableRouteControls(edge);
     pathFor(edge);
+  }
+  // Reserve clear straight automatic routes before ID-ordered bending edges so
+  // a later edge cannot steal a corridor that already has one good straight path.
+  // Skip during discoverFixes probes (discoverFixes === false): those probes
+  // strip labelAt/via and would otherwise look "automatic", recreating the pin
+  // geometry and shrinking causal pin sets (round-23 regression).
+  if (discoverFixes) {
+    for (const edge of workflow.edges) {
+      if (!nodes.has(edge.from) || !nodes.has(edge.to) || !hasClearStraightAutomaticRoute(edge)) continue;
+      validateReadableRouteControls(edge);
+      pathFor(edge);
+    }
   }
   // Routing order feedback: an automatic edge that an earlier automatic edge
   // forced into a shared corridor or crossing is planned first on a retry.
