@@ -181,7 +181,9 @@ their offsets around zero:
 ```
 
 An implicit readable-v2 vertical stack whose measured lane height exceeds the
-104px baseline declares `data-reader-fit="width-first"`. The desktop Viewer uses
+104px baseline declares `data-reader-fit="width-first"`, as does any implicit
+readable-v2 canvas that would otherwise overflow the 1440×900 desktop page at
+full width. The desktop Viewer uses
 available reading width and normal page scrolling to keep tall stages readable,
 with the existing 1.5× automatic enlargement cap. This changes only displayed
 size: canonical SVG geometry and explicit `meta.viewBox` workflows retain their

@@ -25,6 +25,7 @@ import {
 import { availableNodeTextWidth, fittedNodeFontSize, minimumNodeTextWidth, nodeLabelLayout } from '../shared/text-fit.mjs';
 import { brandLabelFitWidth, brandMarkFor, brandMetadataFor, brandTopRailProblem, renderBrandMark } from '../shared/brand-marks.mjs';
 import { translateMessage as i18nText } from '../shared/i18n.mjs';
+import { predictedFixedWidthOverflow } from '../shared/desktop-readability.mjs';
 import {
   createMappedWorkflowCandidate,
   intrinsicWorkflow,
@@ -4892,10 +4893,12 @@ function renderLegend() {
 }
 
 function renderSvg() {
+  // A renderer-sized canvas that would overflow the desktop page at full
+  // width reads at page width with vertical scroll, like a tall stack.
   const readerFit = workflow.schema_version === 2
     && !workflow.meta?.viewBox
-    && hasVerticalStack(workflow)
-    && asArray(layout.laneHeights).some((height) => height > 104)
+    && ((hasVerticalStack(workflow) && asArray(layout.laneHeights).some((height) => height > 104))
+      || predictedFixedWidthOverflow({ viewBoxWidth: viewBox[0], viewBoxHeight: viewBox[1], diagramType: 'workflow' }))
     ? ' data-reader-fit="width-first"'
     : '';
   const contract = workflow.schema_version === 2 ? ' data-layout-contract="readable-v2"' : '';

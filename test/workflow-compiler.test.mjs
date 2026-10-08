@@ -491,6 +491,18 @@ test('an automatic readable-v2 vertical stack opts into width-first reader fitti
   assert.equal(attribute(svgRoot, 'data-reader-fit'), 'width-first');
 });
 
+test('an automatic readable-v2 canvas too tall for the desktop page reads at page width', () => {
+  const workflow = adjacentWorkflow();
+  workflow.lanes = Array.from({ length: 6 }, (_, index) => ({ id: `lane-${index}`, label: `Lane ${index}` }));
+  workflow.nodes = workflow.lanes.map((lane, index) => ({ id: `n${index}`, lane: lane.id, col: 1, type: 'backend', label: `Step ${index}` }));
+  workflow.edges = workflow.nodes.slice(1).map((node, index) => ({ id: `e${index}`, from: workflow.nodes[index].id, to: node.id }));
+  const result = compileSuccessfully(workflow);
+  const svgRoot = result.svg.match(/<svg\b[^>]*>/)?.[0];
+  const [, , width, height] = attribute(svgRoot, 'viewBox').split(' ').map(Number);
+  assert.ok(width / height < 1.55, `${width}x${height} must be below the wide ratio`);
+  assert.equal(attribute(svgRoot, 'data-reader-fit'), 'width-first');
+});
+
 test('stack reader fitting stays off for authored canvases, fixed-v1, and workflows without a vertical stack', () => {
   const authoredCanvas = stackedGroupWorkflow({ schemaVersion: 2, offsets: [-90, 0, 90] });
   authoredCanvas.meta.viewBox = [768, 452];
