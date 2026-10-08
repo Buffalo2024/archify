@@ -19,8 +19,8 @@
       "engineeringProfile": null,
       "nodeCount": 12,
       "edgeCount": 11,
-      "artifactBytes": 783567,
-      "artifactSha256": "2412d9039ad8ff28f7adc890f2df9da80fc7036fecb6fb8c4a3e29b629013261",
+      "artifactBytes": 783573,
+      "artifactSha256": "3d2d925435e2a4d7a16f4cf41f5181aa0a8a5fe13a68c007d29f8a54b1cf80ea",
       "sourceBytes": 4939,
       "sourceSha256": "d67965d50872c97e4ff3476271e645bf19fab6b3ab44e111bdb44b063e3aa36f",
       "checks": [
