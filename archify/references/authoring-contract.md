@@ -363,7 +363,7 @@ straight corridor. Never place an unrelated entity between two aligned anchors;
 the router can detour around it, but the clear corridor is shorter and reads
 better. A junction table has two parents: put it in a cell beside or between
 both, not beneath one of them with tables stacked between it and the other,
-and keep every table that shares its domain tag in one solid block of cells.
+and keep every table that shares its domain tag in one solid block of cells. A relationship must connect two different entities; a self-reference such as manager_id stays as a foreign-key column (and optionally a card), not an `employees`→`employees` edge.
 Use `row`/`col` for this normal grouped layout, and only use explicit
 `pos`/`via` after a diagnostic identifies a concrete geometry problem.
 
