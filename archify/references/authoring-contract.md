@@ -361,7 +361,10 @@ place their direct children beside or beneath them. Columns read left to right a
 rows read top to bottom, so a relationship between neighbouring columns is one
 straight corridor. Never place an unrelated entity between two aligned anchors;
 the router can detour around it, but the clear corridor is shorter and reads
-better. Use `row`/`col` for this normal grouped layout, and only use explicit
+better. A junction table has two parents: put it in a cell beside or between
+both, not beneath one of them with tables stacked between it and the other,
+and keep every table that shares its domain tag in one solid block of cells.
+Use `row`/`col` for this normal grouped layout, and only use explicit
 `pos`/`via` after a diagnostic identifies a concrete geometry problem.
 
 State every key role a column carries in `key`, and the real references in
