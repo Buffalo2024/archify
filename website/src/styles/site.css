@@ -121,6 +121,10 @@
       .site-nav .brand-lockup { width:30px; object-fit:cover; object-position:left center; }
       .site-nav .nav-link { padding:0 .3rem; font-size:.75rem; gap:.3rem; }
     }
+    @media (max-width:360px) {
+      .site-nav { padding:0 .5rem; }
+      .site-nav .nav-link { min-width:44px; padding:0 .2rem; }
+    }
     /* inner-page entrance — label, title, copy and side board arrive in sequence */
     @keyframes siteRise { from { opacity:0; translate:0 18px; filter:blur(6px); } }
     @keyframes siteTitle { from { opacity:0; clip-path:inset(0 0 100% 0); translate:0 .35em; } to { clip-path:inset(-20% -5% -30% -5%); } }
