@@ -21,7 +21,7 @@ TypeScript stays on the supported 6.x line because the Astro checker currently r
 
 ## Source ownership
 
-- `src/pages/*.astro`: the four website pages, retaining `index.html`, `gallery.html`, `guide.html`, and `start.html` URLs.
+- `src/pages/*.astro`: five English pages and reusable Chinese route wrappers. Existing English file URLs remain available; the Chinese homepage builds as `zh.html`, with four pages under `zh/`.
 - `src/layouts/SiteLayout.astro` and `src/components/Navigation.astro`: shared document and navigation.
 - `src/components/Brand.tsx`: shared server-rendered React identity; no unnecessary hydration is shipped. Future interactive React components can opt into Astro client directives.
 - `src/components/GalleryCard.astro` and `src/data/gallery-presentation.mjs`: shared gallery presentation. The existing artifact builder imports the same card renderer and curated case metadata.
@@ -76,3 +76,13 @@ Cut over in this order:
 For rollback, disable the Cloudflare deployment variable and roll back to the last verified Pages deployment; keep the old GitHub site available. Record DNS before any cutover so changes can be reversed deliberately. Removing a project is not a rollback: first detach custom domains and their DNS records to avoid dangling destinations.
 
 The migration visual receipt is in `test/evidence/visual-parity.json`. Full-page comparisons use identical browser/viewports and wait for fonts. Animation is frozen and iframe pixels are hidden in both versions; iframe files are instead verified byte-for-byte, and unmasked pages are inspected separately.
+
+## Search and AI discovery
+
+The ten main language pages contain their translated body text, metadata and recipe references before JavaScript runs. Language links navigate to real URLs; URL language takes precedence over stored preferences. Existing `?lang=` entry links migrate to the matching route and preserve other parameters and fragments. Guide drafts survive a language switch once in session storage, expire after 30 seconds, and are never placed in the URL or sent over the network.
+
+`src/data/site-urls.mjs` defines the preferred `https://archify.si` URLs for both hosts. Each language has its own canonical and reciprocal `en`/`zh-Hans`/`x-default` links. GitHub Pages retains its `/archify` resource paths while pointing search engines to the official domain. Release identity and recipes come from this checkout: stable and development builds must not advertise each other's capabilities.
+
+The build produces `robots.txt` and `sitemap.xml` from the ten pages and the curated gallery inventory. It checks each advertised artifact's original manifest hashes before adding an explicitly marked metadata block in the deployed HTML head; exported source files, SVG, scripts and updater bytes retain their existing contracts. Source JSON remains accessible and receives `X-Robots-Tag: noindex` on Cloudflare. GitHub Pages cannot set that response header. Robots rules allow crawling these evidence URLs so their indexing headers can be read.
+
+After publication, verify the actual Cloudflare response, including any managed robots rules, redirects, sitemap URLs and headers. Submit the deployed sitemap to verified Google Search Console and Bing Webmaster Tools properties, then inspect real crawl and index results. Google AI controls, search impressions and Bing AI citation reports are separate account observations; successful builds and submissions do not establish rankings or AI citations. Avoid fabricated ratings, install statistics or daily sitemap modification dates. Search access and AI training permissions are independent decisions.

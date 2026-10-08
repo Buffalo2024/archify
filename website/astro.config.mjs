@@ -3,8 +3,14 @@ import react from '@astrojs/react';
 import tailwindcss from '@tailwindcss/vite';
 import { writeFileSync } from 'node:fs';
 import { siteTarget } from './scripts/site-target.mjs';
+import { publishSeo } from './scripts/publish-seo.mjs';
+import { fileURLToPath } from 'node:url';
 
 const target = siteTarget();
+const publishSearchMetadata = {
+  name: 'archify-publish-search-metadata',
+  hooks: { 'astro:build:done': ({ dir }) => publishSeo(fileURLToPath(dir), target) },
+};
 const cloudflareNotFound = {
   name: 'archify-cloudflare-not-found',
   hooks: {
@@ -22,6 +28,6 @@ export default defineConfig({
   publicDir: './.public',
   compressHTML: false,
   build: { format: 'file' },
-  integrations: [react(), ...(target.name === 'cloudflare' ? [cloudflareNotFound] : [])],
+  integrations: [react(), publishSearchMetadata, ...(target.name === 'cloudflare' ? [cloudflareNotFound] : [])],
   vite: { plugins: [tailwindcss()] },
 });

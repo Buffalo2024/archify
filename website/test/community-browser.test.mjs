@@ -18,16 +18,17 @@ test('real Chrome: community metadata remains text through language, filter and 
   assert.ok(chrome, 'The requested community integration gate requires usable Chrome.');
   const fixture = createCommunityFixture();
   let server;
+  let fixtureServer;
   let browser;
   try {
     const built = fixture.build();
     assert.equal(built.status, 0, built.stdout + built.stderr);
-    server = http.createServer((request, response) => {
+    const serve = (root, mount) => http.createServer((request, response) => {
       const url = new URL(request.url, 'http://127.0.0.1');
-      const isFixture = url.pathname.startsWith('/fixture/');
-      const root = isFixture ? fixture.dist : siteRoot;
-      if (!isFixture && siteBase && !url.pathname.startsWith(`${siteBase}/`)) return response.writeHead(404).end();
-      const relative = url.pathname.slice(isFixture ? '/fixture/'.length : siteBase.length).replace(/^\/+/, '');
+      if (mount && !url.pathname.startsWith(`${mount}/`)) return response.writeHead(404).end();
+      let relative = url.pathname.slice(mount.length).replace(/^\/+/, '') || 'index.html';
+      // Serve only actual file-format routes; never introduce an SPA fallback.
+      if (['zh', 'start', 'guide', 'gallery', 'community', 'zh/start', 'zh/guide', 'zh/gallery', 'zh/community'].includes(relative)) relative += '.html';
       const file = path.resolve(root, relative);
       if (!file.startsWith(`${root}${path.sep}`)) return response.writeHead(404).end();
       try {
@@ -36,8 +37,11 @@ test('real Chrome: community metadata remains text through language, filter and 
         response.end(fs.readFileSync(file));
       } catch { response.writeHead(404).end(); }
     });
-    await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+    server = serve(siteRoot, siteBase);
+    fixtureServer = serve(fixture.dist, '/archify');
+    await Promise.all([server, fixtureServer].map(server => new Promise(resolve => server.listen(0, '127.0.0.1', resolve))));
     const base = `http://127.0.0.1:${server.address().port}`;
+    const fixtureBase = `http://127.0.0.1:${fixtureServer.address().port}/archify`;
     browser = new ChromeVisualBrowser(chrome);
     const session = await browser.sessionPromise;
     const evaluate = async expression => {
@@ -48,6 +52,11 @@ test('real Chrome: community metadata remains text through language, filter and 
     const navigate = async url => {
       const loaded = browser.cdp.waitFor('Page.loadEventFired', session);
       await browser.cdp.send('Page.navigate', { url }, session);
+      await loaded;
+    };
+    const switchLanguage = async () => {
+      const loaded = browser.cdp.waitFor('Page.loadEventFired', session);
+      await evaluate("document.getElementById('language').click()");
       await loaded;
     };
     const assertText = async language => {
@@ -61,7 +70,7 @@ test('real Chrome: community metadata remains text through language, filter and 
         heroMarkup: !!document.querySelector('h1 br') && !!document.querySelector('h1 em'),
         width: document.documentElement.scrollWidth, viewport: innerWidth
       })`);
-      assert.equal(state.language, language === 'en' ? 'en' : 'zh-CN');
+      assert.equal(state.language, language === 'en' ? 'en' : 'zh-Hans');
       assert.equal(state.executed, null);
       assert.equal(state.summary, language === 'en' ? payload : `测试 ${payload}`);
       assert.deepEqual(state.evidence, fixture.entry.evidence.map(item => ({ text: `${item.label} ↗`, href: item.url })));
@@ -73,28 +82,29 @@ test('real Chrome: community metadata remains text through language, filter and 
     for (const width of [1440, 390]) {
       await browser.cdp.send('Emulation.setDeviceMetricsOverride', { width, height: 900, deviceScaleFactor: 1, mobile: false }, session);
       for (const language of ['en', 'zh']) {
-        await navigate(`${base}/fixture/community.html?lang=${language}`);
+        await navigate(`${fixtureBase}/${language === 'zh' ? 'zh/' : ''}community.html`);
         await assertText(language);
-        await evaluate("document.getElementById('language').click()");
+        await switchLanguage();
         await assertText(language === 'en' ? 'zh' : 'en');
-        await evaluate("document.getElementById('language').click()");
+        await switchLanguage();
         await assertText(language);
       }
       await evaluate("document.querySelector('[data-filter=recipe]').click()");
       assert.deepEqual(await evaluate(`({ visible: [...document.querySelectorAll('.package-card')].filter(node => !node.hidden).length, empty: getComputedStyle(document.getElementById('empty-state')).display, type: new URL(location.href).searchParams.get('type') })`), { visible: 0, empty: 'block', type: 'recipe' });
-      await navigate(`${base}/fixture/community.html?type=skill&lang=en`);
+      await navigate(`${fixtureBase}/community.html?type=skill`);
       assert.equal(await evaluate("document.querySelector('[data-filter=skill]').getAttribute('aria-pressed')"), 'true');
       assert.equal(await evaluate("document.querySelector('.package-card').hidden"), false);
-      await navigate(`${base}${siteBase}/index.html?lang=zh`);
+      await navigate(`${base}${siteBase}/${siteBase ? 'zh.html' : 'zh'}`);
       const loaded = browser.cdp.waitFor('Page.loadEventFired', session);
-      await evaluate("document.querySelector('footer a[href=\"community.html\"]').click()");
+      await evaluate(`document.querySelector('footer a[href="zh/community${siteBase ? ".html" : ""}"]').click()`);
       await loaded;
-      assert.equal(await evaluate('document.documentElement.lang'), 'zh-CN');
-      assert.equal(await evaluate('location.pathname'), `${siteBase}/community.html`);
+      assert.equal(await evaluate('document.documentElement.lang'), 'zh-Hans');
+      assert.equal(await evaluate('location.pathname'), `${siteBase}/zh/community${siteBase ? ".html" : ""}`);
     }
   } finally {
     if (browser) await browser.close();
     if (server) await new Promise(resolve => server.close(resolve));
+    if (fixtureServer) await new Promise(resolve => fixtureServer.close(resolve));
     fixture.close();
   }
 });
