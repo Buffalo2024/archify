@@ -365,3 +365,20 @@ test('automatic dataflow routes honor perpendicular pinned sides', t => {
   assert.equal(points.length, 3, JSON.stringify(points));
   assert.ok(points[1][1] > points[2][1], 'final segment rises into the bottom side');
 });
+
+test('automatic dataflow routes across stages turn in a clear gap, not inside a middle node', t => {
+  const diagram = {
+    schema_version: 1, diagram_type: 'dataflow',
+    meta: { title: 'Across stages', output: 'diagram.html', quality_profile: 'showcase' },
+    stages: [{ label: 'A' }, { label: 'B' }, { label: 'C' }, { label: 'D' }],
+    nodes: [
+      { id: 'source', type: 'backend', label: 'Source', stage: 0, row: 0 },
+      { id: 'middle', type: 'backend', label: 'Middle', stage: 1, row: 0 },
+      { id: 'other', type: 'backend', label: 'Other', stage: 2, row: 0 },
+      { id: 'target', type: 'backend', label: 'Target', stage: 3, row: 1 },
+    ],
+    flows: [{ id: 'push', from: 'source', to: 'target', label: 'push' }],
+  };
+  const { result, receipt } = inspect(t, diagram);
+  assert.equal(result.status, 0, JSON.stringify(receipt.diagnostics));
+});
