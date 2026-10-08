@@ -353,11 +353,11 @@ test('readable-v2 separates approval branches in the checked-in workflow example
 
   assert.equal(result.receipt.contract, 'readable-v2');
   assert.equal(
-    // The only visible delta is approved-tool's source moving 12px left:
-    // approval-denied and approved-tool previously shared a mixed-style trunk.
-    // Node geometry, labels, all other paths and v1 baselines are unchanged.
+    // approval-denied and approved-tool keep separate trunks. Neighbouring
+    // columns now keep a 32px route corridor, which widens the canvas by 12px,
+    // and tags keep their 7px preferred size.
     sha256(result.svg.replace(/ data-(?:composition-routing|edge-role|layout-contract)="[^"]*"/g, '')),
-    'cf98dc4bf3104e98dee7b69e1875206cc78cd9e322142e8432219c1784dae886',
+    '9254f1c5304ea0a2ba0db9399952988a6af8c768930fd47b7d8ba5935499a073',
   );
 });
 
@@ -1448,6 +1448,13 @@ test('CLI validate workflow --layout-json returns only the causal compiler failu
   assert.equal(receipt.contract, 'fixed-v1');
   assert.equal(receipt.diagnostics.length, 1, JSON.stringify(receipt.diagnostics, null, 2));
   assert.equal(receipt.diagnostics[0].code, 'workflow/column-capacity');
+});
+
+test('a dense automatic first draft routes between columns without crossings', () => {
+  // A generated first draft: five lanes, 150px nodes and no authored routes.
+  const workflow = readJson(path.join(__dirname, 'fixtures', 'workflow-dense-automatic.json'));
+  const result = compileWorkflow({ workflow, qualityProfile: 'showcase' });
+  assert.equal(result.ok, true, JSON.stringify(result.diagnostics, null, 2));
 });
 
 process.on('exit', () => fs.rmSync(tmp, { recursive: true, force: true }));

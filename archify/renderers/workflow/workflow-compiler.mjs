@@ -154,11 +154,16 @@ function usesIndependentLaneMeasurement(workflow) {
 }
 
 // A readable-v2 node without an authored width grows to fit its label, up to
-// 200px; longer labels still fail the label check. Keyed by the node object so
-// the authored document is never rewritten.
+// 200px; longer labels still fail the label check. A sublabel or tag that
+// would not fit even at 6px also grows the node to fit it at its preferred 8px
+// or 7px. Keyed by the node object so the authored document is never rewritten.
 const automaticNodeWidths = new WeakMap();
 function automaticNodeWidth(node) {
-  const fitted = Math.ceil((textUnits(node.label) * 6.8 - 6) / 4) * 4;
+  const labelWidth = Math.max(92, Math.ceil((textUnits(node.label) * 6.8 - 6) / 4) * 4);
+  const secondaryWidths = [[node.sublabel, 8], [node.tag, 7]]
+    .filter(([text]) => text && minimumNodeTextWidth(text, 6) > availableNodeTextWidth(labelWidth))
+    .map(([text, size]) => Math.ceil((minimumNodeTextWidth(text, size) + labelWidth - availableNodeTextWidth(labelWidth)) / 4) * 4);
+  const fitted = Math.max(labelWidth, ...secondaryWidths);
   return fitted > 92 ? Math.min(200, fitted) : null;
 }
 
@@ -251,10 +256,11 @@ function createReadableLayout(workflow, layoutFeedback = {}) {
       if (!verticalIntervalsOverlap(leftNode, rightNode, 8)) continue;
       const fromNode = leftNode.col < rightNode.col ? leftNode : rightNode;
       const toNode = fromNode === leftNode ? rightNode : leftNode;
+      // Leave room for a vertical route corridor between neighbouring nodes.
       constraints.push({
         from: fromNode.col,
         to: toNode.col,
-        minimum: authoredNodeWidth(fromNode) / 2 + 8 + authoredNodeWidth(toNode) / 2,
+        minimum: authoredNodeWidth(fromNode) / 2 + 32 + authoredNodeWidth(toNode) / 2,
         contributors: [
           `rank ${fromNode.col}→${toNode.col} node width clearance`,
           nodeWidthContributor(fromNode),
@@ -3787,6 +3793,11 @@ function readableAutomaticCandidateSet(
     { family: 'outside-right', via: corridorViaX(start, end, fromSide, toSide, outsideRight) },
     { family: 'top-corridor', via: corridorViaY(start, end, fromSide, toSide, topY) },
     { family: 'bottom-corridor', via: corridorViaY(start, end, fromSide, toSide, bottomY) },
+    // Offset tracks let several routes through one gap run side by side.
+    ...[-12, 12, -24, 24].flatMap((offset) => [
+      { family: 'lane-gap-corridor', via: corridorViaY(start, end, fromSide, toSide, laneGapY + offset) },
+      { family: 'column-gap-corridor', via: corridorViaX(start, end, fromSide, toSide, midX + offset) },
+    ]),
   ];
   const candidates = rawCandidates.map((candidate, ordinal) => ({
     ...candidate,
@@ -4843,24 +4854,22 @@ function renderGroup(group, index) {
         <text x="${span.x + 10}" y="${labelY}" class="${textClass}" font-size="7" font-weight="600">${esc(group.label)}</text>`;
 }
 
-// Shrink-to-fit stops where node text still reads on the desktop at the final
+// Sublabel shrink-to-fit stops where it still reads on the desktop at the final
 // canvas width, so an overflow is reported here rather than by the browser gate.
-function readableTextMinimum(minimum) {
+// The gate exempts fine tags, which keep their fixed legible minimum.
+function readableSublabelMinimum() {
+  const minimum = nodeTextFit.sublabelMinimum;
   if (workflow.schema_version !== 2) return minimum;
   return Math.max(minimum, Math.ceil(minimumReadableSourceTextPx(viewBox[0]) * 10) / 10);
 }
 
 function validateReadableNodeText() {
   const problems = [];
+  const minimum = readableSublabelMinimum();
   for (const node of nodes.values()) {
-    for (const [field, value, minimum] of [
-      ['Sublabel', node.sublabel, readableTextMinimum(nodeTextFit.sublabelMinimum)],
-      ['Tag', node.tag, readableTextMinimum(nodeTextFit.tagMinimum)],
-    ]) {
-      const minimumW = value ? minimumNodeTextWidth(value, minimum) : 0;
-      if (minimumW > availableNodeTextWidth(node.width)) {
-        problems.push(`${field} "${value}" needs ~${Math.ceil(minimumW)}px at the ${minimum}px minimum that stays readable on this ${viewBox[0]}px canvas, but node "${node.id}" provides ${availableNodeTextWidth(node.width)}px — shorten the ${field.toLowerCase()}; a wider node or canvas lowers every projected font.`);
-      }
+    const minimumW = node.sublabel ? minimumNodeTextWidth(node.sublabel, minimum) : 0;
+    if (minimumW > availableNodeTextWidth(node.width)) {
+      problems.push(`Sublabel "${node.sublabel}" needs ~${Math.ceil(minimumW)}px at the ${minimum}px minimum that stays readable on this ${viewBox[0]}px canvas, but node "${node.id}" provides ${availableNodeTextWidth(node.width)}px — shorten the sublabel; a wider node or canvas lowers every projected font.`);
     }
   }
   if (problems.length) throwDiagnosticProblems('Workflow layout validation failed', problems, { subject: { diagramType: 'workflow' } });
@@ -4871,10 +4880,9 @@ function renderNode(node) {
   const accent = componentText[node.type] || 't-muted';
   const hasSub = node.sublabel != null && node.sublabel !== '';
   const labelFontSize = fittedNodeFontSize(node.label, brandLabelFitWidth(node, node.width), nodeTextFit.labelPreferred, nodeTextFit.labelMinimum);
-  const sublabelMinimum = readableTextMinimum(nodeTextFit.sublabelMinimum);
-  const tagMinimum = readableTextMinimum(nodeTextFit.tagMinimum);
+  const sublabelMinimum = readableSublabelMinimum();
   const sublabelFontSize = fittedNodeFontSize(node.sublabel, node.width, Math.max(nodeTextFit.sublabelPreferred, sublabelMinimum), sublabelMinimum);
-  const tagFontSize = fittedNodeFontSize(node.tag, node.width, Math.max(nodeTextFit.tagPreferred, tagMinimum), tagMinimum);
+  const tagFontSize = fittedNodeFontSize(node.tag, node.width, nodeTextFit.tagPreferred, nodeTextFit.tagMinimum);
   const textRows = [{ text: node.label, font: labelFontSize, y: 21 }];
   if (hasSub) textRows.push({ text: node.sublabel, font: sublabelFontSize, y: 38 });
   if (node.tag) textRows.push({ text: node.tag, font: tagFontSize, y: node.height - 12 });

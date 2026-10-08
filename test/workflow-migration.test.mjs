@@ -436,10 +436,10 @@ test('workflow migration remaps absolute x coordinates, expands only the constra
   const migratedBytes = fs.readFileSync(destination);
   const migrated = JSON.parse(migratedBytes);
   assert.equal(migrated.schema_version, 2);
-  assert.deepEqual(migrated.meta.viewBox, [768, 700], 'width grows to fit v2 while sufficient height is preserved');
+  assert.deepEqual(migrated.meta.viewBox, [772, 700], 'width grows to fit v2 while sufficient height is preserved');
   assert.deepEqual(migrated.edges[0].via, [[214, 119]]);
-  assert.deepEqual(migrated.edges[1].labelAt, [394, 203]);
-  assert.equal(migrated.edges[2].channelX, 574);
+  assert.deepEqual(migrated.edges[1].labelAt, [396, 203]);
+  assert.equal(migrated.edges[2].channelX, 578);
 
   const report = parseJsonOutput(result);
   assert.equal(report.ok, true);
@@ -462,11 +462,11 @@ test('workflow migration remaps absolute x coordinates, expands only the constra
   assert.deepEqual(report.newSchemaDiagnostics, []);
   assert.deepEqual(report.changedCoordinates, [
     { path: '/edges/0/via/0/0', from: 220, to: 214 },
-    { path: '/edges/1/labelAt/0', from: 365, to: 394 },
-    { path: '/edges/2/channelX', from: 500, to: 574 },
+    { path: '/edges/1/labelAt/0', from: 365, to: 396 },
+    { path: '/edges/2/channelX', from: 500, to: 578 },
   ]);
   assert.deepEqual(report.oldRequiredViewBox, [720, 652]);
-  assert.deepEqual(report.newRequiredViewBox, [768, 652]);
+  assert.deepEqual(report.newRequiredViewBox, [772, 652]);
 });
 
 test('workflow migration never shrinks an already spacious explicit viewBox', () => {
