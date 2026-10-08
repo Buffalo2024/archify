@@ -18,6 +18,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { minimumReadableSourceTextPx } from '../archify/renderers/shared/desktop-readability.mjs';
+import { segmentRectClearanceWithin } from '../archify/renderers/shared/geometry.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const skillRoot = path.resolve(__dirname, '..', 'archify');
@@ -1025,18 +1026,60 @@ test('architecture: Clean Flow Gate rejects a connection through a component', (
   assert.match(stderr, /segment 0 .*2px clearance/);
 });
 
-test('dataflow: showcase rejects a relationship label that hides another route', () => {
+test('dataflow: showcase rejects a pinned relationship label that hides another route', () => {
   const d = JSON.parse(fs.readFileSync(path.join(skillRoot, 'examples', 'event-stream.dataflow.json'), 'utf8'));
   const approvedReplay = d.flows.find((flow) => flow.label === 'approved replay');
   delete approvedReplay.labelAt;
   delete approvedReplay.labelDx;
   delete approvedReplay.labelDy;
   delete approvedReplay.labelSegment;
+  // Zero is still an authored pin. Keep this deliberately bad placement fixed
+  // so the negative case tests the gate rather than automatic label repair.
+  approvedReplay.labelDx = 0;
   const { code, stderr } = render('dataflow', d);
   assert.notEqual(code, 0, `expected non-zero exit; stderr:\n${stderr}`);
   assert.match(stderr, /\[composition\/label-route-clearance\] showcase dataflow/);
   assert.match(stderr, /approved replay.*failure sample/);
   assert.match(stderr, /labelAt.*labelDx.*labelDy.*labelSegment/);
+});
+
+test('dataflow: an unpinned two-line label repairs its other-route collision without changing semantics or paths', () => {
+  const d = JSON.parse(fs.readFileSync(path.join(skillRoot, 'examples', 'event-stream.dataflow.json'), 'utf8'));
+  const approvedReplay = d.flows.find((flow) => flow.label === 'approved replay');
+  for (const key of ['labelAt', 'labelDx', 'labelDy', 'labelSegment']) delete approvedReplay[key];
+  const { code, stderr, outPath } = render('dataflow', d);
+  assert.equal(code, 0, stderr);
+  const html = fs.readFileSync(outPath, 'utf8');
+  const group = html.match(/<g data-detail="context"[^>]*data-edge-label="approved replay"[^>]*>[\s\S]*?<\/g>/)?.[0];
+  assert.ok(group);
+  const bounds = group.match(/<rect x="([^"]+)" y="([^"]+)" width="([^"]+)" height="([^"]+)"/).slice(1).map(Number);
+  const [x, y, width, height] = bounds;
+  const mask = { x, y, width, height };
+  assert.equal(height, 27, 'both authored label lines must retain their full mask');
+  const paths = (artifact) => [...artifact.matchAll(/<path[^>]*data-edge-key="(\d+)"[^>]*data-composition-points="([^"]+)"/g)]
+    .map(([, key, points]) => ({ key: Number(key), points: points.split(';').map(point => point.split(',').map(Number)) }));
+  const routes = paths(html);
+  assert.equal(routes.length, d.flows.length);
+  const replayIndex = d.flows.indexOf(approvedReplay);
+  for (const route of routes.filter(route => route.key !== replayIndex)) {
+    for (const [index, end] of route.points.slice(1).entries()) {
+      assert.ok(segmentRectClearanceWithin({ start: route.points[index], end }, mask, 4) >= 4,
+        `repaired label must clear flow ${route.key} segment ${index}: ${JSON.stringify(mask)}`);
+    }
+  }
+  for (const flow of d.flows) {
+    assert.ok(html.includes(`>${flow.label}</text>`), flow.label);
+    if (flow.classification) assert.ok(html.includes(`>${flow.classification}</text>`), flow.classification);
+  }
+  for (const node of d.nodes) assert.ok(html.includes(`>${node.label}</text>`), node.label);
+  // Standard permits this explicit collision, providing a reference for every
+  // authored route without weakening the showcase gate in the negative case.
+  const pinned = structuredClone(d);
+  pinned.meta.quality_profile = 'standard';
+  pinned.flows[replayIndex].labelDx = 0;
+  const reference = render('dataflow', pinned);
+  assert.equal(reference.code, 0, reference.stderr);
+  assert.deepEqual(routes, paths(fs.readFileSync(reference.outPath, 'utf8')));
 });
 
 test('dataflow: validator and SVG share the 27px CJK/emoji classification mask', () => {
