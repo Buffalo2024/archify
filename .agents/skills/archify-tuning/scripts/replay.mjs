@@ -1,17 +1,18 @@
 #!/usr/bin/env node
-// Usage: node replay.mjs --base <archify-dir> [--head <archify-dir>] [--bench <dir>] [--type <type>] [--out <dir>]
+// Usage: node replay.mjs --base <archify-dir> [--head <archify-dir>] [--type <type>] [--bench <dir>] [--out <dir>]
 //
 // Renders every benchmark first draft with two Archify trees (each the
-// directory holding bin/archify.mjs) and reports, per type, how many drafts
-// pass on each side, which flipped, and which passing drafts changed
-// geometry. Exits 1 when a draft that passes on base fails on head.
+// directory holding bin/archify.mjs; head defaults to this repository) and
+// reports, per type, how many drafts pass on each side, which flipped and
+// which passing drafts changed geometry. Renders and replay.json go to
+// <tuning-home>/replays/<timestamp> unless --out. Exits 1 when a draft that
+// passes on base fails on head. Rendering skips finalize's browser gate.
 import { spawn } from 'node:child_process';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { DIAGRAM_TYPES } from './diagram-shape.mjs';
+import { DIAGRAM_TYPES, tuningHome } from './lib.mjs';
 
 const args = process.argv.slice(2);
 const option = (name, fallback) => {
@@ -21,12 +22,11 @@ const option = (name, fallback) => {
 const here = path.dirname(fileURLToPath(import.meta.url));
 const base = option('--base');
 const head = path.resolve(option('--head', path.join(here, '../../../../archify')));
-const bench = path.resolve(option('--bench', process.env.ARCHIFY_TUNING_BENCH
-  || path.join(os.homedir(), '.local/share/archify-tuning/bench')));
-const out = path.resolve(option('--out', fs.mkdtempSync(path.join(os.tmpdir(), 'archify-replay-'))));
+const bench = path.resolve(option('--bench', path.join(tuningHome(), 'bench')));
+const out = path.resolve(option('--out', path.join(tuningHome(), 'replays', new Date().toISOString().replace(/[:.]/g, '-'))));
 const onlyType = option('--type');
 if (!base || !fs.existsSync(path.join(base, 'bin/archify.mjs')) || !fs.existsSync(path.join(head, 'bin/archify.mjs'))) {
-  console.error('Usage: node replay.mjs --base <archify-dir> [--head <archify-dir>] [--bench <dir>] [--type <type>] [--out <dir>]');
+  console.error('Usage: node replay.mjs --base <archify-dir> [--head <archify-dir>] [--type <type>] [--bench <dir>] [--out <dir>]');
   process.exit(2);
 }
 
@@ -83,6 +83,7 @@ for (const result of results) {
   const note = !result.base.ok && result.head.ok ? 'FIXED'
     : result.base.ok && !result.head.ok ? 'REGRESSED'
       : result.base.ok && result.base.geometry !== result.head.geometry ? 'changed' : '';
+  result.note = note;
   console.log(`${`${result.type}/${result.name}`.padEnd(32)} base ${tag(result.base).padEnd(10)} head ${tag(result.head).padEnd(10)} ${note.padEnd(9)} ${result.head.ok ? '' : result.head.codes.join(',')}`);
 }
 console.log('\nfirst-draft pass rate by type (base -> head)');
@@ -94,5 +95,5 @@ for (const type of DIAGRAM_TYPES) {
 }
 const regressed = results.filter((result) => result.base.ok && !result.head.ok);
 console.log(`total ${results.filter((result) => result.base.ok).length}/${results.length} -> ${results.filter((result) => result.head.ok).length}/${results.length}; regressed ${regressed.length}; renders in ${out}`);
-fs.writeFileSync(path.join(out, 'replay.json'), `${JSON.stringify(results, null, 2)}\n`);
+fs.writeFileSync(path.join(out, 'replay.json'), `${JSON.stringify({ base: path.resolve(base), head, bench, results }, null, 2)}\n`);
 process.exit(regressed.length ? 1 : 0);

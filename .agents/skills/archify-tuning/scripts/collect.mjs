@@ -1,30 +1,32 @@
 #!/usr/bin/env node
-// Usage: node collect.mjs <round-root> [--bench <dir>] [--round <name>] [--no-bench] [--dump]
+// Usage: node collect.mjs <round-name-or-path> [--round <name>] [--no-bench] [--dump]
 //
 // Reads Devin CLI session history for subagents whose task pointed at
-// <round-root>/<type>, then reports per type: tool calls, finalize runs and
-// failures, diagnostic codes, and the elements and relationships the final
-// candidate dropped from the first draft. The first draft of each type is
-// added to the benchmark (repository evidence stripped) unless --no-bench.
+// <round>/<type>, then reports per type: tool calls, finalize runs and
+// failures, diagnostic codes, whether the first draft was fully automatic and
+// the elements and relationships the final candidate dropped from it. Each
+// first draft is kept as <round>/<type>/first-draft.json and added to the
+// benchmark (repository evidence stripped) unless --no-bench.
 import { DatabaseSync } from 'node:sqlite';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { DIAGRAM_TYPES, benchmarkDocument, contentLost } from './diagram-shape.mjs';
+import { DIAGRAM_TYPES, authoredControls, benchmarkDocument, contentLost, finalizeStatus, tuningHome } from './lib.mjs';
 
 const args = process.argv.slice(2);
 const option = (name, fallback) => {
   const index = args.indexOf(name);
   return index === -1 ? fallback : args[index + 1];
 };
-const root = path.resolve(args.find((arg, index) => !arg.startsWith('--') && !args[index - 1]?.startsWith('--')) || '');
-if (!args.length || !fs.existsSync(root)) {
-  console.error('Usage: node collect.mjs <round-root> [--bench <dir>] [--round <name>] [--no-bench] [--dump]');
+const target = args.find((arg, index) => !arg.startsWith('--') && !args[index - 1]?.startsWith('--')) || '';
+const root = fs.existsSync(path.resolve(target)) ? path.resolve(target) : path.join(tuningHome(), 'rounds', target);
+if (!target || !fs.existsSync(root)) {
+  console.error('Usage: node collect.mjs <round-name-or-path> [--round <name>] [--no-bench] [--dump]');
   process.exit(2);
 }
-const round = option('--round', path.basename(root));
-const bench = path.resolve(option('--bench', process.env.ARCHIFY_TUNING_BENCH
-  || path.join(os.homedir(), '.local/share/archify-tuning/bench')));
+const recorded = fs.existsSync(path.join(root, 'round.json')) ? JSON.parse(fs.readFileSync(path.join(root, 'round.json'), 'utf8')) : {};
+const round = option('--round', recorded.name || path.basename(root));
+const bench = path.join(tuningHome(), 'bench');
 const database = path.join(os.homedir(), '.local/share/devin/cli/sessions.db');
 const db = new DatabaseSync(database, { readOnly: true });
 
@@ -33,15 +35,6 @@ const escape = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 // Task text may name the macOS /private alias or the plain /tmp path.
 const roots = [...new Set([root, root.replace(/^\/private\//, '/'), root.replace(/^\/tmp\//, '/private/tmp/')])];
 const CODE = /\b((?:layout|composition|clean-flow|workflow|sequence|dataflow|lifecycle|erd|class|tree|timeline|waterfall|architecture|repository-evidence|schema|viewer|delivery)\/[a-z0-9]+(?:-[a-z0-9]+)*)\b/g;
-
-// Agents often pipe finalize through jq, so the exit code is not evidence.
-function finalizeStatus(result) {
-  if (/"ok":\s*false|"status":\s*"fail"|"(?:validate|deliver|check|browser-check)":\s*"fail"/.test(result)) return 'fail';
-  if (/"ok":\s*true|"status":\s*"pass"/.test(result)
-    || /"validate":\s*"pass"[^}]*"browser-check":\s*"pass"/.test(result)) return 'pass';
-  const exit = result.match(/Exit code: (\d+)/);
-  return exit ? (exit[1] === '0' ? 'unknown' : 'fail') : 'unknown';
-}
 
 function chainsByType() {
   const like = roots.map(() => 'chat_message like ?').join(' or ');
@@ -113,10 +106,12 @@ for (const [type, chain] of [...chainsByType()].sort(([a], [b]) => DIAGRAM_TYPES
     finalizeUnknown: stats.finalize.filter(({ status }) => status === 'unknown').length,
     firstFinalize: stats.finalize[0]?.status ?? 'not-run',
     codes: [...new Set(stats.finalize.flatMap(({ codes }) => codes))],
+    controls: stats.firstDraft ? authoredControls(type, stats.firstDraft) : null,
     lost,
     docReads: stats.docReads,
   };
   if (args.includes('--dump')) fs.writeFileSync(path.join(root, `${type}.trace.txt`), stats.dump.join('\n\n'));
+  if (stats.firstDraft) fs.writeFileSync(path.join(root, type, 'first-draft.json'), `${JSON.stringify(stats.firstDraft, null, 2)}\n`);
   if (stats.firstDraft && !args.includes('--no-bench')) {
     fs.mkdirSync(path.join(bench, type), { recursive: true });
     fs.writeFileSync(path.join(bench, type, `${round}.json`), `${JSON.stringify(benchmarkDocument(stats.firstDraft, round), null, 2)}\n`);
@@ -135,11 +130,12 @@ if (!args.includes('--no-bench') && Object.keys(index).length) {
 fs.writeFileSync(path.join(root, 'tuning-summary.json'), `${JSON.stringify(summary, null, 2)}\n`);
 
 const pad = (value, width) => String(value).padEnd(width);
-console.log(`${pad('type', 13)}${pad('tools', 7)}${pad('finalize', 10)}${pad('failed', 8)}${pad('first', 9)}lost (elements/relations)  codes`);
+console.log(`${pad('type', 13)}${pad('tools', 7)}${pad('finalize', 10)}${pad('failed', 8)}${pad('first', 9)}${pad('draft', 8)}lost (elements/relations)  codes`);
 for (const [type, entry] of Object.entries(summary)) {
   const lost = entry.lost ? `${entry.lost.elements.length}/${entry.lost.relations.length}${entry.lost.elements.length ? ` ${entry.lost.elements.join(',')}` : ''}` : 'n/a';
   const failed = `${entry.finalizeFailures}${entry.finalizeUnknown ? `+${entry.finalizeUnknown}?` : ''}`;
-  console.log(`${pad(type, 13)}${pad(entry.tools, 7)}${pad(entry.finalizeRuns, 10)}${pad(failed, 8)}${pad(entry.firstFinalize, 9)}${pad(lost, 27)}${entry.codes.join(',')}`);
+  const draft = !entry.controls ? 'n/a' : Object.keys(entry.controls).length ? 'pinned' : 'auto';
+  console.log(`${pad(type, 13)}${pad(entry.tools, 7)}${pad(entry.finalizeRuns, 10)}${pad(failed, 8)}${pad(entry.firstFinalize, 9)}${pad(draft, 8)}${pad(lost, 27)}${entry.codes.join(',')}`);
 }
 const entries = Object.values(summary);
 console.log(`TOTAL tools ${entries.reduce((sum, entry) => sum + entry.tools, 0)}, finalize ${entries.reduce((sum, entry) => sum + entry.finalizeRuns, 0)}, failed ${entries.reduce((sum, entry) => sum + entry.finalizeFailures, 0)}, first-run passes ${entries.filter((entry) => entry.firstFinalize === 'pass').length}/${entries.length}`);
