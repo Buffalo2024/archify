@@ -2549,6 +2549,8 @@ function validateReadablePinnedGeometry() {
 }
 
 function validateWorkflow() {
+  // Report edges by their authored index; the canonical order is internal.
+  const authoredEdges = asArray(qualityResolvedWorkflow.edges);
   const problems = [];
   if (workflow.schema_version !== 1 && workflow.schema_version !== 2) {
     problems.push('Workflow files must set "schema_version" to 1 or 2.');
@@ -2721,7 +2723,7 @@ function validateWorkflow() {
   }
 
   problems.push(...cleanEndpointSideProblems({
-    relations: workflow.edges,
+    relations: authoredEdges,
     endpointIds: new Set(nodes.keys()),
     pathFor,
     diagramType: 'workflow',
@@ -2731,7 +2733,7 @@ function validateWorkflow() {
     routeHint: 'keep automatic routing, or choose fromSide/toSide and via points whose first and final segments cross node borders perpendicularly',
   }));
   problems.push(...cleanFlowProblems({
-    relations: workflow.edges,
+    relations: authoredEdges,
     obstacles: nodes.values(),
     pathFor,
     diagramType: 'workflow',
@@ -2740,7 +2742,7 @@ function validateWorkflow() {
     routeHint: 'adjust fromSide/toSide, set route/via or channel coordinates, or move the node to a clearer lane/column'
   }));
   problems.push(...cleanCrossingProblems({
-    relations: workflow.edges,
+    relations: authoredEdges,
     endpointIds: new Set(nodes.keys()),
     pathFor,
     diagramType: 'workflow',
@@ -2754,7 +2756,7 @@ function validateWorkflow() {
     routeHint: 'adjust route/via, bias, or channel coordinates so the edges use separate lane corridors'
   }));
   problems.push(...cleanAmbiguousCorridorProblems({
-    relations: workflow.edges,
+    relations: authoredEdges,
     endpointIds: new Set(nodes.keys()),
     pathFor,
     diagramType: 'workflow',
@@ -2785,7 +2787,7 @@ function validateWorkflow() {
     }
   }
   problems.push(...cleanBorderRunProblems({
-    relations: workflow.edges,
+    relations: authoredEdges,
     endpointIds: new Set(nodes.keys()),
     frames: workflowCompositionFrames(),
     pathFor,
@@ -2796,7 +2798,7 @@ function validateWorkflow() {
     routeHint: 'adjust route/via, bias, or channel coordinates so the edge crosses the lane or group perpendicularly instead of following its border'
   }));
   problems.push(...cleanRouteRhythmProblems({
-    relations: workflow.edges,
+    relations: authoredEdges,
     endpointIds: new Set(nodes.keys()),
     pathFor,
     diagramType: 'workflow',
@@ -2870,7 +2872,7 @@ function validateWorkflow() {
     }
   }
   problems.push(...cleanLabelRouteClearanceProblems({
-    relations: workflow.edges,
+    relations: authoredEdges,
     labels: labelRects,
     endpointIds: new Set(nodes.keys()),
     pathFor,
