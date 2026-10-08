@@ -212,10 +212,10 @@ const DOMAIN_PAD_X = 12;
 const DOMAIN_PAD_TOP = 18;
 const DOMAIN_PAD_BOTTOM = 8;
 
-// A domain is drawn as a band when its members fill a solid block of grid cells:
-// every cell of the bounding box holds one of them, so the band encloses no cell
-// the domain does not own. A single row or column, the common case, is that same
-// claim with one dimension of one.
+// A domain is drawn as a band when its members fill a solid rectangle of grid
+// cells: every cell of the bounding box holds one of them, so the band encloses
+// no cell the domain does not own. A single row or column, the common case, is
+// that same claim with one dimension of one; an L or diagonal is not contiguous.
 function gridRunIsContiguous(members) {
   const cols = members.map((entity) => entity.col);
   const rows = members.map((entity) => entity.row);

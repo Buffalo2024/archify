@@ -345,15 +345,17 @@ replace a field list.
 
 Before placing boxes, classify tables into functional domains using verified table
 names, comments, module paths, and foreign-key meaning. Put the domain name in
-`tag` and give each domain one solid block of grid cells: a single row, a single
-column, or a full block, with every cell of the block holding one of its tables.
+`tag` and give each domain one solid rectangle of grid cells: a single row, a
+single column, or a filled rectangular block — not an L or a diagonal — with
+every cell of the rectangle holding one of its tables.
 All tables with the same tag stay together; do not interleave unrelated tables
-between members. A domain that fills one such block is drawn as a labelled band
-behind its tables, so the
+between members. A domain that fills one such rectangle is drawn as a labelled
+band behind its tables, so the
 grouping is visible without reading every box;
-a tag whose tables do not fill one block earns no band, and because the band is
-the only place a domain name is drawn the renderer reports `erd/domain-not-drawn`
-rather than publishing a diagram that cannot name the domain. Absolute
+a tag whose tables do not fill one rectangle earns no band, and because the band
+is the only place a domain name is drawn the renderer reports
+`erd/domain-not-drawn` rather than publishing a diagram that cannot name the
+domain. Absolute
 coordinates have no grid cells at all, so a tagged table always needs `row`/`col`.
 Order parent/core tables
 toward the shared boundary and
@@ -363,7 +365,7 @@ straight corridor. Never place an unrelated entity between two aligned anchors;
 the router can detour around it, but the clear corridor is shorter and reads
 better. A junction table has two parents: put it in a cell beside or between
 both, not beneath one of them with tables stacked between it and the other,
-and keep every table that shares its domain tag in one solid block of cells. A relationship must connect two different entities; a self-reference such as manager_id stays as a foreign-key column (and optionally a card), not an `employees`→`employees` edge.
+and keep every table that shares its domain tag in one solid rectangle of cells. A relationship must connect two different entities; a self-reference such as manager_id stays as a foreign-key column (and optionally a card), not an `employees`→`employees` edge.
 Use `row`/`col` for this normal grouped layout, and only use explicit
 `pos`/`via` after a diagnostic identifies a concrete geometry problem.
 
@@ -457,8 +459,8 @@ invented or approximate times as observed, and never fill gaps with events the
 input does not contain.
 
 Use `lanes` for sources or categories (release, monitoring, response); every
-event then names one. `kind` (`change`, `alert`, `action`, `recovery`) only
-colours the card. Events are drawn in time order whatever the authored order;
+event then names one. `kind` (`default`, `change`, `alert`, `action`, `recovery`) only
+colours the card; inventing values such as `milestone` fails schema validation. Events are drawn in time order whatever the authored order;
 simultaneous and close events stack. By default a quiet period longer than 8×
 the median gap and 10% of the span is drawn as a fixed-width break labelled
 with the omitted duration; `layout.breaks: "none"` keeps one proportional axis.
