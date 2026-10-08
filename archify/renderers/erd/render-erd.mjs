@@ -567,6 +567,12 @@ const { ports, pathFor, inferredSides, connectionEndpointSide } = createRouter(e
   // A proper crossing fails the showcase gate, so a relationship that needs
   // the obstacle search first looks for a detour that crosses nothing.
   crossingFreeGridFirst: true,
+  // A detour keeps a readable gap from every table it only passes instead of
+  // running along its border at the grid's 2-unit clearance.
+  componentGapPx: 10,
+  // Corners are drawn with a 6-unit radius; an end segment shorter than the
+  // radius plus the 8-unit micro-segment floor fails the drawn-route gate.
+  minimumTerminalSegmentPx: 14,
 });
 
 function corridorKey(relationship) {

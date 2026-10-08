@@ -7,6 +7,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { properSegmentIntersection, rectsOverlap } from '../archify/renderers/shared/geometry.mjs';
+import { routeHugs } from './helpers/route-hugs.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const skillRoot = path.resolve(__dirname, '..', 'archify');
@@ -98,6 +99,9 @@ for (const name of ['blog', 'shop', 'warehouse']) {
     assert.equal(result.status, 0, result.stdout + result.stderr);
     assertLabelsClear(result.html);
     assert.deepEqual(properCrossings(result.html), []);
+    // A detour keeps a readable gap from the tables it passes (warehouse used
+    // to run 3 units along the products table for its full width).
+    assert.deepEqual(routeHugs(routes(result.html), entityBoxes(result.html)), []);
     const check = spawnSync(process.execPath, [checker, result.output], { encoding: 'utf8' });
     assert.equal(check.status, 0, check.stdout);
   });

@@ -7,6 +7,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { properSegmentIntersection, rectsOverlap } from '../archify/renderers/shared/geometry.mjs';
+import { routeHugs } from './helpers/route-hugs.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const skillRoot = path.resolve(__dirname, '..', 'archify');
@@ -42,6 +43,14 @@ function labelBoxes(html) {
     .map((match) => ({ id: match[1], x: +match[2], y: +match[3], width: +match[4], height: +match[5] }));
 }
 
+function typeBoxes(html) {
+  const boxes = new Map();
+  for (const match of svgOf(html).matchAll(/data-node-id="([^"]+)"[^>]*>[\s\S]{0,600}?<rect x="([\d.-]+)" y="([\d.-]+)" width="([\d.]+)" height="([\d.]+)"/g)) {
+    if (!boxes.has(match[1])) boxes.set(match[1], { x: +match[2], y: +match[3], width: +match[4], height: +match[5] });
+  }
+  return boxes;
+}
+
 function properCrossings(html) {
   const all = routes(html);
   const crossings = [];
@@ -63,6 +72,9 @@ for (const name of ['notifications', 'repository', 'shapes']) {
     const result = render(diagram);
     assert.equal(result.status, 0, result.stdout + result.stderr);
     assert.deepEqual(properCrossings(result.html), []);
+    // shapes used to run 3 units along the Shape type, notifications along
+    // EmailChannel: a detour keeps a readable gap from the types it passes.
+    assert.deepEqual(routeHugs(routes(result.html), typeBoxes(result.html)), []);
     assert.ok(labelBoxes(result.html).length > 0, 'the fixture draws relationship labels');
     const validation = spawnSync(process.execPath, [cli, 'validate', 'class', result.input, '--quality', 'showcase', '--json'], { encoding: 'utf8' });
     assert.equal(validation.status, 0, validation.stdout + validation.stderr);

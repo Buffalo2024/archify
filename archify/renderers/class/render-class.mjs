@@ -443,6 +443,9 @@ const router = createRouter(types, routable.filter((relationship) => !busPaths.h
   // any proper crossing, so the shorter crossing route only buys a repair.
   preferReadableRoutes: true,
   crossingFreeGridFirst: true,
+  // A detour keeps a readable gap from every type it only passes instead of
+  // running along its border at the grid's 2-unit clearance.
+  componentGapPx: 10,
 });
 function pathFor(relationship) {
   const points = busPaths.get(relationship);
