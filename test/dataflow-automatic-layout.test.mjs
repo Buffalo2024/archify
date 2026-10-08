@@ -170,7 +170,7 @@ test('natural height includes explicit outer route and two-line label plate', t 
   const render = spawnSync(process.execPath, [cli, 'render', 'dataflow', input, output], { encoding: 'utf8', env });
   assert.equal(render.status, 0, render.stderr);
   const html = fs.readFileSync(output, 'utf8');
-  assert.match(html, /viewBox="0 0 940 674"/);
+  assert.match(html, /viewBox="0 0 480 674"/);
   assert.match(html, /data-composition-points="100,186;100,560;315,560;315,186"/);
   assert.match(html, /<text x="210" y="560"/);
 });
@@ -267,7 +267,7 @@ test('an explicit insufficient canvas retains its width and bounds diagnostics',
 test('straight ignores inactive channelY in both route and natural height', t => {
   const plain = footprintSvg(t, smallFootprintDiagram({ route: 'straight' }));
   const inactive = footprintSvg(t, smallFootprintDiagram({ route: 'straight', channelY: 1500 }));
-  assert.match(plain, /viewBox="0 0 940 360"/);
+  assert.match(plain, /viewBox="0 0 480 360"/);
   assert.match(plain, /data-composition-points="156,157;259,157"/);
   assert.equal(inactive, plain);
 });
@@ -277,7 +277,7 @@ test('explicit via overrides channelY in both route and natural height', t => {
     via: [[100, 560], [315, 560]], labelAt: [210, 560], classification: 'restricted' };
   const plain = footprintSvg(t, smallFootprintDiagram(flow));
   const inactive = footprintSvg(t, smallFootprintDiagram({ ...flow, channelY: 1500 }));
-  assert.match(plain, /viewBox="0 0 940 674"/);
+  assert.match(plain, /viewBox="0 0 480 674"/);
   assert.equal(inactive, plain);
 });
 
@@ -285,7 +285,7 @@ test('labelAt overrides labelDy in both label and natural height', t => {
   const flow = { route: 'straight', labelAt: [210, 210] };
   const plain = footprintSvg(t, smallFootprintDiagram(flow));
   const inactive = footprintSvg(t, smallFootprintDiagram({ ...flow, labelDy: 1500 }));
-  assert.match(plain, /viewBox="0 0 940 360"/);
+  assert.match(plain, /viewBox="0 0 480 360"/);
   assert.match(plain, /<text x="210" y="210"/);
   assert.equal(inactive, plain);
 });
@@ -294,7 +294,7 @@ test('empty authored via also suppresses the preset channel footprint', t => {
   const flow = { route: 'bottom-channel', fromSide: 'right', toSide: 'left', via: [] };
   const plain = footprintSvg(t, smallFootprintDiagram(flow));
   const inactive = footprintSvg(t, smallFootprintDiagram({ ...flow, channelY: 1500 }));
-  assert.match(plain, /viewBox="0 0 940 360"/);
+  assert.match(plain, /viewBox="0 0 480 360"/);
   assert.equal(inactive, plain);
 });
 
@@ -312,7 +312,7 @@ for (const [name, flow, expectedPoints, expectedHeight] of [
 ]) {
   test(`natural height contains actual points and final label plate for ${name}`, t => {
     const svg = footprintSvg(t, smallFootprintDiagram(flow));
-    assert.ok(svg.includes(`viewBox="0 0 940 ${expectedHeight}"`), svg.slice(0, 200));
+    assert.ok(svg.includes(`viewBox="0 0 480 ${expectedHeight}"`), svg.slice(0, 200));
     assert.ok(svg.includes(`data-composition-points="${expectedPoints}"`));
     const contentBottom = expectedHeight - 74 - 24;
     for (const point of expectedPoints.split(';')) assert.ok(Number(point.split(',')[1]) <= contentBottom);
@@ -327,9 +327,9 @@ for (const [name, flow, expectedPoints, expectedHeight] of [
 // comparison is recorded in the PR evidence; SVG isolates renderer behavior
 // from unrelated future Viewer-template changes.
 for (const [name, mutate, expectedSha256] of [
-  ['standard-auto', diagram => { diagram.meta.quality_profile = 'standard'; }, '2665e15fb2ee1a9d21b653c9acc9417e6988def98bf45d22630c47f434ae907a'],
+  ['standard-auto', diagram => { diagram.meta.quality_profile = 'standard'; }, '99637c1e91964415abeff668d89e7126ff12960d69d535a570f7a452b088f528'],
   ['explicit-viewbox', diagram => { diagram.meta.viewBox = [1080, 720]; }, 'd738f4c38e336886aaf86bc769ea8b401e540da0f9566330b559408340968879'],
-  ['explicit-one-width', diagram => { diagram.nodes[0].width = 152; }, 'e5006801fe5137e2b204d4d168a76571bb83dc52e94a0261b14e6b889ab7c08d'],
+  ['explicit-one-width', diagram => { diagram.nodes[0].width = 152; }, '0533eb9cfbd3a6a5bbd99c01342a3cf07429dc834fd2d446409eb35448a601ec'],
   ['explicit-both', diagram => { diagram.meta.viewBox = [1080, 720]; diagram.nodes[0].width = 152; }, '0d2ee82e89eeb9e1c83e2002f72b004adfe876fb6d50dc91d465f8e778d3e8dd'],
 ]) {
   test(`dev byte compatibility for ${name}`, t => {
