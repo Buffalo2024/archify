@@ -275,7 +275,7 @@ Compare diagnostics by code, subject, and stage instead of total count alone.
 5. Fix label-to-node, label-to-label, then label-to-route clearance.
 6. Fix labels that leave the canvas: move the label with `labelAt`/`labelDx`/`labelDy`/`labelSegment`, or widen `meta.viewBox`. Suggested `labelDx`/`labelDy` values replace the authored field; they are not added to it.
 
-Run `validate` after every edit. Consume `diagnostics[]` by stable `code`, exact `subject`, measured `evidence`, and `supportedFixes`. If the diagnostic gives `labelAt`, use that point instead of estimating another offset.
+After every edit, rerun the complete `finalize` as the delivery contract requires; use `validate` only for focused diagnosis between finalize runs. Consume `diagnostics[]` by stable `code`, exact `subject`, measured `evidence`, and `supportedFixes`. If the diagnostic gives `labelAt`, use that point instead of estimating another offset.
 
 ## Mode placement
 
@@ -321,6 +321,14 @@ Participants are ordered by conversation role. Messages own their vertical order
 ### Dataflow
 
 Stages express transformation or custody. Rows separate parallel streams. Label only data contracts, classifications, or cross-boundary movement that is not obvious.
+
+Omit `meta.viewBox` to fit canvas width to all stages and nodes in either quality
+profile, including explicit node widths. The 940px minimum and 24px right padding
+remain; left-edge overflow still needs a node repair. An authored viewBox stays
+fixed. Showcase node growth, readable typography, content height, port bridges
+and bounded label placement apply only when the canvas and all node widths are
+omitted. `--quality` overrides `meta.quality_profile`; without it, the renderer
+uses `ARCHIFY_QUALITY_PROFILE` when set, otherwise the JSON profile.
 
 ### ERD
 

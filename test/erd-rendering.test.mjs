@@ -1138,3 +1138,27 @@ test('a domain band rejects intrusion into another tagged domain', () => {
     assert.equal(spaced.status, 0, spaced.stderr);
   }
 });
+
+test('grid-placed entities without a layout block use the default grid', t => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'archify-erd-default-grid-'));
+  t.after(() => fs.rmSync(directory, { recursive: true, force: true }));
+  const diagram = cloneWithoutViews(example);
+  delete diagram.layout;
+  for (const relationship of diagram.relationships) delete relationship.label;
+  const result = render(diagram, directory);
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(entityBoxes(fs.readFileSync(result.output, 'utf8')).size, diagram.entities.length);
+});
+
+test('a self-relationship reports only its own unsupported-shape problem', t => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'archify-erd-self-'));
+  t.after(() => fs.rmSync(directory, { recursive: true, force: true }));
+  const diagram = cloneWithoutViews(example);
+  diagram.meta.quality_profile = 'showcase';
+  const entity = diagram.entities[0].id;
+  diagram.relationships.push({ id: 'self', from: entity, to: entity, label: 'parent', fromCardinality: 'many', toCardinality: 'one' });
+  const result = render(diagram, directory);
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /connects entity "[^"]+" to itself/);
+  assert.doesNotMatch(result.stderr, /relationships\[\d+\] id "self"/);
+});

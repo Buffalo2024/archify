@@ -23,7 +23,13 @@ export const DEFAULT_ER_GRID = {
 
 export function erGridLayout(er) {
   const raw = er.layout;
-  if (!raw || raw.mode !== 'grid') return null;
+  // Grid cells without a layout block mean the default grid, not absolute
+  // coordinates that were never supplied.
+  if (!raw) {
+    const gridPlaced = (er.entities || []).some((entity) => Number.isFinite(entity?.row) && Number.isFinite(entity?.col));
+    return gridPlaced ? { ...DEFAULT_ER_GRID } : null;
+  }
+  if (raw.mode !== 'grid') return null;
   return { ...DEFAULT_ER_GRID, ...raw };
 }
 

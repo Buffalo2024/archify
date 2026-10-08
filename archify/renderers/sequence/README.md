@@ -104,6 +104,14 @@ for the bounded authoring repair and explicit-fixed preservation rules.
 
 ## Design Rules
 
+- Messages currently require distinct `from` and `to` participants. Although
+  schema-v1 accepts matching IDs, this renderer does not draw self-call loops
+  and rejects them with `sequence/self-message-unsupported`, naming the message
+  path and participant. Increasing column distance cannot repair a self-message.
+  Preserve an internal step's wording, ownership, and order in a note on an
+  actual interaction or an explicitly ordered card. Do not invent another
+  participant or change the target merely to pass validation. These authoring
+  choices require semantic review and are not advertised as automatic fixes.
 - Put participants across the top, ordered by the story the reader should
   follow.
 - Time moves downward.

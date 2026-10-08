@@ -293,3 +293,33 @@ test('an automatic canvas grows to hold a wrapped note on the last message', (t)
   assert.ok(lastBaseline + 2 < legendTitle - 12, `last note line ${lastBaseline} stays above the legend title ${legendTitle}`);
   assert.ok(height > 760);
 });
+
+test('a widened automatic canvas wraps a late note using its final lane geometry', (t) => {
+  const ids = Array.from({ length: 8 }, (_, index) => `p${index}`);
+  const token = 'x'.repeat(160);
+  const spec = sequence({
+    participants: ids,
+    messages: [{ from: 'p1', to: 'p2', y: 700, label: 'late', note: token }],
+  });
+  // This dev-supported label widens the automatic canvas beyond 920px.
+  spec.participants[4].label = 'Team operations';
+  const html = render(t, spec);
+  const [, widthText, heightText] = html.match(/<svg viewBox="0 0 (\d+) (\d+)"/);
+  const width = Number(widthText);
+  const height = Number(heightText);
+  assert.ok(width > 920 && width <= 1085, `automatic width ${width} stays within the readable bound`);
+  const lanes = lifelines(html);
+  const [note] = notes(html);
+  assert.equal(note.x, lanes[1] + 19, 'note starts in the final sender lane');
+  assert.ok(note.lines.length > 1);
+  assert.equal(note.lines.join(''), token);
+  for (const line of note.lines) {
+    assert.ok(note.x + minimumNodeTextWidth(line, 7) <= lanes[2] - 11, `${line} clears the final next lifeline`);
+  }
+  const lastBaseline = note.y + (note.lines.length - 1) * 11;
+  const legendTitle = Number(html.match(/<text x="[\d.]+" y="([\d.]+)"[^>]*>Legend<\/text>/)[1]);
+  assert.ok(lastBaseline + 2 < legendTitle - 12, 'automatic height includes the wrapped note');
+  const authored = render(t, { ...spec, meta: { ...spec.meta, viewBox: [width, height] } });
+  assert.deepEqual(lifelines(authored), lanes, 'authored and computed canvas widths give the same lanes');
+  assert.deepEqual(notes(authored), notes(html), 'note wrapping uses the final width before automatic height');
+});
