@@ -208,7 +208,28 @@ function segmentLabelBox(segment) {
     if (!occupied.some((rect) => rectsOverlap(label, rect, 2))) break;
     label.y -= 22;
   }
+  if (!segmentLabelMisplaced(label, segment)) return label;
+  // Abutting segments can leave no room on the border: the badge climbed
+  // behind the participant headers or into the previous segment, where it
+  // names the wrong phase. Its own frame's top-left corner, clear of messages,
+  // names the right one.
+  const inside = { x: 56, y: segment.from + 4, width: labelW, height: 18 };
+  for (let attempt = 0; attempt < 4 && inside.y + inside.height <= segment.to - 2; attempt += 1) {
+    if (!occupied.some((rect) => rectsOverlap(inside, rect, 2))) return inside;
+    inside.y += 22;
+  }
   return label;
+}
+
+// A badge on its frame's top border is the intended title. It stops naming
+// that frame once it hides mostly behind the participant headers, or once
+// message labels pushed it up into another segment.
+function segmentLabelMisplaced(label, segment) {
+  const half = label.height / 2;
+  if (layout.topY + layout.participantH - label.y > half) return true;
+  if (label.y >= segment.from - 22) return false;
+  return asArray(sequence.segments).some((other) => other !== segment
+    && Math.min(label.y + label.height, other.to) - Math.max(label.y, other.from) > half);
 }
 
 const compositionFrames = asArray(sequence.segments).map((segment, index) => ({
