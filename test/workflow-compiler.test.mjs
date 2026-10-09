@@ -420,7 +420,8 @@ test('issue #250: implicit readable-v2 measures a stacked lane independently', (
   const result = compileSuccessfully(workflow);
   assert.equal(result.receipt.contract, 'readable-v2');
   assert.deepEqual([0, 1, 2].map((index) => laneFrameRect(result.svg, index).height), [276, 104, 104]);
-  assert.deepEqual(result.receipt.viewBox, [768, 700]);
+  // The lane ends after the group's last rank (col 3) instead of col 5.
+  assert.deepEqual(result.receipt.viewBox, [528, 700]);
   const group = groupFrameRect(result.svg);
   for (const id of ['a', 'b', 'c']) {
     const node = nodeRect(result.svg, id);
@@ -583,13 +584,15 @@ test('an automatic readable-v2 canvas too tall for the desktop page reads at pag
 test('stack reader fitting stays off for authored canvases, fixed-v1, and workflows without a vertical stack', () => {
   const authoredCanvas = stackedGroupWorkflow({ schemaVersion: 2, offsets: [-90, 0, 90] });
   authoredCanvas.meta.viewBox = [768, 452];
-  const tallWithoutStack = adjacentWorkflow();
+  const tallWithoutStack = adjacentWorkflow({ fromCol: 0, toCol: 5 });
   tallWithoutStack.nodes.forEach((node) => { node.height = 130; });
 
   const cases = [
     ['authored readable-v2 canvas', authoredCanvas],
     ['fixed-v1 workflow', stackedGroupWorkflow({ offsets: [0] })],
-    ['baseline readable-v2 lane', adjacentWorkflow()],
+    // A full-width lane keeps the ordinary ratio fit; a packed short lane is
+    // taller than wide enough to read width-first like a stack.
+    ['baseline readable-v2 lane', adjacentWorkflow({ fromCol: 0, toCol: 5 })],
     ['tall readable-v2 lane without a vertical stack', tallWithoutStack],
   ];
   for (const [description, workflow] of cases) {
@@ -1301,7 +1304,8 @@ test('readable-v2 keeps a first-rank group label mask clear of its lane header m
 });
 
 test('readable-v2 measures multi-row legends into intrinsic and explicit viewBox capacity', () => {
-  const workflow = adjacentWorkflow({ fromCol: 0 });
+  // Span all six ranks so the intrinsic lane equals the full explicit-canvas lane.
+  const workflow = adjacentWorkflow({ fromCol: 0, toCol: 5 });
   workflow.meta.legend = {
     mode: 'all',
     entries: Object.fromEntries([
@@ -1535,3 +1539,33 @@ test('a dense automatic first draft routes between columns without crossings', (
 });
 
 process.on('exit', () => fs.rmSync(tmp, { recursive: true, force: true }));
+
+test('readable-v2 ends an automatic lane after the last used rank', () => {
+  const workflow = {
+    schema_version: 2,
+    diagram_type: 'workflow',
+    meta: { title: 'Three ranks', output: 'three-ranks.html', legend: { mode: 'hidden' } },
+    lanes: [{ id: 'ask', label: 'Employee' }, { id: 'review', label: 'Manager' }],
+    nodes: [
+      { id: 'submit', lane: 'ask', col: 0, type: 'frontend', label: 'Submit' },
+      { id: 'approve', lane: 'review', col: 1, type: 'frontend', label: 'Approve' },
+      { id: 'deny', lane: 'review', col: 2, type: 'backend', label: 'Deny' },
+    ],
+    edges: [
+      { id: 'send', from: 'submit', to: 'approve', label: 'send' },
+      { id: 'no', from: 'approve', to: 'deny', label: 'no' },
+    ],
+  };
+  const result = compileSuccessfully(workflow, 'showcase');
+  const lane = laneFrameRect(result.svg, 0);
+  const rightmostNode = Math.max(...result.receipt.nodes.map((node) => node.x + node.width));
+  // Before packing, every automatic lane reached rank 5 (laneW >= 640).
+  assert.ok(lane.width < 640, `lane width ${lane.width}`);
+  assert.ok(lane.x + lane.width - rightmostNode <= 16, `trailing lane gap ${lane.x + lane.width - rightmostNode}`);
+  assert.equal(result.receipt.viewBox[0], lane.x + lane.width + 16);
+
+  // An authored canvas keeps the full six-rank lane it was drawn against.
+  const authored = clone(workflow);
+  authored.meta.viewBox = [800, result.receipt.viewBox[1]];
+  assert.ok(laneFrameRect(compileSuccessfully(authored, 'showcase').svg, 0).width >= 640);
+});

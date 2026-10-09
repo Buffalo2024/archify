@@ -214,7 +214,8 @@ test('readable-v2 evaluates automatic endpoint sides against the complete labele
 
   const result = compileWorkflow({ workflow: document, qualityProfile: 'standard' });
   assert.equal(result.ok, true, JSON.stringify(result.diagnostics, null, 2));
-  assert.deepEqual(result.receipt.viewBox, [768, 404]);
+  // The lane ends after the last used rank instead of trailing four empty ones.
+  assert.deepEqual(result.receipt.viewBox, [376, 404]);
   assert.deepEqual(result.receipt.edges[0].points, [
     [94, 145], [94, 166], [214, 166], [214, 217],
   ]);
@@ -370,14 +371,14 @@ test('readable-v2 feeds a measured outside-channel constraint back into layout',
   const first = compileWorkflow({ workflow: document });
   const second = compileWorkflow({ workflow: clone(document) });
   assert.equal(first.ok, true, JSON.stringify(first.diagnostics, null, 2));
-  assert.deepEqual(first.receipt.viewBox, [780, 404]);
-  assert.deepEqual(first.receipt.requiredViewBox, [780, 404]);
+  assert.deepEqual(first.receipt.viewBox, [740, 404]);
+  assert.deepEqual(first.receipt.requiredViewBox, [740, 404]);
   assert.deepEqual(first.receipt.edges[0].points, [
-    [140, 119], [764, 119], [764, 243], [140, 243],
+    [140, 119], [722, 119], [722, 243], [140, 243],
   ]);
   assert.deepEqual(
     { x: first.receipt.labels[0].x, y: first.receipt.labels[0].y },
-    { x: 452, y: 109 },
+    { x: 431, y: 109 },
   );
   assert.equal(second.svg, first.svg);
   assert.equal(JSON.stringify(second.receipt), JSON.stringify(first.receipt));
@@ -712,11 +713,11 @@ test('readable-v2 treats an omitted preset side as a solver choice', () => {
       expected: [[140, 119], [288, 119]],
     },
     { route: 'drop', document: crossLane('drop'), expected: [[94, 145], [94, 166], [334, 166], [334, 217]] },
-    { route: 'outside-right', document: crossLane('outside-right'), expected: [[140, 119], [764, 119], [764, 243], [380, 243]] },
+    { route: 'outside-right', document: crossLane('outside-right'), expected: [[140, 119], [404, 119], [404, 243], [380, 243]] },
     { route: 'return-left', document: crossLane('return-left'), expected: [[48, 119], [20, 119], [20, 243], [288, 243]] },
     { route: 'bottom-channel', document: crossLane('bottom-channel'), expected: [[94, 145], [94, 301], [334, 301], [334, 269]] },
     { route: 'up-channel', document: crossLane('up-channel'), expected: [[94, 93], [94, 65], [334, 65], [334, 217]] },
-    { route: 'outside-right partial', document: crossLane('outside-right', { fromSide: 'right' }), expected: [[140, 119], [764, 119], [764, 243], [380, 243]] },
+    { route: 'outside-right partial', document: crossLane('outside-right', { fromSide: 'right' }), expected: [[140, 119], [404, 119], [404, 243], [380, 243]] },
   ];
 
   for (const fixture of cases) {

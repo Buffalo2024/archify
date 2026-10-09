@@ -221,6 +221,14 @@ function verticalIntervalsOverlap(a, b, clearance = 0) {
     < authoredNodeHeight(a) / 2 + authoredNodeHeight(b) / 2 + clearance;
 }
 
+const MINIMUM_PACKED_LANE_WIDTH = 320;
+
+function packsTrailingRanks(workflow) {
+  return workflow?.schema_version === 2
+    && !workflow.meta?.viewBox
+    && !hasAbsoluteWorkflowPins(workflow);
+}
+
 function createReadableLayout(workflow, layoutFeedback = {}) {
   const columnCount = 6;
   const baselinePitch = 120;
@@ -485,8 +493,21 @@ function createReadableLayout(workflow, layoutFeedback = {}) {
     for (let col = 0; col < colXs.length; col += 1) colXs[col] += measuredContentLeftShift;
   }
 
-  let rightmost = colXs.at(-1) + 50;
-  let rightmostContributors = new Set(colProvenance.at(-1));
+  // An authored canvas or absolute route pins keep the full six-rank lane,
+  // because their coordinates were chosen against it. Otherwise the lane ends
+  // after the last rank that carries a node, phase or group, so a three-rank
+  // process does not trail an empty half-lane.
+  const packTrailingRanks = packsTrailingRanks(workflow) && !layoutFeedback.fullLaneWidth;
+  const usedColumns = [
+    ...nodes.map((node) => node.col),
+    ...asArray(workflow.phases).map((phase) => phase.toCol),
+    ...asArray(workflow.groups).map((group) => group.toCol),
+  ].filter((col) => Number.isInteger(col) && col >= 0 && col < columnCount);
+  const lastUsedColumn = packTrailingRanks && usedColumns.length
+    ? Math.max(...usedColumns)
+    : columnCount - 1;
+  let rightmost = colXs[lastUsedColumn] + 50;
+  let rightmostContributors = new Set(colProvenance[lastUsedColumn]);
   for (const node of nodes) {
     if (!Number.isInteger(node.col) || node.col < 0 || node.col >= columnCount) continue;
     const nodeRight = colXs[node.col] + authoredNodeWidth(node) / 2;
@@ -527,12 +548,13 @@ function createReadableLayout(workflow, layoutFeedback = {}) {
   }, { width: 0, lane: null });
   const laneLabelWidth = widestLaneLabel.width;
   const rightmostLaneWidth = Math.ceil(rightmost - 40 + 8);
+  const laneFloor = packTrailingRanks ? MINIMUM_PACKED_LANE_WIDTH : 640;
   const laneW = Math.max(
-    640,
+    laneFloor,
     rightmostLaneWidth,
     Math.ceil(laneLabelWidth),
   );
-  if (laneW > 640) {
+  if (laneW > laneFloor) {
     if (rightmostLaneWidth === laneW) {
       for (const contributor of rightmostContributors) widthContributors.add(contributor);
     }
@@ -5281,8 +5303,10 @@ function compileWithRouteOrderFeedback(options) {
   return best;
 }
 
-function compileWorkflowWithFeedback({ workflow, qualityProfile, sourceEvidence, discoverFixes = true } = {}) {
-  let layoutFeedback = {};
+function compileWorkflowWithLayoutFeedback({
+  workflow, qualityProfile, sourceEvidence, discoverFixes = true, initialFeedback = {},
+} = {}) {
+  let layoutFeedback = { ...initialFeedback };
   for (let attempt = 0; attempt <= MAX_READABLE_LAYOUT_FEEDBACK_ROUNDS; attempt += 1) {
     try {
       return compileWithRouteOrderFeedback({
@@ -5336,6 +5360,17 @@ function compileWorkflowWithFeedback({ workflow, qualityProfile, sourceEvidence,
     }
   }
   throw new Error('unreachable readable-v2 layout feedback state');
+}
+
+// The packed lane ends after the last used rank. When that tighter lane leaves
+// errors that the full six-rank lane avoids (its outside corridors sit further
+// right), keep the full lane instead: packing must never cost a passing route.
+function compileWorkflowWithFeedback(options = {}) {
+  const packed = compileWorkflowWithLayoutFeedback(options);
+  const { workflow } = options;
+  if (packed.ok || !packsTrailingRanks(workflow)) return packed;
+  const full = compileWorkflowWithLayoutFeedback({ ...options, initialFeedback: { fullLaneWidth: true } });
+  return errorCount(full) < errorCount(packed) ? full : packed;
 }
 
 export function compileWorkflow({ workflow, qualityProfile, sourceEvidence } = {}) {

@@ -143,7 +143,7 @@ a verified migration-to-v2 repair; v1 never falls through to adaptive layout.
 | Same-lane node clearance | ≥8px when vertical node intervals overlap |
 | Facing direct edge | clear gap ≥`max(28px, measured label mask width + 8px)` |
 | Automatic route rhythm | direct segment ≥28px; endpoint stub ≥8px; interior turn segment ≥16px |
-| Implicit viewBox | intrinsic content bounds plus contract padding |
+| Implicit viewBox | intrinsic content bounds plus contract padding; an unpinned lane ends after the last rank used by a node, phase or group (minimum 320px) instead of always reaching rank 5 |
 | Explicit viewBox | containment capacity; too-small input reports exact `requiredViewBox` and contributors |
 | Lane measurement | A same-column vertical stack (two or more distinct `yOffset` values) opts an implicit, unpinned workflow into per-lane measurement. Explicit `meta.viewBox`, `via`, `labelAt`, `channelX`, or `channelY`, and workflows without a stack retain shared-height v2 geometry for compatibility. |
 
@@ -151,7 +151,9 @@ Unpinned v2 drafts reserve 32px between overlapping same-lane nodes for routes,
 and omitted node widths may grow from 92px to 200px to fit their text. Documents
 with an explicit `meta.viewBox` or absolute `via`, `labelAt`, `channelX`, or
 `channelY` pins retain the existing width defaults and 8px rank-clearance
-constraint, in both compilation and migration planning. Authored widths remain
+constraint, in both compilation and migration planning. They also keep the
+full six-rank lane (at least 640px); an unpinned draft whose packed lane would
+fail a route check falls back to that full lane. Authored widths remain
 authoritative.
 
 Automatic showcase canvases check sublabels against the desktop reading floor
