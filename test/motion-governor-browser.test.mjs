@@ -59,6 +59,12 @@ test('Motion Governor preserves mode, ownership, ambient completion and real cal
   async function load(mode = 'architecture', { theme = 'dark', reduced = false, fixture = '', preserveStorage = false, query = '' } = {}) {
     const expectedNavigation = ++navigationId;
     if (!preserveStorage) {
+      if (fixtureUrl) {
+        // Reset through the outgoing document's live storage area, then verify
+        // completion before navigating. A CDP clear against a guessed file
+        // storage key did not reliably clear this document's saved intent.
+        assert.equal(await run('motionResetStorage()'), null, 'Outgoing fixture must clear stored intent.');
+      }
       fixtureUrl = pathToFileURL(files[mode]).href + `?theme=${theme}&testNavigation=${expectedNavigation}${query}`;
       // End the old document before resetting this disposable profile. A
       // backend clear while the old file document still owns its Storage area
@@ -77,6 +83,14 @@ test('Motion Governor preserves mode, ownership, ambient completion and real cal
     if (startup) await send('Page.removeScriptToEvaluateOnNewDocument', { identifier: startup });
     ({ identifier: startup } = await send('Page.addScriptToEvaluateOnNewDocument', { source: `(() => {
       if (location.href !== ${JSON.stringify(fixtureUrl)}) return;
+      // Capture methods without accessing localStorage before Viewer startup.
+      // Cleanup runs only later in the outgoing document, including after the
+      // storage-unavailable fixture has replaced Storage.prototype methods.
+      const readStored = Storage.prototype.getItem, removeStored = Storage.prototype.removeItem;
+      window.motionResetStorage = () => {
+        removeStored.call(localStorage, 'archify-motion');
+        return readStored.call(localStorage, 'archify-motion');
+      };
       window.motionNavigation = ${expectedNavigation};
       window.motionErrors = []; window.motionEnds = []; window.motionAmbient = [];
       addEventListener('error', e => motionErrors.push(e.message));
