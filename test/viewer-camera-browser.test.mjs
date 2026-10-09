@@ -15,6 +15,54 @@ const cases = {
   lifecycle: 'agent-run.lifecycle.json',
 };
 
+test('Camera accessible names retain the visible readout after native actions', {
+  skip: chrome ? false : 'Set ARCHIFY_CHROME to run real-browser camera checks.',
+}, async (t) => {
+  const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'archify-camera-name-'));
+  t.after(() => fs.rmSync(scratch, { recursive: true, force: true }));
+  const browser = new ChromeVisualBrowser(chrome);
+  t.after(() => browser.close());
+  const session = await browser.sessionPromise;
+  const send = (method, params = {}) => browser.cdp.send(method, params, session);
+  await send('Emulation.setDeviceMetricsOverride', {
+    width: 1440, height: 900, deviceScaleFactor: 1, mobile: false,
+  });
+  await send('Emulation.setEmulatedMedia', {
+    features: [{ name: 'prefers-reduced-motion', value: 'reduce' }],
+  });
+  for (const [mode, example] of Object.entries(cases)) {
+    for (const locale of ['en', 'zh-CN']) {
+      const candidate = JSON.parse(fs.readFileSync(path.join(skillRoot, 'examples', example), 'utf8'));
+      candidate.meta.locale = locale;
+      const input = path.join(scratch, `${mode}-${locale}.json`);
+      const artifact = path.join(scratch, `${mode}-${locale}.html`);
+      fs.writeFileSync(input, JSON.stringify(candidate));
+      execFileSync(process.execPath, [path.join(skillRoot, 'bin/archify.mjs'), 'render', mode, input, artifact]);
+      const loaded = browser.cdp.waitFor('Page.loadEventFired', session);
+      await send('Page.navigate', { url: pathToFileURL(artifact).href });
+      await loaded;
+      for (const action of [null, 'out', 'in', 'in', 'in', 'reset']) {
+        const result = await send('Runtime.evaluate', {
+          expression: `(async () => {
+            ${action ? `document.querySelector('[data-view="${action}"]').click();` : ''}
+            await Archify.layoutStability.whenStable();
+            const button = document.querySelector('[data-view="reset"]');
+            return {
+              visible: button.innerText.replace(/\\s+/g, ' ').trim(),
+              accessible: button.getAttribute('aria-label')
+            };
+          })()`,
+          awaitPromise: true, returnByValue: true,
+        });
+        assert.equal(result.exceptionDetails, undefined, result.exceptionDetails?.exception?.description);
+        const name = result.result.value;
+        assert.ok(name.visible, `${mode}/${locale}/${action}: ${JSON.stringify(name)}`);
+        assert.ok(name.accessible.includes(name.visible), `${mode}/${locale}/${action}: ${JSON.stringify(name)}`);
+      }
+    }
+  }
+});
+
 test('Camera preserves transactions, rendered state and real caller handoffs', {
   skip: chrome ? false : 'Set ARCHIFY_CHROME to run real-browser camera checks.',
 }, async (t) => {
