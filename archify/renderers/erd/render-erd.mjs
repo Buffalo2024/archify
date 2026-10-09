@@ -1044,6 +1044,7 @@ function validateEr() {
     relationship.from === relationship.to ? null : relationship));
   const headerDetails = [];
   const domainDetails = [];
+  const attributeDetails = [];
   for (const entity of entities.values()) {
     const header = entityHeader(entity);
     if (!header.problem) continue;
@@ -1115,7 +1116,7 @@ function validateEr() {
   }
   validateErGridPlacement(er, grid, bands, problems);
   const seenEntityIds = new Set();
-  for (const entity of asArray(er.entities)) {
+  for (const [entityIndex, entity] of asArray(er.entities).entries()) {
     if (seenEntityIds.has(entity.id)) problems.push(`Entity ids must be unique; "${entity.id}" is declared twice.`);
     seenEntityIds.add(entity.id);
 
@@ -1135,9 +1136,21 @@ function validateEr() {
       const available = entityWidth(entity) - layout.padX * 2 - keyColumnWidth(entity);
       const needed = nameUnits * layout.rowFont + (typeUnits ? typeUnits * layout.typeFont + 8 : 0);
       if (needed > available) {
-        problems.push(
-          `Entity "${entity.id}" attribute ${attributeIndex} "${attribute.name}" needs ${Math.ceil(needed)}px of text but only ${Math.floor(available)}px is available — widen the entity, shorten the attribute name, or drop the type.`,
-        );
+        const requiredEntityWidth = Math.ceil(needed + layout.padX * 2 + keyColumnWidth(entity));
+        const fix = `For this attribute row's text capacity, set entities[${entityIndex}].width to at least ${requiredEntityWidth}px, preserving the attribute name, type and key roles.`;
+        const message = `Entity "${entity.id}" attribute ${attributeIndex} "${attribute.name}" needs ${Math.ceil(needed)}px of text but only ${Math.floor(available)}px is available — ${fix}`;
+        problems.push(message);
+        attributeDetails.push({
+          code: 'erd/attribute-text-capacity', severity: 'error', message,
+          subject: { diagramType: 'erd', entityId: entity.id, attributeIndex, attributeName: attribute.name },
+          evidence: {
+            entityWidth: entityWidth(entity), requiredEntityWidth,
+            availableTextWidth: available, requiredTextWidth: needed,
+            paddingWidth: layout.padX * 2, keyColumnWidth: keyColumnWidth(entity),
+            nameFontSize: layout.rowFont, typeFontSize: layout.typeFont,
+          },
+          supportedFixes: [fix],
+        });
       }
     }
   }
@@ -1303,7 +1316,7 @@ function validateEr() {
     throwDiagnosticProblems('Entity-relationship layout validation failed', problems, {
       code: 'layout/constraint',
       subject: { diagramType: 'erd' },
-      diagnostics: [...headerDetails, ...domainDetails, ...portSpacingDetails],
+      diagnostics: [...headerDetails, ...domainDetails, ...portSpacingDetails, ...attributeDetails],
     });
   }
 }
@@ -1317,7 +1330,7 @@ function buildLayoutReport() {
     relationships: relationships
       .filter(renderableRelationship)
       .map((relationship) => ({
-        ...relationshipPath(relationship, pathFor(relationship), relationship.labelAt),
+        ...relationshipPath(relationship, pathFor(relationship), relationship.labelAt || resolvedLabelPoints.get(relationship)),
         fromCardinality: cardinalityOf(relationship, 'from'),
         toCardinality: cardinalityOf(relationship, 'to'),
       })),

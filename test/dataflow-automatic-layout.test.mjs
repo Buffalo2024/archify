@@ -50,6 +50,30 @@ function pipeline() {
   };
 }
 
+test('automatic dataflow width contains a nearby authored label without moving its pin', t => {
+  const diagram = {
+    schema_version: 1, diagram_type: 'dataflow',
+    meta: { title: 'Pinned payload', output: 'diagram.html', quality_profile: 'showcase' },
+    stages: [{ label: 'Source' }, { label: 'Sink' }],
+    nodes: [
+      { id: 'source', type: 'backend', label: 'Source', stage: 0, row: 0 },
+      { id: 'sink', type: 'backend', label: 'Sink', stage: 1, row: 0 },
+      { id: 'archive', type: 'backend', label: 'Archive', stage: 1, row: 1 },
+    ],
+    flows: [{ id: 'flow', from: 'sink', to: 'archive', label: 'versioned transaction payload contract', labelAt: [435, 225] }],
+  };
+  const { result, receipt, input, output, env } = inspect(t, diagram);
+  assert.equal(result.status, 0, JSON.stringify(receipt));
+  const rendered = spawnSync(process.execPath, [cli, 'render', 'dataflow', input, output], { encoding: 'utf8', env });
+  assert.equal(rendered.status, 0, rendered.stdout + rendered.stderr);
+  const html = fs.readFileSync(output, 'utf8');
+  const width = Number(html.match(/<svg viewBox="0 0 (\d+) /)[1]);
+  assert.ok(width >= 535 && width < 940, `pin should fit without the old width floor, got ${width}`);
+  assert.match(html, /<text x="435" y="225"/);
+  assert.match(html, /versioned transaction payload contract/);
+  assert.match(html, /data-composition-points="315,186;315,242"/);
+});
+
 test('five-stage unpinned pipeline passes first draft with complete text and projected typography', t => {
   const diagram = pipeline();
   const { result, receipt, input, output, env } = inspect(t, diagram);

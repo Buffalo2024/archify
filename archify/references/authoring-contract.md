@@ -283,7 +283,7 @@ After every edit, rerun the complete `finalize` as the delivery contract require
 
 Choose overview or mechanism detail using [Composition and meaning](authoring-defaults.md#composition-and-meaning). Use one obvious primary reading path, which may step across meaningful rows when the requested topology needs room. Keep the overview readable at its chosen abstraction; expand implementation details when they answer the reader's question. Group only real ownership, trust, process, or deployment boundaries. Boundaries do not replace relationships.
 
-Grid placement is preferred when the schema supports it. Free positions are appropriate for a bounded exception, not for prose-level coordinate planning. Keep external actors outside the system boundary when that is factually true. A boundary is drawn as the padded box around all of its members, so place them as one compact axis-aligned cluster (no empty bay that lets a non-member sit inside the padded frame) and keep every non-member outside that box; `layout/boundary-encloses-non-member` reports a component the box swallows.
+Grid placement is preferred when the schema supports it. Free positions are appropriate for a bounded exception, not for prose-level coordinate planning. Keep external actors outside the system boundary when that is factually true. A boundary is drawn as the padded box around all of its members, so place them as one compact axis-aligned cluster (no empty bay that lets a non-member sit inside the padded frame) and keep every non-member outside that box; `layout/boundary-encloses-non-member` reports a component the box swallows in showcase quality. Standard retains its existing acceptance behavior.
 
 ### Workflow
 
@@ -317,7 +317,7 @@ not settle viewport fit. These are repair directions, not guaranteed coordinates
 
 ### Sequence
 
-Participants are ordered by conversation role. Messages own their vertical order. Use return/async/security variants for meaning, not decoration; sequence does not use Automatic Port Spread. A segment's `from`/`to` edges must stay at least 4px off every message arrow (`message.y`): an edge along an arrow leaves the reader unable to tell which phase the message belongs to, and the renderer reports it.
+Participants are ordered by conversation role. Messages own their vertical order. Use return/async/security variants for meaning, not decoration; sequence does not use Automatic Port Spread. A segment's `from`/`to` edges must stay at least 4px off every message arrow (`message.y`): an edge along an arrow leaves the reader unable to tell which phase the message belongs to, and showcase quality reports `sequence/segment-message-border-run`. Standard retains its existing acceptance behavior.
 
 First-draft shape: every message needs an `id`, `from`, `to`, `label`, and integer `y` at least 160. `from` and `to` must be different participants — self-messages are unsupported (`sequence/self-message-unsupported`). Optional phase bands are `segments[]` with only `from`, `to`, and `label` (no segment `id`). Inventing `pos`/`size` on participants fails schema validation — order alone places them. Omit `meta.viewBox` so automatic height fits the timeline + legend (minimum 327px readable band) instead of a fixed 760px floor, and so 2–3 participant spreads pack below the 920px default when labels fit (4+ stay at 920px; long labels still widen).
 

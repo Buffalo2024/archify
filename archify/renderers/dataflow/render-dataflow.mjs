@@ -82,11 +82,13 @@ const automaticShowcase = qualityProfile === 'showcase'
 const stageRight = stageX(asArray(dataflow.stages).length - 1) + layout.stageW / 2;
 const nodeRights = asArray(dataflow.nodes).map(node =>
   stageX(node.stage) + (node.width || layout.nodeW) / 2).filter(Number.isFinite);
+const pinnedLabelRights = asArray(dataflow.flows).filter(flow => flow.label && Array.isArray(flow.labelAt) && isFinitePoint(...flow.labelAt))
+  .map(flow => flow.labelAt[0] + flowLabelSize(flow).width / 2);
 // Automatic width fits stages/nodes with 24px right pad. The old 940px floor
 // left a blank third of the canvas on 2–3 stage drafts; five default stages
 // still measure ~1068 and stay unchanged. Height starts at 720 and is refit
 // by heightForLabels for automatic showcase.
-const contentWidth = Math.ceil(Math.max(stageRight, ...nodeRights, 0) + 24);
+const contentWidth = Math.ceil(Math.max(stageRight, ...nodeRights, ...pinnedLabelRights, 0) + 24);
 const viewBox = dataflow.meta?.viewBox || [
   Math.max(480, contentWidth),
   720,

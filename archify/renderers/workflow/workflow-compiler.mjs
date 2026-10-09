@@ -2274,20 +2274,40 @@ function routeContainsChannelPin(points, field, value) {
   });
 }
 
-function hasClearStraightAutomaticRoute(edge) {
-  if (!independentAutomaticRoute(edge) || edge.from === edge.to) return false;
+function clearStraightAutomaticPlan(edge) {
+  if (!independentAutomaticRoute(edge) || edge.from === edge.to) return null;
   // Relative label pins are not absolute, but they still participate in
   // placed-label conflict evidence. Reserving a straight path for them first
   // can change which edge owns the corridor and scramble supportedFixes.
   if (edge.labelDx !== undefined || edge.labelDy !== undefined || edge.labelSegment !== undefined) {
-    return false;
+    return null;
   }
   const from = nodes.get(edge.from);
   const to = nodes.get(edge.to);
   const start = anchor(from, defaultFromSide(from, to));
   const end = anchor(to, defaultToSide(from, to));
   const aligned = Math.abs(start[0] - end[0]) < 0.0001 || Math.abs(start[1] - end[1]) < 0.0001;
-  return aligned && routeClearsUnrelatedNodes(edge, [start, end]);
+  if (!aligned || !routeClearsUnrelatedNodes(edge, [start, end])) return null;
+  // Facing centres are only a cheap filter. Port selection, labels and route
+  // costs can still select a bent route; reserving that route first would let
+  // a long branch displace a shorter one. Preview the ordinary planner and
+  // reserve only its selected straight route, without registering obstacles.
+  const hadSides = readableSideCache.has(edge);
+  const previousSides = readableSideCache.get(edge);
+  try {
+    const plan = withDiagnosticRecordingSuppressed(() => readableAutomaticRoute(
+      edge, from, to, edgeSides(edge), automaticPorts.get(edge),
+    ));
+    return plan.points.length === 2 ? plan : null;
+  } catch (error) {
+    // A preview does not own layout feedback or failure diagnostics. Let the
+    // ordinary routing order establish them with its complete preceding scene.
+    if (error instanceof WorkflowLayoutFeedback || Array.isArray(error?.archifyDiagnostics)) return null;
+    throw error;
+  } finally {
+    if (hadSides) readableSideCache.set(edge, previousSides);
+    else readableSideCache.delete(edge);
+  }
 }
 
 function validateReadablePinnedGeometry() {
@@ -2316,9 +2336,11 @@ function validateReadablePinnedGeometry() {
   ));
   if (discoverFixes && !hasLabelPins) {
     for (const edge of workflow.edges) {
-      if (!nodes.has(edge.from) || !nodes.has(edge.to) || !hasClearStraightAutomaticRoute(edge)) continue;
+      if (!nodes.has(edge.from) || !nodes.has(edge.to)) continue;
+      const plan = clearStraightAutomaticPlan(edge);
+      if (!plan) continue;
       validateReadableRouteControls(edge);
-      pathFor(edge);
+      pathFor(edge, plan);
     }
   }
   // Routing order feedback: an automatic edge that an earlier automatic edge
@@ -4301,6 +4323,70 @@ function automaticPortCandidates(edge, node, side, preferred, counterpart) {
   return candidates.length ? candidates : [preferred];
 }
 
+function automaticEndpointRepairs(edge, selected, from, to, naturalFromSide, naturalToSide) {
+  if (!independentAutomaticRoute(edge)
+    || ['labelDx', 'labelDy', 'labelSegment', 'bias'].some(field => edge[field] !== undefined)
+    || selected.cost.properCrossingCount !== 0 || selected.cost.sharedCorridorPx === 0
+    || selected.points.length < 3) return [];
+  const corridorHits = (points) => [...pathCache].flatMap(([relation, routed]) => (
+    collectAmbiguousCorridors({
+      routedRelations: [{ relation: edge, points }, { relation, points: routed.points }],
+      includeSharedEndpoints: () => true,
+      allowShortWorkflowTrunks: true,
+    })
+  ));
+  const originalHits = corridorHits(selected.points);
+  const originalNeighbours = new Set(originalHits.map(hit => hit.right.relation));
+  const strokeWidth = relation => relation.width || (relation.variant === 'emphasis' ? 1.8 : 1.4);
+  const arrowRelation = relation => ({ ...relation, width: strokeWidth(relation) });
+  const ownArrow = arrowRelation(edge);
+  const incoming = [...(nodeRoutes.get(edge.to) ?? [])].map(([relation, routed]) => ({
+    relation: arrowRelation(relation), points: routed.points,
+  }));
+  const repairs = [];
+  for (const endpoint of ['from', 'to']) {
+    const first = endpoint === 'from';
+    const endpointIndex = first ? 0 : selected.points.length - 1;
+    const segmentIndex = first ? 0 : selected.points.length - 2;
+    if (!originalHits.some(hit => hit.leftSegment === segmentIndex)) continue;
+    const node = first ? from : to;
+    const side = first ? selected.fromSide : selected.toSide;
+    const axis = side === 'left' || side === 'right' ? 1 : 0;
+    const minimum = (axis ? node.y : node.x) + 16;
+    const maximum = (axis ? node.y + node.height : node.x + node.width) - 16;
+    // Keep the side, its perpendicular stub, and the existing corner gutter.
+    // Small slides can separate source strokes or a source from an arrow even
+    // when the normal 12px port-spread step cannot fit on a 52px node side.
+    for (const offset of [-8, 8, -10, 10]) {
+      const points = selected.points.map(point => [...point]);
+      points[endpointIndex][axis] += offset;
+      points[first ? 1 : points.length - 2][axis] += offset;
+      if (points[endpointIndex][axis] < minimum || points[endpointIndex][axis] > maximum) continue;
+      const endpointFootprint = (first ? 0.5 : 3.5) * strokeWidth(edge);
+      const clearPort = [...(nodeRoutes.get(node.id) ?? [])].every(([relation, routed]) => (
+        ['from', 'to'].every(otherEndpoint => {
+          if (relation[otherEndpoint] !== node.id) return true;
+          const point = otherEndpoint === 'from' ? routed.points[0] : routed.points.at(-1);
+          if (Math.abs(point[1 - axis] - points[endpointIndex][1 - axis]) > 0.0001) return true;
+          const otherFootprint = (otherEndpoint === 'from' ? 0.5 : 3.5) * strokeWidth(relation);
+          return Math.abs(point[axis] - points[endpointIndex][axis]) + 0.0001 >= endpointFootprint + otherFootprint;
+        })
+      ));
+      if (!clearPort) continue;
+      if (!readableCandidateIsFeasible(edge, points, from, to, selected.fromSide, selected.toSide)) continue;
+      const cost = readableCandidateCost(edge, points, selected.cost.stableCandidateOrdinal, naturalFromSide, naturalToSide);
+      if (cost.properCrossingCount !== 0 || cost.sharedCorridorPx >= selected.cost.sharedCorridorPx) continue;
+      if (corridorHits(points).some(hit => !originalNeighbours.has(hit.right.relation))) continue;
+      if (collectArrowheadCollisions({
+        routedRelations: [{ relation: ownArrow, points }, ...incoming],
+        allowShortWorkflowTrunks: true,
+      }).some(hit => hit.left.relation === ownArrow || hit.right.relation === ownArrow)) continue;
+      repairs.push({ ...selected, points, cost });
+    }
+  }
+  return repairs;
+}
+
 function readableAutomaticRoute(edge, from, to, primarySides, primaryPorts) {
   const authoredFrom = edge.fromSide && edge.fromSide !== 'auto' ? edge.fromSide : null;
   const authoredTo = edge.toSide && edge.toSide !== 'auto' ? edge.toSide : null;
@@ -4439,6 +4525,7 @@ function readableAutomaticRoute(edge, from, to, primarySides, primaryPorts) {
 
   plans.sort((left, right) => compareCost(left.cost, right.cost));
   if (plans.length) {
+    const endpointRepairs = automaticEndpointRepairs(edge, plans[0], from, to, naturalFromSide, naturalToSide);
     const repairSeeds = plans[0].cost.sharedCorridorPx > 0
       ? plans.filter((plan, index) => plans.findIndex(other => (
         other.fromSide === plan.fromSide && other.toSide === plan.toSide
@@ -4466,6 +4553,7 @@ function readableAutomaticRoute(edge, from, to, primarySides, primaryPorts) {
       alternatives.sort((a, b) => compareCost(a.cost, b.cost));
       if (alternatives.length) plans.push(alternatives[0]);
     }
+    plans.push(...endpointRepairs);
     plans.sort((a, b) => compareCost(a.cost, b.cost));
     const selected = plans[0];
     return {
@@ -4669,7 +4757,7 @@ function registerRouted(edge, routed) {
   return routed;
 }
 
-function pathFor(edge) {
+function pathFor(edge, automaticPlan = null) {
   if (pathCache.has(edge)) return pathCache.get(edge);
   const from = nodes.get(edge.from);
   const to = nodes.get(edge.to);
@@ -4692,7 +4780,7 @@ function pathFor(edge) {
     && edge.channelY === undefined
     && (!edge.route || edge.route === 'auto');
   if (readableAutomatic) {
-    const planned = readableAutomaticRoute(
+    const planned = automaticPlan || readableAutomaticRoute(
       edge,
       from,
       to,

@@ -257,6 +257,50 @@ test('few-participant automatic spread packs below 920px when labels fit', () =>
   assert.match(fourHtml, /viewBox="0 0 920 /);
 });
 
+function compactSequence() {
+  return {
+    schema_version: 1, diagram_type: 'sequence',
+    meta: { title: 'Complete timeline', quality_profile: 'showcase' },
+    participants: [{ id: 'client', type: 'external', label: 'Client' }, { id: 'api', type: 'backend', label: 'API' }],
+    messages: [{ id: 'request', from: 'client', to: 'api', y: 200, label: 'ping' }],
+  };
+}
+
+test('compact automatic sequence includes full message and segment label footprints', () => {
+  for (const content of ['message', 'segment']) {
+    const doc = compactSequence();
+    const label = 'POST /api/v1/accounts/{accountId}/transactions/{transactionId}/settlement?include=balance,ledger';
+    if (content === 'message') doc.messages[0].label = label;
+    else doc.segments = [{ from: 160, to: 250, label }];
+    const html = render(doc, true);
+    const width = Number(html.match(/<svg viewBox="0 0 (\d+) /)[1]);
+    assert.ok(width > 560 && width < 920, `${content} should widen only enough to fit, got ${width}`);
+    assert.ok(html.includes(label), 'full authored label remains in the SVG');
+    if (content === 'message') {
+      const boxes = participantBoxes(html);
+      const center = (boxes[0].x + boxes[0].width / 2 + boxes[1].x + boxes[1].width / 2) / 2;
+      const labelWidth = textUnits(label) * 6.6 + 12;
+      assert.ok(center - labelWidth / 2 >= 0 && center + labelWidth / 2 <= width);
+    } else assert.ok(56 + textUnits(label) * 5.2 + 14 <= width - 48);
+  }
+});
+
+test('automatic timeline height includes late content when its legend is empty', () => {
+  for (const legend of [{ mode: 'hidden' }, { entries: { default: { visible: false } } }]) {
+    const doc = compactSequence();
+    doc.meta.legend = legend;
+    doc.messages[0].y = 500;
+    doc.messages[0].note = 'Complete note';
+    doc.activations = [{ participant: 'api', from: 480, to: 530 }];
+    doc.segments = [{ from: 160, to: 540, label: 'Phase' }];
+    const html = render(doc, true);
+    const height = Number(html.match(/<svg viewBox="0 0 \d+ (\d+)"/)[1]);
+    assert.ok(height >= 583 && height < 760, `late content should fit in a compact timeline, got ${height}`);
+    assert.match(html, /Complete note/);
+    assert.match(html, /data-composition-points="[^\"]*,500;/);
+  }
+});
+
 test('eight participants fit the automatic 920px canvas with default and explicit spread', () => {
   const doc = {
     schema_version: 1, diagram_type: 'sequence', meta: { title: 'Eight participants' },

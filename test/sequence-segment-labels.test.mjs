@@ -8,23 +8,25 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const renderer = path.resolve(__dirname, '..', 'archify', 'renderers', 'sequence', 'render-sequence.mjs');
+const cli = path.resolve(__dirname, '..', 'archify', 'bin', 'archify.mjs');
 // An unedited first draft with two abutting segments (140-300, 300-520). On
 // dev the first label climbed behind the participant headers and the second
 // climbed into the first segment, where it named the wrong phase.
 const fixture = path.join(__dirname, 'fixtures', 'sequence-first-draft', 'scan-to-pay.sequence.json');
 const PARTICIPANT_BOTTOM = 72 + 60;
 
-function render(diagram) {
+function render(diagram, publicCli = false) {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'archify-sequence-segments-'));
   const input = path.join(directory, 'candidate.json');
   const output = path.join(directory, 'candidate.html');
   fs.writeFileSync(input, JSON.stringify(diagram));
-  const result = spawnSync(process.execPath, [renderer, input, output], { cwd: directory, encoding: 'utf8' });
-  return { ...result, html: result.status === 0 ? fs.readFileSync(output, 'utf8') : '' };
+  const args = publicCli ? [cli, 'render', 'sequence', input, output] : [renderer, input, output];
+  const result = spawnSync(process.execPath, args, { cwd: directory, encoding: 'utf8' });
+  return { ...result, input, html: result.status === 0 ? fs.readFileSync(output, 'utf8') : '' };
 }
 
 const labels = (html) => [...html.matchAll(/data-segment-id="(\d+)">\s*<rect x="([\d.]+)" y="([\d.-]+)" width="([\d.]+)" height="([\d.]+)"/g)]
-  .map((match) => ({ index: +match[1], y: +match[3], height: +match[5] }));
+  .map((match) => ({ index: +match[1], x: +match[2], y: +match[3], width: +match[4], height: +match[5] }));
 
 test('abutting segment labels stay in their own phase and clear of the participant headers', () => {
   const diagram = JSON.parse(fs.readFileSync(fixture, 'utf8'));
@@ -89,3 +91,60 @@ test('a segment edge running along a message arrow is reported with the move tha
   assert.notEqual(result.status, 0);
   assert.match(result.stderr + result.stdout, /Segment "Create" bottom edge at y 298 runs along message "PATCH chunk 1\.\.n" \(arrow at y 300\) — move the edge to at least 304/);
 });
+
+test('inside title candidates stay below low participant headers', () => {
+  const diagram = JSON.parse(fs.readFileSync(fixture, 'utf8'));
+  diagram.segments = [{ from: 120, to: 300, label: 'Phase' }];
+  const result = render(diagram);
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+  assert.ok(labels(result.html)[0].y >= PARTICIPANT_BOTTOM);
+});
+
+test('inside segment title clears a message note after avoiding participant headers', () => {
+  const diagram = {
+    schema_version: 1, diagram_type: 'sequence',
+    meta: { title: 'Annotated phase', output: 'phase.html', quality_profile: 'showcase', viewBox: [920, 760] },
+    participants: [{ id: 'client', type: 'external', label: 'Client' }, { id: 'api', type: 'backend', label: 'API' }],
+    messages: [{ from: 'client', to: 'api', y: 160, label: 'ping', note: 'diagnostic annotation' }],
+    segments: [{ from: 120, to: 300, label: 'Processing phase title covering the annotation' }],
+  };
+  const result = render(diagram, true);
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+  const [title] = labels(result.html);
+  const note = result.html.match(/<text data-detail="fine" x="([\d.]+)" y="([\d.]+)" class="t-dim" font-size="([\d.]+)">diagnostic annotation<\/text>/);
+  assert.ok(note, 'the full authored annotation remains visible');
+  assert.deepEqual(note.slice(1).map(Number), [176, 178, 7], 'note position and font remain authored geometry');
+  assert.ok(title.y >= PARTICIPANT_BOTTOM, 'title clears the participant headers');
+  assert.ok(title.x <= Number(note[1]) && title.x + title.width > Number(note[1]), 'fixture shares horizontal space with the note');
+  const baseline = Number(note[2]);
+  const font = Number(note[3]);
+  assert.ok(title.y + title.height <= baseline - font * 1.2 || title.y >= baseline + font * 0.3,
+    `title at y${title.y}..${title.y + title.height} must clear the annotation around baseline ${baseline}`);
+});
+
+for (const profile of ['standard', 'showcase']) {
+  test(`near-border message preserves ${profile} acceptance policy`, () => {
+    const diagram = {
+      schema_version: 1, diagram_type: 'sequence',
+      meta: { title: 'Phase boundary', output: 'phase.html', quality_profile: profile, viewBox: [920, 760] },
+      participants: [{ id: 'client', type: 'external', label: 'Client' }, { id: 'api', type: 'backend', label: 'API' }],
+      messages: [{ from: 'client', to: 'api', y: 200, label: 'ping' }],
+      segments: [{ from: 140, to: 202, label: 'Phase' }],
+    };
+    const result = render(diagram);
+    if (profile === 'standard') assert.equal(result.status, 0, result.stdout + result.stderr);
+    else {
+      assert.notEqual(result.status, 0);
+      assert.match(result.stdout + result.stderr, /bottom edge at y 202 runs along message "ping"/);
+      const validated = spawnSync(process.execPath, [cli, 'validate', 'sequence', result.input, '--json'], { encoding: 'utf8' });
+      const diagnostic = JSON.parse(validated.stdout).diagnostics.find(entry => entry.code === 'sequence/segment-message-border-run');
+      assert.equal(diagnostic.subject.path, '/segments/0/to');
+      assert.equal(diagnostic.evidence.borderY, 202);
+      assert.equal(diagnostic.evidence.messageY, 200);
+      assert.deepEqual(diagnostic.supportedFixes, [
+        'set /segments/0/to to at least 204 to leave the message above it',
+        'set /segments/0/to to at most 196 to leave the message below it',
+      ]);
+    }
+  });
+}

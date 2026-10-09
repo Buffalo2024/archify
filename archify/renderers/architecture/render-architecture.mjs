@@ -662,7 +662,9 @@ function validateArchitecture() {
   // a member. Report it instead of letting the picture claim false ownership.
   // A box the frame border visibly cuts through does not claim membership,
   // and earlier valid inputs depend on that, so only full enclosure fails.
-  if (enforcesBoundaryTitleComposition) {
+  // This new composition gate applies to showcase; standard keeps its existing
+  // acceptance contract while authors can opt into the stricter check.
+  if (arch.meta?.quality_profile === 'showcase') {
     for (const b of boundaries) {
       const members = new Set(asArray(b.wraps));
       for (const component of components.values()) {
