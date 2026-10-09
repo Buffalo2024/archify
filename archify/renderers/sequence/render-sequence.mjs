@@ -53,18 +53,52 @@ const LEGEND_BLOCK_HEIGHT = 86;
 // desktop reading minimum; an inherently crowded row still fails below.
 const spreadParticipantWidth = (canvasWidth) => Math.max(86,
   Math.min(190, Math.round((canvasWidth - 124) / Math.max(1, asArray(sequence.participants).length)) - 24));
+function spreadColumnGeometry(canvasWidth) {
+  const count = Math.max(1, asArray(sequence.participants).length);
+  const width = spreadParticipantWidth(canvasWidth);
+  const span = count * width + (count - 1) * 16;
+  const margin = Math.max(40, Math.min(62, canvasWidth - 40 - span));
+  return { width, margin, gap: count > 1 ? Math.max(width + 16, (canvasWidth - 40 - margin - width) / (count - 1)) : 108 };
+}
+// Evaluate the same spread coordinates and full masks used by the renderer;
+// short participant names alone do not imply a compact timeline will fit.
+function timelineLabelsFit(canvasWidth) {
+  const { width, margin, gap } = spreadColumnGeometry(canvasWidth);
+  const centers = new Map(asArray(sequence.participants).map((participant, index) => [participant.id, margin + width / 2 + index * gap]));
+  const unitWidth = sequence.meta?.quality_profile === 'showcase' ? 6.6 : 5.2;
+  return asArray(sequence.messages).every((message) => {
+    if (!centers.has(message.from) || !centers.has(message.to)) return true;
+    const center = (centers.get(message.from) + centers.get(message.to)) / 2;
+    const halfWidth = Math.max(34, textUnits(message.label) * unitWidth + 12) / 2;
+    return center - halfWidth >= 0 && center + halfWidth <= canvasWidth;
+  }) && asArray(sequence.segments).every((segment) => 56 + Math.max(42, textUnits(segment.label) * 5.2 + 14) <= canvasWidth - 48);
+}
 const readableCanvasWidth = Math.floor(DESKTOP_READER_DIAGRAM_WIDTH * participantTextFit.sublabelPreferred / MIN_PROJECTED_NODE_TEXT_PX);
 function automaticCanvasWidth() {
   const participantsFit = (width) => asArray(sequence.participants).every((participant) => (
     textUnits(participant.label) * 6.8 <= width + 6
     && (!participant.sublabel || minimumNodeTextWidth(participant.sublabel, participantTextFit.sublabelMinimum) <= availableNodeTextWidth(width))
   ));
-  if ((sequence.meta?.column_fit || 'spread') !== 'spread' || participantsFit(spreadParticipantWidth(920))) return 920;
+  const count = Math.max(1, asArray(sequence.participants).length);
+  const columnFitMode = sequence.meta?.column_fit || 'spread';
+  if (columnFitMode !== 'spread') return 920;
+  if (participantsFit(spreadParticipantWidth(920))) {
+    // Few-participant automatic canvases: keep readable box sizes but drop the
+    // empty gutters a 920px spread leaves beside 2–3 lifelines. Authored
+    // viewBoxes and the widen-for-labels path below are unchanged.
+    if (count <= 3) {
+      for (const candidate of [560, 640, 720, 800, 920]) {
+        const box = spreadParticipantWidth(candidate);
+        const span = count * box + (count - 1) * 16;
+        if (box >= 86 && participantsFit(box) && candidate - 80 >= span && timelineLabelsFit(candidate)) return candidate;
+      }
+    }
+    return 920;
+  }
   const needed = Math.max(...asArray(sequence.participants).map((participant) => Math.max(
     textUnits(participant.label) * 6.8 - 6,
     participant.sublabel ? minimumNodeTextWidth(participant.sublabel, participantTextFit.sublabelPreferred) + 86 - availableNodeTextWidth(86) : 0,
   )));
-  const count = Math.max(1, asArray(sequence.participants).length);
   return Math.min(readableCanvasWidth, Math.max(920, Math.ceil((Math.min(190, needed) + 25) * count + 124)));
 }
 const automaticWidth = sequence.meta?.viewBox ? null : automaticCanvasWidth();
@@ -80,17 +114,17 @@ const canvasWidth = sequence.meta?.viewBox?.[0] ?? automaticWidth;
 const columnFit = sequence.meta?.column_fit || 'spread';
 const participantCount = Math.max(1, asArray(sequence.participants).length);
 const preferredSideMargin = 62;
-const participantW = columnFit === 'spread' ? spreadParticipantWidth(canvasWidth) : 86;
+const spreadGeometry = spreadColumnGeometry(canvasWidth);
+const participantW = columnFit === 'spread' ? spreadGeometry.width : 86;
 // Narrow feasible frames can reduce the left margin, while ordinary frames
 // keep 62px. Compute card width first so this does not change its sizing rule.
-const minimumParticipantSpan = participantCount * participantW + (participantCount - 1) * 16;
 const sideMargin = columnFit === 'spread'
-  ? Math.max(40, Math.min(preferredSideMargin, canvasWidth - 40 - minimumParticipantSpan))
+  ? spreadGeometry.margin
   : preferredSideMargin;
 // Fit the authored width when feasible, preserving a real 16px card gutter.
 // Infeasible frames retain that minimum and fail the capacity check below.
 const colGap = columnFit === 'spread' && participantCount > 1
-  ? Math.max(participantW + 16, (canvasWidth - 40 - sideMargin - participantW) / (participantCount - 1))
+  ? spreadGeometry.gap
   : 108;
 const leftX = columnFit === 'spread' ? sideMargin + participantW / 2 : sideMargin;
 const participantIndexById = new Map(asArray(sequence.participants).map((participant, index) => [participant.id, index]));
@@ -197,7 +231,8 @@ function noteLayout(message) {
       baseline,
       lines,
       width: Math.max(...lines.map(noteTextWidth)),
-      top: baseline - NOTE_FONT_SIZE,
+      // Include fallback-font ascent in the same bounds used for title clearance.
+      top: baseline - NOTE_FONT_SIZE * 1.2,
       bottom: message.y + 22 + (lines.length - 1) * NOTE_LINE_HEIGHT,
     };
   }
@@ -219,9 +254,16 @@ function legendRequiredHeight(width) {
   return Math.ceil(contentBottom + LEGEND_CONTENT_GAP + LEGEND_BLOCK_HEIGHT
     + legendFootprint(entries, { width: width - 80 }).extraHeight);
 }
-// A renderer-sized canvas grows to keep the legend clear of late messages;
-// an authored viewBox is honored and validated below.
-const viewBox = sequence.meta?.viewBox || [automaticWidth, Math.max(760, legendRequiredHeight(automaticWidth))];
+// A renderer-sized canvas grows to keep the legend clear of late messages and
+// shrinks when the timeline is short. Keep a readable minimum band (lifelineTop
+// 142 + 120px timeline + 65px footer = 327); honor authored canvases below.
+const SEQUENCE_MIN_AUTO_HEIGHT = 327;
+// Timeline clearance is independent of legend visibility. Messages need 18px
+// before the lifeline bottom; notes, activations and frames need their footer.
+const timelineRequiredHeight = Math.max(contentBottom + 65,
+  ...asArray(sequence.messages).map((message) => message.y + 18 + 65));
+const automaticHeight = Math.max(SEQUENCE_MIN_AUTO_HEIGHT, timelineRequiredHeight, legendRequiredHeight(automaticWidth));
+const viewBox = sequence.meta?.viewBox || [automaticWidth, automaticHeight];
 // The timeline scales with viewBox height: a taller viewBox gains message room,
 // a shorter one shrinks the readable band (validated below) instead of clipping.
 
@@ -242,7 +284,7 @@ const layout = {
   legendY: viewBox[1] - 54,
   leftX,
   colGap,
-  labelH: readableMessages ? 18 : 16
+  labelH: readableMessages ? 18 : 16,
 };
 
 // Automatic showcase spread can guarantee a readable fit within its bounded
@@ -333,6 +375,21 @@ function segmentLabelBox(segment) {
     if (!occupied.some(({ rect }) => rectsOverlap(label, rect, 2))) break;
     label.y -= 22;
   }
+  if (!segmentLabelMisplaced(label, segment)) return label;
+  // Abutting segments can leave no room on the border: the badge climbed
+  // behind the participant headers or into the previous segment, where it
+  // names the wrong phase. Its own frame's top-left corner, clear of messages,
+  // names the right one.
+  // Another segment's title normally sits on that segment's own top border,
+  // so its strip is taken too.
+  const otherTitles = asArray(sequence.segments).filter((other) => other !== segment)
+    .map((other) => ({ x: 56, y: other.from - 22, width: Math.max(42, textUnits(other.label) * 5.2 + 14), height: 18 }));
+  const inside = { x: 56, y: segment.from + 4, width: labelW, height: 18 };
+  for (let attempt = 0; attempt < 4 && inside.y + inside.height <= segment.to - 2; attempt += 1) {
+    if (!segmentLabelMisplaced(inside, segment)
+      && ![...occupied.map(({ rect }) => rect), ...otherTitles, ...participants.values()].some((rect) => rectsOverlap(inside, rect, 2))) return inside;
+    inside.y += 22;
+  }
   return label;
 }
 
@@ -341,7 +398,10 @@ function segmentLabelBox(segment) {
 // label, route and note. Used to offer only repairs that hold.
 function messageFitsAt(messageIndex, y) {
   const messages = asArray(sequence.messages);
-  if (y < layout.lifelineTop + 18 || y > layout.lifelineBottom - 18) return false;
+  if (y < layout.lifelineTop + 18) return false;
+  // An automatic canvas recalculates its height after this edit; an authored
+  // canvas must still fit the suggested position without a second repair.
+  if (sequence.meta?.viewBox && y > layout.lifelineBottom - 18) return false;
   const span = (message) => {
     const from = participants.get(message.from)?.cx;
     const to = participants.get(message.to)?.cx;
@@ -363,6 +423,17 @@ function messageFitsAt(messageIndex, y) {
 function segmentLabelBlocker(segment) {
   const label = segmentLabelBox(segment);
   return segmentLabelOccupants().find(({ rect }) => rectsOverlap(label, rect, 2)) || null;
+}
+
+// A badge on its frame's top border is the intended title. It stops naming
+// that frame once it hides mostly behind the participant headers, or once
+// message labels pushed it up into another segment.
+function segmentLabelMisplaced(label, segment) {
+  const half = label.height / 2;
+  if (layout.topY + layout.participantH - label.y > half) return true;
+  if (label.y >= segment.from - 22) return false;
+  return asArray(sequence.segments).some((other) => other !== segment
+    && Math.min(label.y + label.height, other.to) - Math.max(label.y, other.from) > half);
 }
 
 const compositionFrames = asArray(sequence.segments).map((segment, index) => ({
@@ -673,7 +744,34 @@ function validateSequence() {
     if (segment.from < layout.topY || segment.to > layout.lifelineBottom + 20) {
       problems.push(`Segment "${segment.label}" extends outside the canvas — keep its y range between ${layout.topY} and ${layout.lifelineBottom + 20}.`);
     }
+    // A frame edge may pass behind a masked message label, but an edge that
+    // runs along the arrow itself leaves the reader unable to tell which phase
+    // the message belongs to.
+    if (sequence.meta?.quality_profile === 'showcase') {
+      for (const edge of ['from', 'to']) {
+        const border = segment[edge];
+        const cut = asArray(sequence.messages).filter((message) => typeof message.y === 'number'
+          && Math.abs(border - message.y) < 4);
+        for (const message of cut) {
+          const problem = `Segment "${segment.label}" ${edge === 'from' ? 'top' : 'bottom'} edge at y ${border} runs along message "${message.label}" (arrow at y ${message.y}) — move the edge to at least ${message.y + 4} to leave the message above it, or to at most ${message.y - 4} to leave it below.`;
+          const segmentIndex = asArray(sequence.segments).indexOf(segment);
+          problems.push(problem);
+          diagnostics.push({
+            code: 'sequence/segment-message-border-run', severity: 'error', message: problem,
+            subject: { diagramType: 'sequence', collection: 'segments', index: segmentIndex, path: `/segments/${segmentIndex}/${edge}` },
+            evidence: { segmentLabel: segment.label, edge, borderY: border, messageIndex: messageList.indexOf(message), messageLabel: message.label, messageY: message.y, minimumClearancePx: 4 },
+            supportedFixes: [`set /segments/${segmentIndex}/${edge} to at least ${message.y + 4} to leave the message above it`, `set /segments/${segmentIndex}/${edge} to at most ${message.y - 4} to leave the message below it`],
+          });
+        }
+      }
+    }
     const labelBox = segmentLabelBox(segment);
+    for (const other of asArray(sequence.segments)) {
+      if (other === segment || asArray(sequence.segments).indexOf(other) < asArray(sequence.segments).indexOf(segment)) continue;
+      if (rectsOverlap(labelBox, segmentLabelBox(other), 0)) {
+        problems.push(`Segment labels "${segment.label}" and "${other.label}" overlap — leave more room between the segments' messages near their shared border, or shorten a label.`);
+      }
+    }
     const availableWidth = Math.max(0, viewBox[0] - 48 - labelBox.x);
     if (labelBox.x + labelBox.width > viewBox[0] - 48) {
       const requiredWidth = Math.ceil(labelBox.x + labelBox.width + 48);

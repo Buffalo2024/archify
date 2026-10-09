@@ -90,7 +90,8 @@ test('SVG and PNG exports keep every line of a wrapped sequence note', {
   })()`);
   assert.equal(diff.sameSize, true);
   assert.ok(diff.bottom >= 0, 'the PNG export draws the note');
-  const scale = diff.width / 920;
+  const exportedWidth = Number(svg.match(/viewBox="[\d.]+ [\d.]+ ([\d.]+) [\d.]+"/)[1]);
+  const scale = diff.width / exportedWidth;
   assert.ok(diff.bottom - diff.top >= (lines.length - 1) * 11 * scale * 0.8, `the PNG note spans its ${lines.length} lines (${diff.bottom - diff.top}px at scale ${scale.toFixed(2)})`);
 
   if (process.env.ARCHIFY_NOTE_EXPORT_EVIDENCE) {

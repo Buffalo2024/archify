@@ -18,8 +18,8 @@ unchanged by all ten renderers and the installed Skill. These maintainer
 sources live outside the packaged `archify/` directory.
 
 From `archify/`, run `npm run generate:viewer` after editing any source.
-`npm run check:viewer` verifies freshness without writing; `npm test` includes
-that check. Shared Viewer changes also require rebuilding the checked-in
+`npm run check:viewer` verifies freshness without writing; root
+`npm run test:generated` and `npm run test:full` include that check. Shared Viewer changes also require rebuilding the checked-in
 Checkout comparison from its tracked snapshots. From the repository root, run:
 
 ```sh
@@ -495,7 +495,7 @@ Focus/Route active queries are runtime lookups; Route initializes later.
   never claims or releases an owner. Export Cleanup strips cloned Intent state,
   while Intent clears the live diagram. Neither dependency moves into this file.
 
-`intent-trace.test.mjs` retains generated-output checks. The browser test covers
+`intent-trace-browser.test.mjs` covers
 five-mode initialization, real pointer/native focus handoffs, bounded timer
 cleanup, isolated timer and SVG fixtures, blockers and actual callers, real CSS
 completion, Motion ownership, reduced motion, themes and SVG export. Fixtures
@@ -556,8 +556,7 @@ position. Its interface is `open`, `close`, `toggle`, `select`, `isOpen`,
   handling, Guide and Route callers remain outside Finder. The dialog stays
   non-modal; no focus trap or keyboard adapter is introduced.
 
-`finder.test.mjs` retains generated-output checks; `finder-browser.test.mjs`
-exercises five-mode initialization, trusted keyboard/mouse input, real Route
+`finder-browser.test.mjs` exercises five-mode initialization, trusted keyboard/mouse input, real Route
 source/target collaboration, retained context, panel cleanup, themes, constrained
 layout, reduced motion and SVG export. Its metadata fixture isolates search
 inputs; it does not claim repository verification or brand-rendering coverage.
@@ -587,9 +586,10 @@ The source split narrows maintenance scope while preserving runtime dependencies
   `data-reader-fit="intrinsic-height"` selects height fitting. Both declare
   automatic canvases and share the existing readability and enlargement limits.
   Automatic Sequence and Waterfall canvases, and intrinsic v2 Workflow canvases
-  with expanded vertical stacks, declare `width-first` and retain
-  vertical page scroll;
-  overflow settling must not shrink them back to fit the viewport height.
+  with expanded vertical stacks, declare `width-first`. A compact automatic
+  Sequence can fit the first screen while preserving authored text sizes;
+  longer sequences and the other width-first families retain vertical page
+  scroll, and overflow settling must not shrink them to viewport height.
   Undeclared SVGs retain the ordinary ratio-based eligibility and fit; UI or
   column attributes alone do not opt into either automatic fit. Other automatic
   canvases retain height fitting. Explicit Workflow canvases retain their existing
@@ -600,8 +600,10 @@ The source split narrows maintenance scope while preserving runtime dependencies
   SVG legend uses a temporary CSS transform to sit at the outer canvas's
   bottom-left content corner, at its normal reading size through 25–100%
   camera zoom. The group stays in the same SVG for hover/focus and export.
-  A legend that cannot fit clear of the navigation dock keeps its original
-  position. Camera zoom above 100%, a nonbinding cap, small screens, Embed,
+  Compact automatic Sequences that fit the first screen also use this corner
+  placement, even when the enlargement cap does not bind. A legend that cannot
+  fit clear of the navigation dock keeps its original position. Camera zoom
+  above 100%, other uncapped diagrams, small screens, Embed,
   Present and print restore ordinary in-SVG legend placement; canonical
   exports remove the corner marker and transform without changing authored
   coordinates or transforms. The 960px shell floor still serves the header and

@@ -24,20 +24,22 @@ test('Motion Governor preserves mode, ownership, ambient completion and real cal
   const cases = {
     architecture: 'web-app.architecture.json', workflow: 'agent-tool-call.workflow.json',
     sequence: 'cache-miss-request.sequence.json', dataflow: 'product-analytics.dataflow.json',
-    lifecycle: 'agent-run.lifecycle.json',
+    lifecycle: 'agent-run.lifecycle.json', erd: 'orders.erd.json', class: 'payments.class.json',
+    tree: 'payment-platform.tree.json', timeline: 'payment-incident.timeline.json',
+    waterfall: 'checkout-request.waterfall.json',
   };
   const files = {};
   for (const [mode, example] of Object.entries(cases)) {
     const doc = JSON.parse(fs.readFileSync(path.join(skillRoot, 'examples', example), 'utf8'));
-    doc.meta.animation = 'trace';
+    delete doc.meta.animation;
     const input = path.join(scratch, mode + '.json');
     fs.writeFileSync(input, JSON.stringify(doc));
     files[mode] = path.join(scratch, mode + '.html');
     execFileSync(process.execPath, [path.join(skillRoot, `renderers/${mode}/render-${mode}.mjs`), input, files[mode]]);
   }
+  // Old standalone static HTML still has an inert Governor. New renders default to motion.
   files.static = path.join(scratch, 'static.html');
-  execFileSync(process.execPath, [path.join(skillRoot, 'renderers/architecture/render-architecture.mjs'),
-    path.join(skillRoot, 'examples', cases.architecture), files.static]);
+  fs.writeFileSync(files.static, fs.readFileSync(files.architecture, 'utf8').replace(' data-animation="trace"', ''));
   const browser = new ChromeVisualBrowser(chrome);
   t.after(() => browser.close());
   const session = await browser.sessionPromise;
@@ -59,15 +61,38 @@ test('Motion Governor preserves mode, ownership, ambient completion and real cal
   async function load(mode = 'architecture', { theme = 'dark', reduced = false, fixture = '', preserveStorage = false, query = '' } = {}) {
     const expectedNavigation = ++navigationId;
     if (!preserveStorage) {
+      if (fixtureUrl) {
+        // Reset through the outgoing document's live storage area, then verify
+        // completion before navigating. A CDP clear against a guessed file
+        // storage key did not reliably clear this document's saved intent.
+        assert.equal(await run('motionResetStorage()'), null, 'Outgoing fixture must clear stored intent.');
+      }
       fixtureUrl = pathToFileURL(files[mode]).href + `?theme=${theme}&testNavigation=${expectedNavigation}${query}`;
-      // Reset the disposable browser profile before navigation. Touching
-      // localStorage in a new-document script can disturb file-backed storage
-      // in Chrome; leave startup and reload reads to the Viewer itself.
+      // End the old document before resetting this disposable profile. A
+      // backend clear while the old file document still owns its Storage area
+      // is not an isolation boundary for its pending work or unload handlers.
+      // Keep startup/reload reads in the real Viewer, outside injected scripts.
+      const frame = (await send('Page.getFrameTree')).frameTree.frame;
+      if (frame.url !== 'about:blank') {
+        const detached = browser.cdp.waitFor('Page.loadEventFired', session);
+        const navigation = await send('Page.navigate', { url: 'about:blank' });
+        assert.ok(navigation.loaderId, 'Fresh fixture reset must end the prior document.');
+        await detached;
+        assert.equal(await run('location.href'), 'about:blank', 'Storage reset requires the neutral document.');
+      }
       await send('Storage.clearDataForStorageKey', { storageKey: 'file:///', storageTypes: 'local_storage' });
     }
     if (startup) await send('Page.removeScriptToEvaluateOnNewDocument', { identifier: startup });
     ({ identifier: startup } = await send('Page.addScriptToEvaluateOnNewDocument', { source: `(() => {
       if (location.href !== ${JSON.stringify(fixtureUrl)}) return;
+      // Capture methods without accessing localStorage before Viewer startup.
+      // Cleanup runs only later in the outgoing document, including after the
+      // storage-unavailable fixture has replaced Storage.prototype methods.
+      const readStored = Storage.prototype.getItem, removeStored = Storage.prototype.removeItem;
+      window.motionResetStorage = () => {
+        removeStored.call(localStorage, 'archify-motion');
+        return readStored.call(localStorage, 'archify-motion');
+      };
       window.motionNavigation = ${expectedNavigation};
       window.motionErrors = []; window.motionEnds = []; window.motionAmbient = [];
       addEventListener('error', e => motionErrors.push(e.message));
@@ -125,13 +150,13 @@ test('Motion Governor preserves mode, ownership, ambient completion and real cal
     fs.writeFileSync(path.join(evidence, name + '.png'), Buffer.from(shot.data, 'base64'));
   }
 
-  await t.test('five trace modes initialize; representative CSS animation completes once; static methods remain inert', async () => {
+  await t.test('ten default-motion modes initialize; representative CSS animation completes once; static methods remain inert', async () => {
     for (const mode of Object.keys(cases)) {
       await load(mode);
       const initial = await snapshot(mode + '-initial');
-      assert.equal(initial.capable, true); assert.equal(initial.mode, 'live');
+      assert.equal(initial.capable, true); assert.equal(initial.mode, 'live'); assert.equal(initial.hidden, false);
       // All modes share the same Governor/CSS. One real completion plus the
-      // five-mode initialization contract covers this seam without five waits.
+      // ten-mode initialization contract covers this seam without five waits.
       if (mode === 'architecture') {
         await run(`motionWait(() => document.documentElement.getAttribute('data-ambient-motion') === 'settled')`);
         const state = await snapshot(mode + '-settled');

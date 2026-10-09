@@ -599,7 +599,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       color: var(--frontend-stroke);
     }
 
-    /* The reader owns only the outer scale. Long sequences and waterfall rows
+    /* The reader owns only the outer scale. Compact automatic sequences fit at
+       their authored text size or larger. Long sequences and waterfall rows
        favor reading width and page scroll; other diagrams keep height fitting.
        Small automatic canvases retain a modest scale inside a usable shell.
        Every strategy preserves the authored SVG/viewBox and semantic geometry. */
@@ -614,8 +615,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       align-items: center;
     }
     html[data-reader-area="true"] .diagram-container > svg { flex-shrink: 0; }
-    /* The original SVG legend can use the spare outer reader canvas while the
-       capped diagram stays centered. The container still clips all outer paint. */
+    /* The original SVG legend can use the outer corner while the capped or fitted
+       diagram stays centered. The container still clips all outer paint. */
     .diagram-container:has([data-reader-legend-corner]) > svg { overflow: visible; }
     .diagram-container [data-reader-legend-corner] {
       transform-origin: 0 0;
@@ -4973,7 +4974,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     <!-- Main Diagram -->
     <div class="diagram-container" data-detail-level="read"
          data-preset-badge-editorial-plate="ARCHIFY / PLATE 04">
-      <svg viewBox="0 0 1216 783" role="img" lang="en" aria-labelledby="archify-diagram-title archify-diagram-description" data-preset="classic" data-quality-profile="showcase" data-waterfall-ui="" data-waterfall-unit="ms" data-reader-fit="width-first" data-reader-min-text="7.5">
+      <svg viewBox="0 0 1216 783" role="img" lang="en" aria-labelledby="archify-diagram-title archify-diagram-description" data-animation="trace" data-preset="classic" data-quality-profile="showcase" data-waterfall-ui="" data-waterfall-unit="ms" data-reader-fit="width-first" data-reader-min-text="7.5">
         <title id="archify-diagram-title">Rebuilding the bundled examples</title>
         <desc id="archify-diagram-description">Measured on one local run: render and artifact check of eight examples across three concurrent workers (process start to exit, ms from batch start).</desc>
         <!-- Definitions -->
@@ -5090,7 +5091,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <g id="node-batch" data-node-id="batch" data-node-label="Rebuild bundled examples (3 workers)" tabindex="0" role="button" aria-label="Focus Rebuild bundled examples (3 workers), 0–1,286.2 ms · 1,286.2 ms · 100% of 1,286.2 ms wall-clock" aria-pressed="false" data-node-kind="external" data-node-sublabel="0–1,286.2 ms · 1,286.2 ms · 100% of 1,286.2 ms wall-clock" data-waterfall-start="0" data-waterfall-end="1286.2" data-waterfall-duration="1286.2" data-waterfall-depth="0" data-waterfall-status="ok">
           <title>Rebuild bundled examples (3 workers) · 0–1,286.2 ms · 1,286.2 ms · 100% of 1,286.2 ms wall-clock</title>
           <rect x="20" y="89" width="1176" height="23" rx="6" class="c-mask wf-row"/>
-          <rect x="351" y="93.5" width="760" height="14" rx="4" class="c-external wf-span" stroke-width="1.2"/>
+          <rect x="351" y="93.5" width="760" height="14" rx="4" class="c-external wf-span" data-animate="node" style="--step:0" stroke-width="1.2"/>
           
           <circle cx="32" cy="100.5" r="4.5" class="t-external wf-dot"/>
           <text data-node-label="" x="42" y="104.8" class="t-primary" font-size="12.5" font-weight="750">Rebuild bundled examples (3 workers)</text>
@@ -5099,7 +5100,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <g id="node-ex0" data-node-id="ex0" data-node-label="web-app.architecture" tabindex="0" role="button" aria-label="Focus web-app.architecture, 0.2–429.7 ms · 429.5 ms · 33% of 1,286.2 ms wall-clock, worker 1 › Rebuild bundled examples (3 workers)" aria-pressed="false" data-node-kind="frontend" data-node-sublabel="0.2–429.7 ms · 429.5 ms · 33% of 1,286.2 ms wall-clock" data-node-context="worker 1 › Rebuild bundled examples (3 workers)" data-waterfall-start="0.2" data-waterfall-end="429.7" data-waterfall-duration="429.5" data-waterfall-depth="1" data-waterfall-status="ok" data-waterfall-service="worker 1">
           <title>web-app.architecture · 0.2–429.7 ms · 429.5 ms · 33% of 1,286.2 ms wall-clock · worker 1 › Rebuild bundled examples (3 workers)</title>
           <rect x="20" y="114" width="1176" height="23" rx="6" class="c-mask wf-row wf-row-alt"/>
-          <rect x="351.12" y="118.5" width="253.77999999999997" height="14" rx="4" class="c-frontend wf-span" stroke-width="1.2"/>
+          <rect x="351.12" y="118.5" width="253.77999999999997" height="14" rx="4" class="c-frontend wf-span" data-animate="node" style="--step:1" stroke-width="1.2"/>
           
           <circle cx="50" cy="125.5" r="3.5" class="t-frontend wf-dot"/>
           <text data-node-label="" x="60" y="129.8" class="t-primary" font-size="12.5" font-weight="650">web-app.architecture</text>
@@ -5108,7 +5109,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <g id="node-ex0_render" data-node-id="ex0_render" data-node-label="render-architecture.mjs" tabindex="0" role="button" aria-label="Focus render-architecture.mjs, 0.2–263.3 ms · 263.1 ms · 20% of 1,286.2 ms wall-clock, worker 1 › web-app.architecture" aria-pressed="false" data-node-kind="frontend" data-node-sublabel="0.2–263.3 ms · 263.1 ms · 20% of 1,286.2 ms wall-clock" data-node-context="worker 1 › web-app.architecture" data-waterfall-start="0.2" data-waterfall-end="263.3" data-waterfall-duration="263.1" data-waterfall-depth="2" data-waterfall-status="ok" data-waterfall-service="worker 1">
           <title>render-architecture.mjs · 0.2–263.3 ms · 263.1 ms · 20% of 1,286.2 ms wall-clock · worker 1 › web-app.architecture</title>
           <rect x="20" y="139" width="1176" height="23" rx="6" class="c-mask wf-row"/>
-          <rect x="351.12" y="143.5" width="155.45999999999998" height="14" rx="4" class="c-frontend wf-solid" stroke-width="1.2"/>
+          <rect x="351.12" y="143.5" width="155.45999999999998" height="14" rx="4" class="c-frontend wf-solid" data-animate="node" style="--step:2" stroke-width="1.2"/>
           
           <circle cx="68" cy="150.5" r="3.5" class="t-frontend wf-dot"/>
           <text data-node-label="" x="78" y="154.8" class="t-primary" font-size="12.5" font-weight="500">render-architecture.mjs</text>
@@ -5117,7 +5118,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <g id="node-ex0_check" data-node-id="ex0_check" data-node-label="check-render-output.mjs" tabindex="0" role="button" aria-label="Focus check-render-output.mjs, 263.3–429.7 ms · 166.4 ms · 13% of 1,286.2 ms wall-clock, worker 1 › web-app.architecture" aria-pressed="false" data-node-kind="frontend" data-node-sublabel="263.3–429.7 ms · 166.4 ms · 13% of 1,286.2 ms wall-clock" data-node-context="worker 1 › web-app.architecture" data-waterfall-start="263.3" data-waterfall-end="429.7" data-waterfall-duration="166.39999999999998" data-waterfall-depth="2" data-waterfall-status="ok" data-waterfall-service="worker 1">
           <title>check-render-output.mjs · 263.3–429.7 ms · 166.4 ms · 13% of 1,286.2 ms wall-clock · worker 1 › web-app.architecture</title>
           <rect x="20" y="164" width="1176" height="23" rx="6" class="c-mask wf-row wf-row-alt"/>
-          <rect x="506.58" y="168.5" width="98.32" height="14" rx="4" class="c-frontend wf-solid" stroke-width="1.2"/>
+          <rect x="506.58" y="168.5" width="98.32" height="14" rx="4" class="c-frontend wf-solid" data-animate="node" style="--step:3" stroke-width="1.2"/>
           
           <circle cx="68" cy="175.5" r="3.5" class="t-frontend wf-dot"/>
           <text data-node-label="" x="78" y="179.8" class="t-primary" font-size="12.5" font-weight="500">check-render-output.mjs</text>
@@ -5126,7 +5127,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <g id="node-ex1" data-node-id="ex1" data-node-label="agent-tool-call.workflow" tabindex="0" role="button" aria-label="Focus agent-tool-call.workflow, 1.6–445.2 ms · 443.6 ms · 34% of 1,286.2 ms wall-clock, worker 2 › Rebuild bundled examples (3 workers)" aria-pressed="false" data-node-kind="backend" data-node-sublabel="1.6–445.2 ms · 443.6 ms · 34% of 1,286.2 ms wall-clock" data-node-context="worker 2 › Rebuild bundled examples (3 workers)" data-waterfall-start="1.6" data-waterfall-end="445.2" data-waterfall-duration="443.59999999999997" data-waterfall-depth="1" data-waterfall-status="ok" data-waterfall-service="worker 2">
           <title>agent-tool-call.workflow · 1.6–445.2 ms · 443.6 ms · 34% of 1,286.2 ms wall-clock · worker 2 › Rebuild bundled examples (3 workers)</title>
           <rect x="20" y="189" width="1176" height="23" rx="6" class="c-mask wf-row"/>
-          <rect x="351.95" y="193.5" width="262.10999999999996" height="14" rx="4" class="c-backend wf-span" stroke-width="1.2"/>
+          <rect x="351.95" y="193.5" width="262.10999999999996" height="14" rx="4" class="c-backend wf-span" data-animate="node" style="--step:4" stroke-width="1.2"/>
           
           <circle cx="50" cy="200.5" r="3.5" class="t-backend wf-dot"/>
           <text data-node-label="" x="60" y="204.8" class="t-primary" font-size="12.5" font-weight="650">agent-tool-call.workflow</text>
@@ -5135,7 +5136,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <g id="node-ex1_render" data-node-id="ex1_render" data-node-label="render-workflow.mjs" tabindex="0" role="button" aria-label="Focus render-workflow.mjs, 1.6–298.5 ms · 296.9 ms · 23% of 1,286.2 ms wall-clock, worker 2 › agent-tool-call.workflow" aria-pressed="false" data-node-kind="backend" data-node-sublabel="1.6–298.5 ms · 296.9 ms · 23% of 1,286.2 ms wall-clock" data-node-context="worker 2 › agent-tool-call.workflow" data-waterfall-start="1.6" data-waterfall-end="298.5" data-waterfall-duration="296.9" data-waterfall-depth="2" data-waterfall-status="ok" data-waterfall-service="worker 2">
           <title>render-workflow.mjs · 1.6–298.5 ms · 296.9 ms · 23% of 1,286.2 ms wall-clock · worker 2 › agent-tool-call.workflow</title>
           <rect x="20" y="214" width="1176" height="23" rx="6" class="c-mask wf-row wf-row-alt"/>
-          <rect x="351.95" y="218.5" width="175.43" height="14" rx="4" class="c-backend wf-solid" stroke-width="1.2"/>
+          <rect x="351.95" y="218.5" width="175.43" height="14" rx="4" class="c-backend wf-solid" data-animate="node" style="--step:5" stroke-width="1.2"/>
           
           <circle cx="68" cy="225.5" r="3.5" class="t-backend wf-dot"/>
           <text data-node-label="" x="78" y="229.8" class="t-primary" font-size="12.5" font-weight="500">render-workflow.mjs</text>
@@ -5144,7 +5145,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <g id="node-ex1_check" data-node-id="ex1_check" data-node-label="check-render-output.mjs" tabindex="0" role="button" aria-label="Focus check-render-output.mjs, 298.5–445.2 ms · 146.7 ms · 11% of 1,286.2 ms wall-clock, worker 2 › agent-tool-call.workflow" aria-pressed="false" data-node-kind="backend" data-node-sublabel="298.5–445.2 ms · 146.7 ms · 11% of 1,286.2 ms wall-clock" data-node-context="worker 2 › agent-tool-call.workflow" data-waterfall-start="298.5" data-waterfall-end="445.2" data-waterfall-duration="146.7" data-waterfall-depth="2" data-waterfall-status="ok" data-waterfall-service="worker 2">
           <title>check-render-output.mjs · 298.5–445.2 ms · 146.7 ms · 11% of 1,286.2 ms wall-clock · worker 2 › agent-tool-call.workflow</title>
           <rect x="20" y="239" width="1176" height="23" rx="6" class="c-mask wf-row"/>
-          <rect x="527.38" y="243.5" width="86.67999999999995" height="14" rx="4" class="c-backend wf-solid" stroke-width="1.2"/>
+          <rect x="527.38" y="243.5" width="86.67999999999995" height="14" rx="4" class="c-backend wf-solid" data-animate="node" style="--step:6" stroke-width="1.2"/>
           
           <circle cx="68" cy="250.5" r="3.5" class="t-backend wf-dot"/>
           <text data-node-label="" x="78" y="254.8" class="t-primary" font-size="12.5" font-weight="500">check-render-output.mjs</text>
@@ -5153,7 +5154,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <g id="node-ex2" data-node-id="ex2" data-node-label="cache-miss-request.sequence" tabindex="0" role="button" aria-label="Focus cache-miss-request.sequence, 2.2–398.4 ms · 396.2 ms · 31% of 1,286.2 ms wall-clock, worker 3 › Rebuild bundled examples (3 workers)" aria-pressed="false" data-node-kind="database" data-node-sublabel="2.2–398.4 ms · 396.2 ms · 31% of 1,286.2 ms wall-clock" data-node-context="worker 3 › Rebuild bundled examples (3 workers)" data-waterfall-start="2.2" data-waterfall-end="398.4" data-waterfall-duration="396.2" data-waterfall-depth="1" data-waterfall-status="ok" data-waterfall-service="worker 3">
           <title>cache-miss-request.sequence · 2.2–398.4 ms · 396.2 ms · 31% of 1,286.2 ms wall-clock · worker 3 › Rebuild bundled examples (3 workers)</title>
           <rect x="20" y="264" width="1176" height="23" rx="6" class="c-mask wf-row wf-row-alt"/>
-          <rect x="352.3" y="268.5" width="234.10999999999996" height="14" rx="4" class="c-database wf-span" stroke-width="1.2"/>
+          <rect x="352.3" y="268.5" width="234.10999999999996" height="14" rx="4" class="c-database wf-span" data-animate="node" style="--step:7" stroke-width="1.2"/>
           
           <circle cx="50" cy="275.5" r="3.5" class="t-database wf-dot"/>
           <text data-node-label="" x="60" y="279.8" class="t-primary" font-size="12.5" font-weight="650">cache-miss-request.sequence</text>
@@ -5162,7 +5163,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <g id="node-ex2_render" data-node-id="ex2_render" data-node-label="render-sequence.mjs" tabindex="0" role="button" aria-label="Focus render-sequence.mjs, 2.2–224.4 ms · 222.2 ms · 17% of 1,286.2 ms wall-clock, worker 3 › cache-miss-request.sequence" aria-pressed="false" data-node-kind="database" data-node-sublabel="2.2–224.4 ms · 222.2 ms · 17% of 1,286.2 ms wall-clock" data-node-context="worker 3 › cache-miss-request.sequence" data-waterfall-start="2.2" data-waterfall-end="224.4" data-waterfall-duration="222.20000000000002" data-waterfall-depth="2" data-waterfall-status="ok" data-waterfall-service="worker 3">
           <title>render-sequence.mjs · 2.2–224.4 ms · 222.2 ms · 17% of 1,286.2 ms wall-clock · worker 3 › cache-miss-request.sequence</title>
           <rect x="20" y="289" width="1176" height="23" rx="6" class="c-mask wf-row"/>
-          <rect x="352.3" y="293.5" width="131.3" height="14" rx="4" class="c-database wf-solid" stroke-width="1.2"/>
+          <rect x="352.3" y="293.5" width="131.3" height="14" rx="4" class="c-database wf-solid" data-animate="node" style="--step:8" stroke-width="1.2"/>
           
           <circle cx="68" cy="300.5" r="3.5" class="t-database wf-dot"/>
           <text data-node-label="" x="78" y="304.8" class="t-primary" font-size="12.5" font-weight="500">render-sequence.mjs</text>
@@ -5171,7 +5172,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <g id="node-ex2_check" data-node-id="ex2_check" data-node-label="check-render-output.mjs" tabindex="0" role="button" aria-label="Focus check-render-output.mjs, 224.4–398.4 ms · 174 ms · 14% of 1,286.2 ms wall-clock, worker 3 › cache-miss-request.sequence" aria-pressed="false" data-node-kind="database" data-node-sublabel="224.4–398.4 ms · 174 ms · 14% of 1,286.2 ms wall-clock" data-node-context="worker 3 › cache-miss-request.sequence" data-waterfall-start="224.4" data-waterfall-end="398.4" data-waterfall-duration="173.99999999999997" data-waterfall-depth="2" data-waterfall-status="ok" data-waterfall-service="worker 3">
           <title>check-render-output.mjs · 224.4–398.4 ms · 174 ms · 14% of 1,286.2 ms wall-clock · worker 3 › cache-miss-request.sequence</title>
           <rect x="20" y="314" width="1176" height="23" rx="6" class="c-mask wf-row wf-row-alt"/>
-          <rect x="483.6" y="318.5" width="102.80999999999995" height="14" rx="4" class="c-database wf-solid" stroke-width="1.2"/>
+          <rect x="483.6" y="318.5" width="102.80999999999995" height="14" rx="4" class="c-database wf-solid" data-animate="node" style="--step:9" stroke-width="1.2"/>
           
           <circle cx="68" cy="325.5" r="3.5" class="t-database wf-dot"/>
           <text data-node-label="" x="78" y="329.8" class="t-primary" font-size="12.5" font-weight="500">check-render-output.mjs</text>
@@ -5180,7 +5181,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <g id="node-ex3" data-node-id="ex3" data-node-label="product-analytics.dataflow" tabindex="0" role="button" aria-label="Focus product-analytics.dataflow, 398.4–830.7 ms · 432.3 ms · 34% of 1,286.2 ms wall-clock, worker 3 › Rebuild bundled examples (3 workers)" aria-pressed="false" data-node-kind="database" data-node-sublabel="398.4–830.7 ms · 432.3 ms · 34% of 1,286.2 ms wall-clock" data-node-context="worker 3 › Rebuild bundled examples (3 workers)" data-waterfall-start="398.4" data-waterfall-end="830.7" data-waterfall-duration="432.30000000000007" data-waterfall-depth="1" data-waterfall-status="ok" data-waterfall-service="worker 3">
           <title>product-analytics.dataflow · 398.4–830.7 ms · 432.3 ms · 34% of 1,286.2 ms wall-clock · worker 3 › Rebuild bundled examples (3 workers)</title>
           <rect x="20" y="339" width="1176" height="23" rx="6" class="c-mask wf-row"/>
-          <rect x="586.41" y="343.5" width="255.44000000000005" height="14" rx="4" class="c-database wf-span" stroke-width="1.2"/>
+          <rect x="586.41" y="343.5" width="255.44000000000005" height="14" rx="4" class="c-database wf-span" data-animate="node" style="--step:10" stroke-width="1.2"/>
           
           <circle cx="50" cy="350.5" r="3.5" class="t-database wf-dot"/>
           <text data-node-label="" x="60" y="354.8" class="t-primary" font-size="12.5" font-weight="650">product-analytics.dataflow</text>
@@ -5189,7 +5190,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <g id="node-ex3_render" data-node-id="ex3_render" data-node-label="render-dataflow.mjs" tabindex="0" role="button" aria-label="Focus render-dataflow.mjs, 398.4–593.4 ms · 195 ms · 15% of 1,286.2 ms wall-clock, worker 3 › product-analytics.dataflow" aria-pressed="false" data-node-kind="database" data-node-sublabel="398.4–593.4 ms · 195 ms · 15% of 1,286.2 ms wall-clock" data-node-context="worker 3 › product-analytics.dataflow" data-waterfall-start="398.4" data-waterfall-end="593.4" data-waterfall-duration="195" data-waterfall-depth="2" data-waterfall-status="ok" data-waterfall-service="worker 3">
           <title>render-dataflow.mjs · 398.4–593.4 ms · 195 ms · 15% of 1,286.2 ms wall-clock · worker 3 › product-analytics.dataflow</title>
           <rect x="20" y="364" width="1176" height="23" rx="6" class="c-mask wf-row wf-row-alt"/>
-          <rect x="586.41" y="368.5" width="115.22000000000003" height="14" rx="4" class="c-database wf-solid" stroke-width="1.2"/>
+          <rect x="586.41" y="368.5" width="115.22000000000003" height="14" rx="4" class="c-database wf-solid" data-animate="node" style="--step:11" stroke-width="1.2"/>
           
           <circle cx="68" cy="375.5" r="3.5" class="t-database wf-dot"/>
           <text data-node-label="" x="78" y="379.8" class="t-primary" font-size="12.5" font-weight="500">render-dataflow.mjs</text>
@@ -5198,7 +5199,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <g id="node-ex3_check" data-node-id="ex3_check" data-node-label="check-render-output.mjs" tabindex="0" role="button" aria-label="Focus check-render-output.mjs, 593.4–830.7 ms · 237.3 ms · 18% of 1,286.2 ms wall-clock, worker 3 › product-analytics.dataflow" aria-pressed="false" data-node-kind="database" data-node-sublabel="593.4–830.7 ms · 237.3 ms · 18% of 1,286.2 ms wall-clock" data-node-context="worker 3 › product-analytics.dataflow" data-waterfall-start="593.4" data-waterfall-end="830.7" data-waterfall-duration="237.30000000000007" data-waterfall-depth="2" data-waterfall-status="ok" data-waterfall-service="worker 3">
           <title>check-render-output.mjs · 593.4–830.7 ms · 237.3 ms · 18% of 1,286.2 ms wall-clock · worker 3 › product-analytics.dataflow</title>
           <rect x="20" y="389" width="1176" height="23" rx="6" class="c-mask wf-row"/>
-          <rect x="701.63" y="393.5" width="140.22000000000003" height="14" rx="4" class="c-database wf-solid" stroke-width="1.2"/>
+          <rect x="701.63" y="393.5" width="140.22000000000003" height="14" rx="4" class="c-database wf-solid" data-animate="node" style="--step:12" stroke-width="1.2"/>
           
           <circle cx="68" cy="400.5" r="3.5" class="t-database wf-dot"/>
           <text data-node-label="" x="78" y="404.8" class="t-primary" font-size="12.5" font-weight="500">check-render-output.mjs</text>
@@ -5207,7 +5208,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <g id="node-ex4" data-node-id="ex4" data-node-label="agent-run.lifecycle" tabindex="0" role="button" aria-label="Focus agent-run.lifecycle, 429.8–862.8 ms · 433 ms · 34% of 1,286.2 ms wall-clock, worker 1 › Rebuild bundled examples (3 workers)" aria-pressed="false" data-node-kind="frontend" data-node-sublabel="429.8–862.8 ms · 433 ms · 34% of 1,286.2 ms wall-clock" data-node-context="worker 1 › Rebuild bundled examples (3 workers)" data-waterfall-start="429.8" data-waterfall-end="862.8" data-waterfall-duration="432.99999999999994" data-waterfall-depth="1" data-waterfall-status="ok" data-waterfall-service="worker 1">
           <title>agent-run.lifecycle · 429.8–862.8 ms · 433 ms · 34% of 1,286.2 ms wall-clock · worker 1 › Rebuild bundled examples (3 workers)</title>
           <rect x="20" y="414" width="1176" height="23" rx="6" class="c-mask wf-row wf-row-alt"/>
-          <rect x="604.96" y="418.5" width="255.86" height="14" rx="4" class="c-frontend wf-span" stroke-width="1.2"/>
+          <rect x="604.96" y="418.5" width="255.86" height="14" rx="4" class="c-frontend wf-span" data-animate="node" style="--step:12" stroke-width="1.2"/>
           
           <circle cx="50" cy="425.5" r="3.5" class="t-frontend wf-dot"/>
           <text data-node-label="" x="60" y="429.8" class="t-primary" font-size="12.5" font-weight="650">agent-run.lifecycle</text>
@@ -5216,7 +5217,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <g id="node-ex4_render" data-node-id="ex4_render" data-node-label="render-lifecycle.mjs" tabindex="0" role="button" aria-label="Focus render-lifecycle.mjs, 429.8–643.7 ms · 213.9 ms · 17% of 1,286.2 ms wall-clock, worker 1 › agent-run.lifecycle" aria-pressed="false" data-node-kind="frontend" data-node-sublabel="429.8–643.7 ms · 213.9 ms · 17% of 1,286.2 ms wall-clock" data-node-context="worker 1 › agent-run.lifecycle" data-waterfall-start="429.8" data-waterfall-end="643.7" data-waterfall-duration="213.90000000000003" data-waterfall-depth="2" data-waterfall-status="ok" data-waterfall-service="worker 1">
           <title>render-lifecycle.mjs · 429.8–643.7 ms · 213.9 ms · 17% of 1,286.2 ms wall-clock · worker 1 › agent-run.lifecycle</title>
           <rect x="20" y="439" width="1176" height="23" rx="6" class="c-mask wf-row"/>
-          <rect x="604.96" y="443.5" width="126.38999999999999" height="14" rx="4" class="c-frontend wf-solid" stroke-width="1.2"/>
+          <rect x="604.96" y="443.5" width="126.38999999999999" height="14" rx="4" class="c-frontend wf-solid" data-animate="node" style="--step:12" stroke-width="1.2"/>
           
           <circle cx="68" cy="450.5" r="3.5" class="t-frontend wf-dot"/>
           <text data-node-label="" x="78" y="454.8" class="t-primary" font-size="12.5" font-weight="500">render-lifecycle.mjs</text>
@@ -5225,7 +5226,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <g id="node-ex4_check" data-node-id="ex4_check" data-node-label="check-render-output.mjs" tabindex="0" role="button" aria-label="Focus check-render-output.mjs, 643.7–862.8 ms · 219.1 ms · 17% of 1,286.2 ms wall-clock, worker 1 › agent-run.lifecycle" aria-pressed="false" data-node-kind="frontend" data-node-sublabel="643.7–862.8 ms · 219.1 ms · 17% of 1,286.2 ms wall-clock" data-node-context="worker 1 › agent-run.lifecycle" data-waterfall-start="643.7" data-waterfall-end="862.8" data-waterfall-duration="219.0999999999999" data-waterfall-depth="2" data-waterfall-status="ok" data-waterfall-service="worker 1">
           <title>check-render-output.mjs · 643.7–862.8 ms · 219.1 ms · 17% of 1,286.2 ms wall-clock · worker 1 › agent-run.lifecycle</title>
           <rect x="20" y="464" width="1176" height="23" rx="6" class="c-mask wf-row wf-row-alt"/>
-          <rect x="731.35" y="468.5" width="129.47000000000003" height="14" rx="4" class="c-frontend wf-solid" stroke-width="1.2"/>
+          <rect x="731.35" y="468.5" width="129.47000000000003" height="14" rx="4" class="c-frontend wf-solid" data-animate="node" style="--step:12" stroke-width="1.2"/>
           
           <circle cx="68" cy="475.5" r="3.5" class="t-frontend wf-dot"/>
           <text data-node-label="" x="78" y="479.8" class="t-primary" font-size="12.5" font-weight="500">check-render-output.mjs</text>
@@ -5234,7 +5235,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <g id="node-ex5" data-node-id="ex5" data-node-label="orders.erd" tabindex="0" role="button" aria-label="Focus orders.erd, 445.2–868.3 ms · 423.1 ms · 33% of 1,286.2 ms wall-clock, worker 2 › Rebuild bundled examples (3 workers)" aria-pressed="false" data-node-kind="backend" data-node-sublabel="445.2–868.3 ms · 423.1 ms · 33% of 1,286.2 ms wall-clock" data-node-context="worker 2 › Rebuild bundled examples (3 workers)" data-waterfall-start="445.2" data-waterfall-end="868.3" data-waterfall-duration="423.09999999999997" data-waterfall-depth="1" data-waterfall-status="ok" data-waterfall-service="worker 2">
           <title>orders.erd · 445.2–868.3 ms · 423.1 ms · 33% of 1,286.2 ms wall-clock · worker 2 › Rebuild bundled examples (3 workers)</title>
           <rect x="20" y="489" width="1176" height="23" rx="6" class="c-mask wf-row"/>
-          <rect x="614.06" y="493.5" width="250.0100000000001" height="14" rx="4" class="c-backend wf-span" stroke-width="1.2"/>
+          <rect x="614.06" y="493.5" width="250.0100000000001" height="14" rx="4" class="c-backend wf-span" data-animate="node" style="--step:12" stroke-width="1.2"/>
           
           <circle cx="50" cy="500.5" r="3.5" class="t-backend wf-dot"/>
           <text data-node-label="" x="60" y="504.8" class="t-primary" font-size="12.5" font-weight="650">orders.erd</text>
@@ -5243,7 +5244,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <g id="node-ex5_render" data-node-id="ex5_render" data-node-label="render-erd.mjs" tabindex="0" role="button" aria-label="Focus render-erd.mjs, 445.2–645.9 ms · 200.7 ms · 16% of 1,286.2 ms wall-clock, worker 2 › orders.erd" aria-pressed="false" data-node-kind="backend" data-node-sublabel="445.2–645.9 ms · 200.7 ms · 16% of 1,286.2 ms wall-clock" data-node-context="worker 2 › orders.erd" data-waterfall-start="445.2" data-waterfall-end="645.9" data-waterfall-duration="200.7" data-waterfall-depth="2" data-waterfall-status="ok" data-waterfall-service="worker 2">
           <title>render-erd.mjs · 445.2–645.9 ms · 200.7 ms · 16% of 1,286.2 ms wall-clock · worker 2 › orders.erd</title>
           <rect x="20" y="514" width="1176" height="23" rx="6" class="c-mask wf-row wf-row-alt"/>
-          <rect x="614.06" y="518.5" width="118.59000000000003" height="14" rx="4" class="c-backend wf-solid" stroke-width="1.2"/>
+          <rect x="614.06" y="518.5" width="118.59000000000003" height="14" rx="4" class="c-backend wf-solid" data-animate="node" style="--step:12" stroke-width="1.2"/>
           
           <circle cx="68" cy="525.5" r="3.5" class="t-backend wf-dot"/>
           <text data-node-label="" x="78" y="529.8" class="t-primary" font-size="12.5" font-weight="500">render-erd.mjs</text>
@@ -5252,7 +5253,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <g id="node-ex5_check" data-node-id="ex5_check" data-node-label="check-render-output.mjs" tabindex="0" role="button" aria-label="Focus check-render-output.mjs, 645.9–868.3 ms · 222.4 ms · 17% of 1,286.2 ms wall-clock, worker 2 › orders.erd" aria-pressed="false" data-node-kind="backend" data-node-sublabel="645.9–868.3 ms · 222.4 ms · 17% of 1,286.2 ms wall-clock" data-node-context="worker 2 › orders.erd" data-waterfall-start="645.9" data-waterfall-end="868.3" data-waterfall-duration="222.39999999999998" data-waterfall-depth="2" data-waterfall-status="ok" data-waterfall-service="worker 2">
           <title>check-render-output.mjs · 645.9–868.3 ms · 222.4 ms · 17% of 1,286.2 ms wall-clock · worker 2 › orders.erd</title>
           <rect x="20" y="539" width="1176" height="23" rx="6" class="c-mask wf-row"/>
-          <rect x="732.65" y="543.5" width="131.42000000000007" height="14" rx="4" class="c-backend wf-solid" stroke-width="1.2"/>
+          <rect x="732.65" y="543.5" width="131.42000000000007" height="14" rx="4" class="c-backend wf-solid" data-animate="node" style="--step:12" stroke-width="1.2"/>
           
           <circle cx="68" cy="550.5" r="3.5" class="t-backend wf-dot"/>
           <text data-node-label="" x="78" y="554.8" class="t-primary" font-size="12.5" font-weight="500">check-render-output.mjs</text>
@@ -5261,7 +5262,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <g id="node-ex6" data-node-id="ex6" data-node-label="subscription-billing.erd" tabindex="0" role="button" aria-label="Focus subscription-billing.erd, 830.7–1,231.3 ms · 400.6 ms · 31% of 1,286.2 ms wall-clock, worker 3 › Rebuild bundled examples (3 workers)" aria-pressed="false" data-node-kind="database" data-node-sublabel="830.7–1,231.3 ms · 400.6 ms · 31% of 1,286.2 ms wall-clock" data-node-context="worker 3 › Rebuild bundled examples (3 workers)" data-waterfall-start="830.7" data-waterfall-end="1231.3" data-waterfall-duration="400.5999999999999" data-waterfall-depth="1" data-waterfall-status="ok" data-waterfall-service="worker 3">
           <title>subscription-billing.erd · 830.7–1,231.3 ms · 400.6 ms · 31% of 1,286.2 ms wall-clock · worker 3 › Rebuild bundled examples (3 workers)</title>
           <rect x="20" y="564" width="1176" height="23" rx="6" class="c-mask wf-row wf-row-alt"/>
-          <rect x="841.85" y="568.5" width="236.70999999999992" height="14" rx="4" class="c-database wf-span" stroke-width="1.2"/>
+          <rect x="841.85" y="568.5" width="236.70999999999992" height="14" rx="4" class="c-database wf-span" data-animate="node" style="--step:12" stroke-width="1.2"/>
           
           <circle cx="50" cy="575.5" r="3.5" class="t-database wf-dot"/>
           <text data-node-label="" x="60" y="579.8" class="t-primary" font-size="12.5" font-weight="650">subscription-billing.erd</text>
@@ -5270,7 +5271,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <g id="node-ex6_render" data-node-id="ex6_render" data-node-label="render-erd.mjs" tabindex="0" role="button" aria-label="Focus render-erd.mjs, 830.7–1,022.2 ms · 191.5 ms · 15% of 1,286.2 ms wall-clock, worker 3 › subscription-billing.erd" aria-pressed="false" data-node-kind="database" data-node-sublabel="830.7–1,022.2 ms · 191.5 ms · 15% of 1,286.2 ms wall-clock" data-node-context="worker 3 › subscription-billing.erd" data-waterfall-start="830.7" data-waterfall-end="1022.2" data-waterfall-duration="191.5" data-waterfall-depth="2" data-waterfall-status="ok" data-waterfall-service="worker 3">
           <title>render-erd.mjs · 830.7–1,022.2 ms · 191.5 ms · 15% of 1,286.2 ms wall-clock · worker 3 › subscription-billing.erd</title>
           <rect x="20" y="589" width="1176" height="23" rx="6" class="c-mask wf-row"/>
-          <rect x="841.85" y="593.5" width="113.15999999999997" height="14" rx="4" class="c-database wf-solid" stroke-width="1.2"/>
+          <rect x="841.85" y="593.5" width="113.15999999999997" height="14" rx="4" class="c-database wf-solid" data-animate="node" style="--step:12" stroke-width="1.2"/>
           
           <circle cx="68" cy="600.5" r="3.5" class="t-database wf-dot"/>
           <text data-node-label="" x="78" y="604.8" class="t-primary" font-size="12.5" font-weight="500">render-erd.mjs</text>
@@ -5279,7 +5280,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <g id="node-ex6_check" data-node-id="ex6_check" data-node-label="check-render-output.mjs" tabindex="0" role="button" aria-label="Focus check-render-output.mjs, 1,022.2–1,231.3 ms · 209.1 ms · 16% of 1,286.2 ms wall-clock, worker 3 › subscription-billing.erd" aria-pressed="false" data-node-kind="database" data-node-sublabel="1,022.2–1,231.3 ms · 209.1 ms · 16% of 1,286.2 ms wall-clock" data-node-context="worker 3 › subscription-billing.erd" data-waterfall-start="1022.2" data-waterfall-end="1231.3" data-waterfall-duration="209.0999999999999" data-waterfall-depth="2" data-waterfall-status="ok" data-waterfall-service="worker 3">
           <title>check-render-output.mjs · 1,022.2–1,231.3 ms · 209.1 ms · 16% of 1,286.2 ms wall-clock · worker 3 › subscription-billing.erd</title>
           <rect x="20" y="614" width="1176" height="23" rx="6" class="c-mask wf-row wf-row-alt"/>
-          <rect x="955.01" y="618.5" width="123.54999999999995" height="14" rx="4" class="c-database wf-solid" stroke-width="1.2"/>
+          <rect x="955.01" y="618.5" width="123.54999999999995" height="14" rx="4" class="c-database wf-solid" data-animate="node" style="--step:12" stroke-width="1.2"/>
           
           <circle cx="68" cy="625.5" r="3.5" class="t-database wf-dot"/>
           <text data-node-label="" x="78" y="629.8" class="t-primary" font-size="12.5" font-weight="500">check-render-output.mjs</text>
@@ -5288,7 +5289,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <g id="node-ex7" data-node-id="ex7" data-node-label="checkout-request.waterfall" tabindex="0" role="button" aria-label="Focus checkout-request.waterfall, 862.8–1,286.2 ms · 423.4 ms · 33% of 1,286.2 ms wall-clock, worker 1 › Rebuild bundled examples (3 workers)" aria-pressed="false" data-node-kind="frontend" data-node-sublabel="862.8–1,286.2 ms · 423.4 ms · 33% of 1,286.2 ms wall-clock" data-node-context="worker 1 › Rebuild bundled examples (3 workers)" data-waterfall-start="862.8" data-waterfall-end="1286.2" data-waterfall-duration="423.4000000000001" data-waterfall-depth="1" data-waterfall-status="ok" data-waterfall-service="worker 1">
           <title>checkout-request.waterfall · 862.8–1,286.2 ms · 423.4 ms · 33% of 1,286.2 ms wall-clock · worker 1 › Rebuild bundled examples (3 workers)</title>
           <rect x="20" y="639" width="1176" height="23" rx="6" class="c-mask wf-row"/>
-          <rect x="860.82" y="643.5" width="250.17999999999995" height="14" rx="4" class="c-frontend wf-span" stroke-width="1.2"/>
+          <rect x="860.82" y="643.5" width="250.17999999999995" height="14" rx="4" class="c-frontend wf-span" data-animate="node" style="--step:12" stroke-width="1.2"/>
           
           <circle cx="50" cy="650.5" r="3.5" class="t-frontend wf-dot"/>
           <text data-node-label="" x="60" y="654.8" class="t-primary" font-size="12.5" font-weight="650">checkout-request.waterfall</text>
@@ -5297,7 +5298,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <g id="node-ex7_render" data-node-id="ex7_render" data-node-label="render-waterfall.mjs" tabindex="0" role="button" aria-label="Focus render-waterfall.mjs, 862.8–1,082.5 ms · 219.7 ms · 17% of 1,286.2 ms wall-clock, worker 1 › checkout-request.waterfall" aria-pressed="false" data-node-kind="frontend" data-node-sublabel="862.8–1,082.5 ms · 219.7 ms · 17% of 1,286.2 ms wall-clock" data-node-context="worker 1 › checkout-request.waterfall" data-waterfall-start="862.8" data-waterfall-end="1082.5" data-waterfall-duration="219.70000000000005" data-waterfall-depth="2" data-waterfall-status="ok" data-waterfall-service="worker 1">
           <title>render-waterfall.mjs · 862.8–1,082.5 ms · 219.7 ms · 17% of 1,286.2 ms wall-clock · worker 1 › checkout-request.waterfall</title>
           <rect x="20" y="664" width="1176" height="23" rx="6" class="c-mask wf-row wf-row-alt"/>
-          <rect x="860.82" y="668.5" width="129.81999999999994" height="14" rx="4" class="c-frontend wf-solid" stroke-width="1.2"/>
+          <rect x="860.82" y="668.5" width="129.81999999999994" height="14" rx="4" class="c-frontend wf-solid" data-animate="node" style="--step:12" stroke-width="1.2"/>
           
           <circle cx="68" cy="675.5" r="3.5" class="t-frontend wf-dot"/>
           <text data-node-label="" x="78" y="679.8" class="t-primary" font-size="12.5" font-weight="500">render-waterfall.mjs</text>
@@ -5306,7 +5307,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <g id="node-ex7_check" data-node-id="ex7_check" data-node-label="check-render-output.mjs" tabindex="0" role="button" aria-label="Focus check-render-output.mjs, 1,082.5–1,286.2 ms · 203.7 ms · 16% of 1,286.2 ms wall-clock, worker 1 › checkout-request.waterfall" aria-pressed="false" data-node-kind="frontend" data-node-sublabel="1,082.5–1,286.2 ms · 203.7 ms · 16% of 1,286.2 ms wall-clock" data-node-context="worker 1 › checkout-request.waterfall" data-waterfall-start="1082.5" data-waterfall-end="1286.2" data-waterfall-duration="203.70000000000005" data-waterfall-depth="2" data-waterfall-status="ok" data-waterfall-service="worker 1">
           <title>check-render-output.mjs · 1,082.5–1,286.2 ms · 203.7 ms · 16% of 1,286.2 ms wall-clock · worker 1 › checkout-request.waterfall</title>
           <rect x="20" y="689" width="1176" height="23" rx="6" class="c-mask wf-row"/>
-          <rect x="990.64" y="693.5" width="120.36000000000001" height="14" rx="4" class="c-frontend wf-solid" stroke-width="1.2"/>
+          <rect x="990.64" y="693.5" width="120.36000000000001" height="14" rx="4" class="c-frontend wf-solid" data-animate="node" style="--step:12" stroke-width="1.2"/>
           
           <circle cx="68" cy="700.5" r="3.5" class="t-frontend wf-dot"/>
           <text data-node-label="" x="78" y="704.8" class="t-primary" font-size="12.5" font-weight="500">check-render-output.mjs</text>
@@ -5802,6 +5803,13 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       }
 
       function cleanExportClone(clone) {
+        // Route interaction rewrites CSS declarations through CSSOM. Normalize
+        // authored motion delays on the clone so exported bytes do not depend
+        // on whether the reader traced a route before downloading.
+        Array.prototype.forEach.call(clone.querySelectorAll('[data-animate]'), function (el) {
+          var step = el.style.getPropertyValue('--step');
+          if (step) el.setAttribute('style', el.style.cssText);
+        });
         // View transforms and neighborhood focus are HTML exploration state,
         // never part of a downloaded full-diagram artifact.
         clone.style.removeProperty('transform');
@@ -9637,6 +9645,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       var ratio = viewBox && viewBox.height > 0 ? viewBox.width / viewBox.height : 0;
       var readerFit = svg && svg.getAttribute('data-reader-fit');
       var widthFirstReading = readerFit === 'width-first';
+      var automaticSequence = widthFirstReading && svg.hasAttribute('data-sequence-column-fit');
+      var readingScroll = widthFirstReading;
       var measuredHeightFit = readerFit === 'intrinsic-height' || widthFirstReading;
       var frame = 0;
       var settleFrame = 0;
@@ -9780,11 +9790,12 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         legend.style.removeProperty('--archify-reader-legend-transform');
       }
       // Keep the original legend in its SVG: renderer hover/focus selectors and
-      // canonical export still own that same group. Only ordinary capped
-      // reading at 25–100% borrows the spare outer canvas for its legend.
+      // canonical export still own that same group. Ordinary capped reading
+      // and fitted automatic sequences borrow the outer corner at 25–100%.
       function syncLegend() {
         var cameraScale = Number(svg && svg.getAttribute('data-view-scale')) || 1;
-        if (!legend || !eligible() || html.getAttribute('data-reader-area') !== 'true' || cameraScale > 1.001) {
+        var cornerReading = html.getAttribute('data-reader-area') === 'true' || automaticSequence && !readingScroll;
+        if (!legend || !eligible() || !cornerReading || cameraScale > 1.001) {
           clearLegend();
           return;
         }
@@ -9923,11 +9934,13 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
             document.documentElement.scrollHeight,
             document.body.scrollHeight
           ) - window.innerHeight - belowFold();
-          if (overflow > 1 && !widthFirstReading && lastWidth > Math.ceil(minWidth)) {
+          // visual-check fails any page whose rounded-up height exceeds the
+          // viewport, so even a 1px remainder must be reduced or declared.
+          if (overflow > 0 && !readingScroll && lastWidth > Math.ceil(minWidth)) {
             applyWidth(Math.max(minWidth, lastWidth - overflow * ratio - 4), minWidth);
             settledCap = lastWidth;
             html.setAttribute('data-reader-overflow', 'reduced');
-          } else if (overflow > 1) {
+          } else if (overflow > 0) {
             html.setAttribute('data-reader-overflow', 'authored');
           } else {
             html.removeAttribute('data-reader-overflow');
@@ -9942,17 +9955,21 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         }
         var chrome = chromeMetrics();
         var viewportCap = Math.max(0, window.innerWidth - chrome.bodyX);
+        // Sequence first-screen fitting preserves source text sizes instead
+        // of shrinking to the shared hard readability floor.
         var readableWidth = viewBox && viewBox.width > 0
-          ? viewBox.width * minimumReadableScale() + chrome.diagramX
+          ? viewBox.width * (automaticSequence ? 1 : minimumReadableScale()) + chrome.diagramX
           : MIN_READER_WIDTH;
         var maxWidth = Math.min(MAX_READER_WIDTH, viewportCap);
-        var readableMinimumWidth = measuredHeightFit && ratio < WIDE_RATIO
+        var readableMinimumWidth = automaticSequence || measuredHeightFit && ratio < WIDE_RATIO
           ? readableWidth
           : measuredHeightFit && ratio >= WIDE_RATIO && Number.isFinite(declaredMinimumText)
             ? Math.max(MIN_READER_WIDTH, readableWidth)
             : MIN_READER_WIDTH;
         var minWidth;
-        if (measuredHeightFit && ratio < WIDE_RATIO) {
+        if (automaticSequence) {
+          minWidth = Math.min(readableMinimumWidth, maxWidth);
+        } else if (measuredHeightFit && ratio < WIDE_RATIO) {
           minWidth = Math.min(readableMinimumWidth, viewportCap);
         } else if (measuredHeightFit && ratio >= WIDE_RATIO && Number.isFinite(declaredMinimumText)) {
           minWidth = Math.min(readableMinimumWidth, maxWidth);
@@ -9988,10 +10005,13 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           outerHeight(header) + stackedBelow;
         var availableSvgHeight = Math.max(1, window.innerHeight - fixedHeight);
         var desiredWidth = availableSvgHeight * ratio + chrome.diagramX + (docked ? railExtra : 0);
-        // Long sequences and waterfall rows use the available horizontal room;
-        // ordinary page scrolling keeps their text and row spacing readable.
-        // Other diagram families retain the existing height-fit strategy.
-        if (widthFirstReading) desiredWidth = maxWidth;
+        // Compact automatic sequences fit the first screen without shrinking
+        // their authored text. Longer sequences retain reading width and page
+        // scroll; other width-first families keep their existing strategy.
+        var sequenceFits = automaticSequence && Math.min(desiredWidth, maxWidth) >=
+          readableWidth + (docked ? railExtra : 0);
+        readingScroll = widthFirstReading && !sequenceFits;
+        if (readingScroll) desiredWidth = maxWidth;
         // Only a binding enlargement cap needs a separate normal reader area.
         // Uncapped diagrams keep their existing natural height and Chrome fit.
         automaticAreaHeight = availableSvgHeight + chrome.diagramY;

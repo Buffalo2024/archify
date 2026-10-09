@@ -266,6 +266,19 @@ test('a wrapped note that reaches the next message names the message and the y i
 
   const repaired = run(t, 'validate', applyFix(crowded(230), diagnostic.supportedFixes[0])).result;
   assert.equal(repaired.status, 0, repaired.stdout);
+  // An automatic canvas grows after the move. An authored canvas of the same
+  // original height cannot promise that one-field repair. Place this case later
+  // in the timeline so its automatic height is also schema-valid when authored.
+  const constrainedSpec = crowded(230);
+  for (const message of constrainedSpec.messages) message.y += 140;
+  const automatic = failure(t, constrainedSpec, 'sequence/note-overlap');
+  const compactHeight = Number(render(t, { ...constrainedSpec, meta: { ...constrainedSpec.meta, quality_profile: 'standard' } })
+    .match(/<svg viewBox="0 0 920 (\d+)"/)[1]);
+  constrainedSpec.meta.viewBox = [920, compactHeight];
+  const constrained = failure(t, constrainedSpec, 'sequence/note-overlap');
+  assert.ok(automatic.evidence.requiredY > compactHeight - 65 - 18, 'repair needs more timeline room than the authored canvas');
+  assert.equal(automatic.supportedFixes.length, 1, 'automatic height grows for the move');
+  assert.deepEqual(constrained.supportedFixes, [], 'authored height remains binding');
   const html = render(t, crowded(requiredY));
   assert.equal(decode(notes(html)[0].lines.join(' ')), LONG_NOTE);
 });

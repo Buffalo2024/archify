@@ -599,7 +599,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       color: var(--frontend-stroke);
     }
 
-    /* The reader owns only the outer scale. Long sequences and waterfall rows
+    /* The reader owns only the outer scale. Compact automatic sequences fit at
+       their authored text size or larger. Long sequences and waterfall rows
        favor reading width and page scroll; other diagrams keep height fitting.
        Small automatic canvases retain a modest scale inside a usable shell.
        Every strategy preserves the authored SVG/viewBox and semantic geometry. */
@@ -614,8 +615,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       align-items: center;
     }
     html[data-reader-area="true"] .diagram-container > svg { flex-shrink: 0; }
-    /* The original SVG legend can use the spare outer reader canvas while the
-       capped diagram stays centered. The container still clips all outer paint. */
+    /* The original SVG legend can use the outer corner while the capped or fitted
+       diagram stays centered. The container still clips all outer paint. */
     .diagram-container:has([data-reader-legend-corner]) > svg { overflow: visible; }
     .diagram-container [data-reader-legend-corner] {
       transform-origin: 0 0;
@@ -4973,7 +4974,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     <!-- Main Diagram -->
     <div class="diagram-container" data-detail-level="read"
          data-preset-badge-editorial-plate="ARCHIFY / PLATE 04">
-      <svg viewBox="0 0 972 430" role="img" lang="en" aria-labelledby="archify-diagram-title archify-diagram-description" data-preset="classic" data-quality-profile="showcase" data-class-ui="" data-reader-fit="intrinsic-height" data-reader-min-text="7.5">
+      <svg viewBox="0 0 972 430" role="img" lang="en" aria-labelledby="archify-diagram-title archify-diagram-description" data-animation="trace" data-preset="classic" data-quality-profile="showcase" data-class-ui="" data-reader-fit="intrinsic-height" data-reader-min-text="7.5">
         <title id="archify-diagram-title">Payment module types</title>
         <desc id="archify-diagram-description">OrderService depends on the PaymentGateway contract; card and wallet gateways implement it.</desc>
         <!-- Definitions -->
@@ -5031,16 +5032,16 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <rect width="100%" height="100%" fill="url(#grid)" />
 
         <!-- Relationships (before types for correct z-order) -->
-        <path data-edge-from="order_service" data-edge-to="payment_gateway" data-edge-label="pays through" data-edge-key="0" data-edge-id="uses_gateway" data-class-relationship="dependency" data-composition-points="274,97;570.5,97" d="M 274 97 L 570.5 97" class="a-default cl-relationship cl-dashed" stroke-width="1.5" marker-end="url(#cl-open)"/>
-        <path data-edge-from="order_service" data-edge-to="order" data-edge-label="creates" data-edge-key="1" data-edge-id="creates_order" data-class-relationship="dependency" data-composition-points="153,154;153,238" d="M 153 154 L 153 238" class="a-default cl-relationship cl-dashed" stroke-width="1.5" marker-end="url(#cl-open)"/>
-        <path data-edge-from="card_gateway" data-edge-to="payment_gateway" data-edge-key="2" data-edge-id="card_implements" data-class-relationship="realization" data-class-bus="payment_gateway" data-motion-path="M 506.5 273 L 506.5 212 Q 506.5 204 514.5 204 L 667 204 Q 675 204 675 196 L 675 134" data-composition-points="506.5,273;506.5,204;675,204;675,134" d="M 675 134 L 675 196 Q 675 204 667 204 L 514.5 204 Q 506.5 204 506.5 212 L 506.5 273" class="a-default cl-relationship cl-dashed" stroke-width="1.5" marker-start="url(#cl-triangle-start)"/>
-        <path data-edge-from="wallet_gateway" data-edge-to="payment_gateway" data-edge-key="3" data-edge-id="wallet_implements" data-class-relationship="realization" data-class-bus="payment_gateway" data-motion-path="M 843.5 273 L 843.5 212 Q 843.5 204 835.5 204 L 683 204 Q 675 204 675 196 L 675 134" data-composition-points="843.5,273;843.5,204;675,204;675,134" d="M 675 134 L 675 196 Q 675 204 683 204 L 835.5 204 Q 843.5 204 843.5 212 L 843.5 273" class="a-default cl-relationship cl-dashed" stroke-width="1.5" marker-start="url(#cl-triangle-start)"/>
+        <path data-edge-from="order_service" data-edge-to="payment_gateway" data-edge-label="pays through" data-edge-key="0" data-edge-id="uses_gateway" data-class-relationship="dependency" data-composition-points="274,97;570.5,97" d="M 274 97 L 570.5 97" class="a-default cl-relationship cl-dashed" data-animate="edge" style="--step:0" stroke-width="1.5" marker-end="url(#cl-open)"/>
+        <path data-edge-from="order_service" data-edge-to="order" data-edge-label="creates" data-edge-key="1" data-edge-id="creates_order" data-class-relationship="dependency" data-composition-points="153,154;153,238" d="M 153 154 L 153 238" class="a-default cl-relationship cl-dashed" data-animate="edge" style="--step:1" stroke-width="1.5" marker-end="url(#cl-open)"/>
+        <path data-edge-from="card_gateway" data-edge-to="payment_gateway" data-edge-key="2" data-edge-id="card_implements" data-class-relationship="realization" data-class-bus="payment_gateway" data-motion-path="M 506.5 273 L 506.5 212 Q 506.5 204 514.5 204 L 667 204 Q 675 204 675 196 L 675 134" data-composition-points="506.5,273;506.5,204;675,204;675,134" d="M 675 134 L 675 196 Q 675 204 667 204 L 514.5 204 Q 506.5 204 506.5 212 L 506.5 273" class="a-default cl-relationship cl-dashed" data-animate="edge" style="--step:2" stroke-width="1.5" marker-start="url(#cl-triangle-start)"/>
+        <path data-edge-from="wallet_gateway" data-edge-to="payment_gateway" data-edge-key="3" data-edge-id="wallet_implements" data-class-relationship="realization" data-class-bus="payment_gateway" data-motion-path="M 843.5 273 L 843.5 212 Q 843.5 204 835.5 204 L 683 204 Q 675 204 675 196 L 675 134" data-composition-points="843.5,273;843.5,204;675,204;675,134" d="M 675 134 L 675 196 Q 675 204 683 204 L 835.5 204 Q 843.5 204 843.5 212 L 843.5 273" class="a-default cl-relationship cl-dashed" data-animate="edge" style="--step:3" stroke-width="1.5" marker-start="url(#cl-triangle-start)"/>
 
         <!-- Types -->
         <g id="node-order_service" data-node-id="order_service" data-node-label="OrderService" tabindex="0" role="button" aria-label="Focus OrderService, Creates orders and starts payment, Class" aria-pressed="false" data-node-kind="class" data-node-sublabel="Creates orders and starts payment" data-node-context="Class" data-class-kind="class">
           <title>OrderService · Creates orders and starts payment · Class</title>
           <rect x="32" y="40" width="242" height="114" rx="6" class="c-mask"/>
-          <rect x="32" y="40" width="242" height="114" rx="6" class="c-backend cl-type" stroke-width="1.5"/>
+          <rect x="32" y="40" width="242" height="114" rx="6" class="c-backend cl-type" data-animate="node" style="--step:1" stroke-width="1.5"/>
           <path class="cl-header c-backend" stroke="none" d="M 38 40 H 268 Q 274 40 274 46 V 74 H 32 V 46 Q 32 40 38 40 Z"/>
           <g aria-hidden="true" class="cl-badge">
             <circle cx="52" cy="57" r="8" class="c-backend" stroke-width="1.25"/>
@@ -5062,7 +5063,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <g id="node-payment_gateway" data-node-id="payment_gateway" data-node-label="PaymentGateway" tabindex="0" role="button" aria-label="Focus PaymentGateway, Payment contract every channel fulfils, Interface" aria-pressed="false" data-node-kind="interface" data-node-sublabel="Payment contract every channel fulfils" data-node-context="Interface" data-class-kind="interface">
           <title>PaymentGateway · Payment contract every channel fulfils · Interface</title>
           <rect x="570.5" y="60" width="209" height="74" rx="6" class="c-mask"/>
-          <rect x="570.5" y="60" width="209" height="74" rx="6" class="c-frontend cl-type" stroke-width="1.5"/>
+          <rect x="570.5" y="60" width="209" height="74" rx="6" class="c-frontend cl-type" data-animate="node" style="--step:0" stroke-width="1.5"/>
           <path class="cl-header c-frontend" stroke="none" d="M 576.5 60 H 773.5 Q 779.5 60 779.5 66 V 104 H 570.5 V 66 Q 570.5 60 576.5 60 Z"/>
           <g aria-hidden="true" class="cl-badge">
             <circle cx="590.5" cy="82" r="8" class="c-frontend" stroke-width="1.25"/>
@@ -5079,7 +5080,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <g id="node-order" data-node-id="order" data-node-label="Order" tabindex="0" role="button" aria-label="Focus Order, Order identity, amount, and status, Class" aria-pressed="false" data-node-kind="class" data-node-sublabel="Order identity, amount, and status" data-node-context="Class" data-class-kind="class">
           <title>Order · Order identity, amount, and status · Class</title>
           <rect x="63" y="238" width="180" height="134" rx="6" class="c-mask"/>
-          <rect x="63" y="238" width="180" height="134" rx="6" class="c-backend cl-type" stroke-width="1.5"/>
+          <rect x="63" y="238" width="180" height="134" rx="6" class="c-backend cl-type" data-animate="node" style="--step:1" stroke-width="1.5"/>
           <path class="cl-header c-backend" stroke="none" d="M 69 238 H 237 Q 243 238 243 244 V 272 H 63 V 244 Q 63 238 69 238 Z"/>
           <g aria-hidden="true" class="cl-badge">
             <circle cx="83" cy="255" r="8" class="c-backend" stroke-width="1.25"/>
@@ -5102,7 +5103,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <g id="node-card_gateway" data-node-id="card_gateway" data-node-label="CardGateway" tabindex="0" role="button" aria-label="Focus CardGateway, Charges a bank card, Class" aria-pressed="false" data-node-kind="class" data-node-sublabel="Charges a bank card" data-node-context="Class" data-class-kind="class">
           <title>CardGateway · Charges a bank card · Class</title>
           <rect x="402" y="273" width="209" height="64" rx="6" class="c-mask"/>
-          <rect x="402" y="273" width="209" height="64" rx="6" class="c-backend cl-type" stroke-width="1.5"/>
+          <rect x="402" y="273" width="209" height="64" rx="6" class="c-backend cl-type" data-animate="node" style="--step:3" stroke-width="1.5"/>
           <path class="cl-header c-backend" stroke="none" d="M 408 273 H 605 Q 611 273 611 279 V 307 H 402 V 279 Q 402 273 408 273 Z"/>
           <g aria-hidden="true" class="cl-badge">
             <circle cx="422" cy="290" r="8" class="c-backend" stroke-width="1.25"/>
@@ -5119,7 +5120,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <g id="node-wallet_gateway" data-node-id="wallet_gateway" data-node-label="WalletGateway" tabindex="0" role="button" aria-label="Focus WalletGateway, Debits a stored wallet balance, Class" aria-pressed="false" data-node-kind="class" data-node-sublabel="Debits a stored wallet balance" data-node-context="Class" data-class-kind="class">
           <title>WalletGateway · Debits a stored wallet balance · Class</title>
           <rect x="739" y="273" width="209" height="64" rx="6" class="c-mask"/>
-          <rect x="739" y="273" width="209" height="64" rx="6" class="c-backend cl-type" stroke-width="1.5"/>
+          <rect x="739" y="273" width="209" height="64" rx="6" class="c-backend cl-type" data-animate="node" style="--step:4" stroke-width="1.5"/>
           <path class="cl-header c-backend" stroke="none" d="M 745 273 H 942 Q 948 273 948 279 V 307 H 739 V 279 Q 739 273 745 273 Z"/>
           <g aria-hidden="true" class="cl-badge">
             <circle cx="759" cy="290" r="8" class="c-backend" stroke-width="1.25"/>
@@ -5628,6 +5629,13 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       }
 
       function cleanExportClone(clone) {
+        // Route interaction rewrites CSS declarations through CSSOM. Normalize
+        // authored motion delays on the clone so exported bytes do not depend
+        // on whether the reader traced a route before downloading.
+        Array.prototype.forEach.call(clone.querySelectorAll('[data-animate]'), function (el) {
+          var step = el.style.getPropertyValue('--step');
+          if (step) el.setAttribute('style', el.style.cssText);
+        });
         // View transforms and neighborhood focus are HTML exploration state,
         // never part of a downloaded full-diagram artifact.
         clone.style.removeProperty('transform');
@@ -9463,6 +9471,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       var ratio = viewBox && viewBox.height > 0 ? viewBox.width / viewBox.height : 0;
       var readerFit = svg && svg.getAttribute('data-reader-fit');
       var widthFirstReading = readerFit === 'width-first';
+      var automaticSequence = widthFirstReading && svg.hasAttribute('data-sequence-column-fit');
+      var readingScroll = widthFirstReading;
       var measuredHeightFit = readerFit === 'intrinsic-height' || widthFirstReading;
       var frame = 0;
       var settleFrame = 0;
@@ -9606,11 +9616,12 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         legend.style.removeProperty('--archify-reader-legend-transform');
       }
       // Keep the original legend in its SVG: renderer hover/focus selectors and
-      // canonical export still own that same group. Only ordinary capped
-      // reading at 25–100% borrows the spare outer canvas for its legend.
+      // canonical export still own that same group. Ordinary capped reading
+      // and fitted automatic sequences borrow the outer corner at 25–100%.
       function syncLegend() {
         var cameraScale = Number(svg && svg.getAttribute('data-view-scale')) || 1;
-        if (!legend || !eligible() || html.getAttribute('data-reader-area') !== 'true' || cameraScale > 1.001) {
+        var cornerReading = html.getAttribute('data-reader-area') === 'true' || automaticSequence && !readingScroll;
+        if (!legend || !eligible() || !cornerReading || cameraScale > 1.001) {
           clearLegend();
           return;
         }
@@ -9749,11 +9760,13 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
             document.documentElement.scrollHeight,
             document.body.scrollHeight
           ) - window.innerHeight - belowFold();
-          if (overflow > 1 && !widthFirstReading && lastWidth > Math.ceil(minWidth)) {
+          // visual-check fails any page whose rounded-up height exceeds the
+          // viewport, so even a 1px remainder must be reduced or declared.
+          if (overflow > 0 && !readingScroll && lastWidth > Math.ceil(minWidth)) {
             applyWidth(Math.max(minWidth, lastWidth - overflow * ratio - 4), minWidth);
             settledCap = lastWidth;
             html.setAttribute('data-reader-overflow', 'reduced');
-          } else if (overflow > 1) {
+          } else if (overflow > 0) {
             html.setAttribute('data-reader-overflow', 'authored');
           } else {
             html.removeAttribute('data-reader-overflow');
@@ -9768,17 +9781,21 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         }
         var chrome = chromeMetrics();
         var viewportCap = Math.max(0, window.innerWidth - chrome.bodyX);
+        // Sequence first-screen fitting preserves source text sizes instead
+        // of shrinking to the shared hard readability floor.
         var readableWidth = viewBox && viewBox.width > 0
-          ? viewBox.width * minimumReadableScale() + chrome.diagramX
+          ? viewBox.width * (automaticSequence ? 1 : minimumReadableScale()) + chrome.diagramX
           : MIN_READER_WIDTH;
         var maxWidth = Math.min(MAX_READER_WIDTH, viewportCap);
-        var readableMinimumWidth = measuredHeightFit && ratio < WIDE_RATIO
+        var readableMinimumWidth = automaticSequence || measuredHeightFit && ratio < WIDE_RATIO
           ? readableWidth
           : measuredHeightFit && ratio >= WIDE_RATIO && Number.isFinite(declaredMinimumText)
             ? Math.max(MIN_READER_WIDTH, readableWidth)
             : MIN_READER_WIDTH;
         var minWidth;
-        if (measuredHeightFit && ratio < WIDE_RATIO) {
+        if (automaticSequence) {
+          minWidth = Math.min(readableMinimumWidth, maxWidth);
+        } else if (measuredHeightFit && ratio < WIDE_RATIO) {
           minWidth = Math.min(readableMinimumWidth, viewportCap);
         } else if (measuredHeightFit && ratio >= WIDE_RATIO && Number.isFinite(declaredMinimumText)) {
           minWidth = Math.min(readableMinimumWidth, maxWidth);
@@ -9814,10 +9831,13 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           outerHeight(header) + stackedBelow;
         var availableSvgHeight = Math.max(1, window.innerHeight - fixedHeight);
         var desiredWidth = availableSvgHeight * ratio + chrome.diagramX + (docked ? railExtra : 0);
-        // Long sequences and waterfall rows use the available horizontal room;
-        // ordinary page scrolling keeps their text and row spacing readable.
-        // Other diagram families retain the existing height-fit strategy.
-        if (widthFirstReading) desiredWidth = maxWidth;
+        // Compact automatic sequences fit the first screen without shrinking
+        // their authored text. Longer sequences retain reading width and page
+        // scroll; other width-first families keep their existing strategy.
+        var sequenceFits = automaticSequence && Math.min(desiredWidth, maxWidth) >=
+          readableWidth + (docked ? railExtra : 0);
+        readingScroll = widthFirstReading && !sequenceFits;
+        if (readingScroll) desiredWidth = maxWidth;
         // Only a binding enlargement cap needs a separate normal reader area.
         // Uncapped diagrams keep their existing natural height and Chrome fit.
         automaticAreaHeight = availableSvgHeight + chrome.diagramY;
