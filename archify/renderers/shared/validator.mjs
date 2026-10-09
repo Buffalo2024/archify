@@ -112,11 +112,43 @@ function additionalPropertyFixes(diagramType, error) {
   return [`remove unsupported property ${JSON.stringify(property)}`];
 }
 
+// Words agents reach for that are not spelling slips of an allowed value, so
+// edit distance cannot suggest them. Each maps to candidate values in
+// preference order; only a candidate the failing enum actually allows is used.
+const ENUM_SYNONYMS = new Map(Object.entries({
+  // timeline event kinds
+  incident: ['alert'], outage: ['alert'], error: ['alert'], failure: ['alert'], fail: ['alert'],
+  failed: ['alert'], issue: ['alert'], alarm: ['alert'], page: ['alert'], warning: ['alert'],
+  degraded: ['alert'], resolved: ['recovery'], resolve: ['recovery'], resolution: ['recovery'],
+  fixed: ['recovery'], recovered: ['recovery'], restored: ['recovery'], restore: ['recovery'],
+  mitigated: ['recovery'], deploy: ['change'], deployment: ['change'], release: ['change'],
+  rollout: ['change'], rollback: ['change'], config: ['change'], migration: ['change'],
+  mitigation: ['action'], mitigate: ['action'], investigation: ['action'], investigate: ['action'],
+  escalation: ['action'], fix: ['action'], decision: ['action'],
+  milestone: ['default'], info: ['default'], event: ['default', 'dashed'], note: ['default'],
+  // sequence message variants
+  async: ['dashed'], asynchronous: ['dashed'], callback: ['dashed'], webhook: ['dashed'],
+  notify: ['dashed'], notification: ['dashed'], response: ['return', 'action'], reply: ['return'],
+  ack: ['return'], result: ['return'], sync: ['default'], request: ['default'],
+  critical: ['emphasis'], primary: ['emphasis'], highlight: ['emphasis'], important: ['emphasis'],
+  auth: ['security'], secure: ['security'], tls: ['security'], encrypted: ['security'],
+  // architecture boundary kinds
+  vpc: ['region'], vnet: ['region'], network: ['region'], cloud: ['region'], account: ['region'],
+  zone: ['region'], az: ['region'], datacenter: ['region'], cluster: ['region'], subnet: ['security-group'],
+  firewall: ['security-group'], sg: ['security-group'], dmz: ['security-group'], 'trust-zone': ['security-group'],
+}));
+
+function synonymFor(word, options) {
+  const folded = String(word).trim().toLowerCase().replace(/[\s_]+/g, '-');
+  return (ENUM_SYNONYMS.get(folded) || []).find((option) => options.includes(option)) ?? null;
+}
+
 function enumFixes(error, data) {
   const allowed = error.params?.allowedValues || [];
   const actual = valueAt(error.instancePath, data);
+  const options = allowed.filter((value) => typeof value === 'string');
   const suggestion = typeof actual === 'string'
-    ? closestName(actual, allowed.filter((value) => typeof value === 'string'))
+    ? closestName(actual, options) ?? synonymFor(actual, options)
     : null;
   const list = allowed.map((value) => JSON.stringify(value)).join(', ');
   return [

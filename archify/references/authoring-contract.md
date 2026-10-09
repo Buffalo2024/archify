@@ -317,7 +317,7 @@ not settle viewport fit. These are repair directions, not guaranteed coordinates
 
 ### Sequence
 
-Participants are ordered by conversation role. Messages own their vertical order. Use return/async/security variants for meaning, not decoration; sequence does not use Automatic Port Spread. A segment's `from`/`to` edges must stay at least 4px off every message arrow (`message.y`): an edge along an arrow leaves the reader unable to tell which phase the message belongs to, and showcase quality reports `sequence/segment-message-border-run`. Standard retains its existing acceptance behavior.
+Participants are ordered by conversation role. Messages own their vertical order. Use the `return`, `dashed` (async, callback, webhook), `security`, and `emphasis` variants for meaning, not decoration (there is no `async` variant); sequence does not use Automatic Port Spread. A segment's `from`/`to` edges must stay at least 4px off every message arrow (`message.y`): an edge along an arrow leaves the reader unable to tell which phase the message belongs to, and showcase quality reports `sequence/segment-message-border-run`. Standard retains its existing acceptance behavior.
 
 First-draft shape: every message needs an `id`, `from`, `to`, and `label`; list messages in time order and omit `y` so the renderer spaces them (first 160, then +34, +58 after a message with a note). Set `y` (integer ≥ 160) only when `activations[]` or `segments[]` need to reference message positions; an omitted `y` continues from the previous message. `from` and `to` must be different participants — self-messages are unsupported (`sequence/self-message-unsupported`). Optional phase bands are `segments[]` with only `from`, `to`, and `label` (no segment `id`). Inventing `pos`/`size` on participants fails schema validation — order alone places them. Omit `meta.viewBox` so automatic height fits the timeline + legend (minimum 327px readable band) instead of a fixed 760px floor, and so 2–3 participant spreads pack below the 920px default when labels fit (4+ stay at 920px; long labels still widen).
 
@@ -471,7 +471,9 @@ input does not contain.
 Use `lanes` for sources or categories (release, monitoring, response); every
 event then names one. Each event's visible text is `title` (not `label`). `kind`
 (`default`, `change`, `alert`, `action`, `recovery`) only
-colours the card; inventing values such as `milestone` fails schema validation. Events are drawn in time order whatever the authored order;
+colours the card: an incident or failure is `alert`, a deploy or config change
+`change`, a mitigation step `action`, a resolution `recovery`, a milestone
+`default`; inventing values such as `incident` fails schema validation. Events are drawn in time order whatever the authored order;
 simultaneous and close events stack. By default a quiet period longer than 8×
 the median gap and 10% of the span is drawn as a fixed-width break labelled
 with the omitted duration; `layout.breaks: "none"` keeps one proportional axis.

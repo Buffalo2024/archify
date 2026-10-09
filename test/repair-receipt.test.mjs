@@ -247,7 +247,26 @@ test('repair receipt: schema fixes name allowed values, close property names and
   const kind = receipt(timelineResult).diagnostics.find((entry) => entry.code === 'schema/enum');
   assert.ok(kind, timelineResult.stdout);
   assert.match(kind.message, /got "incident"; allowed "default", "change", "alert", "action", "recovery"/);
-  assert.deepEqual(kind.supportedFixes, ['use one of "default", "change", "alert", "action", "recovery"']);
+  // "incident" is no spelling slip of an allowed kind; the semantic match is named.
+  assert.deepEqual(kind.supportedFixes, ['use "alert" (allowed: "default", "change", "alert", "action", "recovery")']);
+  timeline.events[0].kind = 'happened';
+  const unmatched = receipt(run(['validate', 'timeline', writeFixture('enum-unmatched.timeline.json', timeline), '--json']))
+    .diagnostics.find((entry) => entry.code === 'schema/enum');
+  assert.deepEqual(unmatched.supportedFixes, ['use one of "default", "change", "alert", "action", "recovery"']);
+
+  const synonyms = [
+    ['timeline', 'examples/payment-incident.timeline.json', (doc, value) => { doc.events[0].kind = value; }, 'resolved', 'recovery'],
+    ['sequence', 'examples/cache-miss-request.sequence.json', (doc, value) => { doc.messages[0].variant = value; }, 'async', 'dashed'],
+    ['architecture', 'examples/production-deployment.architecture.json', (doc, value) => { doc.boundaries[0].kind = value; }, 'VPC', 'region'],
+  ];
+  for (const [mode, example, mutate, value, expected] of synonyms) {
+    const doc = JSON.parse(fs.readFileSync(path.join(skillRoot, example), 'utf8'));
+    mutate(doc, value);
+    const diagnostic = receipt(run(['validate', mode, writeFixture(`synonym-${mode}.json`, doc), '--json']))
+      .diagnostics.find((entry) => entry.code === 'schema/enum');
+    assert.ok(diagnostic, `${mode} ${value}`);
+    assert.match(diagnostic.supportedFixes[0], new RegExp(`^use "${expected}" \\(allowed:`), `${mode} ${value}`);
+  }
 
   const workflow = JSON.parse(fs.readFileSync(path.join(skillRoot, 'examples/agent-tool-call.workflow.json'), 'utf8'));
   workflow.nodes[0].sublable = 'typo';
