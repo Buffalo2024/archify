@@ -105,6 +105,42 @@ for (const [index, c] of asArray(arch.components).entries()) {
 }
 
 // ---- Boundaries computed from the `wraps` id list ---------------------------
+// The nearest position that takes a non-member wholly outside a boundary
+// frame, clear of the frame by BOUNDARY_ESCAPE_GAP and of every other
+// component, so the diagnostic names one edit that works.
+const BOUNDARY_ESCAPE_GAP = 24;
+function boundaryEscapePosition(frame, component) {
+  const others = [...components.values()].filter((other) => other.id !== component.id);
+  const candidates = [
+    { side: 'right', pos: [frame.x + frame.width + BOUNDARY_ESCAPE_GAP, component.y] },
+    { side: 'below', pos: [component.x, frame.y + frame.height + BOUNDARY_ESCAPE_GAP] },
+    { side: 'left', pos: [frame.x - BOUNDARY_ESCAPE_GAP - component.width, component.y] },
+    { side: 'above', pos: [component.x, frame.y - BOUNDARY_ESCAPE_GAP - component.height] },
+  ].map((candidate) => ({ ...candidate, pos: candidate.pos.map((value) => Math.ceil(value)) }))
+    .filter(({ pos: [x, y] }) => x >= 0 && y >= 0)
+    .filter(({ pos: [x, y] }) => others.every((other) => (
+      x + component.width + 16 <= other.x || other.x + other.width + 16 <= x
+      || y + component.height + 16 <= other.y || other.y + other.height + 16 <= y
+    )))
+    .map((candidate) => ({
+      ...candidate,
+      distance: Math.abs(candidate.pos[0] - component.x) + Math.abs(candidate.pos[1] - component.y),
+    }))
+    .sort((a, b) => a.distance - b.distance);
+  return candidates[0] ? { side: candidates[0].side, pos: candidates[0].pos } : null;
+}
+
+// Members whose own box alone stretches the frame over the non-member: without
+// any one of them the remaining members' frame would leave it outside.
+function boundaryStretchingMembers(frame, component) {
+  const members = asArray(frame.wraps);
+  if (members.length < 2) return [];
+  return members.filter((id) => {
+    const rest = boundaryRect({ ...frame, wraps: members.filter((member) => member !== id) });
+    return rest && !rectContains(rest, component);
+  });
+}
+
 function boundaryRect(boundary) {
   const members = asArray(boundary.wraps).map((id) => components.get(id)).filter(Boolean);
   if (!members.length) return null;
@@ -669,8 +705,15 @@ function validateArchitecture() {
       const members = new Set(asArray(b.wraps));
       for (const component of components.values()) {
         if (members.has(component.id) || !rectContains(b, component)) continue;
-        const message = `Component "${component.id}" is not wrapped by boundary "${b.label}" but sits inside its frame — `
-          + 'move it outside the frame, place the wrapped members in one compact axis-aligned cluster (no empty bay for a non-member), or add it to wraps only when it truly belongs there.';
+        const escape = boundaryEscapePosition(b, component);
+        const stretchers = boundaryStretchingMembers(b, component);
+        const concrete = [
+          escape ? `move "${component.id}" to pos [${escape.pos.join(', ')}] (${escape.side} of the frame)` : null,
+        ].filter(Boolean);
+        const message = `Component "${component.id}" is not wrapped by boundary "${b.label}" but sits inside its frame `
+          + `(frame x ${Math.round(b.x)}–${Math.round(b.x + b.width)}, y ${Math.round(b.y)}–${Math.round(b.y + b.height)}) — `
+          + (concrete.length ? `${concrete.join(', ')}; ` : '')
+          + 'otherwise move it outside the frame, place the wrapped members in one compact axis-aligned cluster (no empty bay for a non-member), or add it to wraps only when it truly belongs there.';
         problems.push(message);
         diagnostics.push({
           code: 'layout/boundary-encloses-non-member',
@@ -680,9 +723,13 @@ function validateArchitecture() {
           evidence: {
             bounds: { x: b.x, y: b.y, width: b.width, height: b.height },
             component: componentBox(component),
+            ...(escape ? { escapePos: escape.pos, escapeSide: escape.side } : {}),
+            stretchingMembers: stretchers,
           },
           supportedFixes: [
-            `move "${component.id}" outside the boundary frame`,
+            escape
+              ? `move "${component.id}" to pos [${escape.pos.join(', ')}], ${escape.side} of the boundary frame`
+              : `move "${component.id}" outside the boundary frame`,
             'reposition the wrapped members into one compact axis-aligned cluster (no empty bay) that leaves non-members outside',
           ],
         });
@@ -860,13 +907,36 @@ function validateArchitecture() {
     const requiredGap = Math.ceil(rect.width + 16);
     if (arch.meta?.quality_profile === 'showcase' && !labelPinned && blockedComponents.length
         && shortHorizontalGap != null && shortHorizontalGap < requiredGap) {
-      const message = `Label "${rect.label}" has only ${Math.round(shortHorizontalGap)}px between "${rect.relation.from}" and "${rect.relation.to}"; it needs at least ${requiredGap}px to stay beside its route — increase that clear gap or place the connected nodes on another readable row, preserving the label.`;
+      // Shifting the right-hand node and everything at or beyond its left edge
+      // keeps every other gap, route and frame shape intact, so it is one edit
+      // that works without re-planning the rest of the canvas.
+      const ends = [components.get(rect.relation.from), components.get(rect.relation.to)].filter(Boolean)
+        .sort((a, b) => a.x - b.x);
+      const shiftPx = Math.ceil(requiredGap - shortHorizontalGap);
+      const rightNode = ends.length === 2 ? ends[1] : null;
+      const shifted = rightNode
+        ? [...components.values()].filter((c) => c.x >= rightNode.x - 0.0001).map((c) => c.id)
+        : [];
+      const shiftFix = rightNode
+        ? `shift "${rightNode.id}" right by ${shiftPx}px to pos [${Math.round(rightNode.x + shiftPx)}, ${Math.round(rightNode.y)}]`
+          + (shifted.length > 1 ? `, together with every component at x >= ${Math.round(rightNode.x)} (${shifted.filter((id) => id !== rightNode.id).map((id) => `"${id}"`).join(', ')})` : '')
+        : null;
+      const message = `Label "${rect.label}" has only ${Math.round(shortHorizontalGap)}px between "${rect.relation.from}" and "${rect.relation.to}"; it needs at least ${requiredGap}px to stay beside its route — `
+        + (shiftFix ? `${shiftFix}, ` : '')
+        + 'increase that clear gap or place the connected nodes on another readable row, preserving the label.';
       problems.push(message);
       diagnostics.push({
         code: 'composition/label-gap', severity: 'error', message,
         subject: { diagramType: 'architecture', collection: 'connections', id: rect.relation.id, from: rect.relation.from, to: rect.relation.to },
-        evidence: { clearGapPx: shortHorizontalGap, minimumGapPx: requiredGap, labelWidthPx: rect.width, obstacles: blockedComponents.map(c => c.id) },
-        supportedFixes: [`increase the clear gap between the connected nodes to at least ${requiredGap}px`, 'reposition the connected nodes together while preserving the full relationship label'],
+        evidence: {
+          clearGapPx: shortHorizontalGap, minimumGapPx: requiredGap, labelWidthPx: rect.width, obstacles: blockedComponents.map(c => c.id),
+          ...(rightNode ? { shiftPx, shiftComponents: shifted } : {}),
+        },
+        supportedFixes: [
+          ...(shiftFix ? [shiftFix] : []),
+          `increase the clear gap between the connected nodes to at least ${requiredGap}px`,
+          'reposition the connected nodes together while preserving the full relationship label',
+        ],
       });
     } else {
       for (const c of blockedComponents) {

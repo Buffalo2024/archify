@@ -194,3 +194,84 @@ test('architecture: non-member enclosure keeps standard compatibility and reject
     assert.equal(enclosure.length, quality === 'standard' ? 0 : 1);
   }
 });
+
+// A first draft placed the external LLM in the corner its boundary frame
+// spans (n1-arch-rag-en). "Move it outside the frame" left the author to
+// measure the frame; the diagnostic now names a verified position.
+test('architecture: a non-member enclosure names a clear position that resolves it', (t) => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'archify-boundary-escape-'));
+  t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+  const candidate = {
+    schema_version: 1,
+    diagram_type: 'architecture',
+    meta: { title: 'Escape', output: 'escape.html', quality_profile: 'showcase' },
+    components: [
+      { id: 'api', type: 'backend', label: 'API', pos: [40, 40], size: [140, 60] },
+      { id: 'llm', type: 'external', label: 'LLM', pos: [280, 40], size: [140, 60] },
+      { id: 'store', type: 'database', label: 'Store', pos: [40, 200], size: [140, 60] },
+      { id: 'worker', type: 'backend', label: 'Worker', pos: [280, 200], size: [140, 60] },
+    ],
+    boundaries: [{ kind: 'region', label: 'Cloud', wraps: ['api', 'store', 'worker'] }],
+    connections: [
+      { from: 'api', to: 'llm' },
+      { from: 'api', to: 'store' },
+      { from: 'worker', to: 'store' },
+    ],
+  };
+  const input = path.join(tmp, 'escape.json');
+  fs.writeFileSync(input, JSON.stringify(candidate));
+  const first = validate('architecture', input);
+  assert.equal(first.status, 1);
+  const issue = first.receipt.diagnostics.find((entry) => entry.code === 'layout/boundary-encloses-non-member');
+  assert.ok(issue, JSON.stringify(first.receipt.diagnostics, null, 2));
+  assert.equal(issue.subject.component, 'llm');
+  assert.ok(Array.isArray(issue.evidence.escapePos), JSON.stringify(issue.evidence));
+  assert.match(issue.supportedFixes[0], new RegExp(`pos \\[${issue.evidence.escapePos.join(', ')}\\]`));
+  // Each listed member alone stretches the frame over the non-member.
+  assert.deepEqual(issue.evidence.stretchingMembers, ['api', 'worker']);
+
+  candidate.components.find((component) => component.id === 'llm').pos = issue.evidence.escapePos;
+  fs.writeFileSync(input, JSON.stringify(candidate));
+  const repaired = validate('architecture', input);
+  assert.equal(
+    (repaired.receipt.diagnostics || []).some((entry) => entry.code === 'layout/boundary-encloses-non-member'),
+    false,
+    JSON.stringify(repaired.receipt.diagnostics, null, 2),
+  );
+});
+
+// arch-cicd-en and arch-video-en budgeted a fixed 70px gap for longer labels.
+// The diagnostic now names one shift that keeps every other gap intact.
+test('architecture: a short label gap names the shift that clears it', (t) => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'archify-label-gap-shift-'));
+  t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+  const candidate = {
+    schema_version: 1,
+    diagram_type: 'architecture',
+    meta: { title: 'Shift', output: 'shift.html', quality_profile: 'showcase' },
+    components: [
+      { id: 'cd', type: 'backend', label: 'Deployer', pos: [40, 40], size: [140, 60] },
+      { id: 'k8s', type: 'cloud', label: 'Cluster', pos: [250, 40], size: [140, 60] },
+      { id: 'registry', type: 'database', label: 'Registry', pos: [250, 180], size: [140, 60] },
+    ],
+    connections: [
+      { from: 'cd', to: 'k8s', label: 'apply manifests' },
+      { from: 'k8s', to: 'registry', label: 'pull' },
+    ],
+  };
+  const input = path.join(tmp, 'shift.json');
+  fs.writeFileSync(input, JSON.stringify(candidate));
+  const first = validate('architecture', input);
+  const issue = first.receipt.diagnostics?.find((entry) => entry.code === 'composition/label-gap');
+  assert.ok(issue, JSON.stringify(first.receipt.diagnostics, null, 2));
+  assert.equal(issue.evidence.shiftPx, issue.evidence.minimumGapPx - issue.evidence.clearGapPx);
+  assert.deepEqual(issue.evidence.shiftComponents, ['k8s', 'registry']);
+  assert.match(issue.supportedFixes[0], /^shift "k8s" right by \d+px to pos \[\d+, 40\]/);
+
+  for (const component of candidate.components) {
+    if (issue.evidence.shiftComponents.includes(component.id)) component.pos[0] += issue.evidence.shiftPx;
+  }
+  fs.writeFileSync(input, JSON.stringify(candidate));
+  const repaired = validate('architecture', input);
+  assert.equal(repaired.status, 0, JSON.stringify(repaired.receipt.diagnostics, null, 2));
+});
