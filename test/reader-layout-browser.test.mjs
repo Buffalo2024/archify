@@ -634,6 +634,9 @@ test('Reader Layout preserves final-artifact behavior across its ownership bound
     await t.test('compact automatic Sequence fits the initial desktop stage without shrinking source text', async () => {
       const compact = JSON.parse(fs.readFileSync(path.resolve(skillRoot,
         '../test/fixtures/reader-readability/compact-roundtrip.sequence.json'), 'utf8'));
+      // Wrapped notes need 6px more room before the Accepted label. Preserve
+      // all annotations and the remaining timeline while exercising Reader fit.
+      compact.messages.find(message => message.id === 'accepted').y = 236;
       function renderSequence(name, doc) {
         const input = path.join(scratch, `${name}.json`);
         const output = path.join(scratch, `${name}.html`);
