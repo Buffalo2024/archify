@@ -397,8 +397,6 @@ test('Motion Governor preserves mode, ownership, continuous Live flow and real c
         root.removeAttribute(attr); await frame(); states.push(visible());
       }
       const token=m.claim('test'); states.push(hidden()); m.release(token); states.push(visible());
-      window.dispatchEvent(new Event('beforeprint')); states.push(hidden());
-      window.dispatchEvent(new Event('afterprint')); states.push(visible());
       Object.defineProperty(document,'hidden',{configurable:true,value:true}); document.dispatchEvent(new Event('visibilitychange')); states.push(hidden());
       Object.defineProperty(document,'hidden',{configurable:true,value:false}); document.dispatchEvent(new Event('visibilitychange')); states.push(visible()); delete document.hidden;
       return {states,count:document.querySelectorAll('.ambient-edge-flow').length,initial:count};
@@ -408,8 +406,43 @@ test('Motion Governor preserves mode, ownership, continuous Live flow and real c
     assert.equal(await run(`document.querySelector('.ambient-edge-flow').getAnimations().length`), 0);
     await media(false); await run(`motionWait(()=>document.querySelector('.ambient-edge-flow').getAnimations().length>0)`);
     await send('Emulation.setEmulatedMedia', {media:'print'});
-    assert.equal(await run(`getComputedStyle(document.querySelector('.ambient-edge-flow')).display`), 'none');
+    assert.equal(await run(`Array.from(document.querySelectorAll('.ambient-edge-flow')).every(e=>getComputedStyle(e).display==='none'&&e.getAnimations().length===0)`), true);
+    assert.equal((await snapshot('print-css')).mode, 'live');
     await media(false);
+    await run(`motionWait(()=>document.querySelector('.ambient-edge-flow').getAnimations().some(a=>a.playState==='running'))`);
+    assert.equal((await snapshot('screen-css-return')).mode, 'live');
+    assert.equal(await run(`document.querySelectorAll('.ambient-edge-flow').length`), guards.initial);
+  });
+
+  await t.test('printing keeps Governor Live and preserves the existing Route print policy', async () => {
+    await load();
+    assert.equal(await run(`(() => {
+      Archify.routeProbe.begin({source:'users'}); Archify.routeProbe.choose('db');
+      window.printPauses=[]; window.printPauseOriginal=Archify.routeProbe.pauseJourney;
+      Archify.routeProbe.pauseJourney=function(options){printPauses.push(options);return printPauseOriginal(options);};
+      return Archify.routeProbe.playJourney();
+    })()`), true);
+    await send('Emulation.setEmulatedMedia', {media:'print'});
+    const printing=await run(`({playing:Archify.routeProbe.isJourneyPlaying(),mode:Archify.motionGovernor.mode(),owner:Archify.motionGovernor.owner(),
+      pausedCalls:printPauses,flowHidden:Array.from(document.querySelectorAll('.ambient-edge-flow')).every(e=>getComputedStyle(e).display==='none'&&e.getAnimations().length===0)})`);
+    assert.deepEqual(printing,{playing:true,mode:'live',owner:'route',pausedCalls:[],flowHidden:true});
+    // Route already pauses itself for print through its private handler. The
+    // Governor must neither add a hidden-page pause nor change reader intent.
+    const beforePrint=await run(`(() => {
+      window.dispatchEvent(new Event('beforeprint'));
+      return {playing:Archify.routeProbe.isJourneyPlaying(),mode:Archify.motionGovernor.mode(),pausedCalls:printPauses};
+    })()`);
+    assert.deepEqual(beforePrint,{playing:false,mode:'live',pausedCalls:[]});
+    await media(false);
+    const returned=await run(`(() => {
+      window.dispatchEvent(new Event('afterprint'));
+      const state={playing:Archify.routeProbe.isJourneyPlaying(),mode:Archify.motionGovernor.mode(),owner:Archify.motionGovernor.owner(),pausedCalls:printPauses,
+        yielding:Array.from(document.querySelectorAll('.ambient-edge-flow')).every(e=>e.getAnimations().length===0)};
+      Archify.routeProbe.pauseJourney=printPauseOriginal; Archify.routeProbe.clear({updateUrl:false});
+      return state;
+    })()`);
+    assert.deepEqual(returned,{playing:false,mode:'live',owner:'route',pausedCalls:[],yielding:true});
+    await run(`motionWait(()=>document.querySelector('.ambient-edge-flow').getAnimations().some(a=>a.playState==='running'))`);
   });
 
   await t.test('canonical SVG and PNG bytes are identical in Live, Still and resumed Live', async () => {

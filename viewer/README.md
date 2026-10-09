@@ -851,11 +851,11 @@ Stale/repeated releases return false. Claims are not a stack of resumable owners
 
 | State / dependency | Ownership and coordination |
 | --- | --- |
-| Reader pause, suspension table, previous effective-pause value | Governor owns these. Ordinary suspend keys count references; each returned release function succeeds once. Visibility and print directly set/delete their own table keys, so callers using either key do not have independent counting guarantees. |
+| Reader pause, suspension table, previous effective-pause value | Governor owns these. Ordinary suspend keys count references; each returned release function succeeds once. Visibility directly sets/deletes the same table's `visibility` key, so a caller using that key does not have independent counting guarantees. |
 | Explicit/derived owner, token and cleanup callback | Governor owns arbitration. Route provides cleanup; their decorations and transaction state remain caller-owned. |
 | Root motion/owner/capable/document-hidden attributes and button hidden/disabled/ARIA/text/title | Governor writes them; CSS consumes them. System preference, suspension, reader pause and owner retain their existing label precedence. Only the system preference disables the button. |
 | Flow overlays, node-entry started flag and pending node set | Governor creates one decorative path per authored connection. CSS repeats its flow while eligible. Node entrance runs at most once and finishes on its animation boundary or suppression. |
-| Button/media/visibility/print/mutation/animation subscriptions | Page lifetime, no destroy method. Observers watch the explicit SVG owner attributes and root embed/share context. |
+| Button/media/visibility/mutation/animation subscriptions | Page lifetime, no destroy method. Observers watch the explicit SVG owner attributes and root embed/share context. |
 
 Entering effective pause pauses Route Journey
 with elapsed time preserved, using the existing reason priority and call order.
@@ -865,8 +865,12 @@ does not imply a universal once-only guarantee under synchronous caller reentry.
 Connection flow uses adjacent runtime paths with the authored geometry and
 clipping, without graph identity or relationship attributes. Geometry queries
 exclude these paths. The authored lines, dashes and arrowheads remain visible.
-Pause, semantic ownership, reduced motion, embed/share mode, document hiding and
-printing hide and stop flow; clearing those guards restores it. Folded tree edges
+Pause, semantic ownership, reduced motion, embed/share mode and document hiding
+hide and stop flow; clearing those guards restores it. Print CSS independently
+hides and stops flow, leaving Route Journey's existing print policy in Route.
+Route retains its own beforeprint pause with elapsed time preserved and manual
+resume after printing.
+Folded tree edges
 hide their adjacent flow paths. No per-frame JavaScript or repeated DOM allocation
 is needed. Diagrams without connections retain bounded node entrance only.
 

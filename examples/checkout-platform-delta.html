@@ -12074,8 +12074,6 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         else if (typeof motionQuery.addListener === &#39;function&#39;) motionQuery.addListener(render);
       }
       document.addEventListener(&#39;visibilitychange&#39;, syncVisibility);
-      window.addEventListener(&#39;beforeprint&#39;, function () { suspensions.print = true; render(); });
-      window.addEventListener(&#39;afterprint&#39;, function () { delete suspensions.print; render(); });
       if (typeof MutationObserver !== &#39;undefined&#39;) {
         var contextObserver = new MutationObserver(render);
         contextObserver.observe(html, { attributes: true, attributeFilter: [&#39;data-embed&#39;, &#39;data-share-playback&#39;] });
@@ -26427,8 +26425,6 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         else if (typeof motionQuery.addListener === &#39;function&#39;) motionQuery.addListener(render);
       }
       document.addEventListener(&#39;visibilitychange&#39;, syncVisibility);
-      window.addEventListener(&#39;beforeprint&#39;, function () { suspensions.print = true; render(); });
-      window.addEventListener(&#39;afterprint&#39;, function () { delete suspensions.print; render(); });
       if (typeof MutationObserver !== &#39;undefined&#39;) {
         var contextObserver = new MutationObserver(render);
         contextObserver.observe(html, { attributes: true, attributeFilter: [&#39;data-embed&#39;, &#39;data-share-playback&#39;] });

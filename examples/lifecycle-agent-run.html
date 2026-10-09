@@ -7481,8 +7481,6 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         else if (typeof motionQuery.addListener === 'function') motionQuery.addListener(render);
       }
       document.addEventListener('visibilitychange', syncVisibility);
-      window.addEventListener('beforeprint', function () { suspensions.print = true; render(); });
-      window.addEventListener('afterprint', function () { delete suspensions.print; render(); });
       if (typeof MutationObserver !== 'undefined') {
         var contextObserver = new MutationObserver(render);
         contextObserver.observe(html, { attributes: true, attributeFilter: ['data-embed', 'data-share-playback'] });
