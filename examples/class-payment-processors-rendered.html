@@ -4974,7 +4974,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     <!-- Main Diagram -->
     <div class="diagram-container" data-detail-level="read"
          data-preset-badge-editorial-plate="ARCHIFY / PLATE 04">
-      <svg viewBox="0 0 1640 918" role="img" lang="en" aria-labelledby="archify-diagram-title archify-diagram-description" data-preset="classic" data-quality-profile="showcase" data-class-ui="" data-reader-fit="intrinsic-height" data-reader-min-text="7.5">
+      <svg viewBox="0 0 1640 918" role="img" lang="en" aria-labelledby="archify-diagram-title archify-diagram-description" data-animation="trace" data-preset="classic" data-quality-profile="showcase" data-class-ui="" data-reader-fit="intrinsic-height" data-reader-min-text="7.5">
         <title id="archify-diagram-title">Payment processor hierarchy</title>
         <desc id="archify-diagram-description">Illustrative module: one processor contract, a retrying base class, and five provider implementations.</desc>
         <!-- Definitions -->
@@ -5038,22 +5038,22 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <rect width="100%" height="100%" fill="url(#grid)" />
 
         <!-- Relationships (before types for correct z-order) -->
-        <path data-edge-from="checkout_orchestrator" data-edge-to="processor_registry" data-edge-label="selects via" data-edge-key="0" data-edge-id="orchestrator_registry" data-class-relationship="association" data-composition-points="332,167;460,167" d="M 332 167 L 460 167" class="a-default cl-relationship" stroke-width="1.5" marker-end="url(#cl-open)"/>
-        <path data-edge-from="processor_registry" data-edge-to="payment_processor" data-edge-label="holds" data-edge-key="1" data-edge-id="registry_processors" data-class-relationship="aggregation" data-composition-points="760,167;1102,167" d="M 760 167 L 1102 167" class="a-default cl-relationship" stroke-width="1.5" marker-start="url(#cl-diamond-hollow)"/>
-        <path data-edge-from="checkout_orchestrator" data-edge-to="order" data-edge-label="updates" data-edge-key="2" data-edge-id="orchestrator_order" data-class-relationship="dependency" data-composition-points="182,274;182,378" d="M 182 274 L 182 378" class="a-default cl-relationship cl-dashed" stroke-width="1.5" marker-end="url(#cl-open)"/>
-        <path data-edge-from="order" data-edge-to="line_item" data-edge-label="owns lines" data-edge-key="3" data-edge-id="order_lines" data-class-relationship="composition" data-composition-points="182,612;182,721" d="M 182 612 L 182 721" class="a-default cl-relationship" stroke-width="1.5" marker-start="url(#cl-diamond-filled)"/>
-        <path data-edge-from="order" data-edge-to="payment_status" data-edge-key="4" data-edge-id="order_status" data-class-relationship="association" data-composition-points="332,495;517,495" d="M 332 495 L 517 495" class="a-default cl-relationship" stroke-width="1.5" marker-end="url(#cl-open)"/>
-        <path data-edge-from="retrying_processor" data-edge-to="payment_processor" data-edge-key="5" data-edge-id="retrying_implements" data-class-relationship="realization" data-class-bus="payment_processor" data-motion-path="M 1038 383 L 1038 347 Q 1038 339 1046 339 L 1244 339 Q 1252 339 1252 331 L 1252 294" data-composition-points="1038,383;1038,339;1252,339;1252,294" d="M 1252 294 L 1252 331 Q 1252 339 1244 339 L 1046 339 Q 1038 339 1038 347 L 1038 383" class="a-default cl-relationship cl-dashed" stroke-width="1.5" marker-start="url(#cl-triangle-start)"/>
-        <path data-edge-from="bank_transfer" data-edge-to="payment_processor" data-edge-key="6" data-edge-id="bank_implements" data-class-relationship="realization" data-class-bus="payment_processor" data-motion-path="M 1466 413 L 1466 347 Q 1466 339 1458 339 L 1260 339 Q 1252 339 1252 331 L 1252 294" data-composition-points="1466,413;1466,339;1252,339;1252,294" d="M 1252 294 L 1252 331 Q 1252 339 1260 339 L 1458 339 Q 1466 339 1466 347 L 1466 413" class="a-default cl-relationship cl-dashed" stroke-width="1.5" marker-start="url(#cl-triangle-start)"/>
-        <path data-edge-from="stripe_card" data-edge-to="retrying_processor" data-edge-key="7" data-edge-id="stripe_extends" data-class-relationship="inheritance" data-class-bus="retrying_processor" data-motion-path="M 610 726 L 610 660 Q 610 652 618 652 L 1030 652 Q 1038 652 1038 644 L 1038 607" data-composition-points="610,726;610,652;1038,652;1038,607" d="M 1038 607 L 1038 644 Q 1038 652 1030 652 L 618 652 Q 610 652 610 660 L 610 726" class="a-default cl-relationship" stroke-width="1.5" marker-start="url(#cl-triangle-start)"/>
-        <path data-edge-from="adyen_card" data-edge-to="retrying_processor" data-edge-key="8" data-edge-id="adyen_extends" data-class-relationship="inheritance" data-class-bus="retrying_processor" data-motion-path="M 1038 726 L 1038 607" data-composition-points="1038,726;1038,607" d="M 1038 607 L 1038 726" class="a-default cl-relationship" stroke-width="1.5" marker-start="url(#cl-triangle-start)"/>
-        <path data-edge-from="paypal_wallet" data-edge-to="retrying_processor" data-edge-key="9" data-edge-id="paypal_extends" data-class-relationship="inheritance" data-class-bus="retrying_processor" data-motion-path="M 1466 696 L 1466 660 Q 1466 652 1458 652 L 1046 652 Q 1038 652 1038 644 L 1038 607" data-composition-points="1466,696;1466,652;1038,652;1038,607" d="M 1038 607 L 1038 644 Q 1038 652 1046 652 L 1458 652 Q 1466 652 1466 660 L 1466 696" class="a-default cl-relationship" stroke-width="1.5" marker-start="url(#cl-triangle-start)"/>
+        <path data-edge-from="checkout_orchestrator" data-edge-to="processor_registry" data-edge-label="selects via" data-edge-key="0" data-edge-id="orchestrator_registry" data-class-relationship="association" data-composition-points="332,167;460,167" d="M 332 167 L 460 167" class="a-default cl-relationship" data-animate="edge" style="--step:0" stroke-width="1.5" marker-end="url(#cl-open)"/>
+        <path data-edge-from="processor_registry" data-edge-to="payment_processor" data-edge-label="holds" data-edge-key="1" data-edge-id="registry_processors" data-class-relationship="aggregation" data-composition-points="760,167;1102,167" d="M 760 167 L 1102 167" class="a-default cl-relationship" data-animate="edge" style="--step:1" stroke-width="1.5" marker-start="url(#cl-diamond-hollow)"/>
+        <path data-edge-from="checkout_orchestrator" data-edge-to="order" data-edge-label="updates" data-edge-key="2" data-edge-id="orchestrator_order" data-class-relationship="dependency" data-composition-points="182,274;182,378" d="M 182 274 L 182 378" class="a-default cl-relationship cl-dashed" data-animate="edge" style="--step:2" stroke-width="1.5" marker-end="url(#cl-open)"/>
+        <path data-edge-from="order" data-edge-to="line_item" data-edge-label="owns lines" data-edge-key="3" data-edge-id="order_lines" data-class-relationship="composition" data-composition-points="182,612;182,721" d="M 182 612 L 182 721" class="a-default cl-relationship" data-animate="edge" style="--step:3" stroke-width="1.5" marker-start="url(#cl-diamond-filled)"/>
+        <path data-edge-from="order" data-edge-to="payment_status" data-edge-key="4" data-edge-id="order_status" data-class-relationship="association" data-composition-points="332,495;517,495" d="M 332 495 L 517 495" class="a-default cl-relationship" data-animate="edge" style="--step:4" stroke-width="1.5" marker-end="url(#cl-open)"/>
+        <path data-edge-from="retrying_processor" data-edge-to="payment_processor" data-edge-key="5" data-edge-id="retrying_implements" data-class-relationship="realization" data-class-bus="payment_processor" data-motion-path="M 1038 383 L 1038 347 Q 1038 339 1046 339 L 1244 339 Q 1252 339 1252 331 L 1252 294" data-composition-points="1038,383;1038,339;1252,339;1252,294" d="M 1252 294 L 1252 331 Q 1252 339 1244 339 L 1046 339 Q 1038 339 1038 347 L 1038 383" class="a-default cl-relationship cl-dashed" data-animate="edge" style="--step:5" stroke-width="1.5" marker-start="url(#cl-triangle-start)"/>
+        <path data-edge-from="bank_transfer" data-edge-to="payment_processor" data-edge-key="6" data-edge-id="bank_implements" data-class-relationship="realization" data-class-bus="payment_processor" data-motion-path="M 1466 413 L 1466 347 Q 1466 339 1458 339 L 1260 339 Q 1252 339 1252 331 L 1252 294" data-composition-points="1466,413;1466,339;1252,339;1252,294" d="M 1252 294 L 1252 331 Q 1252 339 1260 339 L 1458 339 Q 1466 339 1466 347 L 1466 413" class="a-default cl-relationship cl-dashed" data-animate="edge" style="--step:6" stroke-width="1.5" marker-start="url(#cl-triangle-start)"/>
+        <path data-edge-from="stripe_card" data-edge-to="retrying_processor" data-edge-key="7" data-edge-id="stripe_extends" data-class-relationship="inheritance" data-class-bus="retrying_processor" data-motion-path="M 610 726 L 610 660 Q 610 652 618 652 L 1030 652 Q 1038 652 1038 644 L 1038 607" data-composition-points="610,726;610,652;1038,652;1038,607" d="M 1038 607 L 1038 644 Q 1038 652 1030 652 L 618 652 Q 610 652 610 660 L 610 726" class="a-default cl-relationship" data-animate="edge" style="--step:7" stroke-width="1.5" marker-start="url(#cl-triangle-start)"/>
+        <path data-edge-from="adyen_card" data-edge-to="retrying_processor" data-edge-key="8" data-edge-id="adyen_extends" data-class-relationship="inheritance" data-class-bus="retrying_processor" data-motion-path="M 1038 726 L 1038 607" data-composition-points="1038,726;1038,607" d="M 1038 607 L 1038 726" class="a-default cl-relationship" data-animate="edge" style="--step:8" stroke-width="1.5" marker-start="url(#cl-triangle-start)"/>
+        <path data-edge-from="paypal_wallet" data-edge-to="retrying_processor" data-edge-key="9" data-edge-id="paypal_extends" data-class-relationship="inheritance" data-class-bus="retrying_processor" data-motion-path="M 1466 696 L 1466 660 Q 1466 652 1458 652 L 1046 652 Q 1038 652 1038 644 L 1038 607" data-composition-points="1466,696;1466,652;1038,652;1038,607" d="M 1038 607 L 1038 644 Q 1038 652 1046 652 L 1458 652 Q 1466 652 1466 660 L 1466 696" class="a-default cl-relationship" data-animate="edge" style="--step:9" stroke-width="1.5" marker-start="url(#cl-triangle-start)"/>
 
         <!-- Types -->
         <g id="node-checkout_orchestrator" data-node-id="checkout_orchestrator" data-node-label="CheckoutOrchestrator" tabindex="0" role="button" aria-label="Focus CheckoutOrchestrator, Runs one checkout from order to receipt, Class" aria-pressed="false" data-node-kind="class" data-node-sublabel="Runs one checkout from order to receipt" data-node-context="Class" data-class-kind="class">
           <title>CheckoutOrchestrator · Runs one checkout from order to receipt · Class</title>
           <rect x="32" y="60" width="300" height="214" rx="6" class="c-mask"/>
-          <rect x="32" y="60" width="300" height="214" rx="6" class="c-backend cl-type" stroke-width="1.5"/>
+          <rect x="32" y="60" width="300" height="214" rx="6" class="c-backend cl-type" data-animate="node" style="--step:1" stroke-width="1.5"/>
           <path class="cl-header c-backend" stroke="none" d="M 38 60 H 326 Q 332 60 332 66 V 94 H 32 V 66 Q 32 60 38 60 Z"/>
           <g aria-hidden="true" class="cl-badge">
             <circle cx="52" cy="77" r="8" class="c-backend" stroke-width="1.25"/>
@@ -5080,7 +5080,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <g id="node-processor_registry" data-node-id="processor_registry" data-node-label="ProcessorRegistry" tabindex="0" role="button" aria-label="Focus ProcessorRegistry, Selects a processor for a payment method, Class" aria-pressed="false" data-node-kind="class" data-node-sublabel="Selects a processor for a payment method" data-node-context="Class" data-class-kind="class">
           <title>ProcessorRegistry · Selects a processor for a payment method · Class</title>
           <rect x="460" y="90" width="300" height="154" rx="6" class="c-mask"/>
-          <rect x="460" y="90" width="300" height="154" rx="6" class="c-backend cl-type" stroke-width="1.5"/>
+          <rect x="460" y="90" width="300" height="154" rx="6" class="c-backend cl-type" data-animate="node" style="--step:0" stroke-width="1.5"/>
           <path class="cl-header c-backend" stroke="none" d="M 466 90 H 754 Q 760 90 760 96 V 124 H 460 V 96 Q 460 90 466 90 Z"/>
           <g aria-hidden="true" class="cl-badge">
             <circle cx="480" cy="107" r="8" class="c-backend" stroke-width="1.25"/>
@@ -5104,7 +5104,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <g id="node-payment_processor" data-node-id="payment_processor" data-node-label="PaymentProcessor" tabindex="0" role="button" aria-label="Focus PaymentProcessor, Authorize, capture, and refund contract, Interface" aria-pressed="false" data-node-kind="interface" data-node-sublabel="Authorize, capture, and refund contract" data-node-context="Interface" data-class-kind="interface">
           <title>PaymentProcessor · Authorize, capture, and refund contract · Interface</title>
           <rect x="1102" y="40" width="300" height="254" rx="6" class="c-mask"/>
-          <rect x="1102" y="40" width="300" height="254" rx="6" class="c-frontend cl-type" stroke-width="1.5"/>
+          <rect x="1102" y="40" width="300" height="254" rx="6" class="c-frontend cl-type" data-animate="node" style="--step:1" stroke-width="1.5"/>
           <path class="cl-header c-frontend" stroke="none" d="M 1108 40 H 1396 Q 1402 40 1402 46 V 84 H 1102 V 46 Q 1102 40 1108 40 Z"/>
           <g aria-hidden="true" class="cl-badge">
             <circle cx="1122" cy="62" r="8" class="c-frontend" stroke-width="1.25"/>
@@ -5130,7 +5130,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <g id="node-order" data-node-id="order" data-node-label="Order" tabindex="0" role="button" aria-label="Focus Order, Aggregate root for one purchase, Class" aria-pressed="false" data-node-kind="class" data-node-sublabel="Aggregate root for one purchase" data-node-context="Class" data-class-kind="class">
           <title>Order · Aggregate root for one purchase · Class</title>
           <rect x="32" y="378" width="300" height="234" rx="6" class="c-mask"/>
-          <rect x="32" y="378" width="300" height="234" rx="6" class="c-backend cl-type" stroke-width="1.5"/>
+          <rect x="32" y="378" width="300" height="234" rx="6" class="c-backend cl-type" data-animate="node" style="--step:2" stroke-width="1.5"/>
           <path class="cl-header c-backend" stroke="none" d="M 38 378 H 326 Q 332 378 332 384 V 412 H 32 V 384 Q 32 378 38 378 Z"/>
           <g aria-hidden="true" class="cl-badge">
             <circle cx="52" cy="395" r="8" class="c-backend" stroke-width="1.25"/>
@@ -5158,7 +5158,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <g id="node-payment_status" data-node-id="payment_status" data-node-label="PaymentStatus" tabindex="0" role="button" aria-label="Focus PaymentStatus, Lifecycle of the order&#39;s payment, Enumeration" aria-pressed="false" data-node-kind="enum" data-node-sublabel="Lifecycle of the order&#39;s payment" data-node-context="Enumeration" data-class-kind="enum">
           <title>PaymentStatus · Lifecycle of the order&#39;s payment · Enumeration</title>
           <rect x="517" y="418" width="186" height="154" rx="6" class="c-mask"/>
-          <rect x="517" y="418" width="186" height="154" rx="6" class="c-messagebus cl-type" stroke-width="1.5"/>
+          <rect x="517" y="418" width="186" height="154" rx="6" class="c-messagebus cl-type" data-animate="node" style="--step:4" stroke-width="1.5"/>
           <path class="cl-header c-messagebus" stroke="none" d="M 523 418 H 697 Q 703 418 703 424 V 462 H 517 V 424 Q 517 418 523 418 Z"/>
           <g aria-hidden="true" class="cl-badge">
             <circle cx="537" cy="440" r="8" class="c-messagebus" stroke-width="1.25"/>
@@ -5179,7 +5179,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <g id="node-retrying_processor" data-node-id="retrying_processor" data-node-label="RetryingProcessorBase" tabindex="0" role="button" aria-label="Focus RetryingProcessorBase, Shared retry, timeout, and idempotency handling, Abstract class" aria-pressed="false" data-node-kind="abstract" data-node-sublabel="Shared retry, timeout, and idempotency handling" data-node-context="Abstract class" data-class-kind="abstract">
           <title>RetryingProcessorBase · Shared retry, timeout, and idempotency handling · Abstract class</title>
           <rect x="888" y="383" width="300" height="224" rx="6" class="c-mask"/>
-          <rect x="888" y="383" width="300" height="224" rx="6" class="c-backend cl-type" stroke-width="1.5"/>
+          <rect x="888" y="383" width="300" height="224" rx="6" class="c-backend cl-type" data-animate="node" style="--step:6" stroke-width="1.5"/>
           <path class="cl-header c-backend" stroke="none" d="M 894 383 H 1182 Q 1188 383 1188 389 V 427 H 888 V 389 Q 888 383 894 383 Z"/>
           <g aria-hidden="true" class="cl-badge">
             <circle cx="908" cy="405" r="8" class="c-backend" stroke-width="1.25"/>
@@ -5206,7 +5206,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <g id="node-bank_transfer" data-node-id="bank_transfer" data-node-label="BankTransferProcessor" tabindex="0" role="button" aria-label="Focus BankTransferProcessor, Asynchronous transfer without provider retries, Class" aria-pressed="false" data-node-kind="class" data-node-sublabel="Asynchronous transfer without provider retries" data-node-context="Class" data-class-kind="class">
           <title>BankTransferProcessor · Asynchronous transfer without provider retries · Class</title>
           <rect x="1316" y="413" width="300" height="164" rx="6" class="c-mask"/>
-          <rect x="1316" y="413" width="300" height="164" rx="6" class="c-backend cl-type" stroke-width="1.5"/>
+          <rect x="1316" y="413" width="300" height="164" rx="6" class="c-backend cl-type" data-animate="node" style="--step:7" stroke-width="1.5"/>
           <path class="cl-header c-backend" stroke="none" d="M 1322 413 H 1610 Q 1616 413 1616 419 V 447 H 1316 V 419 Q 1316 413 1322 413 Z"/>
           <g aria-hidden="true" class="cl-badge">
             <circle cx="1336" cy="430" r="8" class="c-backend" stroke-width="1.25"/>
@@ -5228,7 +5228,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <g id="node-line_item" data-node-id="line_item" data-node-label="LineItem" tabindex="0" role="button" aria-label="Focus LineItem, Immutable priced order line, Record" aria-pressed="false" data-node-kind="record" data-node-sublabel="Immutable priced order line" data-node-context="Record" data-class-kind="record">
           <title>LineItem · Immutable priced order line · Record</title>
           <rect x="92" y="721" width="180" height="114" rx="6" class="c-mask"/>
-          <rect x="92" y="721" width="180" height="114" rx="6" class="c-database cl-type" stroke-width="1.5"/>
+          <rect x="92" y="721" width="180" height="114" rx="6" class="c-database cl-type" data-animate="node" style="--step:3" stroke-width="1.5"/>
           <path class="cl-header c-database" stroke="none" d="M 98 721 H 266 Q 272 721 272 727 V 765 H 92 V 727 Q 92 721 98 721 Z"/>
           <g aria-hidden="true" class="cl-badge">
             <circle cx="112" cy="743" r="8" class="c-database" stroke-width="1.25"/>
@@ -5247,7 +5247,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <g id="node-stripe_card" data-node-id="stripe_card" data-node-label="StripeCardProcessor" tabindex="0" role="button" aria-label="Focus StripeCardProcessor, Card payments through Stripe, Class" aria-pressed="false" data-node-kind="class" data-node-sublabel="Card payments through Stripe" data-node-context="Class" data-class-kind="class">
           <title>StripeCardProcessor · Card payments through Stripe · Class</title>
           <rect x="460" y="726" width="300" height="104" rx="6" class="c-mask"/>
-          <rect x="460" y="726" width="300" height="104" rx="6" class="c-backend cl-type" stroke-width="1.5"/>
+          <rect x="460" y="726" width="300" height="104" rx="6" class="c-backend cl-type" data-animate="node" style="--step:8" stroke-width="1.5"/>
           <path class="cl-header c-backend" stroke="none" d="M 466 726 H 754 Q 760 726 760 732 V 760 H 460 V 732 Q 460 726 466 726 Z"/>
           <g aria-hidden="true" class="cl-badge">
             <circle cx="480" cy="743" r="8" class="c-backend" stroke-width="1.25"/>
@@ -5266,7 +5266,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <g id="node-adyen_card" data-node-id="adyen_card" data-node-label="AdyenCardProcessor" tabindex="0" role="button" aria-label="Focus AdyenCardProcessor, Card payments through Adyen, Class" aria-pressed="false" data-node-kind="class" data-node-sublabel="Card payments through Adyen" data-node-context="Class" data-class-kind="class">
           <title>AdyenCardProcessor · Card payments through Adyen · Class</title>
           <rect x="888" y="726" width="300" height="104" rx="6" class="c-mask"/>
-          <rect x="888" y="726" width="300" height="104" rx="6" class="c-backend cl-type" stroke-width="1.5"/>
+          <rect x="888" y="726" width="300" height="104" rx="6" class="c-backend cl-type" data-animate="node" style="--step:9" stroke-width="1.5"/>
           <path class="cl-header c-backend" stroke="none" d="M 894 726 H 1182 Q 1188 726 1188 732 V 760 H 888 V 732 Q 888 726 894 726 Z"/>
           <g aria-hidden="true" class="cl-badge">
             <circle cx="908" cy="743" r="8" class="c-backend" stroke-width="1.25"/>
@@ -5285,7 +5285,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <g id="node-paypal_wallet" data-node-id="paypal_wallet" data-node-label="PayPalWalletProcessor" tabindex="0" role="button" aria-label="Focus PayPalWalletProcessor, Wallet payments through PayPal, Class" aria-pressed="false" data-node-kind="class" data-node-sublabel="Wallet payments through PayPal" data-node-context="Class" data-class-kind="class">
           <title>PayPalWalletProcessor · Wallet payments through PayPal · Class</title>
           <rect x="1316" y="696" width="300" height="164" rx="6" class="c-mask"/>
-          <rect x="1316" y="696" width="300" height="164" rx="6" class="c-backend cl-type" stroke-width="1.5"/>
+          <rect x="1316" y="696" width="300" height="164" rx="6" class="c-backend cl-type" data-animate="node" style="--step:10" stroke-width="1.5"/>
           <path class="cl-header c-backend" stroke="none" d="M 1322 696 H 1610 Q 1616 696 1616 702 V 730 H 1316 V 702 Q 1316 696 1322 696 Z"/>
           <g aria-hidden="true" class="cl-badge">
             <circle cx="1336" cy="713" r="8" class="c-backend" stroke-width="1.25"/>
@@ -5823,6 +5823,13 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       }
 
       function cleanExportClone(clone) {
+        // Route interaction rewrites CSS declarations through CSSOM. Normalize
+        // authored motion delays on the clone so exported bytes do not depend
+        // on whether the reader traced a route before downloading.
+        Array.prototype.forEach.call(clone.querySelectorAll('[data-animate]'), function (el) {
+          var step = el.style.getPropertyValue('--step');
+          if (step) el.setAttribute('style', el.style.cssText);
+        });
         // View transforms and neighborhood focus are HTML exploration state,
         // never part of a downloaded full-diagram artifact.
         clone.style.removeProperty('transform');

@@ -14,6 +14,9 @@ The baseline capture uses the unchanged base Reader fragment in the generated
 fixture; its CSS differs only by the updated explanatory comment. No runtime
 layout values are injected. [Observed bounds](observations.json) record the
 actual browser dimensions.
+The candidate includes `dev@8a1ef5c8`'s default Live motion and export cleanup;
+its updated capture records that state. The older baseline keeps its original
+rendering state. Motion does not change this diagram's measured layout.
 
 | State | SVG size | Diagram bottom | Viewport height |
 | --- | --- | --- | --- |
@@ -55,4 +58,5 @@ that cannot fit the original text size returns to the existing reading scale;
 the threshold transition is not a continuously interpolated scale.
 
 All SVG blocks in the 44 refreshed diagram HTML artifacts are byte-identical
-to the comparison base. The change affects the outer Reader layout only.
+to the latest target base, `dev@8a1ef5c8`. The Reader change affects only the
+outer layout; upstream motion changes remain intact.

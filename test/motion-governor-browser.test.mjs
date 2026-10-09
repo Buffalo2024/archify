@@ -24,20 +24,22 @@ test('Motion Governor preserves mode, ownership, ambient completion and real cal
   const cases = {
     architecture: 'web-app.architecture.json', workflow: 'agent-tool-call.workflow.json',
     sequence: 'cache-miss-request.sequence.json', dataflow: 'product-analytics.dataflow.json',
-    lifecycle: 'agent-run.lifecycle.json',
+    lifecycle: 'agent-run.lifecycle.json', erd: 'orders.erd.json', class: 'payments.class.json',
+    tree: 'payment-platform.tree.json', timeline: 'payment-incident.timeline.json',
+    waterfall: 'checkout-request.waterfall.json',
   };
   const files = {};
   for (const [mode, example] of Object.entries(cases)) {
     const doc = JSON.parse(fs.readFileSync(path.join(skillRoot, 'examples', example), 'utf8'));
-    doc.meta.animation = 'trace';
+    delete doc.meta.animation;
     const input = path.join(scratch, mode + '.json');
     fs.writeFileSync(input, JSON.stringify(doc));
     files[mode] = path.join(scratch, mode + '.html');
     execFileSync(process.execPath, [path.join(skillRoot, `renderers/${mode}/render-${mode}.mjs`), input, files[mode]]);
   }
+  // Old standalone static HTML still has an inert Governor. New renders default to motion.
   files.static = path.join(scratch, 'static.html');
-  execFileSync(process.execPath, [path.join(skillRoot, 'renderers/architecture/render-architecture.mjs'),
-    path.join(skillRoot, 'examples', cases.architecture), files.static]);
+  fs.writeFileSync(files.static, fs.readFileSync(files.architecture, 'utf8').replace(' data-animation="trace"', ''));
   const browser = new ChromeVisualBrowser(chrome);
   t.after(() => browser.close());
   const session = await browser.sessionPromise;
@@ -148,13 +150,13 @@ test('Motion Governor preserves mode, ownership, ambient completion and real cal
     fs.writeFileSync(path.join(evidence, name + '.png'), Buffer.from(shot.data, 'base64'));
   }
 
-  await t.test('five trace modes initialize; representative CSS animation completes once; static methods remain inert', async () => {
+  await t.test('ten default-motion modes initialize; representative CSS animation completes once; static methods remain inert', async () => {
     for (const mode of Object.keys(cases)) {
       await load(mode);
       const initial = await snapshot(mode + '-initial');
-      assert.equal(initial.capable, true); assert.equal(initial.mode, 'live');
+      assert.equal(initial.capable, true); assert.equal(initial.mode, 'live'); assert.equal(initial.hidden, false);
       // All modes share the same Governor/CSS. One real completion plus the
-      // five-mode initialization contract covers this seam without five waits.
+      // ten-mode initialization contract covers this seam without five waits.
       if (mode === 'architecture') {
         await run(`motionWait(() => document.documentElement.getAttribute('data-ambient-motion') === 'settled')`);
         const state = await snapshot(mode + '-settled');
