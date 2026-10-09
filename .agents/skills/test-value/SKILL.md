@@ -1,6 +1,8 @@
 ---
 name: test-value
 description: Improve test value and feedback cost when auditing slow, flaky, redundant or brittle tests; choosing tests during implementation; or reviewing test changes before a commit or PR. Keep ordinary implementation and pre-commit use scoped to the affected behavior, not a repository-wide audit.
+metadata:
+  internal: true
 ---
 
 # Test Value

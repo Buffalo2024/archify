@@ -53,7 +53,7 @@ under [Choose evidence by impact](#choose-evidence-by-impact); this check adds n
 separate audit report or CI gate. Repository instructions govern scope and
 publication authority. Treat the two vendored Skills as read-only guidance in
 ordinary PRs; update their pinned sources through a dedicated reviewed change.
-See [Skill sources](.agents/skills/README.md) for provenance and update procedure.
+See [Skill sources](.agents/README.md) for provenance and update procedure.
 
 ## Choose evidence by impact
 
