@@ -49,6 +49,46 @@ test('recipe, schema and shared renderer owners include their real source consum
   assert.ok(selectAffectedTests(schema.owners, [], available).includes('test/generate-validators.test.mjs'));
 });
 
+test('Architecture grid changes retain explicit placement regression coverage', () => {
+  const available = ['test/grid.test.mjs', 'test/architecture-first-draft.test.mjs', 'test/cli.test.mjs'];
+  const plan = classifyPaths(['archify/renderers/architecture/grid.mjs']);
+  assert.equal(plan.scope, 'core');
+  assert.ok(plan.generated && plan.browser && plan.package);
+  const selected = selectAffectedTests(plan.owners, [], available);
+  assert.ok(selected.includes('test/grid.test.mjs'));
+  assert.ok(!selected.includes('test/cli.test.mjs'));
+});
+
+test('the grid shared by ERD and Class retains both modes and their compatibility checks', () => {
+  const available = ['test/erd-rendering.test.mjs', 'test/class-rendering.test.mjs', 'test/tree-rendering.test.mjs'];
+  const plan = classifyPaths(['archify/renderers/erd/grid.mjs']);
+  assert.equal(plan.scope, 'core');
+  assert.ok(plan.owners.includes('erd') && plan.owners.includes('class'));
+  assert.deepEqual(selectAffectedTests(plan.owners, [], available), available.slice(0, 2).sort());
+});
+
+test('the router shared by Architecture, ERD and Class retains all three callers', () => {
+  const available = ['test/architecture-first-draft.test.mjs', 'test/erd-rendering.test.mjs',
+    'test/class-rendering.test.mjs', 'test/tree-rendering.test.mjs'];
+  const plan = classifyPaths(['archify/renderers/architecture/routing.mjs']);
+  assert.equal(plan.scope, 'core');
+  assert.ok(plan.generated && plan.browser && plan.package);
+  assert.ok(['architecture', 'erd', 'class'].every(owner => plan.owners.includes(owner)));
+  assert.deepEqual(selectAffectedTests(plan.owners, [], available), available.slice(0, 3).sort());
+});
+
+test('renderer changes retain cross-mode public regressions even without changing those tests', () => {
+  const regressions = ['test/automatic-port-spread.test.mjs', 'test/edge-label-color.test.mjs',
+    'test/label-clearance.test.mjs', 'test/vertical-edge.test.mjs', 'test/node-icons.test.mjs'];
+  const available = [...regressions, 'test/cli.test.mjs'];
+  for (const source of ['archify/renderers/dataflow/render-dataflow.mjs',
+    'archify/renderers/sequence/render-sequence.mjs', 'archify/renderers/shared/geometry.mjs']) {
+    const plan = classifyPaths([source]);
+    assert.equal(plan.scope, 'core');
+    assert.deepEqual(selectAffectedTests(plan.owners, [], available), regressions.slice().sort(), source);
+  }
+});
+
 test('checked artifacts retain XML integrity and compare artifact regression coverage', () => {
   const available = ['test/generated-artifact-xml.test.mjs', 'test/architecture-delta.test.mjs'];
   for (const name of ['examples/checkout-platform-delta.html', 'docs/guide.html', 'archify/examples/rendered.html', 'docs/assets/example.svg']) {

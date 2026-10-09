@@ -182,7 +182,7 @@ test('core smoke: public CLI diagrams, compatibility and delivery safety', async
   });
 
   await t.test('strict provenance binds the delivered artifact bytes', (t) => {
-    if (!workflow) return t.skip('requires the official workflow delivery that failed above');
+    if (!workflow) return t.skip('requires a successful official workflow delivery');
     const checked = receipt(['check', workflow.output, '--require-provenance']);
     assert.equal(checked.ok, true);
     assert.equal(checked.provenance, 'current');
@@ -200,7 +200,7 @@ test('core smoke: public CLI diagrams, compatibility and delivery safety', async
   });
 
   await t.test('invalid schema preserves the last artifact and marks its delivery as failed', (t) => {
-    if (!workflow) return t.skip('requires the official workflow delivery that failed above');
+    if (!workflow) return t.skip('requires a successful official workflow delivery');
     const invalid = structuredClone(workflow.document);
     invalid.nodes[0].unexpected = true;
     const input = path.join(workflow.directory, 'invalid.workflow.json');

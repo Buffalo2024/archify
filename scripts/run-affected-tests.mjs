@@ -8,7 +8,7 @@ import { sameEntry } from '../archify/renderers/shared/path-semantics.mjs';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const mode = /^(architecture|workflow|sequence|dataflow|lifecycle|erd|class|tree|timeline|waterfall)-/;
 // A few broad ownership families, not a source-to-test dependency graph.
-const shared = /^(geometry|spatial-grid|svg-path-analysis|layout-rules|engineering-profile|legend-contract|render-|renderer-(?:diagnostic|import)|route-|authored-|spread-|text-|base-input-|v1-|brand-|semantic-legend)/;
+const shared = /^(geometry|spatial-grid|svg-path-analysis|layout-rules|engineering-profile|legend-contract|render-|renderer-(?:diagnostic|import)|route-|authored-|spread-|text-|base-input-|v1-|brand-|semantic-legend|automatic-port-spread|edge-label-color|label-clearance|vertical-edge|node-icons)/;
 const viewer = /^(viewer-|reader-|desktop-|semantic-|finder|focus|intent-|crossover-|animation|export-|motion-|offline-|i18n|relationship-|share-|reach-|presentation)/;
 export function selectAffectedTests(owners, changed, available) {
   if (!Array.isArray(owners) || !Array.isArray(changed)) throw new Error('CI test selection must contain arrays');
@@ -26,7 +26,8 @@ export function selectAffectedTests(owners, changed, available) {
             : owner === 'delta' ? name === 'architecture-delta.test.mjs'
             : owner === 'schema' ? /^(generate-validators|base-input-|v1-|workflow-migration)/.test(name)
             : owner === 'readme' ? name === 'readme-showcase.test.mjs'
-              : name.startsWith(`${owner}-`) || shared.test(name));
+              : name.startsWith(`${owner}-`) || shared.test(name)
+                || (owner === 'architecture' && name === 'grid.test.mjs'));
   }).sort();
 }
 if (process.argv[1] && sameEntry(process.argv[1], fileURLToPath(import.meta.url)).status === 'match') {

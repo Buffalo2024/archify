@@ -39,6 +39,11 @@ export function classifyPaths(paths) {
     const renderer = name.match(rendererPath);
     if (renderer) {
       own(renderer[1] || renderer[2]);
+      // These mode-local helpers also serve other renderers directly.
+      if (name === 'archify/renderers/erd/grid.mjs') own('class');
+      if (name === 'archify/renderers/architecture/routing.mjs') {
+        own('erd'); own('class');
+      }
       if (renderer[2]) own('schema');
       plan.generated = plan.browser = plan.package = true;
       continue;
