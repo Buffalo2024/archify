@@ -430,7 +430,8 @@ html[data-present="true"]:not([data-embed="true"]) #btn-present {
   color: var(--frontend-stroke);
 }
 
-/* The reader owns only the outer scale. Long sequences and waterfall rows
+/* The reader owns only the outer scale. Compact automatic sequences fit at
+   their authored text size or larger. Long sequences and waterfall rows
    favor reading width and page scroll; other diagrams keep height fitting.
    Small automatic canvases retain a modest scale inside a usable shell.
    Every strategy preserves the authored SVG/viewBox and semantic geometry. */

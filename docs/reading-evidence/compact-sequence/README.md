@@ -1,0 +1,47 @@
+# Compact Sequence initial view
+
+The compact automatic Sequence in the regression fixture has three participants,
+six messages, and a 560×658 SVG. On `dev@9ef09617`, its ordinary initial view
+enlarges to 840×987, putting the final messages and legend below the first screen.
+The candidate fits the complete diagram without shrinking its source text.
+Long automatic sequences retain reading width and normal page scrolling.
+
+Both captures use the same redacted input, a 1396×830 viewport, dark theme,
+Classic preset, Read detail, camera at 100%, and page at scrollY=0.
+The baseline capture uses the unchanged base Reader fragment in the generated
+fixture; its CSS differs only by the updated explanatory comment. No runtime
+layout values are injected. [Observed bounds](observations.json) record the
+actual browser dimensions.
+
+| State | SVG size | Diagram bottom | Viewport height |
+| --- | --- | --- | --- |
+| Base | 840×987 | 1123 | 830 |
+| Candidate | 575×675.6 | 811.6 | 830 |
+
+| Before | After |
+| --- | --- |
+| ![Default view clips the last messages](before.png) | ![Complete default view](after.png) |
+
+The fixture removes repository and source references and uses generic labels.
+The reported real artifact was also inspected locally under the same conditions;
+its bounds match these captures. Perceptual review passed for the intended
+complete first-screen diagram, legend, and controls. Notes still belong below
+the diagram and may require ordinary page scrolling.
+
+Reproduce the candidate from the repository root:
+
+```sh
+node archify/bin/archify.mjs render sequence test/fixtures/reader-readability/compact-roundtrip.sequence.json /tmp/compact-sequence.html
+ARCHIFY_CHROME="/path/to/chrome" npm run test:focus -- test/reader-layout-browser.test.mjs
+```
+
+The added browser regression fails on the base and passes on the candidate.
+It also covers a shorter window and resize recovery, presentation entry/exit,
+a short wide sequence, a long automatic sequence, and an explicit canvas.
+Independent Chrome review exercised an expanded right rail across the fit
+threshold without layout oscillation or controls leaving the viewport. A window
+that cannot fit the original text size returns to the existing reading scale;
+the threshold transition is not a continuously interpolated scale.
+
+All SVG blocks in the 44 refreshed diagram HTML artifacts are byte-identical
+to the comparison base. The change affects the outer Reader layout only.

@@ -1,0 +1,64 @@
+{
+  "base": "9ef09617bd9ed2fe7bb4ad17fba7c8fce6b0ce76",
+  "input": "test/fixtures/reader-readability/compact-roundtrip.sequence.json",
+  "theme": "dark",
+  "preset": "classic",
+  "detail": "read",
+  "cameraScale": 1,
+  "records": [
+    {
+      "name": "before",
+      "viewport": [
+        1396,
+        830
+      ],
+      "viewBox": "0 0 560 658",
+      "svg": {
+        "top": 67,
+        "bottom": 1054,
+        "width": 840,
+        "height": 987
+      },
+      "stage": {
+        "top": 58,
+        "bottom": 1123,
+        "width": 1317,
+        "height": 1065
+      },
+      "controls": {
+        "top": 772,
+        "bottom": 814,
+        "width": 313.7421875,
+        "height": 42
+      },
+      "scale": 1.5
+    },
+    {
+      "name": "after",
+      "viewport": [
+        1396,
+        830
+      ],
+      "viewBox": "0 0 560 658",
+      "svg": {
+        "top": 67,
+        "bottom": 742.625,
+        "width": 575,
+        "height": 675.625
+      },
+      "stage": {
+        "top": 58,
+        "bottom": 811.625,
+        "width": 960,
+        "height": 753.625
+      },
+      "controls": {
+        "top": 752.625,
+        "bottom": 794.625,
+        "width": 313.7421875,
+        "height": 42
+      },
+      "scale": 1.0267857142857142
+    }
+  ]
+}

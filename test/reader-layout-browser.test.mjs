@@ -631,6 +631,96 @@ test('Reader Layout preserves final-artifact behavior across its ownership bound
       assert.ok(await evaluate("document.querySelector('.diagram-container > svg').clientWidth > 456 * 1.5"),
         'an authored canvas retains its previous enlargement behavior');
     });
+    await t.test('compact automatic Sequence fits the initial desktop stage without shrinking source text', async () => {
+      const compact = JSON.parse(fs.readFileSync(path.resolve(skillRoot,
+        '../test/fixtures/reader-readability/compact-roundtrip.sequence.json'), 'utf8'));
+      function renderSequence(name, doc) {
+        const input = path.join(scratch, `${name}.json`);
+        const output = path.join(scratch, `${name}.html`);
+        fs.writeFileSync(input, JSON.stringify(doc));
+        execFileSync(process.execPath, [path.join(skillRoot, 'bin/archify.mjs'), 'render', 'sequence', input, output]);
+        return output;
+      }
+      async function stage(label) {
+        const value = await evaluate(`(function () {
+          var svg = document.querySelector('.diagram-container > svg');
+          function bounds(element) {
+            var rect = element.getBoundingClientRect();
+            return { top: rect.top, bottom: rect.bottom, left: rect.left, right: rect.right };
+          }
+          var textScales = Array.from(svg.querySelectorAll('text')).map(function (text) {
+            var matrix = text.getScreenCTM();
+            return Math.hypot(matrix.a, matrix.b);
+          });
+          return { svg: bounds(svg), stage: bounds(svg.parentElement),
+            controls: bounds(document.querySelector('.diagram-nav')),
+            width: svg.clientWidth, sourceWidth: svg.viewBox.baseVal.width,
+            minimumTextScale: Math.min.apply(Math, textScales),
+            viewportWidth: innerWidth, viewportHeight: innerHeight,
+            geometry: ['viewBox', 'width', 'height'].map(function (name) { return svg.getAttribute(name); }) };
+        })()`);
+        records.push({ label, ...value });
+        return value;
+      }
+      function fits(value) {
+        for (const region of [value.svg, value.stage, value.controls]) {
+          assert.ok(region.top >= -1 && region.bottom <= value.viewportHeight + 1 &&
+            region.left >= -1 && region.right <= value.viewportWidth + 1, JSON.stringify(value));
+        }
+        assert.ok(value.minimumTextScale >= 1 - 0.01, 'initial fitting must retain source text size: ' + JSON.stringify(value));
+        assert.ok(value.width <= value.sourceWidth * 1.5 + 1, 'automatic enlargement remains capped: ' + JSON.stringify(value));
+      }
+      const file = renderSequence('compact-roundtrip', compact);
+      await load(file, { width: 1396, height: 830 });
+      const initial = await stage('compact-sequence-initial');
+      fits(initial);
+      assert.ok((await snapshot('compact-sequence-shell')).shellWidth >= 960, 'height fitting preserves the desktop shell');
+      await viewport(1396, 540);
+      await stable();
+      const short = await stage('compact-sequence-short-window');
+      assert.ok(short.stage.bottom > short.viewportHeight, 'insufficient height retains page scrolling');
+      assert.ok(short.minimumTextScale >= 1 - 0.01, 'short windows do not shrink source text');
+      assert.ok(short.width >= initial.width, 'short windows recover reading width');
+      await viewport(1396, 830);
+      await stable();
+      fits(await stage('compact-sequence-resized-back'));
+      await evaluate('Archify.presentation.enter()');
+      await stable();
+      const presented = await stage('compact-sequence-presentation');
+      assert.ok(presented.svg.top >= -1 && presented.svg.bottom <= presented.viewportHeight + 1, JSON.stringify(presented));
+      await evaluate('Archify.presentation.exit()');
+      await stable();
+      const returned = await stage('compact-sequence-return');
+      fits(returned);
+      assert.deepEqual(returned.geometry, initial.geometry, 'fitting never rewrites authored SVG geometry');
+
+      const wide = { ...compact, segments: [], cards: [],
+        messages: [{ from: 'client', to: 'worker', y: 160, label: 'Check status' }] };
+      await load(renderSequence('short-wide-sequence', wide), { width: 1396, height: 480 });
+      const shortWide = await stage('short-wide-sequence');
+      assert.ok(shortWide.sourceWidth < 960 && shortWide.sourceWidth /
+        Number(shortWide.geometry[0].split(/\s+/)[3]) >= 1.55, 'exercise a small wide canvas');
+      fits(shortWide);
+
+      const long = { ...compact, segments: [], cards: [], messages: Array.from({ length: 20 }, (_, index) => ({
+        from: index % 2 ? 'service' : 'client', to: index % 2 ? 'client' : 'service',
+        y: 160 + index * 100, label: `Message ${index + 1}`,
+      })) };
+      await load(renderSequence('long-automatic-sequence', long), { width: 1396, height: 830 });
+      const reading = await stage('long-automatic-sequence');
+      assert.ok(reading.stage.bottom > reading.viewportHeight, 'long automatic Sequence retains page scrolling');
+      assert.ok(reading.minimumTextScale >= 1 - 0.01, 'long Sequence preserves readable text');
+      assert.ok(reading.width >= reading.sourceWidth * 1.4, 'long Sequence retains reading-width enlargement');
+
+      const explicit = structuredClone(compact);
+      explicit.meta.viewBox = initial.geometry[0].split(/\s+/).slice(2).map(Number);
+      await load(renderSequence('explicit-roundtrip', explicit), { width: 1396, height: 830 });
+      const authored = await stage('explicit-roundtrip');
+      assert.deepEqual(authored.geometry, initial.geometry);
+      assert.equal((await snapshot('explicit-sequence')).readerFit, null, 'explicit canvases retain their previous eligibility');
+      assert.ok(authored.stage.bottom > authored.viewportHeight, 'explicit geometry retains its original desktop layout');
+    });
+
     await t.test('public renderers declare automatic reading width while undeclared canvases retain their fit', async () => {
       const sequence = { schema_version: 1, diagram_type: 'sequence', meta: { title: 'Reader sequence', output: 'reader-sequence.html' },
         participants: [{ id: 'a', type: 'external', label: 'Client' }, { id: 'b', type: 'backend', label: 'Server' }],
