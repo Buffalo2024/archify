@@ -266,7 +266,9 @@ test('ERD capacity uses inherited widths, the entity index and no type gap when 
   assert.equal(result.status, 1, result.stdout);
   const diagnostic = JSON.parse(result.stdout).diagnostics.find(entry => entry.code === 'erd/attribute-text-capacity');
   assert.equal(diagnostic.subject.entityId, 'second');
-  assert.equal(diagnostic.evidence.entityWidth, 180);
+  // An omitted width first grows to the 320px automatic cap; a row still too
+  // long there keeps the diagnostic and its exact repair width.
+  assert.equal(diagnostic.evidence.entityWidth, 320);
   assert.equal(diagnostic.evidence.keyColumnWidth, 30);
   assert.equal(diagnostic.evidence.requiredEntityWidth, 371);
   assert.match(diagnostic.supportedFixes[0], /entities\[1\]\.width/);
@@ -274,4 +276,36 @@ test('ERD capacity uses inherited widths, the entity index and no type gap when 
   const repaired = invoke(t, document);
   assert.equal(repaired.status, 0, repaired.stdout + repaired.stderr);
   assert.match(repaired.html, new RegExp(document.entities[1].attributes[0].name));
+});
+
+test('ERD grid tables without width grow to fit their longest attribute row', t => {
+  const document = fixture('showcase');
+  document.layout = { mode: 'grid' };
+  document.entities = [
+    { id: 'tenants', label: 'tenants', row: 0, col: 0, attributes: [{ name: 'id', type: 'uuid', key: 'pk' }] },
+    {
+      id: 'subscriptions', label: 'subscriptions', row: 0, col: 1,
+      attributes: [
+        { name: 'id', type: 'uuid', key: 'pk' },
+        { name: 'tenant_id', type: 'uuid', key: 'fk', references: 'tenants.id' },
+        { name: 'current_period_end', type: 'timestamptz' },
+      ],
+    },
+  ];
+  document.relationships = [
+    { id: 's_t', from: 'subscriptions', to: 'tenants', fromCardinality: 'many', toCardinality: 'one' },
+  ];
+  const validated = invoke(t, document, 'validate');
+  assert.equal(validated.status, 0, validated.stdout);
+  const rendered = invoke(t, document);
+  assert.equal(rendered.status, 0, rendered.stdout + rendered.stderr);
+  const widths = boxes(rendered.html).map(box => box.width).sort((a, b) => a - b);
+  // tenants keeps the 240px default; subscriptions grows past it to fit its row.
+  assert.equal(widths[0], 240);
+  assert.ok(widths[1] > 240 && widths[1] <= 320, JSON.stringify(widths));
+
+  const authored = structuredClone(document);
+  authored.entities[1].width = 240;
+  const refused = invoke(t, authored, 'validate');
+  assert.equal(refused.status, 1, 'an authored width stays authoritative');
 });

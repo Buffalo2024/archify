@@ -108,7 +108,10 @@ renderer:
 The renderer also reports ER-specific diagnostics: unknown entities in
 `from`/`to`, unknown attribute names and unresolved `references`, duplicate attribute
 names, self-referencing relationships, overlapping entity boxes, and rows whose
-text cannot fit inside the declared entity width.
+text cannot fit inside the declared entity width. A grid table that omits
+`width` (with no `pos` and no explicit `meta.viewBox`) first grows to fit its
+longest name-plus-type row, up to 320px; only a row still too long at that
+width reports `erd/attribute-text-capacity`.
 
 ## Domain bands
 

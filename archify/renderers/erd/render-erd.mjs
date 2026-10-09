@@ -128,6 +128,28 @@ function renderKeyGlyphs(attribute, x0, baseline) {
     .join('');
 }
 
+// A grid table that omits `width` grows to fit its longest attribute row (name
+// plus SQL type), up to AUTOMATIC_ENTITY_MAX_W, instead of failing
+// erd/attribute-text-capacity and asking the author for a number the renderer
+// can measure. Authored widths, absolute positions and explicit canvases keep
+// their geometry; a row still too long at the cap keeps the diagnostic.
+const AUTOMATIC_ENTITY_MAX_W = 320;
+function fitAutomaticEntityWidths() {
+  if (!grid || Array.isArray(er.meta?.viewBox)) return;
+  for (const entity of asArray(er.entities)) {
+    if (!entity || entity.width !== undefined || Array.isArray(entity.pos)) continue;
+    const base = grid.entityW ?? DEFAULT_ER_GRID.entityW;
+    let needed = 0;
+    for (const attribute of asArray(entity.attributes)) {
+      const { name: nameUnits, type: typeUnits } = rowTextWidths(attribute);
+      needed = Math.max(needed, nameUnits * layout.rowFont + (typeUnits ? typeUnits * layout.typeFont + 8 : 0));
+    }
+    const required = Math.ceil((needed + layout.padX * 2 + keyColumnWidth(entity)) / 4) * 4;
+    if (required > base) entity.width = Math.min(AUTOMATIC_ENTITY_MAX_W, required);
+  }
+}
+fitAutomaticEntityWidths();
+
 // ---- Measure entities from the banded grid -----------------------------------
 // Header and row metrics live in the grid contract so the banded layout and the
 // renderer can never disagree about a box's height.
