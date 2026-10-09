@@ -10079,11 +10079,12 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     }
 
     function hasDrawableGeometry(element) {
-      if (!element) return false;
+      if (!element || element.hasAttribute(&#39;data-ambient-flow-overlay&#39;)) return false;
       var geometries = /^(path|line|polyline)$/i.test(element.tagName)
         ? [element]
         : Array.prototype.slice.call(element.querySelectorAll(&#39;path, line, polyline&#39;));
       return geometries.some(function (geometry) {
+        if (geometry.hasAttribute(&#39;data-ambient-flow-overlay&#39;)) return false;
         var source = geometry.tagName.toLowerCase() === &#39;path&#39;
           ? geometry.getAttribute(&#39;d&#39;)
           : geometry.tagName.toLowerCase() === &#39;polyline&#39;
@@ -24431,11 +24432,12 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     }
 
     function hasDrawableGeometry(element) {
-      if (!element) return false;
+      if (!element || element.hasAttribute(&#39;data-ambient-flow-overlay&#39;)) return false;
       var geometries = /^(path|line|polyline)$/i.test(element.tagName)
         ? [element]
         : Array.prototype.slice.call(element.querySelectorAll(&#39;path, line, polyline&#39;));
       return geometries.some(function (geometry) {
+        if (geometry.hasAttribute(&#39;data-ambient-flow-overlay&#39;)) return false;
         var source = geometry.tagName.toLowerCase() === &#39;path&#39;
           ? geometry.getAttribute(&#39;d&#39;)
           : geometry.tagName.toLowerCase() === &#39;polyline&#39;

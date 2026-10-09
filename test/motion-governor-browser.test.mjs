@@ -238,7 +238,7 @@ test('Motion Governor preserves mode, ownership, continuous Live flow and real c
         return found;
       };
     ` });
-    const copies = await run(`(() => {
+    const copies = await run(`(async () => {
       const svg=document.querySelector('.diagram-container > svg'), edge=svg.querySelector('[data-motion-test-group]'),
         from=edge.getAttribute('data-edge-from'), to=edge.getAttribute('data-edge-to'), initial=svg.querySelectorAll('[data-ambient-flow-overlay]').length;
       const rows=[];
@@ -248,9 +248,27 @@ test('Motion Governor preserves mode, ownership, continuous Live flow and real c
       const kind=svg.querySelector('[data-node-kind]').getAttribute('data-node-kind');
       Archify.semanticLens.select(kind); record('lens','.semantic-lens-flow'); Archify.semanticLens.clear({updateUrl:false});
       Archify.focus.inspectRelationship(edge.getAttribute('data-edge-key'),{updateUrl:false}); record('relationship','.relationship-flow-pulse'); Archify.focus.clear({updateUrl:false});
-      return {initial,rows,grouped:edge.localName==='g'&&edge.querySelector('path[data-ambient-flow-overlay]')!==null};
+      Archify.routeProbe.begin({source:from}); Archify.routeProbe.choose(to);
+      const originalSnapshot=Archify.routeProbe.exportSnapshot(), authored=edge.querySelector('path[data-animate="edge"]'), flow=edge.querySelector('[data-ambient-flow-overlay]'), originalPath=authored.getAttribute('d');
+      let emptyRejected,exportError;
+      try {
+        authored.setAttribute('d','');
+        emptyRejected=Archify.routeProbe.exportSnapshot()===null;
+        try { await Archify.exportMenu.shareCard({variant:'route'}); }
+        catch(error) { exportError=String(error.message||error); }
+      } finally { authored.setAttribute('d',originalPath); }
+      const restoredSnapshot=Archify.routeProbe.exportSnapshot();
+      Archify.routeProbe.clear({updateUrl:false});
+      return {initial,rows,grouped:edge.localName==='g'&&flow!==null,
+        originalValid:originalSnapshot!==null,emptyRejected,exportError,
+        decorationStillDrawable:flow.getTotalLength()>0,directDecorationRejected:!hasDrawableGeometry(flow),
+        restored:restoredSnapshot!==null&&JSON.stringify(restoredSnapshot)===JSON.stringify(originalSnapshot)};
     })()`);
     assert.equal(copies.grouped,true); assert.ok(copies.initial>0);
+    assert.equal(copies.originalValid,true); assert.equal(copies.decorationStillDrawable,true);
+    assert.equal(copies.directDecorationRejected,true); assert.equal(copies.emptyRejected,true);
+    assert.match(copies.exportError,/Trace a route before exporting a Route Share Card/);
+    assert.equal(copies.restored,true);
     for(const row of copies.rows) { assert.ok(row.geometry>0,JSON.stringify(row)); assert.equal(row.flows,copies.initial,row.name); }
   });
 
