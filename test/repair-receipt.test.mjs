@@ -264,8 +264,10 @@ test('repair receipt: schema fixes name allowed values, close property names and
   assert.match(comment.supportedFixes[0], /into "type" as "SQL_TYPE｜comment"/);
 
   const sequence = JSON.parse(fs.readFileSync(path.join(skillRoot, 'examples/cache-miss-request.sequence.json'), 'utf8'));
-  delete sequence.messages[0].y;
-  const sequenceResult = run(['validate', 'sequence', writeFixture('missing-y.sequence.json', sequence), '--json']);
+  // Message y is optional (automatic rhythm), so exercise a still-required
+  // number: a segment's end coordinate.
+  delete sequence.segments[0].to;
+  const sequenceResult = run(['validate', 'sequence', writeFixture('missing-to.sequence.json', sequence), '--json']);
   const missing = receipt(sequenceResult).diagnostics.find((entry) => entry.code === 'schema/required');
-  assert.deepEqual(missing.supportedFixes, ['add required property "y" (number >= 160)']);
+  assert.deepEqual(missing.supportedFixes, ['add required property "to" (number)']);
 });

@@ -165,7 +165,6 @@
         "required": [
           "from",
           "to",
-          "y",
           "label"
         ],
         "properties": {
@@ -180,7 +179,8 @@
           },
           "y": {
             "type": "number",
-            "minimum": 160
+            "minimum": 160,
+            "description": "Optional arrow y. Omitted y follows the previous message: 160 for the first, then +34 (+58 after a message with a note)."
           },
           "label": {
             "type": "string",

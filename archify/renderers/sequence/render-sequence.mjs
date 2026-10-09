@@ -22,6 +22,25 @@ const { diagram: sequence, template, outPath, sourceEvidence } = await loadDiagr
   defaultExample: 'cache-miss-request.sequence.json'
 });
 
+// Messages without an authored y follow the previous one at a readable
+// rhythm, so a first draft only needs order. 34px clears an 18px showcase
+// label plate plus the arrow; a note below the previous arrow needs 24px more.
+// Authored y values stay authoritative and later omitted ones continue from them.
+const AUTOMATIC_MESSAGE_FIRST_Y = 160;
+const AUTOMATIC_MESSAGE_STEP = 34;
+const AUTOMATIC_MESSAGE_NOTE_STEP = 24;
+{
+  let previous = null;
+  for (const message of asArray(sequence.messages)) {
+    if (message && typeof message.y !== 'number') {
+      message.y = previous
+        ? previous.y + AUTOMATIC_MESSAGE_STEP + (previous.note ? AUTOMATIC_MESSAGE_NOTE_STEP : 0)
+        : AUTOMATIC_MESSAGE_FIRST_Y;
+    }
+    if (message && typeof message.y === 'number') previous = message;
+  }
+}
+
 const LEGEND_CATALOG = [
   { kind: 'emphasis', className: 'a-emphasis', marker: 'arrowhead-emphasis', strokeWidth: 1.8 },
   { kind: 'return', className: 'a-default', marker: 'arrowhead', dash: '3,5' },
