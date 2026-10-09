@@ -239,3 +239,33 @@ test('repair receipt: edge readability advises a projection-changing reflow, not
   assert.match(fix, /Preserve the semantic text and any supplied coordinates, routes, sides, channels, and labels/);
   assert.doesNotMatch(fix, /labelAt|labelDx|labelDy|labelSegment|reposition/i);
 });
+
+test('repair receipt: schema fixes name allowed values, close property names and relocated facts', () => {
+  const timeline = JSON.parse(fs.readFileSync(path.join(skillRoot, 'examples/payment-incident.timeline.json'), 'utf8'));
+  timeline.events[0].kind = 'incident';
+  const timelineResult = run(['validate', 'timeline', writeFixture('enum.timeline.json', timeline), '--json']);
+  const kind = receipt(timelineResult).diagnostics.find((entry) => entry.code === 'schema/enum');
+  assert.ok(kind, timelineResult.stdout);
+  assert.match(kind.message, /got "incident"; allowed "default", "change", "alert", "action", "recovery"/);
+  assert.deepEqual(kind.supportedFixes, ['use one of "default", "change", "alert", "action", "recovery"']);
+
+  const workflow = JSON.parse(fs.readFileSync(path.join(skillRoot, 'examples/agent-tool-call.workflow.json'), 'utf8'));
+  workflow.nodes[0].sublable = 'typo';
+  const workflowResult = run(['validate', 'workflow', writeFixture('typo.workflow.json', workflow), '--json']);
+  const typo = receipt(workflowResult).diagnostics.find((entry) => entry.code === 'schema/additionalProperties');
+  assert.deepEqual(typo.supportedFixes, ['rename "sublable" to "sublabel"']);
+  assert.match(typo.message, /"sublable"; allowed .*"sublabel"/);
+
+  const erd = JSON.parse(fs.readFileSync(path.join(skillRoot, 'examples/orders.erd.json'), 'utf8'));
+  erd.entities[0].attributes[0].comment = '主键';
+  const erdResult = run(['validate', 'erd', writeFixture('comment.erd.json', erd), '--json']);
+  const comment = receipt(erdResult).diagnostics.find((entry) => entry.code === 'schema/additionalProperties');
+  // Deleting the comment would drop a source fact; the fix names its home.
+  assert.match(comment.supportedFixes[0], /into "type" as "SQL_TYPE｜comment"/);
+
+  const sequence = JSON.parse(fs.readFileSync(path.join(skillRoot, 'examples/cache-miss-request.sequence.json'), 'utf8'));
+  delete sequence.messages[0].y;
+  const sequenceResult = run(['validate', 'sequence', writeFixture('missing-y.sequence.json', sequence), '--json']);
+  const missing = receipt(sequenceResult).diagnostics.find((entry) => entry.code === 'schema/required');
+  assert.deepEqual(missing.supportedFixes, ['add required property "y" (number >= 160)']);
+});

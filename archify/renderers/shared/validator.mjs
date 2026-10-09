@@ -1,5 +1,146 @@
+import fs from 'node:fs';
 import * as validators from './generated-validators.mjs';
 import { throwDiagnosticError } from './diagnostics.mjs';
+
+const SCHEMA_DIRECTORY = new URL('../../schemas/', import.meta.url);
+const schemaCache = new Map();
+function loadSchema(file) {
+  if (!schemaCache.has(file)) {
+    try {
+      schemaCache.set(file, JSON.parse(fs.readFileSync(new URL(file, SCHEMA_DIRECTORY), 'utf8')));
+    } catch {
+      schemaCache.set(file, null);
+    }
+  }
+  return schemaCache.get(file);
+}
+
+// Resolve the object schema whose additionalProperties rejected a property so
+// the diagnostic can name the properties that are allowed there.
+function parentObjectSchema(diagramType, schemaPath) {
+  const [file, pointer = ''] = String(schemaPath || '').split('#');
+  let node = loadSchema(file || `${diagramType}.schema.json`);
+  const segments = pointer.split('/').slice(1, -1)
+    .map((segment) => segment.replace(/~1/g, '/').replace(/~0/g, '~'));
+  for (const segment of segments) {
+    if (node == null || typeof node !== 'object') return [];
+    node = node[segment];
+  }
+  return node && typeof node === 'object' ? node : null;
+}
+
+function allowedPropertyNames(diagramType, schemaPath) {
+  const node = parentObjectSchema(diagramType, schemaPath);
+  return node && typeof node.properties === 'object' ? Object.keys(node.properties) : [];
+}
+
+// "number >= 160" or "one of ..." for a required property, when the schema
+// states it inline; a $ref target is left to the schema read.
+function describeProperty(diagramType, schemaPath, property) {
+  const definition = parentObjectSchema(diagramType, schemaPath)?.properties?.[property];
+  if (!definition || typeof definition !== 'object') return '';
+  if (Array.isArray(definition.enum)) {
+    return ` (one of ${definition.enum.map((value) => JSON.stringify(value)).join(', ')})`;
+  }
+  const parts = [];
+  if (typeof definition.type === 'string') parts.push(definition.type);
+  if (Number.isFinite(definition.minimum)) parts.push(`>= ${definition.minimum}`);
+  if (Number.isFinite(definition.maximum)) parts.push(`<= ${definition.maximum}`);
+  return parts.length ? ` (${parts.join(' ')})` : '';
+}
+
+function editDistance(a, b) {
+  const row = Array.from({ length: b.length + 1 }, (_, index) => index);
+  for (let i = 1; i <= a.length; i += 1) {
+    let previous = row[0];
+    row[0] = i;
+    for (let j = 1; j <= b.length; j += 1) {
+      const current = row[j];
+      row[j] = Math.min(row[j] + 1, row[j - 1] + 1, previous + (a[i - 1] === b[j - 1] ? 0 : 1));
+      previous = current;
+    }
+  }
+  return row[b.length];
+}
+
+function closestName(word, options) {
+  const folded = String(word).toLowerCase();
+  let best = null;
+  for (const option of options) {
+    const distance = editDistance(folded, String(option).toLowerCase());
+    if (distance <= Math.max(1, Math.floor(option.length / 3))
+      && (!best || distance < best.distance)) best = { option, distance };
+  }
+  return best?.option ?? null;
+}
+
+// Properties agents commonly invent whose fact has a documented home; deleting
+// them would drop meaning, so the fix names where the fact belongs instead.
+const RELOCATED_PROPERTIES = {
+  erd: {
+    attribute: {
+      match: /^\/entities\/\d+\/attributes\/\d+$/,
+      properties: ['comment', 'note', 'description', 'desc', 'remark'],
+      fix: (property) => `move the ${property} text into "type" as "SQL_TYPE｜${property}" (for example "varchar(32)｜姓名"); attributes have no separate ${property} field`,
+    },
+  },
+};
+
+function relocationFix(diagramType, instancePath, property) {
+  for (const rule of Object.values(RELOCATED_PROPERTIES[diagramType] || {})) {
+    if (rule.match.test(instancePath) && rule.properties.includes(property)) return rule.fix(property);
+  }
+  return null;
+}
+
+function valueAt(instancePath, data) {
+  let node = data;
+  for (const segment of String(instancePath || '').split('/').slice(1)) {
+    if (node == null || typeof node !== 'object') return undefined;
+    node = node[/^\d+$/.test(segment) ? Number(segment) : segment];
+  }
+  return node;
+}
+
+function additionalPropertyFixes(diagramType, error) {
+  const property = error.params?.additionalProperty;
+  const relocated = relocationFix(diagramType, error.instancePath, property);
+  if (relocated) return [relocated];
+  const allowed = allowedPropertyNames(diagramType, error.schemaPath);
+  const suggestion = closestName(property, allowed);
+  if (suggestion) return [`rename ${JSON.stringify(property)} to ${JSON.stringify(suggestion)}`];
+  return [`remove unsupported property ${JSON.stringify(property)}`];
+}
+
+function enumFixes(error, data) {
+  const allowed = error.params?.allowedValues || [];
+  const actual = valueAt(error.instancePath, data);
+  const suggestion = typeof actual === 'string'
+    ? closestName(actual, allowed.filter((value) => typeof value === 'string'))
+    : null;
+  const list = allowed.map((value) => JSON.stringify(value)).join(', ');
+  return [
+    suggestion
+      ? `use ${JSON.stringify(suggestion)} (allowed: ${list})`
+      : `use one of ${list}`,
+  ];
+}
+
+function schemaMessage(diagramType, error, data) {
+  const base = `${annotatePath(error.instancePath, data)} ${error.message}`;
+  if (error.keyword === 'enum') {
+    const actual = valueAt(error.instancePath, data);
+    return `${base}: got ${JSON.stringify(actual)}; allowed ${(error.params?.allowedValues || [])
+      .map((value) => JSON.stringify(value)).join(', ')}`;
+  }
+  if (error.keyword === 'additionalProperties') {
+    const allowed = allowedPropertyNames(diagramType, error.schemaPath);
+    return `${base}: ${JSON.stringify(error.params?.additionalProperty)}${allowed.length
+      ? `; allowed ${allowed.map((name) => JSON.stringify(name)).join(', ')}`
+      : ''}`;
+  }
+  return base;
+}
 
 // "/nodes/3/label" reads much better as "/nodes/3 (id: "router") /label" for the
 // LLM fixing the JSON; resolve the nearest enclosing element's id or label.
@@ -54,10 +195,10 @@ export function validateSchema(diagramType, data) {
         ...error.params,
       };
       const supportedFixes = {
-        additionalProperties: [`remove unsupported property ${JSON.stringify(error.params?.additionalProperty)}`],
-        required: [`add required property ${JSON.stringify(error.params?.missingProperty)}`],
+        additionalProperties: additionalPropertyFixes(diagramType, error),
+        required: [`add required property ${JSON.stringify(error.params?.missingProperty)}${describeProperty(diagramType, error.schemaPath, error.params?.missingProperty)}`],
         type: [`use ${JSON.stringify(error.params?.type)} at ${annotated.path}`],
-        enum: [`choose one of the allowed values`],
+        enum: enumFixes(error, data),
         pattern: [`match the required pattern ${JSON.stringify(error.params?.pattern)}`],
         minimum: [`use a value ${error.params?.comparison || '>='} ${error.params?.limit}`],
         maximum: [`use a value ${error.params?.comparison || '<='} ${error.params?.limit}`],
@@ -69,7 +210,7 @@ export function validateSchema(diagramType, data) {
       return {
         code: `schema/${error.keyword}`,
         severity: 'error',
-        message: `${annotatePath(error.instancePath, data)} ${error.message}`,
+        message: schemaMessage(diagramType, error, data),
         subject,
         evidence,
         supportedFixes,
