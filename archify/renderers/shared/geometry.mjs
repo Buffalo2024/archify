@@ -1604,7 +1604,9 @@ export function automaticPortRhythmBridge(
 // Keep conservative auto-routed fan-out/fan-in relationships visually
 // distinct without changing authored route controls. The returned map only
 // contains endpoints that belong to a shared automatic midpoint anchor.
-export function automaticPortSpread(relations, boxes, { gutter = 16, maxSpacing = 14, sideFor, spacingFor } = {}) {
+export function automaticPortSpread(relations, boxes, {
+  gutter = 16, maxSpacing = 14, sideFor, spacingFor, centerAligned = false,
+} = {}) {
   const groups = new Map();
   const spread = new Map();
 
@@ -1661,6 +1663,24 @@ export function automaticPortSpread(relations, boxes, { gutter = 16, maxSpacing 
       if (span <= usable && gaps.some((gap) => gap > maxSpacing)) {
         let offset = -span / 2;
         offsets = [offset, ...gaps.map((gap) => (offset += gap))];
+      }
+    }
+
+    // A symmetric spread moves even the relationship whose counterpart sits
+    // squarely opposite the side off-centre, so the straight row/column edge
+    // gains a sub-rhythm jog that the router can only bridge with an S-bend.
+    // With centerAligned, that one relationship keeps the side centre and the
+    // others fan out on their own side of it.
+    if (!offsets && centerAligned) {
+      const centreOf = (box) => (verticalSide ? box.cy : box.cx);
+      const sideCentre = centreOf(items[0].rect);
+      const aligned = items.filter((item) => Math.abs(centreOf(item.counterpart) - sideCentre) < 0.5);
+      if (aligned.length === 1) {
+        const pivot = items.indexOf(aligned[0]);
+        const before = pivot;
+        const after = items.length - 1 - pivot;
+        const sideSpacing = Math.min(maxSpacing, (usable / 2) / Math.max(1, before, after));
+        if (sideSpacing >= 8) offsets = items.map((_, index) => (index - pivot) * sideSpacing);
       }
     }
 

@@ -464,6 +464,7 @@ function flowSides(flow) {
 const automaticPorts = automaticPortSpread(dataflow.flows, nodes, {
   sideFor: (flow, endpoint) => flowSides(flow)[endpoint === 'source' ? 'fromSide' : 'toSide'],
   maxSpacing: 18,
+  centerAligned: true,
 });
 
 function pathFor(flow) {

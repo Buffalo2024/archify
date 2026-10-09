@@ -423,3 +423,32 @@ test('authoring defaults point to the bounded automatic port rules and READMEs d
   assert.match(fs.readFileSync(path.join(repoRoot, 'README_ZH.md'), 'utf8'), /共享的自动端点会确定性展开/);
   assert.match(fs.readFileSync(path.join(repoRoot, 'README_JA.md'), 'utf8'), /共有される自動接続点は決定論的に分散/);
 });
+
+test('dataflow fan-in keeps the row-aligned flow straight and fans the others beside it', () => {
+  const doc = {
+    schema_version: 1,
+    diagram_type: 'dataflow',
+    meta: { title: 'Fan-in keeps the aligned flow straight' },
+    stages: [{ label: 'Sources' }, { label: 'Stream' }],
+    nodes: [
+      { id: 'pos', type: 'external', label: 'Card terminals', stage: 0, row: 0 },
+      { id: 'web', type: 'frontend', label: 'Online checkout', stage: 0, row: 1 },
+      { id: 'kafka', type: 'messagebus', label: 'Kafka', stage: 1, row: 0 },
+    ],
+    flows: [
+      { id: 'pos-kafka', from: 'pos', to: 'kafka', label: 'auth' },
+      { id: 'web-kafka', from: 'web', to: 'kafka', label: 'checkout' },
+    ],
+  };
+  const html = render('dataflow', doc);
+  const aligned = connectionPoints(html, 'pos-kafka');
+  const fanned = connectionPoints(html, 'web-kafka');
+  // Before: the symmetric spread put the aligned port 9px above centre and the
+  // router bridged it with a six-point S-bend.
+  assert.equal(aligned.length, 2, `aligned flow should be one straight segment: ${JSON.stringify(aligned)}`);
+  assert.equal(aligned[0][1], aligned[1][1]);
+  const alignedY = aligned.at(-1)[1];
+  const fannedY = fanned.at(-1)[1];
+  assert.ok(fannedY > alignedY, 'the lower source enters below the aligned flow');
+  assert.ok(fannedY - alignedY >= 8, `ports stay visibly separate (${fannedY - alignedY}px)`);
+});
