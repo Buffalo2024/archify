@@ -593,6 +593,14 @@ function heightForLabels(labels) {
   const contentBottom = Math.max(geometryBottom, ...labels.map(rect => rect.y + rect.height));
   return Math.max(360, Math.ceil(contentBottom + 24 + layout.stageBottomPad));
 }
+function fitAutomaticWidthToLabels(labels) {
+  if (dataflow.meta?.viewBox) return;
+  const labelRight = Math.max(0, ...labels.map(rect => rect.x + rect.width));
+  viewBox[0] = Math.max(viewBox[0], Math.ceil(labelRight + 24));
+}
+// Give the shared placer room for complete initial plates before its search;
+// width growth here does not recompute the measured nodes or cached routes.
+fitAutomaticWidthToLabels(initialLabelRects);
 if (automaticShowcase) viewBox[1] = heightForLabels(initialLabelRects);
 const compositionFrames = asArray(dataflow.stages).map(stageFrame);
 
@@ -674,8 +682,11 @@ for (const [index, rect] of resolvedLabelRects.entries()) {
   resolvedLabelPoints.set(rect.relation, [resolved.lx, resolved.ly]);
 }
 
-// A bounded label move may extend below the initial route footprint. Include
-// its final rendered plate before drawing the stage frames and legend.
+// A shared placement search may retain an unpinned original plate when none
+// of its candidates fit the compact width. Include every final rendered plate
+// without moving nodes, routes or labels; an authored canvas remains fixed.
+fitAutomaticWidthToLabels(resolvedLabelRects);
+// A bounded label move may also extend below the initial route footprint.
 if (automaticShowcase) {
   viewBox[1] = heightForLabels(resolvedLabelRects);
   for (const frame of compositionFrames) frame.height = viewBox[1] - layout.stageY - layout.stageBottomPad;

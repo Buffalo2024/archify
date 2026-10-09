@@ -74,6 +74,75 @@ test('automatic dataflow width contains a nearby authored label without moving i
   assert.match(html, /data-composition-points="315,186;315,242"/);
 });
 
+function longVerticalLabelDiagram(controls = {}) {
+  return {
+    schema_version: 1, diagram_type: 'dataflow',
+    meta: { title: 'Complete payload contract', output: 'diagram.html', quality_profile: 'showcase' },
+    stages: [{ label: 'Source' }, { label: 'Sink' }],
+    nodes: [
+      { id: 'source', type: 'backend', label: 'Source', stage: 0, row: 0 },
+      { id: 'sink', type: 'backend', label: 'Sink', stage: 1, row: 0 },
+      { id: 'archive', type: 'backend', label: 'Archive', stage: 1, row: 1 },
+    ],
+    flows: [{ id: 'flow', from: 'sink', to: 'archive',
+      label: 'versioned transaction payload contract with account identifiers, settlement metadata and durable audit references',
+      ...controls }],
+  };
+}
+
+function renderedFootprint(t, diagram) {
+  const { result, receipt, input, output, env } = inspect(t, diagram);
+  assert.equal(result.status, 0, JSON.stringify(receipt));
+  const rendered = spawnSync(process.execPath, [cli, 'render', 'dataflow', input, output], { encoding: 'utf8', env });
+  assert.equal(rendered.status, 0, rendered.stdout + rendered.stderr);
+  const html = fs.readFileSync(output, 'utf8');
+  return {
+    html,
+    width: Number(html.match(/<svg viewBox="0 0 (\d+) /)[1]),
+    plates: [...html.matchAll(/<rect x="([\d.]+)" y="([\d.]+)" width="([\d.]+)" height="16" rx="4" class="c-mask"/g)].map(match => match.slice(1).map(Number)),
+    nodes: [...html.matchAll(/<rect x="[\d.]+" y="(?:128|242)" width="112" height="58"[^>]*>/g)].map(match => match[0]),
+  };
+}
+
+for (const [profile, name, controls] of [
+  ['showcase', 'unpinned', {}],
+  ['showcase', 'authored relative label controls', { labelDx: 20, labelDy: 40, labelSegment: 0 }],
+  ['standard', 'authored relative label controls', { labelDx: 20, labelDy: 40, labelSegment: 0 }],
+]) {
+  test(`automatic width includes the final ${profile} ${name} label footprint`, t => {
+    const diagram = longVerticalLabelDiagram(controls);
+    diagram.meta.quality_profile = profile;
+    const actual = renderedFootprint(t, diagram);
+    // Authored canvases retain their established placement policy. Give the
+    // unpinned comparison a valid relative position to isolate node/route size.
+    const wideDiagram = structuredClone(diagram);
+    wideDiagram.meta.viewBox = [940, 398];
+    if (name === 'unpinned') wideDiagram.flows[0].labelDy = 40;
+    const wide = renderedFootprint(t, wideDiagram);
+    assert.equal(actual.plates.length, 1);
+    const [[left, , labelWidth]] = actual.plates;
+    assert.ok(labelWidth > 480 && left > 0, 'complete label exceeds the compact canvas but has a valid left edge');
+    assert.ok(actual.width >= Math.ceil(left + labelWidth + 24), 'canvas fits the final plate with the established 24px padding');
+    assert.ok(actual.width < 940, 'automatic canvas retains compact packing');
+    assert.ok(actual.html.includes(diagram.flows[0].label), 'full meaningful label remains present');
+    if (name !== 'unpinned') assert.deepEqual(actual.plates, wide.plates, 'growing canvas preserves authored relative label coordinates');
+    assert.deepEqual(actual.nodes, wide.nodes, 'growing canvas preserves node geometry');
+    assert.match(actual.html, /data-composition-points="315,186;315,242"/);
+    assert.equal(wide.width, 940, 'authored canvas remains authoritative');
+  });
+}
+
+test('an authored narrow canvas still reports long-label overflow without resizing it', t => {
+  const diagram = longVerticalLabelDiagram();
+  diagram.meta.viewBox = [480, 398];
+  const { result, receipt } = inspect(t, diagram);
+  assert.notEqual(result.status, 0);
+  const overflow = receipt.diagnostics.find(diagnostic => diagnostic.code === 'composition/label-canvas-containment');
+  assert.ok(overflow);
+  assert.deepEqual(overflow.evidence.viewBox, [480, 398]);
+  assert.ok(overflow.evidence.overflowPx.right > 0);
+});
+
 test('five-stage unpinned pipeline passes first draft with complete text and projected typography', t => {
   const diagram = pipeline();
   const { result, receipt, input, output, env } = inspect(t, diagram);
