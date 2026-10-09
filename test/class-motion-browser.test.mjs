@@ -128,6 +128,7 @@ test('class: mixed hierarchy fallback keeps dependency notation in focus and SVG
     return result.result?.value;
   };
   await send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
+  await send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'no-preference' }] });
   // 只截取下载边界，SVG 序列化和关系交互仍执行产品实现。
   await send('Page.addScriptToEvaluateOnNewDocument', { source: `
     window.classExports = [];
