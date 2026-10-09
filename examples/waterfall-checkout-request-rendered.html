@@ -4973,7 +4973,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     <!-- Main Diagram -->
     <div class="diagram-container" data-detail-level="read"
          data-preset-badge-editorial-plate="ARCHIFY / PLATE 04">
-      <svg viewBox="0 0 1089 308" role="img" lang="en" aria-labelledby="archify-diagram-title archify-diagram-description" data-preset="classic" data-quality-profile="showcase" data-waterfall-ui="" data-waterfall-unit="ms" data-reader-fit="width-first" data-reader-min-text="7.5">
+      <svg viewBox="0 0 1089 308" role="img" lang="en" aria-labelledby="archify-diagram-title archify-diagram-description" data-animation="trace" data-preset="classic" data-quality-profile="showcase" data-waterfall-ui="" data-waterfall-unit="ms" data-reader-fit="width-first" data-reader-min-text="7.5">
         <title id="archify-diagram-title">Checkout request execution</title>
         <desc id="archify-diagram-description">Illustrative timing: inventory lookup and discount calculation run concurrently; payment follows.</desc>
         <!-- Definitions -->
@@ -5071,7 +5071,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <g id="node-request" data-node-id="request" data-node-label="POST /checkout" tabindex="0" role="button" aria-label="Focus POST /checkout, 0–1,200 ms · 1,200 ms · 100% of 1,200 ms wall-clock — Parent of every step below; its duration is not added to theirs., checkout-api" aria-pressed="false" data-node-kind="frontend" data-node-sublabel="0–1,200 ms · 1,200 ms · 100% of 1,200 ms wall-clock — Parent of every step below; its duration is not added to theirs." data-node-context="checkout-api" data-waterfall-start="0" data-waterfall-end="1200" data-waterfall-duration="1200" data-waterfall-depth="0" data-waterfall-status="ok" data-waterfall-service="checkout-api">
           <title>POST /checkout · 0–1,200 ms · 1,200 ms · 100% of 1,200 ms wall-clock — Parent of every step below; its duration is not added to theirs. · checkout-api</title>
           <rect x="20" y="89" width="1049" height="23" rx="6" class="c-mask wf-row"/>
-          <rect x="237" y="93.5" width="760" height="14" rx="4" class="c-frontend wf-span" stroke-width="1.2"/>
+          <rect x="237" y="93.5" width="760" height="14" rx="4" class="c-frontend wf-span" data-animate="node" style="--step:0" stroke-width="1.2"/>
           
           <circle cx="32" cy="100.5" r="4.5" class="t-frontend wf-dot"/>
           <text data-node-label="" x="42" y="104.8" class="t-primary" font-size="12.5" font-weight="750">POST /checkout</text>
@@ -5080,7 +5080,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <g id="node-auth" data-node-id="auth" data-node-label="Authenticate caller" tabindex="0" role="button" aria-label="Focus Authenticate caller, 0–100 ms · 100 ms · 8.3% of 1,200 ms wall-clock, identity › POST /checkout" aria-pressed="false" data-node-kind="backend" data-node-sublabel="0–100 ms · 100 ms · 8.3% of 1,200 ms wall-clock" data-node-context="identity › POST /checkout" data-waterfall-start="0" data-waterfall-end="100" data-waterfall-duration="100" data-waterfall-depth="1" data-waterfall-status="ok" data-waterfall-service="identity">
           <title>Authenticate caller · 0–100 ms · 100 ms · 8.3% of 1,200 ms wall-clock · identity › POST /checkout</title>
           <rect x="20" y="114" width="1049" height="23" rx="6" class="c-mask wf-row wf-row-alt"/>
-          <rect x="237" y="118.5" width="63.329999999999984" height="14" rx="4" class="c-backend wf-solid" stroke-width="1.2"/>
+          <rect x="237" y="118.5" width="63.329999999999984" height="14" rx="4" class="c-backend wf-solid" data-animate="node" style="--step:1" stroke-width="1.2"/>
           
           <circle cx="50" cy="125.5" r="3.5" class="t-backend wf-dot"/>
           <text data-node-label="" x="60" y="129.8" class="t-primary" font-size="12.5" font-weight="500">Authenticate caller</text>
@@ -5089,7 +5089,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <g id="node-inventory" data-node-id="inventory" data-node-label="Look up inventory" tabindex="0" role="button" aria-label="Focus Look up inventory, 100–400 ms · 300 ms · 25% of 1,200 ms wall-clock, inventory › POST /checkout" aria-pressed="false" data-node-kind="database" data-node-sublabel="100–400 ms · 300 ms · 25% of 1,200 ms wall-clock" data-node-context="inventory › POST /checkout" data-waterfall-start="100" data-waterfall-end="400" data-waterfall-duration="300" data-waterfall-depth="1" data-waterfall-status="ok" data-waterfall-service="inventory">
           <title>Look up inventory · 100–400 ms · 300 ms · 25% of 1,200 ms wall-clock · inventory › POST /checkout</title>
           <rect x="20" y="139" width="1049" height="23" rx="6" class="c-mask wf-row"/>
-          <rect x="300.33" y="143.5" width="190" height="14" rx="4" class="c-database wf-solid" stroke-width="1.2"/>
+          <rect x="300.33" y="143.5" width="190" height="14" rx="4" class="c-database wf-solid" data-animate="node" style="--step:2" stroke-width="1.2"/>
           
           <circle cx="50" cy="150.5" r="3.5" class="t-database wf-dot"/>
           <text data-node-label="" x="60" y="154.8" class="t-primary" font-size="12.5" font-weight="500">Look up inventory</text>
@@ -5098,7 +5098,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <g id="node-discount" data-node-id="discount" data-node-label="Calculate discount" tabindex="0" role="button" aria-label="Focus Calculate discount, 100–300 ms · 200 ms · 17% of 1,200 ms wall-clock, checkout-api › POST /checkout" aria-pressed="false" data-node-kind="frontend" data-node-sublabel="100–300 ms · 200 ms · 17% of 1,200 ms wall-clock" data-node-context="checkout-api › POST /checkout" data-waterfall-start="100" data-waterfall-end="300" data-waterfall-duration="200" data-waterfall-depth="1" data-waterfall-status="ok" data-waterfall-service="checkout-api">
           <title>Calculate discount · 100–300 ms · 200 ms · 17% of 1,200 ms wall-clock · checkout-api › POST /checkout</title>
           <rect x="20" y="164" width="1049" height="23" rx="6" class="c-mask wf-row wf-row-alt"/>
-          <rect x="300.33" y="168.5" width="126.67000000000002" height="14" rx="4" class="c-frontend wf-solid" stroke-width="1.2"/>
+          <rect x="300.33" y="168.5" width="126.67000000000002" height="14" rx="4" class="c-frontend wf-solid" data-animate="node" style="--step:3" stroke-width="1.2"/>
           
           <circle cx="50" cy="175.5" r="3.5" class="t-frontend wf-dot"/>
           <text data-node-label="" x="60" y="179.8" class="t-primary" font-size="12.5" font-weight="500">Calculate discount</text>
@@ -5107,7 +5107,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <g id="node-payment" data-node-id="payment" data-node-label="Charge payment" tabindex="0" role="button" aria-label="Focus Charge payment, 400–1,050 ms · 650 ms · 54% of 1,200 ms wall-clock, payments › POST /checkout" aria-pressed="false" data-node-kind="cloud" data-node-sublabel="400–1,050 ms · 650 ms · 54% of 1,200 ms wall-clock" data-node-context="payments › POST /checkout" data-waterfall-start="400" data-waterfall-end="1050" data-waterfall-duration="650" data-waterfall-depth="1" data-waterfall-status="ok" data-waterfall-service="payments">
           <title>Charge payment · 400–1,050 ms · 650 ms · 54% of 1,200 ms wall-clock · payments › POST /checkout</title>
           <rect x="20" y="189" width="1049" height="23" rx="6" class="c-mask wf-row"/>
-          <rect x="490.33" y="193.5" width="411.67" height="14" rx="4" class="c-cloud wf-solid" stroke-width="1.2"/>
+          <rect x="490.33" y="193.5" width="411.67" height="14" rx="4" class="c-cloud wf-solid" data-animate="node" style="--step:4" stroke-width="1.2"/>
           
           <circle cx="50" cy="200.5" r="3.5" class="t-cloud wf-dot"/>
           <text data-node-label="" x="60" y="204.8" class="t-primary" font-size="12.5" font-weight="500">Charge payment</text>
@@ -5116,7 +5116,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <g id="node-save" data-node-id="save" data-node-label="Write order" tabindex="0" role="button" aria-label="Focus Write order, 1,050–1,200 ms · 150 ms · 13% of 1,200 ms wall-clock, checkout-api › POST /checkout" aria-pressed="false" data-node-kind="frontend" data-node-sublabel="1,050–1,200 ms · 150 ms · 13% of 1,200 ms wall-clock" data-node-context="checkout-api › POST /checkout" data-waterfall-start="1050" data-waterfall-end="1200" data-waterfall-duration="150" data-waterfall-depth="1" data-waterfall-status="ok" data-waterfall-service="checkout-api">
           <title>Write order · 1,050–1,200 ms · 150 ms · 13% of 1,200 ms wall-clock · checkout-api › POST /checkout</title>
           <rect x="20" y="214" width="1049" height="23" rx="6" class="c-mask wf-row wf-row-alt"/>
-          <rect x="902" y="218.5" width="95" height="14" rx="4" class="c-frontend wf-solid" stroke-width="1.2"/>
+          <rect x="902" y="218.5" width="95" height="14" rx="4" class="c-frontend wf-solid" data-animate="node" style="--step:5" stroke-width="1.2"/>
           
           <circle cx="50" cy="225.5" r="3.5" class="t-frontend wf-dot"/>
           <text data-node-label="" x="60" y="229.8" class="t-primary" font-size="12.5" font-weight="500">Write order</text>
@@ -5616,6 +5616,13 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       }
 
       function cleanExportClone(clone) {
+        // Route interaction rewrites CSS declarations through CSSOM. Normalize
+        // authored motion delays on the clone so exported bytes do not depend
+        // on whether the reader traced a route before downloading.
+        Array.prototype.forEach.call(clone.querySelectorAll('[data-animate]'), function (el) {
+          var step = el.style.getPropertyValue('--step');
+          if (step) el.setAttribute('style', el.style.cssText);
+        });
         // View transforms and neighborhood focus are HTML exploration state,
         // never part of a downloaded full-diagram artifact.
         clone.style.removeProperty('transform');
