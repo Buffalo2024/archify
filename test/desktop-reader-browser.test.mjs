@@ -185,9 +185,13 @@ test('production showcase is readable in the real 1440 by 900 adaptive reader', 
     const artifactSource = fs.readFileSync(artifact, 'utf8');
     const svgRoot = artifactSource.match(/<svg\b[^>]*>/)?.[0];
     assert.ok(svgRoot, 'production fixture must contain an SVG root');
-    // The comfortable primary-text preference uses the available width here;
-    // the viewport cap still wins over the preferred reading size.
-    assert.match(svgRoot, /viewBox="0 0 1376 728"/);
+    // Guard what a reader sees, not one exact canvas: the showcase keeps the
+    // full 1376 authored width, and its height may change when the layout gets
+    // more correct (the audit archive sits outside the private network frame,
+    // and the DR region keeps clear of the production region).
+    const viewBox = svgRoot.match(/viewBox="0 0 (\d+) (\d+)"/);
+    assert.ok(viewBox, svgRoot);
+    assert.equal(Number(viewBox[1]), 1376);
     assert.match(svgRoot, /data-reader-fit="intrinsic-height"/);
     assert.match(svgRoot, /data-reader-min-text="7\.5"/);
 
@@ -205,9 +209,13 @@ test('production showcase is readable in the real 1440 by 900 adaptive reader', 
       ));
       for (const observation of [desktop, darkDesktop]) {
         assert.ok(observation);
-        assert.equal(observation.readerWidth, 1376);
-        assert.ok(observation.readerWidth <= 1376);
-        assert.equal(observation.diagramWidth, 1346);
+        // The intrinsic-height Reader may narrow the diagram so the whole
+        // showcase fits the 1440x900 first screen. That is fine as long as it
+        // never exceeds the reading cap, keeps the 30px frame inset, and the
+        // projected text still meets the 7.5px reading target below.
+        assert.ok(observation.readerWidth <= 1376, JSON.stringify(observation));
+        assert.ok(observation.readerWidth >= 1200, JSON.stringify(observation));
+        assert.equal(observation.diagramWidth, observation.readerWidth - 30, JSON.stringify(observation));
         assert.equal(observation.viewBoxWidth, 1376);
         assert.ok(Number.isFinite(observation.minimumProjectedNodeTextPx));
         assert.ok(observation.minimumProjectedNodeTextPx >= MIN_PROJECTED_NODE_TEXT_PX);
@@ -216,14 +224,10 @@ test('production showcase is readable in the real 1440 by 900 adaptive reader', 
         assert.ok(observation.minimumProjectedNodeText.trim().length > 0);
         assert.equal(observation.readabilityOk, true);
         assert.equal(observation.overflowX, false, JSON.stringify(observation));
-        if (observation.overflowY) {
-          assert.equal(observation.verticalScrollAccepted, true, JSON.stringify(observation));
-          assert.equal(observation.readerLayout, 'adaptive', JSON.stringify(observation));
-          assert.equal(observation.readerOverflow, 'authored', JSON.stringify(observation));
-          assert.equal(observation.readerFit, 'intrinsic-height', JSON.stringify(observation));
-        } else {
-          assert.equal(observation.verticalScrollAccepted, false, JSON.stringify(observation));
-        }
+        // The production showcase is the gallery's first impression: it must
+        // read whole on a laptop screen without page scroll.
+        assert.equal(observation.overflowY, false, JSON.stringify(observation));
+        assert.equal(observation.verticalScrollAccepted, false, JSON.stringify(observation));
       }
     }
   } finally {
