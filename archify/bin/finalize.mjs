@@ -782,22 +782,12 @@ export async function runFinalize({
   // update check in parallel instead of timing out on every delivery.
   const updateCheck = startUpdateCheck({ env, deadlineMs: FINALIZE_UPDATE_DEADLINE_MS });
 
-  // Only launch/attach the blank browser here. The normal browser gate still
-  // verifies current delivery provenance before it consumes this one-shot factory.
-  const chromePath = runBrowserCheck ? resolveChrome({ env }) : null;
+  // Resolve and launch Chrome only after delivery and strict artifact checks pass.
+  // Invalid candidates must not start a browser that cannot inspect an artifact.
+  let chromePath = null;
   let browser;
   let browserStartupError;
   let browserTransferred = false;
-  if (chromePath) {
-    try {
-      browser = createBrowser(chromePath, { env });
-      // Deliver/check may fail before inspect() awaits startup. Handle the
-      // rejection now while retaining the same promise for the browser gate.
-      browser.sessionPromise.catch(() => {});
-    } catch (error) {
-      browserStartupError = error;
-    }
-  }
   const browserFactory = () => {
     if (browserStartupError) throw browserStartupError;
     if (browserTransferred || !browser) throw new Error('The finalize browser is unavailable or already consumed.');
@@ -821,6 +811,17 @@ export async function runFinalize({
       const inProcess = stage === 'browser-check' && runBrowserCheck;
       let result;
       if (inProcess) {
+        chromePath = resolveChrome({ env });
+        if (chromePath) {
+          try {
+            browser = createBrowser(chromePath, { env });
+            // Retain the startup rejection for the browser gate without emitting
+            // an unhandled rejection before inspect() awaits the same promise.
+            browser.sessionPromise.catch(() => {});
+          } catch (error) {
+            browserStartupError = error;
+          }
+        }
         const checked = await runBrowserCheck({
           artifactPath: resolvedOutput,
           outDir: resolvedOutDir,
