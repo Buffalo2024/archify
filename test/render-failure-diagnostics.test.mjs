@@ -113,7 +113,7 @@ test('render layout rejection exposes the existing diagnostic and preserves an e
   }));
   fs.writeFileSync(output, 'trusted artifact');
   const result = run([cli, 'render', 'architecture', input, output], cwd);
-  assertHumanFailure(result, 'layout/constraint');
+  assertHumanFailure(result, 'architecture/component-label-overflow');
   assert.match(result.stderr, /shorten the label or widen size/);
   assert.equal(fs.readFileSync(output, 'utf8'), 'trusted artifact');
   for (const command of ['validate', 'deliver']) {
@@ -121,8 +121,8 @@ test('render layout rejection exposes the existing diagnostic and preserves an e
     assert.equal(machine.status, 1);
     assert.equal(machine.stderr, '');
     const failure = JSON.parse(machine.stdout);
-    assert.equal(failure.diagnostics[0].code, 'layout/constraint');
-    assert.deepEqual(failure.diagnostics[0].subject, { diagramType: 'architecture' });
+    assert.equal(failure.diagnostics[0].code, 'architecture/component-label-overflow');
+    assert.deepEqual(failure.diagnostics[0].subject, { diagramType: 'architecture', nodeId: 'node' });
   }
   assert.equal(fs.readFileSync(output, 'utf8'), 'trusted artifact');
 });
