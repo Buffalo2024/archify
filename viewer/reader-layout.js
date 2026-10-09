@@ -156,11 +156,12 @@
         legend.style.removeProperty('--archify-reader-legend-transform');
       }
       // Keep the original legend in its SVG: renderer hover/focus selectors and
-      // canonical export still own that same group. Only ordinary capped
-      // reading at 25–100% borrows the spare outer canvas for its legend.
+      // canonical export still own that same group. Ordinary capped reading
+      // and fitted automatic sequences borrow the outer corner at 25–100%.
       function syncLegend() {
         var cameraScale = Number(svg && svg.getAttribute('data-view-scale')) || 1;
-        if (!legend || !eligible() || html.getAttribute('data-reader-area') !== 'true' || cameraScale > 1.001) {
+        var cornerReading = html.getAttribute('data-reader-area') === 'true' || automaticSequence && !readingScroll;
+        if (!legend || !eligible() || !cornerReading || cameraScale > 1.001) {
           clearLegend();
           return;
         }

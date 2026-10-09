@@ -615,8 +615,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       align-items: center;
     }
     html[data-reader-area="true"] .diagram-container > svg { flex-shrink: 0; }
-    /* The original SVG legend can use the spare outer reader canvas while the
-       capped diagram stays centered. The container still clips all outer paint. */
+    /* The original SVG legend can use the outer corner while the capped or fitted
+       diagram stays centered. The container still clips all outer paint. */
     .diagram-container:has([data-reader-legend-corner]) > svg { overflow: visible; }
     .diagram-container [data-reader-legend-corner] {
       transform-origin: 0 0;
@@ -10115,11 +10115,12 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         legend.style.removeProperty('--archify-reader-legend-transform');
       }
       // Keep the original legend in its SVG: renderer hover/focus selectors and
-      // canonical export still own that same group. Only ordinary capped
-      // reading at 25–100% borrows the spare outer canvas for its legend.
+      // canonical export still own that same group. Ordinary capped reading
+      // and fitted automatic sequences borrow the outer corner at 25–100%.
       function syncLegend() {
         var cameraScale = Number(svg && svg.getAttribute('data-view-scale')) || 1;
-        if (!legend || !eligible() || html.getAttribute('data-reader-area') !== 'true' || cameraScale > 1.001) {
+        var cornerReading = html.getAttribute('data-reader-area') === 'true' || automaticSequence && !readingScroll;
+        if (!legend || !eligible() || !cornerReading || cameraScale > 1.001) {
           clearLegend();
           return;
         }

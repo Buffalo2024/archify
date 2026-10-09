@@ -5,6 +5,8 @@ six messages, and a 560×658 SVG. On `dev@9ef09617`, its ordinary initial view
 enlarges to 840×987, putting the final messages and legend below the first screen.
 The candidate fits the complete diagram without shrinking its source text.
 Long automatic sequences retain reading width and normal page scrolling.
+The original legend stays at the outer reading area's bottom-left content
+corner, including when the first-screen fit does not bind the enlargement cap.
 
 Both captures use the same redacted input, a 1396×830 viewport, dark theme,
 Classic preset, Read detail, camera at 100%, and page at scrollY=0.
@@ -38,6 +40,15 @@ ARCHIFY_CHROME="/path/to/chrome" npm run test:focus -- test/reader-layout-browse
 The added browser regression fails on the base and passes on the candidate.
 It also covers a shorter window and resize recovery, presentation entry/exit,
 a short wide sequence, a long automatic sequence, and an explicit canvas.
+The legend follow-up failed on `5e2c7ef6`: fitting was correct, but corner
+placement was absent and the legend was offset from the stage's content
+corner by about 219px horizontally and 52px vertically. On the final candidate,
+both gaps are zero and there is no navigation overlap. The same Chrome session
+also verifies 150% camera zoom, Reset, presentation and print roundtrips, and
+canonical export restoration without altering the live SVG. The real reported
+diagram was visually inspected after the move; the legend does not cover its
+messages or segment labels. This is evidence for this input, rather than a
+general content-avoidance guarantee.
 Independent Chrome review exercised an expanded right rail across the fit
 threshold without layout oscillation or controls leaving the viewport. A window
 that cannot fit the original text size returns to the existing reading scale;

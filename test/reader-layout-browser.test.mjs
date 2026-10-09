@@ -652,8 +652,20 @@ test('Reader Layout preserves final-artifact behavior across its ownership bound
             var matrix = text.getScreenCTM();
             return Math.hypot(matrix.a, matrix.b);
           });
+          var legend = svg.querySelector('[data-legend]');
+          var legendRect = legend.getBoundingClientRect();
+          var containerRect = svg.parentElement.getBoundingClientRect();
+          var containerStyle = getComputedStyle(svg.parentElement);
+          var navRect = document.querySelector('.diagram-nav').getBoundingClientRect();
           return { svg: bounds(svg), stage: bounds(svg.parentElement),
             controls: bounds(document.querySelector('.diagram-nav')),
+            legend: { corner: legend.hasAttribute('data-reader-legend-corner'),
+              bounds: bounds(legend),
+              originalSvg: legend.ownerSVGElement === svg, count: document.querySelectorAll('[data-legend]').length,
+              leftGap: legendRect.left - containerRect.left - parseFloat(containerStyle.borderLeftWidth) - parseFloat(containerStyle.paddingLeft),
+              bottomGap: containerRect.bottom - parseFloat(containerStyle.borderBottomWidth) - parseFloat(containerStyle.paddingBottom) - legendRect.bottom,
+              navOverlap: Math.max(0, Math.min(navRect.right, legendRect.right) - Math.max(navRect.left, legendRect.left)) *
+                Math.max(0, Math.min(navRect.bottom, legendRect.bottom) - Math.max(navRect.top, legendRect.top)) },
             width: svg.clientWidth, sourceWidth: svg.viewBox.baseVal.width,
             minimumTextScale: Math.min.apply(Math, textScales),
             viewportWidth: innerWidth, viewportHeight: innerHeight,
@@ -670,11 +682,66 @@ test('Reader Layout preserves final-artifact behavior across its ownership bound
         assert.ok(value.minimumTextScale >= 1 - 0.01, 'initial fitting must retain source text size: ' + JSON.stringify(value));
         assert.ok(value.width <= value.sourceWidth * 1.5 + 1, 'automatic enlargement remains capped: ' + JSON.stringify(value));
       }
+      function legendPlacement(value, corner) {
+        assert.equal(value.legend.corner, corner, JSON.stringify(value));
+        assert.equal(value.legend.originalSvg, true, 'legend remains in the original SVG');
+        assert.equal(value.legend.count, 1, 'legend is never duplicated');
+        if (corner) {
+          assert.ok(Math.abs(value.legend.leftGap) <= 1 && Math.abs(value.legend.bottomGap) <= 1,
+            'legend sits in the outer stage padding corner: ' + JSON.stringify(value));
+          assert.equal(value.legend.navOverlap, 0, 'legend must not overlap navigation');
+        }
+      }
+      async function exportedLegend() {
+        return evaluate(`(async function () {
+          var svg = document.querySelector('.diagram-container > svg');
+          var before = svg.outerHTML, original = URL.createObjectURL, captured;
+          URL.createObjectURL = function (blob) {
+            if (blob.type.indexOf('image/svg+xml') === 0) captured = blob;
+            return original.call(URL, blob);
+          };
+          try {
+            await Archify.exportMenu.run('svg');
+            var text = await captured.text();
+            var clone = new DOMParser().parseFromString(text, 'image/svg+xml').documentElement;
+            return { legend: clone.querySelector('[data-legend]').outerHTML.replace(' style=""', ''),
+              geometry: ['viewBox', 'width', 'height'].map(function (name) { return clone.getAttribute(name); }),
+              count: clone.querySelectorAll('[data-legend]').length, liveUnchanged: before === svg.outerHTML,
+              runtime: Boolean(clone.querySelector('[data-reader-legend-corner]')) || text.includes('--archify-reader-legend-transform') };
+          } finally { URL.createObjectURL = original; }
+        })()`, true);
+      }
       const file = renderSequence('compact-roundtrip', compact);
+      await load(file, { width: 1396, height: 540 });
+      const canonical = await exportedLegend();
+      assert.equal(canonical.count, 1);
+      assert.equal(canonical.liveUnchanged, true);
+      assert.equal(canonical.runtime, false);
       await load(file, { width: 1396, height: 830 });
       const initial = await stage('compact-sequence-initial');
       fits(initial);
+      legendPlacement(initial, true);
+      if (evidence) {
+        assert.equal(await evaluate('scrollY'), 0, 'initial screenshot uses the top of the document');
+        assert.equal(await evaluate('Archify.view.state().scale'), 1);
+        const capture = await send('Page.captureScreenshot', { format: 'png' });
+        fs.writeFileSync(path.join(evidence, 'compact-sequence-initial.png'), Buffer.from(capture.data, 'base64'));
+      }
+      assert.deepEqual(await exportedLegend(), canonical, 'initial fitting exports canonical geometry and legend placement');
       assert.ok((await snapshot('compact-sequence-shell')).shellWidth >= 960, 'height fitting preserves the desktop shell');
+      await evaluate('Archify.view.zoomIn(); Archify.view.zoomIn()');
+      await stable();
+      const zoomed = await stage('compact-sequence-legend-150');
+      assert.equal(await evaluate('Archify.view.state().scale'), 1.5);
+      legendPlacement(zoomed, false);
+      assert.deepEqual(zoomed.geometry, initial.geometry);
+      assert.deepEqual(await exportedLegend(), canonical, 'zoom exports canonical legend placement without changing live SVG');
+      await evaluate('Archify.view.reset()');
+      await stable();
+      const reset = await stage('compact-sequence-legend-reset');
+      fits(reset);
+      legendPlacement(reset, true);
+      assert.deepEqual(reset.geometry, initial.geometry);
       await viewport(1396, 540);
       await stable();
       const short = await stage('compact-sequence-short-window');
@@ -683,16 +750,31 @@ test('Reader Layout preserves final-artifact behavior across its ownership bound
       assert.ok(short.width >= initial.width, 'short windows recover reading width');
       await viewport(1396, 830);
       await stable();
-      fits(await stage('compact-sequence-resized-back'));
+      const resizedBack = await stage('compact-sequence-resized-back');
+      fits(resizedBack);
+      legendPlacement(resizedBack, true);
       await evaluate('Archify.presentation.enter()');
       await stable();
       const presented = await stage('compact-sequence-presentation');
+      legendPlacement(presented, false);
+      assert.deepEqual(presented.geometry, initial.geometry);
+      assert.deepEqual(await exportedLegend(), canonical, 'presentation exports canonical legend placement');
       assert.ok(presented.svg.top >= -1 && presented.svg.bottom <= presented.viewportHeight + 1, JSON.stringify(presented));
       await evaluate('Archify.presentation.exit()');
       await stable();
       const returned = await stage('compact-sequence-return');
       fits(returned);
+      legendPlacement(returned, true);
       assert.deepEqual(returned.geometry, initial.geometry, 'fitting never rewrites authored SVG geometry');
+      await media('dark', false, true);
+      await stable();
+      const printed = await stage('compact-sequence-print');
+      legendPlacement(printed, false);
+      assert.deepEqual(printed.geometry, initial.geometry);
+      assert.deepEqual(await exportedLegend(), canonical, 'print exports canonical legend placement');
+      await media();
+      await stable();
+      legendPlacement(await stage('compact-sequence-print-return'), true);
 
       const wide = { ...compact, segments: [], cards: [],
         messages: [{ from: 'client', to: 'worker', y: 160, label: 'Check status' }] };
