@@ -200,6 +200,10 @@
                 "type": {
                   "type": "string"
                 },
+                "comment": {
+                  "type": "string",
+                  "description": "Column comment. Rendered after the type as \"SQL_TYPE｜comment\"."
+                },
                 "key": {
                   "anyOf": [
                     {

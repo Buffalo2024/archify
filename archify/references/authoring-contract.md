@@ -342,8 +342,8 @@ schema has more than 8 tables or 50 fields, it is a dense full-schema map: start
 with `meta.quality_profile: "standard"` so complete field visibility is not
 traded away for repeated showcase route repairs. Include every physical column in
 `attributes`, keep the source SQL type, and preserve the
-field's Chinese comment in the type string as `SQL_TYPE｜中文备注` because the
-schema has no separate comment property. The default viewer shows these rows at
+field's Chinese comment in the attribute's `comment` (drawn after the type as
+`SQL_TYPE｜中文备注`). The default viewer shows these rows at
 the `read` level; do not rely on hover/focus or cards to reveal physical fields.
 Cards may explain constraints, inferred relationships, or domain rules, but never
 replace a field list.
@@ -353,6 +353,10 @@ names, comments, module paths, and foreign-key meaning. Put the domain name in
 `tag` and give each domain one solid rectangle of grid cells: a single row, a
 single column, or a filled rectangular block — not an L or a diagonal — with
 every cell of the rectangle holding one of its tables.
+For a first draft you may omit every `row`, `col`, `pos`, and `layout`: the
+renderer then stacks each `tag` domain in its own column (untagged tables in a
+final column; without tags, three tables per row) and picks the deterministic
+order whose relationships cross least. Place cells yourself only to override it.
 All tables with the same tag stay together; do not interleave unrelated tables
 between members. A domain that fills one such rectangle is drawn as a labelled
 band behind its tables, so the

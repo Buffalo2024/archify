@@ -64,6 +64,112 @@ const { diagram: er, template, outPath, sourceEvidence } = loadDiagram({
   argv: cliArgs,
 });
 
+// Agents copy a column comment into its own field. Show it the documented way,
+// after the SQL type ("SQL_TYPE｜comment"), so every measurement and capacity
+// check sees the exact text that is drawn. The authored file is not rewritten.
+for (const entity of Array.isArray(er.entities) ? er.entities : []) {
+  for (const attribute of Array.isArray(entity?.attributes) ? entity.attributes : []) {
+    if (!attribute || typeof attribute.comment !== 'string') continue;
+    const comment = attribute.comment.trim();
+    if (comment) attribute.type = attribute.type ? `${attribute.type}｜${comment}` : comment;
+    delete attribute.comment;
+  }
+}
+
+// A first draft that places no table at all (no layout block, row/col or pos)
+// gave every table the origin and crashed the router with an internal error.
+// Lay such tables out on the default grid instead. Tables sharing a domain
+// stack in one column so the domain band is a solid rectangle; otherwise up to
+// three tables per row (four above nine). Among a few deterministic orderings
+// keep the one whose centre-to-centre relationship lines cross least and
+// pass through fewest other tables, then the shortest.
+function automaticEntityCells(tables, relationships) {
+  const ids = tables.map((entity) => entity.id);
+  const links = relationships.filter((relationship) => (
+    relationship && ids.includes(relationship.from) && ids.includes(relationship.to) && relationship.from !== relationship.to
+  ));
+  const degree = new Map(ids.map((id) => [id, 0]));
+  for (const { from, to } of links) { degree.set(from, degree.get(from) + 1); degree.set(to, degree.get(to) + 1); }
+  const neighbours = new Map(ids.map((id) => [id, []]));
+  for (const { from, to } of links) { neighbours.get(from).push(to); neighbours.get(to).push(from); }
+  const bfs = () => {
+    const order = [];
+    const seen = new Set();
+    const roots = [...ids].sort((a, b) => degree.get(b) - degree.get(a) || ids.indexOf(a) - ids.indexOf(b));
+    for (const root of roots) {
+      if (seen.has(root)) continue;
+      const queue = [root];
+      seen.add(root);
+      while (queue.length) {
+        const id = queue.shift();
+        order.push(id);
+        for (const next of neighbours.get(id)) if (!seen.has(next)) { seen.add(next); queue.push(next); }
+      }
+    }
+    return order;
+  };
+  const candidates = [];
+  const domains = [...new Set(tables.map((entity) => entity.tag).filter((domain) => typeof domain === 'string' && domain))];
+  if (domains.length) {
+    const groups = [...domains.map((domain) => ids.filter((id, index) => tables[index].tag === domain))];
+    const loose = ids.filter((id, index) => !domains.includes(tables[index].tag));
+    const columnsFor = (order) => [...order.map((index) => groups[index]), ...(loose.length ? [loose] : [])];
+    const permutations = (items) => items.length <= 1 ? [items] : items.flatMap((item, index) => (
+      permutations([...items.slice(0, index), ...items.slice(index + 1)]).map((rest) => [item, ...rest])));
+    const orders = groups.length <= 5 ? permutations(groups.map((_, index) => index)) : [groups.map((_, index) => index)];
+    for (const order of orders) {
+      const cells = new Map();
+      columnsFor(order).forEach((column, col) => column.forEach((id, row) => cells.set(id, { row, col })));
+      candidates.push(cells);
+    }
+  } else {
+    const columns = ids.length <= 3 ? ids.length : ids.length <= 9 ? 3 : 4;
+    const hub = [...ids].sort((a, b) => degree.get(b) - degree.get(a) || ids.indexOf(a) - ids.indexOf(b))[0];
+    const centred = [...ids.filter((id) => id !== hub)];
+    centred.splice(Math.min(centred.length, columns === 3 ? 4 : Math.floor(columns / 2)), 0, hub);
+    for (const order of [ids, bfs(), centred]) {
+      candidates.push(new Map(order.map((id, index) => [id, { row: Math.floor(index / columns), col: index % columns }])));
+    }
+  }
+  const centre = (cell) => [cell.col * 3, cell.row * 2];
+  const cross = (a, b, c, d) => {
+    const orient = (p, q, r) => Math.sign((q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0]));
+    return orient(a, b, c) * orient(a, b, d) < 0 && orient(c, d, a) * orient(c, d, b) < 0;
+  };
+  const score = (cells) => {
+    const segments = links.map(({ from, to }) => [from, to, centre(cells.get(from)), centre(cells.get(to))]);
+    let crossings = 0;
+    let blocked = 0;
+    let length = 0;
+    for (const [index, [from, to, a, b]] of segments.entries()) {
+      length += Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]);
+      for (const [otherFrom, otherTo, c, d] of segments.slice(index + 1)) {
+        if ([otherFrom, otherTo].some((id) => id === from || id === to)) continue;
+        if (cross(a, b, c, d)) crossings += 1;
+      }
+      for (const id of ids) {
+        if (id === from || id === to) continue;
+        const [x, y] = centre(cells.get(id));
+        const t = ((x - a[0]) * (b[0] - a[0]) + (y - a[1]) * (b[1] - a[1])) / ((b[0] - a[0]) ** 2 + (b[1] - a[1]) ** 2);
+        if (t <= 0 || t >= 1) continue;
+        if (Math.hypot(a[0] + t * (b[0] - a[0]) - x, a[1] + t * (b[1] - a[1]) - y) < 0.5) blocked += 1;
+      }
+    }
+    return crossings * 1000 + blocked * 100 + length;
+  };
+  return candidates.reduce((best, cells) => (score(cells) < score(best) ? cells : best));
+}
+{
+  const tables = Array.isArray(er.entities) ? er.entities.filter((entity) => entity && typeof entity.id === 'string') : [];
+  const unplaced = !er.layout && tables.length > 0 && tables.length === asArray(er.entities).length
+    && tables.every((entity) => entity.row === undefined && entity.col === undefined && entity.pos === undefined)
+    && new Set(tables.map((entity) => entity.id)).size === tables.length;
+  if (unplaced) {
+    const cells = automaticEntityCells(tables, asArray(er.relationships));
+    for (const entity of tables) Object.assign(entity, cells.get(entity.id));
+  }
+}
+
 const grid = erGridLayout(er);
 
 const layout = {

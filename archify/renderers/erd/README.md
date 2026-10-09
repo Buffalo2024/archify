@@ -44,7 +44,7 @@ run in the table — never narrower than the shared width, wider when the badges
 need it. Every `fk`
 role — alone or inside a list — must also name its target as `"entity.attribute"`
 in `references`, and that target is checked against the declared entities and
-attributes.
+attributes. When no table has `row`, `col`, or `pos` and there is no `layout` block, the renderer assigns cells: one column per `tag` domain (untagged tables last), or three per row without tags, keeping the deterministic order with the fewest crossing relationship lines.
 
 A relationship reads `from` -> `to` and is drawn with crow's foot notation at
 both ends. The foot opens toward the entity whose cardinality it describes: its

@@ -276,11 +276,11 @@ test('repair receipt: schema fixes name allowed values, close property names and
   assert.match(typo.message, /"sublable"; allowed .*"sublabel"/);
 
   const erd = JSON.parse(fs.readFileSync(path.join(skillRoot, 'examples/orders.erd.json'), 'utf8'));
-  erd.entities[0].attributes[0].comment = '主键';
-  const erdResult = run(['validate', 'erd', writeFixture('comment.erd.json', erd), '--json']);
+  erd.entities[0].attributes[0].note = '主键';
+  const erdResult = run(['validate', 'erd', writeFixture('note.erd.json', erd), '--json']);
   const comment = receipt(erdResult).diagnostics.find((entry) => entry.code === 'schema/additionalProperties');
-  // Deleting the comment would drop a source fact; the fix names its home.
-  assert.match(comment.supportedFixes[0], /into "type" as "SQL_TYPE｜comment"/);
+  // Deleting the note would drop a source fact; the fix names its home.
+  assert.match(comment.supportedFixes[0], /^rename "note" to "comment"/);
 
   const sequence = JSON.parse(fs.readFileSync(path.join(skillRoot, 'examples/cache-miss-request.sequence.json'), 'utf8'));
   // Message y is optional (automatic rhythm), so exercise a still-required

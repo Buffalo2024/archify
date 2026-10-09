@@ -80,8 +80,8 @@ const RELOCATED_PROPERTIES = {
   erd: {
     attribute: {
       match: /^\/entities\/\d+\/attributes\/\d+$/,
-      properties: ['comment', 'note', 'description', 'desc', 'remark'],
-      fix: (property) => `move the ${property} text into "type" as "SQL_TYPE｜${property}" (for example "varchar(32)｜姓名"); attributes have no separate ${property} field`,
+      properties: ['note', 'description', 'desc', 'remark'],
+      fix: (property) => `rename ${JSON.stringify(property)} to "comment" (drawn after the type as "SQL_TYPE｜comment")`,
     },
   },
 };
