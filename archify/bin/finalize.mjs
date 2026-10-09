@@ -14,6 +14,7 @@ import {
   CAPTURE_VIEWPORTS,
   ChromeVisualBrowser,
   findChrome,
+  persistBrowserCheckFailure,
   VISUAL_CHECK_VIEWPORTS,
 } from './visual-check.mjs';
 import { startDeliveryUpdateCheck } from './delivery-update.mjs';
@@ -811,24 +812,39 @@ export async function runFinalize({
       const inProcess = stage === 'browser-check' && runBrowserCheck;
       let result;
       if (inProcess) {
-        chromePath = resolveChrome({ env });
-        if (chromePath) {
-          try {
+        try {
+          chromePath = resolveChrome({ env });
+          if (chromePath) {
             browser = createBrowser(chromePath, { env });
             // Retain the startup rejection for the browser gate without emitting
             // an unhandled rejection before inspect() awaits the same promise.
             browser.sessionPromise.catch(() => {});
-          } catch (error) {
-            browserStartupError = error;
           }
+        } catch (error) {
+          browserStartupError = error;
         }
-        const checked = await runBrowserCheck({
-          artifactPath: resolvedOutput,
-          outDir: resolvedOutDir,
-          chromePath,
-          resolveChrome: () => chromePath,
-          browserFactory,
-        });
+        // Discovery errors have no executable for the browser factory. Record
+        // a failed gate instead of treating them as ordinary Chrome absence.
+        const checked = browserStartupError && !chromePath
+          ? { exitCode: 1, receipt: persistBrowserCheckFailure(resolvedOutput, {
+            schemaVersion: 1, ok: false, command: 'browser-check', status: 'fail',
+            evidenceKind: 'automated-browser', visualReview: 'not-requested',
+            error: browserStartupError.message,
+            diagnostics: [{
+              code: 'viewer/browser-check-runtime', severity: 'error',
+              message: 'browser-check could not discover Chrome.',
+              subject: { artifact: resolvedOutput },
+              evidence: { reason: browserStartupError.message },
+              supportedFixes: ['resolve the reported Chrome discovery error, then rerun browser-check'],
+            }],
+          }, { outDir: resolvedOutDir }) }
+          : await runBrowserCheck({
+            artifactPath: resolvedOutput,
+            outDir: resolvedOutDir,
+            chromePath,
+            resolveChrome: () => chromePath,
+            browserFactory,
+          });
         result = { status: checked.exitCode, stdout: JSON.stringify(checked.receipt) };
       } else {
         result = await runCommand({ stage, cliPath, args, cwd,

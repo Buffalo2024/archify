@@ -296,6 +296,35 @@ test('Chrome startup and discovery failures are reported by the browser gate', a
   }
 });
 
+test('Chrome discovery exceptions persist terminal browser-check and finalize failures', async t => {
+  const { input, output, outDir, source } = inputs(t);
+  let delivered;
+  const finalized = await runFinalize(options({
+    input, output, outDir,
+    resolveChrome: () => { throw new Error('Chrome discovery failed'); },
+    createBrowser: () => { assert.fail('discovery failure must not launch Chrome'); },
+    runBrowserCheck: () => { assert.fail('discovery failure must not inspect Chrome'); },
+    runCommand: ({ stage }) => {
+      if (stage === 'deliver') {
+        delivered = delivery({ input, output, source });
+        return stageResult(delivered);
+      }
+      return stageResult(check(output, delivered));
+    },
+  }));
+  assert.equal(finalized.exitCode, 1);
+  assert.equal(finalized.receipt.status, 'fail');
+  assert.equal(finalized.receipt.failedStage, 'browser-check');
+  assert.equal(finalized.receipt.stages['browser-check'].status, 'fail');
+  const saved = JSON.parse(fs.readFileSync(finalized.receipt.evidence.receipt, 'utf8'));
+  assert.equal(saved.status, 'fail');
+  assert.equal(saved.failedStage, 'browser-check');
+  const browserFailure = JSON.parse(fs.readFileSync(finalized.receipt.evidence.browserCheckReceipt, 'utf8'));
+  assert.equal(browserFailure.status, 'fail');
+  assert.equal(browserFailure.error, 'Chrome discovery failed');
+  assert.equal(browserFailure.diagnostics[0].code, 'viewer/browser-check-runtime');
+});
+
 test('finalize closes an unconsumed browser when the in-process browser callback throws', async t => {
   const { input, output, outDir, source } = inputs(t);
   const events = [];

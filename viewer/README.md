@@ -586,9 +586,10 @@ The source split narrows maintenance scope while preserving runtime dependencies
   `data-reader-fit="intrinsic-height"` selects height fitting. Both declare
   automatic canvases and share the existing readability and enlargement limits.
   Automatic Sequence and Waterfall canvases, and intrinsic v2 Workflow canvases
-  with expanded vertical stacks, declare `width-first` and retain
-  vertical page scroll;
-  overflow settling must not shrink them back to fit the viewport height.
+  with expanded vertical stacks, declare `width-first`. A compact automatic
+  Sequence can fit the first screen while preserving authored text sizes;
+  longer sequences and the other width-first families retain vertical page
+  scroll, and overflow settling must not shrink them to viewport height.
   Undeclared SVGs retain the ordinary ratio-based eligibility and fit; UI or
   column attributes alone do not opt into either automatic fit. Other automatic
   canvases retain height fitting. Explicit Workflow canvases retain their existing
@@ -599,8 +600,10 @@ The source split narrows maintenance scope while preserving runtime dependencies
   SVG legend uses a temporary CSS transform to sit at the outer canvas's
   bottom-left content corner, at its normal reading size through 25–100%
   camera zoom. The group stays in the same SVG for hover/focus and export.
-  A legend that cannot fit clear of the navigation dock keeps its original
-  position. Camera zoom above 100%, a nonbinding cap, small screens, Embed,
+  Compact automatic Sequences that fit the first screen also use this corner
+  placement, even when the enlargement cap does not bind. A legend that cannot
+  fit clear of the navigation dock keeps its original position. Camera zoom
+  above 100%, other uncapped diagrams, small screens, Embed,
   Present and print restore ordinary in-SVG legend placement; canonical
   exports remove the corner marker and transform without changing authored
   coordinates or transforms. The 960px shell floor still serves the header and
