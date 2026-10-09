@@ -60,12 +60,14 @@ function render(t, document, quality = 'showcase') {
   t.after(() => fs.rmSync(directory, { recursive: true, force: true }));
   const input = path.join(directory, 'input.class.json');
   const output = path.join(directory, 'output.html');
-  fs.writeFileSync(input, JSON.stringify(document));
+  const authoredInput = JSON.stringify(document);
+  fs.writeFileSync(input, authoredInput);
   const validation = JSON.parse(run(['validate', 'class', input, '--quality', quality, '--json'], directory));
   assert.equal(validation.ok, true);
   run(['render', 'class', input, output, '--quality', quality], directory);
   const check = JSON.parse(run(['check', output, '--json'], directory));
   assert.equal(check.ok, true);
+  assert.equal(fs.readFileSync(input, 'utf8'), authoredInput, '路由归一化不得改写作者输入');
   assert.equal(check.composition.summary.errors, 0);
   const svg = fs.readFileSync(output, 'utf8').match(/<svg\b[\s\S]*?<\/svg>/)?.[0];
   assert.ok(svg, '渲染结果应包含 SVG');
@@ -166,6 +168,26 @@ for (const quality of ['standard', 'showcase']) {
   }
 }
 
+for (const quality of ['standard', 'showcase']) {
+  for (const kind of ['dependency', 'realization']) {
+    test(`class ${quality}: empty via keeps ${kind} fallback equivalent to omitted waypoints`, (t) => {
+      for (const reverse of [false, true]) {
+        const omitted = diagram(kind);
+        if (reverse) omitted.relationships.reverse();
+        const expected = render(t, omitted, quality);
+        for (const selection of ['one', 'hierarchy', 'all']) {
+          const document = structuredClone(omitted);
+          const members = document.relationships.filter((relation) => selection === 'all' || relation.kind === 'inheritance');
+          for (const relation of selection === 'one' ? members.slice(0, 1) : members) relation.via = [];
+          const actual = render(t, document, quality);
+          assertDistinctNotation(actual.routes);
+          assert.equal(actual.svg, expected.svg, `${selection}: 空 via 与省略字段应有相同渲染行为`);
+        }
+      }
+    });
+  }
+}
+
 for (const kind of ['inheritance', 'realization']) {
   test(`class: an isolated ${kind} hierarchy retains its shared bus`, (t) => {
     const document = diagram();
@@ -201,10 +223,12 @@ test('class: a separate storage hierarchy keeps its bus while another hierarchy 
   }
 });
 
-for (const control of ['via', 'sides', 'route', 'labelAt']) {
-  test(`class: bus coordination preserves authored ${control}`, (t) => {
+for (const [control, emptyVia] of ['via', 'sides', 'route', 'labelAt']
+  .flatMap((control) => (control === 'via' ? [[control, false]] : [[control, false], [control, true]]))) {
+  test(`class: bus coordination preserves authored ${control}${emptyVia ? ' with empty via' : ''}`, (t) => {
     const document = diagram('dependency');
     const relation = document.relationships.at(-1);
+    if (emptyVia) relation.via = [];
     if (control === 'via') {
       Object.assign(relation, { fromSide: 'right', toSide: 'right', via: [[584, 313], [584, 62]] });
     } else if (control === 'sides') {
@@ -218,7 +242,7 @@ for (const control of ['via', 'sides', 'route', 'labelAt']) {
     const route = routes.find(({ id }) => id === relation.id);
     if (relation.fromSide) assert.ok(onSide(route.points[0], boxes.get(relation.from), relation.fromSide));
     if (relation.toSide) assert.ok(onSide(route.points.at(-1), boxes.get(relation.to), relation.toSide));
-    if (relation.via) assert.deepEqual(route.points.slice(1, -1), relation.via, '作者 via 点必须原样保留');
+    if (relation.via?.length) assert.deepEqual(route.points.slice(1, -1), relation.via, '作者 via 点必须原样保留');
     if (relation.route === 'straight') assert.equal(route.points.length, 2, '作者要求的直线路由不能被自动绕行替代');
     if (relation.labelAt) {
       const labelGroup = [...svg.matchAll(/<g\b[^>]*data-edge-id="impl_relation"[^>]*>[\s\S]*?<\/g>/g)]

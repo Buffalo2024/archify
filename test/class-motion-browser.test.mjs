@@ -112,8 +112,8 @@ test('class: mixed hierarchy fallback keeps dependency notation in focus and SVG
       { id: 'client', label: 'Client', kind: 'class', row: 2, col: 1 },
     ],
     relationships: [
-      { id: 'left_extends', from: 'left', to: 'base', kind: 'inheritance' },
-      { id: 'right_extends', from: 'right', to: 'base', kind: 'inheritance' },
+      { id: 'left_extends', from: 'left', to: 'base', kind: 'inheritance', via: [] },
+      { id: 'right_extends', from: 'right', to: 'base', kind: 'inheritance', via: [] },
       { id: 'client_uses', from: 'client', to: 'base', kind: 'dependency' },
     ],
   }));

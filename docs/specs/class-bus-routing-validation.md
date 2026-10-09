@@ -13,11 +13,12 @@
 3. 有冲突时整组回退，通过现有普通路由器重新分配；仅发生回退后启用已有的独立端口模式，防止等高交错关系重新共享走廊。
 4. 每轮只删除冲突组，再检查剩余主干。候选集合单调缩小，最多候选组数次回退；不增加无界重试。
 5. 节点位置、文本、关系身份和方向不变。保留显式 via、侧边、直线路由及 labelAt；不增加对所有固定路线间距或任意布局成功的保证。
+   空数组 `via: []` 在关系入口与省略字段统一；仅克隆需要归一化的条目，不改原始文档，非空路径仍保持显式控制。
 6. 正常同类主干保留反向绘制和 source-to-target 的 data-motion-path，Focus 与独立 SVG 导出继续使用正确语义。
 
 ## 验收记录
 
-基线为 `9ef09617bd9ed2fe7bb4ad17fba7c8fce6b0ce76`，运行时代码的内容摘要记录在[比较证据](../evidence/class-bus-routing/comparison.json)中。
+基线为 `9ef09617bd9ed2fe7bb4ad17fba7c8fce6b0ce76`，初版运行时代码的内容摘要记录在[比较证据](../evidence/class-bus-routing/comparison.json)中。空 via 跟进的代码摘要及 18 个输出复核记录见[跟进证据](../evidence/class-bus-routing/empty-via-followup.json)。
 
 | 行为 | 检查及结果 |
 | --- | --- |
@@ -31,7 +32,7 @@
 | 类型与成员信息 | 全部 9 个 Class 对比输入的节点位置、尺寸、文字与关系身份／种类一致 |
 | 实际视觉观察 | 3 个案例、light/dark、前后共 12 张截图检查通过 |
 
-34 项 Class 专项、18 项核心 smoke、2 项真实 Chrome 检查及 generated 检查通过。无需改写其他图类型的黄金结果；本轮没有执行本地 test:full，远端最终提交的适用 CI 另行验证并记录于 PR。
+初版 34 项 Class 专项、18 项核心 smoke、2 项真实 Chrome 检查及 generated 检查通过。空 via 跟进后 Class 专项为 41 项，Chrome 2 项与 generated 检查重新通过；旧 18 个输入的公开命令及输出字节重新核验一致。无需改写其他图类型的黄金结果；本轮没有执行本地 test:full，远端最终提交的适用 CI 另行验证并记录于 PR。
 
 ## 边界
 

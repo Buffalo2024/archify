@@ -109,6 +109,9 @@ rhythm, and label-clearance gates.
 Labels sit on the segment with the most room: above a horizontal run, beside a
 vertical one. `labelAt`, `labelDx`/`labelDy`, and `labelSegment` override it.
 
+`via: []` 与省略 `via` 等价，在主干选择和回退路由前统一按无路径点处理。
+非空 `via` 仍是显式几何；其他路由与标签控制不变，原始 JSON 不会被改写。
+
 ## Reader and export
 
 An automatic canvas declares `data-reader-fit="intrinsic-height"` and a 7.5px

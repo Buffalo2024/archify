@@ -246,7 +246,13 @@ const types = new Map(measuredTypes.map((type) => {
   }
 }
 
-const relationships = asArray(cd.relationships);
+const relationships = asArray(cd.relationships).map((relationship) => {
+  if (!Array.isArray(relationship.via) || relationship.via.length) return relationship;
+  // 空路径与省略字段等价，统一主干和普通路由的判断，同时保留作者原始文档。
+  const automatic = { ...relationship };
+  delete automatic.via;
+  return automatic;
+});
 
 const typeSteps = new Map();
 for (const [index, relationship] of relationships.entries()) {
