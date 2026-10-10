@@ -147,6 +147,7 @@ test('class: mixed hierarchy fallback keeps dependency notation in focus and SVG
     await loaded;
     await run('document.fonts.ready');
     await run('Archify.layoutStability.whenStable()');
+    await run('Archify.motionGovernor.resume()');
     const result = await run(`(async () => {
       const svg = document.querySelector('.diagram-container svg');
       const paths = root => [...root.querySelectorAll('path[data-edge-id]')].map(path => ({
