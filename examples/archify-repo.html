@@ -4726,22 +4726,26 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     .c-lane           { fill: var(--lane-fill); stroke: var(--lane-stroke); stroke-dasharray: 6,6; }
 
     /* Live turns each edge into a small light show on one shared cycle: a comet
-       (halo, tail, head — plus a dimmer echo on long edges) cascades downstream,
-       leaves a soft wake, and lands as a ripple on the target node. Original line
-       language and markers remain static. Each edge's phase follows the authored
-       step order — source-node rank, or chronological order in sequence
-       diagrams — so the whole diagram ripples downstream instead of marching
-       uniformly. Node entry is bounded to one pass per document, then a soft
-       node glow follows the authored step order. */
+       (halo, tail, head — plus a dimmer echo, half a travel window behind on long
+       edges and half a cycle behind on short ones) cascades downstream, leaves a
+       soft wake, and lands as a ripple on the target node. Short edges carry a
+       proportionally larger comet with a brightness boost so compact diagrams read
+       as alive as sprawling ones. Original line language and markers remain
+       static. Each edge's phase follows the authored step order — source-node
+       rank, or chronological order in sequence diagrams — so the whole diagram
+       ripples downstream instead of marching uniformly. Node entry is bounded to
+       one pass per document, then a soft node glow follows the authored step
+       order. */
     svg[data-animation="trace"] {
       --flow-cycle: 6.4s;
       --flow-step-delay: 0.2s;
-      --flow-halo-peak: 0.13;
-      --flow-tail-peak: 0.34;
+      --flow-halo-peak: 0.17;
+      --flow-glow-peak: 0.5;
+      --flow-tail-peak: 0.42;
       --flow-head-peak: 0.95;
-      --flow-wake-peak: 0.08;
-      --flow-ripple-peak: 0.55;
-      --flow-ripple-echo-peak: 0.22;
+      --flow-wake-peak: 0.1;
+      --flow-ripple-peak: 0.65;
+      --flow-ripple-echo-peak: 0.26;
     }
     .ambient-edge-flow {
       fill: none;
@@ -4756,9 +4760,17 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       animation-name: archify-flow-wake;
     }
     .ambient-flow-halo {
-      stroke-width: 5;
+      stroke-width: 6;
       stroke-dasharray: var(--flow-dash, 12px) calc(var(--flow-len, 0px) - var(--flow-dash, 12px));
       animation-name: archify-cascade-halo;
+    }
+    /* A wide blurred streak centered on the head: this is the bloom that makes
+       the comet read as a traveling orb of light rather than a bright dash. */
+    .ambient-flow-glow {
+      stroke-width: 9;
+      stroke-dasharray: var(--flow-dash, 12px) calc(var(--flow-len, 0px) - var(--flow-dash, 12px));
+      filter: blur(2.5px);
+      animation-name: archify-cascade-glow;
     }
     .ambient-flow-tail {
       stroke-width: 2.4;
@@ -4766,8 +4778,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       animation-name: archify-cascade-tail;
     }
     .ambient-flow-head {
-      stroke: color-mix(in srgb, var(--arrow-emphasis) 45%, white);
-      stroke-width: 2.2;
+      stroke: color-mix(in srgb, var(--arrow-emphasis) 40%, white);
+      stroke-width: 2.6;
       stroke-dasharray: var(--flow-dash, 6px) calc(var(--flow-len, 0px) - var(--flow-dash, 6px));
       animation-name: archify-cascade-head;
     }
@@ -4796,19 +4808,20 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     .ambient-edge-flow[data-tree-hidden] { display: none !important; animation: none !important; }
     svg[data-preset="signal-flow"] { --flow-cycle: 5.2s; --flow-step-delay: 0.18s; }
     svg[data-preset="blueprint"] .ambient-edge-flow { stroke-linecap: square; }
-    svg[data-preset="editorial"] { --flow-halo-peak: 0.07; --flow-tail-peak: 0.2; --flow-head-peak: 0.7; --flow-wake-peak: 0.05; --flow-ripple-peak: 0.3; --flow-ripple-echo-peak: 0.12; }
+    svg[data-preset="editorial"] { --flow-halo-peak: 0.07; --flow-glow-peak: 0.28; --flow-tail-peak: 0.2; --flow-head-peak: 0.7; --flow-wake-peak: 0.05; --flow-ripple-peak: 0.3; --flow-ripple-echo-peak: 0.12; }
     /* On light canvases the cascade reads by saturation instead of bloom: the
        head and inner ripple mix toward ink instead of white, and every layer's
        peak rises so the wave survives the bright background. */
     html[data-theme="light"] svg[data-animation="trace"] {
       --flow-halo-peak: 0.22;
+      --flow-glow-peak: 0.4;
       --flow-tail-peak: 0.5;
       --flow-wake-peak: 0.13;
       --flow-ripple-echo-peak: 0.3;
     }
     html[data-theme="light"] .ambient-flow-head {
       stroke: color-mix(in srgb, var(--arrow-emphasis) 55%, black);
-      stroke-width: 2.4;
+      stroke-width: 2.8;
     }
     html[data-theme="light"] .ambient-flow-ripple {
       stroke: color-mix(in srgb, var(--arrow-emphasis) 65%, black);
@@ -4860,43 +4873,51 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     }
     @keyframes archify-flow-wake {
       0% { opacity: 0; }
-      24% { opacity: var(--flow-wake-peak, 0.08); }
-      62% { opacity: var(--flow-wake-peak, 0.08); }
+      24% { opacity: calc(var(--flow-wake-peak, 0.1) * var(--flow-boost, 1)); }
+      62% { opacity: calc(var(--flow-wake-peak, 0.1) * var(--flow-boost, 1)); }
       82%, 100% { opacity: 0; }
     }
     @keyframes archify-cascade-halo {
       0% { stroke-dashoffset: calc(var(--flow-len, 0px) + var(--flow-shift, 3px)); opacity: 0; }
-      4% { opacity: var(--flow-halo-peak, 0.13); }
+      4% { opacity: calc(var(--flow-halo-peak, 0.17) * var(--flow-boost, 1)); }
       15% { stroke-dashoffset: calc((var(--flow-len, 0px) + var(--flow-shift, 3px)) * 0.88); }
       48% { stroke-dashoffset: calc((var(--flow-len, 0px) + var(--flow-shift, 3px)) * 0.22); }
-      62% { stroke-dashoffset: var(--flow-shift, 3px); opacity: var(--flow-halo-peak, 0.13); }
+      62% { stroke-dashoffset: var(--flow-shift, 3px); opacity: calc(var(--flow-halo-peak, 0.17) * var(--flow-boost, 1)); }
+      68%, 100% { stroke-dashoffset: var(--flow-shift, 3px); opacity: 0; }
+    }
+    @keyframes archify-cascade-glow {
+      0% { stroke-dashoffset: calc(var(--flow-len, 0px) + var(--flow-shift, 3px)); opacity: 0; }
+      4% { opacity: calc(var(--flow-glow-peak, 0.5) * var(--flow-boost, 1)); }
+      15% { stroke-dashoffset: calc((var(--flow-len, 0px) + var(--flow-shift, 3px)) * 0.88); }
+      48% { stroke-dashoffset: calc((var(--flow-len, 0px) + var(--flow-shift, 3px)) * 0.22); }
+      62% { stroke-dashoffset: var(--flow-shift, 3px); opacity: calc(var(--flow-glow-peak, 0.5) * var(--flow-boost, 1)); }
       68%, 100% { stroke-dashoffset: var(--flow-shift, 3px); opacity: 0; }
     }
     @keyframes archify-cascade-tail {
       0% { stroke-dashoffset: calc(var(--flow-len, 0px) + var(--flow-shift, 20px)); opacity: 0; }
-      4% { opacity: calc(var(--flow-tail-peak, 0.34) * var(--flow-echo-scale, 1)); }
+      4% { opacity: calc(var(--flow-tail-peak, 0.42) * var(--flow-echo-scale, 1) * var(--flow-boost, 1)); }
       15% { stroke-dashoffset: calc((var(--flow-len, 0px) + var(--flow-shift, 20px)) * 0.88); }
       48% { stroke-dashoffset: calc((var(--flow-len, 0px) + var(--flow-shift, 20px)) * 0.22); }
-      62% { stroke-dashoffset: var(--flow-shift, 20px); opacity: calc(var(--flow-tail-peak, 0.34) * var(--flow-echo-scale, 1)); }
+      62% { stroke-dashoffset: var(--flow-shift, 20px); opacity: calc(var(--flow-tail-peak, 0.42) * var(--flow-echo-scale, 1) * var(--flow-boost, 1)); }
       68%, 100% { stroke-dashoffset: var(--flow-shift, 20px); opacity: 0; }
     }
     @keyframes archify-cascade-head {
       0% { stroke-dashoffset: var(--flow-len, 0px); opacity: 0; }
-      4% { opacity: calc(var(--flow-head-peak, 0.95) * var(--flow-echo-scale, 1)); }
+      4% { opacity: calc(var(--flow-head-peak, 0.95) * var(--flow-echo-scale, 1) * var(--flow-boost, 1)); }
       15% { stroke-dashoffset: calc(var(--flow-len, 0px) * 0.88); }
       48% { stroke-dashoffset: calc(var(--flow-len, 0px) * 0.22); }
-      62% { stroke-dashoffset: 0; opacity: calc(var(--flow-head-peak, 0.95) * var(--flow-echo-scale, 1)); }
+      62% { stroke-dashoffset: 0; opacity: calc(var(--flow-head-peak, 0.95) * var(--flow-echo-scale, 1) * var(--flow-boost, 1)); }
       68%, 100% { stroke-dashoffset: 0; opacity: 0; }
     }
     @keyframes archify-flow-ripple {
       0%, 60% { r: 2px; opacity: 0; }
-      63% { r: 2px; opacity: var(--flow-ripple-peak, 0.55); }
-      78%, 100% { r: 17px; opacity: 0; }
+      63% { r: 2px; opacity: calc(var(--flow-ripple-peak, 0.65) * var(--flow-boost, 1)); }
+      78%, 100% { r: 20px; opacity: 0; }
     }
     @keyframes archify-flow-ripple-echo {
       0%, 63% { r: 2px; opacity: 0; }
-      66% { r: 2px; opacity: var(--flow-ripple-echo-peak, 0.22); }
-      84%, 100% { r: 26px; opacity: 0; }
+      66% { r: 2px; opacity: calc(var(--flow-ripple-echo-peak, 0.26) * var(--flow-boost, 1)); }
+      84%, 100% { r: 30px; opacity: 0; }
     }
     @keyframes archify-node-receive {
       0%, 100% { filter: var(--ambient-node-base-filter, none); }
@@ -5563,7 +5584,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <button id="btn-overview-map" type="button" aria-label="Open semantic radar" aria-expanded="false" aria-controls="overview-map" title="Semantic radar (M)">MAP</button>
         <button id="btn-semantic-lens" type="button" aria-label="Open semantic lens" aria-haspopup="dialog" aria-expanded="false" aria-pressed="false" aria-controls="semantic-lens" title="Semantic lens (L)">LENS</button>
         <button id="btn-node-finder" type="button" aria-label="Find a node" aria-haspopup="dialog" aria-expanded="false" aria-controls="node-finder" title="Find a node (/)" data-node-finder-trigger><span class="diagram-nav-icon find" aria-hidden="true"></span></button>
-        <button id="btn-diagram-guide" type="button" hidden aria-label="Open diagram guide" aria-haspopup="dialog" aria-expanded="false" aria-controls="diagram-guide" title="Diagram guide (?)"><span class="diagram-nav-icon guide" aria-hidden="true"></span></button>
+        <button id="btn-diagram-guide" type="button" aria-label="Open diagram guide" aria-haspopup="dialog" aria-expanded="false" aria-controls="diagram-guide" title="Diagram guide (?)"><span class="diagram-nav-icon guide" aria-hidden="true"></span></button>
         <button data-view="out" type="button" aria-label="Zoom out" title="Zoom out (-)"><span class="diagram-nav-icon minus" aria-hidden="true"></span></button>
         <button data-view="reset" type="button" aria-label="Reset diagram view" title="Reset view (0)"><span class="diagram-nav-detail" data-view-detail hidden>READ</span><span class="diagram-nav-percent" data-view-percent>100%</span></button>
         <button data-view="in" type="button" aria-label="Zoom in" title="Zoom in (+)"><span class="diagram-nav-icon plus" aria-hidden="true"></span></button>
@@ -6839,7 +6860,6 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         var vb = svg.viewBox.baseVal;
         var scale = Math.min(1, 1280 / vb.width);
         var data = serializeSvg(scale);
-        var sourceUrl = URL.createObjectURL(new Blob([data.svgString], { type: 'image/svg+xml;charset=utf-8' }));
 
         function createMotionScene(root) {
           var rootMatrix = root.getCTM ? root.getCTM() : null;
@@ -6996,73 +7016,99 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         var motionScene = createMotionScene(svg);
 
         return new Promise(function (resolve, reject) {
-          var backgroundImage = new Image();
-          backgroundImage.onload = function () {
-            var canvas = document.createElement('canvas');
-            canvas.width = Math.max(2, Math.round(data.width / 2) * 2);
-            canvas.height = Math.max(2, Math.round(data.height / 2) * 2);
-            var ctx = canvas.getContext('2d');
-            var stream = canvas.captureStream(fps);
-            var mime = motionMimeType();
-            var recorder;
-            try {
-              recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 6000000 });
-            } catch (err) {
-              URL.revokeObjectURL(sourceUrl);
-              stream.getTracks().forEach(function (track) { track.stop(); });
-              reject(err);
-              return;
+          var sourceUrl = null;
+          var backgroundImage = null;
+          var stream = null;
+          var recorder = null;
+          var raf = 0;
+          var durationTimer = 0;
+          var flushTimer = 0;
+          var settled = false;
+
+          function finish(error, blob) {
+            if (settled) return;
+            // 先锁定终态：停止录制和释放流可能产生晚到的编码事件。
+            settled = true;
+            cancelAnimationFrame(raf);
+            clearTimeout(durationTimer);
+            clearTimeout(flushTimer);
+            if (backgroundImage) {
+              backgroundImage.onload = null;
+              backgroundImage.onerror = null;
             }
-            var chunks = [];
-            var raf = 0;
-            var stopped = false;
-            var startedAt = performance.now();
-            function cleanup() {
-              if (stopped) return;
-              stopped = true;
-              cancelAnimationFrame(raf);
-              URL.revokeObjectURL(sourceUrl);
-              stream.getTracks().forEach(function (track) { track.stop(); });
+            if (recorder) {
+              recorder.ondataavailable = null;
+              recorder.onerror = null;
+              recorder.onstop = null;
+              try { if (recorder.state !== 'inactive') recorder.stop(); } catch (_) {}
             }
-            function draw(now) {
-              var elapsed = Math.max(0, ((Number(now) || performance.now()) - startedAt) / 1000);
-              drawMotionFrame(ctx, backgroundImage, motionScene, elapsed);
-              raf = requestAnimationFrame(draw);
-            }
-            recorder.ondataavailable = function (event) {
-              if (event.data && event.data.size) chunks.push(event.data);
+            if (stream) stream.getTracks().forEach(function (track) { track.stop(); });
+            if (sourceUrl) URL.revokeObjectURL(sourceUrl);
+            if (blob) resolve(blob);
+            else reject(error);
+          }
+
+          try {
+            sourceUrl = URL.createObjectURL(new Blob([data.svgString], { type: 'image/svg+xml;charset=utf-8' }));
+            backgroundImage = new Image();
+            backgroundImage.onload = function () {
+              if (settled) return;
+              try {
+                var canvas = document.createElement('canvas');
+                canvas.width = Math.max(2, Math.round(data.width / 2) * 2);
+                canvas.height = Math.max(2, Math.round(data.height / 2) * 2);
+                var ctx = canvas.getContext('2d');
+                if (!ctx) throw exportError('viewer.export.error.contextUnavailable', { label: 'WebM' });
+                stream = canvas.captureStream(fps);
+                var mime = motionMimeType();
+                recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 6000000 });
+                var chunks = [];
+                var startedAt = performance.now();
+                function draw(now) {
+                  if (settled) return;
+                  try {
+                    var elapsed = Math.max(0, ((Number(now) || performance.now()) - startedAt) / 1000);
+                    drawMotionFrame(ctx, backgroundImage, motionScene, elapsed);
+                    raf = requestAnimationFrame(draw);
+                  } catch (error) { finish(error); }
+                }
+                recorder.ondataavailable = function (event) {
+                  if (!settled && event.data && event.data.size) chunks.push(event.data);
+                };
+                recorder.onerror = function (event) {
+                  finish(event.error || exportError('viewer.export.error.mediaRecorder'));
+                };
+                recorder.onstop = function () {
+                  if (settled) return;
+                  try {
+                    var blob = new Blob(chunks, { type: recorder.mimeType || mime });
+                    if (!blob.size) throw exportError('viewer.export.error.emptyWebm');
+                    finish(null, blob);
+                  } catch (error) { finish(error); }
+                };
+                drawMotionFrame(ctx, backgroundImage, motionScene, 0);
+                recorder.start(250);
+                if (settled) return;
+                startedAt = performance.now();
+                raf = requestAnimationFrame(draw);
+                durationTimer = setTimeout(function () {
+                  if (settled || recorder.state === 'inactive') return;
+                  // 保留最佳努力的编码器 flush；失败后仍通过 stop 收集最后的片段。
+                  try { recorder.requestData(); } catch (_) {}
+                  if (settled) return;
+                  flushTimer = setTimeout(function () {
+                    if (settled) return;
+                    try { if (recorder.state !== 'inactive') recorder.stop(); }
+                    catch (error) { finish(error); }
+                  }, 120);
+                }, duration);
+              } catch (error) { finish(error); }
             };
-            recorder.onerror = function (event) {
-              cleanup();
-              reject(event.error || exportError('viewer.export.error.mediaRecorder'));
+            backgroundImage.onerror = function () {
+              finish(exportError('viewer.export.error.webmBackground'));
             };
-            recorder.onstop = function () {
-              cleanup();
-              var blob = new Blob(chunks, { type: recorder.mimeType || mime });
-              if (!blob.size) reject(exportError('viewer.export.error.emptyWebm'));
-              else resolve(blob);
-            };
-            drawMotionFrame(ctx, backgroundImage, motionScene, 0);
-            recorder.start(250);
-            startedAt = performance.now();
-            raf = requestAnimationFrame(draw);
-            setTimeout(function () {
-              if (recorder.state === 'inactive') return;
-              // Chromium normally emits the final chunk during stop(), but
-              // some embedded browser shells need an explicit encoder flush
-              // first. Keep the short grace window bounded and harmless for
-              // browsers that already delivered timeslice chunks.
-              try { recorder.requestData(); } catch (_) {}
-              setTimeout(function () {
-                if (recorder.state !== 'inactive') recorder.stop();
-              }, 120);
-            }, duration);
-          };
-          backgroundImage.onerror = function () {
-            URL.revokeObjectURL(sourceUrl);
-            reject(exportError('viewer.export.error.webmBackground'));
-          };
-          backgroundImage.src = sourceUrl;
+            backgroundImage.src = sourceUrl;
+          } catch (error) { finish(error); }
         });
       }
 
@@ -7512,6 +7558,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
             wake.remove();
             return;
           }
+          var glow = addPath('glow');
           var halo = addPath('halo');
           var tail = addPath('tail');
           var head = addPath('head');
@@ -7528,9 +7575,12 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           // Absolute caps keep the comet a slim streak on long edges instead
           // of growing into a bright slab; the tail disintegrates into a
           // sparkle of fragments behind the head, and --flow-shift trails
-          // each layer behind the head tip by its own length.
-          var headLen = Math.min(10, Math.max(4, len * 0.016));
-          var haloLen = Math.min(14, Math.max(8, len * 0.045));
+          // each layer behind the head tip by its own length. Short edges get
+          // a proportionally larger comet and a brightness boost so a compact
+          // diagram reads as alive as a sprawling one.
+          var headLen = Math.min(12, Math.max(5, len * 0.02));
+          var haloLen = Math.min(18, Math.max(10, len * 0.06));
+          var boost = len < 260 ? Math.min(1.7, 260 / Math.max(len, 90)) : 1;
           var trail = len >= 120
             ? { pattern: '2.5 2 4 3 5.5 4.5 8 ' + (len - 30).toFixed(1), length: 30 }
             : (len >= 60
@@ -7539,20 +7589,24 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           var phase = edgePhase(shape, index) * stepDelay;
           var configs = [
             { flow: wake, dash: len, shift: 0, delay: phase },
+            { flow: glow, dash: haloLen, shift: (haloLen - headLen) / 2, delay: phase },
             { flow: halo, dash: haloLen, shift: (haloLen - headLen) / 2, delay: phase },
             { flow: tail, dash: trail.length, shift: trail.length - headLen, delay: phase, dasharray: trail.pattern },
             { flow: head, dash: headLen, shift: 0, delay: phase },
           ];
-          // Long edges earn a dimmer echo comet half a travel window behind.
-          if (len > 340) {
-            configs.push({ flow: addPath('tail echo'), dash: trail.length, shift: trail.length - headLen, delay: phase + cycle * 0.31, dasharray: trail.pattern });
-            configs.push({ flow: addPath('head echo'), dash: headLen, shift: 0, delay: phase + cycle * 0.31 });
-          }
+          // Every edge earns a dimmer echo comet: half a travel window behind
+          // on long edges, half a cycle behind on short ones so compact
+          // diagrams never sit in a silent gap between passes.
+          var echoShift = len > 340 ? cycle * 0.31 : cycle * 0.5;
+          configs.push({ flow: addPath('tail echo'), dash: trail.length, shift: trail.length - headLen, delay: phase + echoShift, dasharray: trail.pattern, echo: true });
+          configs.push({ flow: addPath('head echo'), dash: headLen, shift: 0, delay: phase + echoShift, echo: true });
           configs.forEach(function (cfg) {
             cfg.flow.style.setProperty('--flow-len', len.toFixed(1) + 'px');
             cfg.flow.style.setProperty('--flow-delay', cfg.delay.toFixed(3) + 's');
             cfg.flow.style.setProperty('--flow-dash', cfg.dash.toFixed(1) + 'px');
             cfg.flow.style.setProperty('--flow-shift', cfg.shift.toFixed(1) + 'px');
+            // Echoes stay background texture: they never inherit the boost.
+            if (!cfg.echo) cfg.flow.style.setProperty('--flow-boost', boost.toFixed(2));
             if (cfg.dasharray) cfg.flow.style.setProperty('--flow-dasharray', cfg.dasharray);
           });
           // The sonar pair lands where the comet does; keep it out of the
@@ -7567,6 +7621,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
               ripple.setAttribute('class', 'ambient-edge-flow ambient-flow-' + kind);
               tagOverlay(ripple);
               ripple.style.setProperty('--flow-delay', phase.toFixed(3) + 's');
+              ripple.style.setProperty('--flow-boost', boost.toFixed(2));
               shape.parentNode.insertBefore(ripple, anchor.nextSibling);
               anchor = ripple;
             });
@@ -7589,7 +7644,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         if (!entryPending.size) settleEntry();
       }
       function renderAmbient(suppressed) {
-        html.setAttribute('data-ambient-motion', suppressed ? 'paused' : (flowCount ? 'running' : 'empty'));
+        html.setAttribute('data-ambient-motion', flowCount ? (suppressed ? 'paused' : 'running') : 'empty');
         if (suppressed) {
           entryStarted = true;
           settleEntry();
@@ -14208,7 +14263,9 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         trigger.setAttribute('aria-label', viewerText('viewer.guide.open'));
         feedback.textContent = '';
         if (options.restoreFocus !== false) {
-          var target = trigger.hidden ? returnFocus : trigger;
+          // Return focus where the reader was when the guide opened; the
+          // trigger itself is only the fallback when that element is gone.
+          var target = returnFocus && returnFocus.isConnected ? returnFocus : trigger;
           if (target && typeof target.focus === 'function') target.focus();
         }
         return false;
@@ -14308,7 +14365,9 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         execute(action);
       });
       document.addEventListener('click', function (event) {
-        if (!panel.hidden && !panel.contains(event.target) && event.target !== trigger) close({ restoreFocus: false });
+        // Clicks anywhere on the trigger (including its icon span) are the
+        // toggle itself, never an outside dismissal.
+        if (!panel.hidden && !panel.contains(event.target) && !trigger.contains(event.target)) close({ restoreFocus: false });
       });
 
       renderFacts();

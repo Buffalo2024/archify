@@ -12372,7 +12372,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           var glow = addPath(&#39;glow&#39;);
           var halo = addPath(&#39;halo&#39;);
           var tail = addPath(&#39;tail&#39;);
-          var head = addPath(&#39;head&#39;);          var end = null;
+          var head = addPath(&#39;head&#39;);
+          var end = null;
           try { end = head.getPointAtLength(len); } catch (_) {}
           // Dashed authored lines keep their dash language through the show:
           // the wake brightens only the authored segments and never fills the
@@ -12475,8 +12476,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       }
       function writeStored() {
         try {
-          if (readerPaused) localStorage.removeItem(STORAGE_KEY);
-          else localStorage.setItem(STORAGE_KEY, &#39;live&#39;);
+          if (readerPaused) localStorage.setItem(STORAGE_KEY, &#39;still&#39;);
+          else localStorage.removeItem(STORAGE_KEY);
         } catch (_) {}
       }
       function reducedMotion() {
@@ -12626,7 +12627,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       createFlows();
       html.setAttribute(&#39;data-motion-capable&#39;, &#39;true&#39;);
       btn.hidden = false;
-      readerPaused = readStored() !== &#39;live&#39;;
+      readerPaused = readStored() === &#39;still&#39;;
       btn.addEventListener(&#39;click&#39;, function () { setPaused(!readerPaused); });
       if (motionQuery) {
         if (typeof motionQuery.addEventListener === &#39;function&#39;) motionQuery.addEventListener(&#39;change&#39;, render);
@@ -19194,22 +19195,6 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           };
         }
       };
-    })();
-
-    /* First-visit onboarding: open the Diagram Guide once per browser so a
-       new reader meets the controls up front instead of discovering them by
-       accident. Automated checks, embeds, share playback and presentations
-       never see it. */
-    (function () {
-      var WELCOME_KEY = &#39;archify-guide-welcomed&#39;;
-      try {
-        if (navigator.webdriver) return;
-        var root = document.documentElement;
-        if (root.hasAttribute(&#39;data-embed&#39;) || root.hasAttribute(&#39;data-present&#39;) || root.hasAttribute(&#39;data-share-playback&#39;)) return;
-        if (window.localStorage.getItem(WELCOME_KEY)) return;
-        window.localStorage.setItem(WELCOME_KEY, &#39;1&#39;);
-        Archify.guide.open();
-      } catch (_) {}
     })();
 
     /* ============================================================
@@ -27100,7 +27085,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           var glow = addPath(&#39;glow&#39;);
           var halo = addPath(&#39;halo&#39;);
           var tail = addPath(&#39;tail&#39;);
-          var head = addPath(&#39;head&#39;);          var end = null;
+          var head = addPath(&#39;head&#39;);
+          var end = null;
           try { end = head.getPointAtLength(len); } catch (_) {}
           // Dashed authored lines keep their dash language through the show:
           // the wake brightens only the authored segments and never fills the
@@ -27203,8 +27189,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       }
       function writeStored() {
         try {
-          if (readerPaused) localStorage.removeItem(STORAGE_KEY);
-          else localStorage.setItem(STORAGE_KEY, &#39;live&#39;);
+          if (readerPaused) localStorage.setItem(STORAGE_KEY, &#39;still&#39;);
+          else localStorage.removeItem(STORAGE_KEY);
         } catch (_) {}
       }
       function reducedMotion() {
@@ -27354,7 +27340,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       createFlows();
       html.setAttribute(&#39;data-motion-capable&#39;, &#39;true&#39;);
       btn.hidden = false;
-      readerPaused = readStored() !== &#39;live&#39;;
+      readerPaused = readStored() === &#39;still&#39;;
       btn.addEventListener(&#39;click&#39;, function () { setPaused(!readerPaused); });
       if (motionQuery) {
         if (typeof motionQuery.addEventListener === &#39;function&#39;) motionQuery.addEventListener(&#39;change&#39;, render);
@@ -33922,22 +33908,6 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           };
         }
       };
-    })();
-
-    /* First-visit onboarding: open the Diagram Guide once per browser so a
-       new reader meets the controls up front instead of discovering them by
-       accident. Automated checks, embeds, share playback and presentations
-       never see it. */
-    (function () {
-      var WELCOME_KEY = &#39;archify-guide-welcomed&#39;;
-      try {
-        if (navigator.webdriver) return;
-        var root = document.documentElement;
-        if (root.hasAttribute(&#39;data-embed&#39;) || root.hasAttribute(&#39;data-present&#39;) || root.hasAttribute(&#39;data-share-playback&#39;)) return;
-        if (window.localStorage.getItem(WELCOME_KEY)) return;
-        window.localStorage.setItem(WELCOME_KEY, &#39;1&#39;);
-        Archify.guide.open();
-      } catch (_) {}
     })();
 
     /* ============================================================

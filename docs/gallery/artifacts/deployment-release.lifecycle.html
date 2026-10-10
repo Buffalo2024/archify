@@ -7637,7 +7637,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           var glow = addPath('glow');
           var halo = addPath('halo');
           var tail = addPath('tail');
-          var head = addPath('head');          var end = null;
+          var head = addPath('head');
+          var end = null;
           try { end = head.getPointAtLength(len); } catch (_) {}
           // Dashed authored lines keep their dash language through the show:
           // the wake brightens only the authored segments and never fills the
@@ -7740,8 +7741,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       }
       function writeStored() {
         try {
-          if (readerPaused) localStorage.removeItem(STORAGE_KEY);
-          else localStorage.setItem(STORAGE_KEY, 'live');
+          if (readerPaused) localStorage.setItem(STORAGE_KEY, 'still');
+          else localStorage.removeItem(STORAGE_KEY);
         } catch (_) {}
       }
       function reducedMotion() {
@@ -7891,7 +7892,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       createFlows();
       html.setAttribute('data-motion-capable', 'true');
       btn.hidden = false;
-      readerPaused = readStored() !== 'live';
+      readerPaused = readStored() === 'still';
       btn.addEventListener('click', function () { setPaused(!readerPaused); });
       if (motionQuery) {
         if (typeof motionQuery.addEventListener === 'function') motionQuery.addEventListener('change', render);
@@ -14459,22 +14460,6 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           };
         }
       };
-    })();
-
-    /* First-visit onboarding: open the Diagram Guide once per browser so a
-       new reader meets the controls up front instead of discovering them by
-       accident. Automated checks, embeds, share playback and presentations
-       never see it. */
-    (function () {
-      var WELCOME_KEY = 'archify-guide-welcomed';
-      try {
-        if (navigator.webdriver) return;
-        var root = document.documentElement;
-        if (root.hasAttribute('data-embed') || root.hasAttribute('data-present') || root.hasAttribute('data-share-playback')) return;
-        if (window.localStorage.getItem(WELCOME_KEY)) return;
-        window.localStorage.setItem(WELCOME_KEY, '1');
-        Archify.guide.open();
-      } catch (_) {}
     })();
 
     /* ============================================================
