@@ -168,6 +168,60 @@ test('native copy links preserve a host page and opaque reader state without cha
     assert.equal(result.residual, 0);
     assert.equal(result.text, host.replace('{state}', encodeURIComponent(result.state)));
   }
+  const restoredScript = `<script>addEventListener('load', () => {
+    parent.postMessage({type:'native-reading-restored', hash:location.hash,
+      focus:Archify.focus.active(), relationship:Archify.focus.relationship(),
+      reach:Archify.focus.reachability(), route:Archify.routeProbe.result(),
+      lens:Archify.semanticLens.active()}, '*');
+  }, {once:true});</script>`;
+  const reopenedReader = html.replace('<head>',
+    '<head><script>location.replace(location.href.replace(/#.*$/, "") + "#" + __STATE__);</script>')
+    .replace('</body>', restoredScript + '</body>');
+  const hostFile = path.join(scratch, 'host.html');
+  fs.writeFileSync(hostFile, `<!doctype html><html><body><script>
+    const address=new URLSearchParams(location.hash.slice(1));
+    const frame=document.createElement('iframe'); frame.setAttribute('sandbox','allow-scripts');
+    addEventListener('message', event => {
+      if(event.source===frame.contentWindow && event.data?.type==='native-reading-restored')
+        window.reopened={page:address.get('page'), ...event.data};
+    });
+    frame.srcdoc=${JSON.stringify(reopenedReader).replaceAll('<', '\\u003c')}
+      .replace('__STATE__', JSON.stringify(address.get('reader') || ''));
+    document.body.appendChild(frame);
+  </script></body></html>`);
+  for (const result of opaque.results) {
+    const address = pathToFileURL(hostFile);
+    address.hash = new URL(result.text).hash;
+    const blank = browser.cdp.waitFor('Page.loadEventFired', session);
+    await browser.cdp.send('Page.navigate', { url: 'about:blank' }, session);
+    await blank;
+    const loaded = browser.cdp.waitFor('Page.loadEventFired', session);
+    await browser.cdp.send('Page.navigate', { url: address.href }, session);
+    await loaded;
+    const restored = await run(`new Promise((resolve,reject) => {
+      const started=performance.now();
+      function check() {
+        if(window.reopened) return resolve(window.reopened);
+        if(performance.now()-started>10000) return reject(new Error('Reopened reader did not report'));
+        requestAnimationFrame(check);
+      }
+      check();
+    })`);
+    assert.equal(restored.page, 'opaque');
+    assert.equal(restored.hash, '#' + result.state, 'host passes native state through without parsing it');
+    if (result.state.startsWith('focus=')) {
+      assert.equal(restored.focus, 'source');
+      assert.equal(restored.reach?.direction ?? null, result.state.includes('&reach=') ? 'downstream' : null);
+    } else if (result.state.startsWith('relation=')) {
+      assert.equal(restored.relationship?.id, 'calls');
+    } else if (result.state.startsWith('route=')) {
+      assert.equal(restored.route?.source, 'source');
+      assert.equal(restored.route?.target, 'target');
+      assert.deepEqual(restored.route?.nodes, ['source', 'target']);
+    } else {
+      assert.deepEqual(restored.lens, ['component']);
+    }
+  }
   const readme = fs.readFileSync(path.join(root, 'README.md'), 'utf8');
   const links = new Set(Array.from(readme.matchAll(/\]\((examples\/[^)\s]+\.html)\)/g), match => match[1]));
   const examples = fs.readdirSync(path.join(root, 'examples'))
