@@ -5183,7 +5183,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         </g>
         <g data-detail="context" data-edge-from="approval" data-edge-to="executing" data-edge-label="approved" data-edge-key="5" data-edge-id="approval-executing">
           <rect x="505" y="165" width="60" height="16" rx="4" class="c-mask"/>
-          <text x="535" y="176.5" class="t-edge-default" font-size="10" text-anchor="middle">approved</text>
+          <text x="535" y="176.5" class="t-muted" font-size="10" text-anchor="middle">approved</text>
         </g>
         <g data-detail="context" data-edge-from="approval" data-edge-to="cancelled" data-edge-label="user denies" data-edge-key="6" data-edge-id="approval-cancelled">
           <rect x="402" y="304" width="78" height="16" rx="4" class="c-mask"/>
@@ -5199,11 +5199,11 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         </g>
         <g data-detail="context" data-edge-from="reviewing" data-edge-to="blocked" data-edge-label="needs input" data-edge-key="9" data-edge-id="reviewing-blocked">
           <rect x="757" y="165" width="78" height="16" rx="4" class="c-mask"/>
-          <text x="796" y="176.5" class="t-edge-default" font-size="10" text-anchor="middle">needs input</text>
+          <text x="796" y="176.5" class="t-muted" font-size="10" text-anchor="middle">needs input</text>
         </g>
         <g data-detail="context" data-edge-from="blocked" data-edge-to="reviewing" data-edge-label="input given" data-edge-key="10" data-edge-id="blocked-reviewing">
           <rect x="873" y="156" width="78" height="16" rx="4" class="c-mask"/>
-          <text x="912" y="167.5" class="t-edge-default" font-size="10" text-anchor="middle">input given</text>
+          <text x="912" y="167.5" class="t-muted" font-size="10" text-anchor="middle">input given</text>
         </g>
         <g data-detail="context" data-edge-from="blocked" data-edge-to="expired" data-edge-label="no reply 24h" data-edge-key="11" data-edge-id="blocked-expired">
           <rect x="764" y="304" width="84" height="16" rx="4" class="c-mask"/>
@@ -9127,8 +9127,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         var value = readerLink(relationId
           ? 'relation=' + encodeURIComponent(relationId)
           : 'focus=' + encodeURIComponent(activeIds[0]) + (reachabilityMode ? '&reach=' + reachabilityMode : ''));
-        if (value === null) return Promise.resolve(false);
-        return copyReaderText(value).then(function (copied) {
+        return (value === null ? Promise.resolve(false) : copyReaderText(value)).then(function (copied) {
           copyBtn.textContent = viewerText(copied ? 'viewer.common.copied' : 'viewer.common.copyFailed');
           copyBtn.setAttribute('aria-label', copied
             ? viewerText(relationId ? 'viewer.passport.copy.pinned.success' : 'viewer.passport.copy.focused.success')
@@ -13061,8 +13060,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       function copyLink() {
         if (mode !== 'result') return Promise.resolve(false);
         var value = readerLink('route=' + encodeURIComponent(startId) + '~' + encodeURIComponent(endId));
-        if (value === null) return Promise.resolve(false);
-        return copyReaderText(value).then(function (copied) {
+        return (value === null ? Promise.resolve(false) : copyReaderText(value)).then(function (copied) {
           copyBtn.textContent = viewerText(copied ? 'viewer.common.copied' : 'viewer.common.copyFailed');
           copyBtn.setAttribute('aria-label', viewerText(copied ? 'viewer.route.copy.success' : 'viewer.route.copy.failed'));
           window.setTimeout(function () {
@@ -13717,10 +13715,13 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       function copyLink() {
         if (!selectedKinds.length) return Promise.resolve(false);
         var value = readerLink('lens=' + selectedKinds.map(encodeURIComponent).join('~'));
-        if (value === null) return Promise.resolve(false);
-        return copyReaderText(value).then(function (copied) {
+        return (value === null ? Promise.resolve(false) : copyReaderText(value)).then(function (copied) {
           copyBtn.textContent = viewerText(copied ? 'viewer.common.copied' : 'viewer.common.copyFailed');
-          window.setTimeout(function () { copyBtn.textContent = viewerText('viewer.common.copyLink'); }, 1600);
+          copyBtn.setAttribute('aria-label', viewerText(copied ? 'viewer.lens.copy' : 'viewer.common.copyFailed'));
+          window.setTimeout(function () {
+            copyBtn.textContent = viewerText('viewer.common.copyLink');
+            copyBtn.setAttribute('aria-label', viewerText('viewer.lens.copy'));
+          }, 1600);
           return copied;
         });
       }

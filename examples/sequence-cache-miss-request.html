@@ -5107,16 +5107,16 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 
         <!-- Segment Labels -->
         <g data-graph-role="segment-label" data-segment-id="0">
-          <rect x="56" y="128" width="50.4" height="18" rx="3" class="c-mask"/>
-          <text x="62" y="141" class="t-dim" font-size="9" font-weight="600">Request</text>
+          <rect x="56" y="134" width="50.4" height="18" rx="3" class="c-mask"/>
+          <text x="62" y="147" class="t-muted" font-size="9" font-weight="600">Request</text>
         </g>
         <g data-graph-role="segment-label" data-segment-id="1">
           <rect x="56" y="238" width="55.6" height="18" rx="3" class="c-mask"/>
-          <text x="62" y="251" class="t-dim" font-size="9" font-weight="600">Fallback</text>
+          <text x="62" y="251" class="t-muted" font-size="9" font-weight="600">Fallback</text>
         </g>
         <g data-graph-role="segment-label" data-segment-id="2">
           <rect x="56" y="358" width="97.2" height="18" rx="3" class="c-mask"/>
-          <text x="62" y="371" class="t-dim" font-size="9" font-weight="600">Response + trace</text>
+          <text x="62" y="371" class="t-muted" font-size="9" font-weight="600">Response + trace</text>
         </g>
 
         <!-- Participants -->
@@ -9130,8 +9130,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         var value = readerLink(relationId
           ? 'relation=' + encodeURIComponent(relationId)
           : 'focus=' + encodeURIComponent(activeIds[0]) + (reachabilityMode ? '&reach=' + reachabilityMode : ''));
-        if (value === null) return Promise.resolve(false);
-        return copyReaderText(value).then(function (copied) {
+        return (value === null ? Promise.resolve(false) : copyReaderText(value)).then(function (copied) {
           copyBtn.textContent = viewerText(copied ? 'viewer.common.copied' : 'viewer.common.copyFailed');
           copyBtn.setAttribute('aria-label', copied
             ? viewerText(relationId ? 'viewer.passport.copy.pinned.success' : 'viewer.passport.copy.focused.success')
@@ -13064,8 +13063,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       function copyLink() {
         if (mode !== 'result') return Promise.resolve(false);
         var value = readerLink('route=' + encodeURIComponent(startId) + '~' + encodeURIComponent(endId));
-        if (value === null) return Promise.resolve(false);
-        return copyReaderText(value).then(function (copied) {
+        return (value === null ? Promise.resolve(false) : copyReaderText(value)).then(function (copied) {
           copyBtn.textContent = viewerText(copied ? 'viewer.common.copied' : 'viewer.common.copyFailed');
           copyBtn.setAttribute('aria-label', viewerText(copied ? 'viewer.route.copy.success' : 'viewer.route.copy.failed'));
           window.setTimeout(function () {
@@ -13720,10 +13718,13 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       function copyLink() {
         if (!selectedKinds.length) return Promise.resolve(false);
         var value = readerLink('lens=' + selectedKinds.map(encodeURIComponent).join('~'));
-        if (value === null) return Promise.resolve(false);
-        return copyReaderText(value).then(function (copied) {
+        return (value === null ? Promise.resolve(false) : copyReaderText(value)).then(function (copied) {
           copyBtn.textContent = viewerText(copied ? 'viewer.common.copied' : 'viewer.common.copyFailed');
-          window.setTimeout(function () { copyBtn.textContent = viewerText('viewer.common.copyLink'); }, 1600);
+          copyBtn.setAttribute('aria-label', viewerText(copied ? 'viewer.lens.copy' : 'viewer.common.copyFailed'));
+          window.setTimeout(function () {
+            copyBtn.textContent = viewerText('viewer.common.copyLink');
+            copyBtn.setAttribute('aria-label', viewerText('viewer.lens.copy'));
+          }, 1600);
           return copied;
         });
       }

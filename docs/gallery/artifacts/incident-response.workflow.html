@@ -4980,19 +4980,19 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 
         <!-- Swimlanes -->
         <rect data-graph-role="structural-frame" data-composition-frame-kind="lane" data-composition-frame-id="lane-0" x="40" y="52" width="640" height="104" rx="10" class="c-lane" stroke-width="1"/>
-        <text x="54" y="74" class="t-dim" font-size="10" font-weight="600">01 / Signals</text>
+        <text x="54" y="74" class="t-muted" font-size="10" font-weight="600">01 / Signals</text>
 
         <rect data-graph-role="structural-frame" data-composition-frame-kind="lane" data-composition-frame-id="lane-1" x="40" y="176" width="640" height="104" rx="10" class="c-lane" stroke-width="1"/>
-        <text x="54" y="198" class="t-dim" font-size="10" font-weight="600">02 / Incident Command</text>
+        <text x="54" y="198" class="t-muted" font-size="10" font-weight="600">02 / Incident Command</text>
 
         <rect data-graph-role="structural-frame" data-composition-frame-kind="lane" data-composition-frame-id="lane-2" x="40" y="300" width="640" height="104" rx="10" class="c-lane" stroke-width="1"/>
-        <text x="54" y="322" class="t-dim" font-size="10" font-weight="600">03 / Service Mitigation</text>
+        <text x="54" y="322" class="t-muted" font-size="10" font-weight="600">03 / Service Mitigation</text>
 
         <rect data-graph-role="structural-frame" data-composition-frame-kind="lane" data-composition-frame-id="lane-3" x="40" y="424" width="640" height="104" rx="10" class="c-lane" stroke-width="1"/>
-        <text x="54" y="446" class="t-dim" font-size="10" font-weight="600">04 / Recovery Evidence</text>
+        <text x="54" y="446" class="t-muted" font-size="10" font-weight="600">04 / Recovery Evidence</text>
 
         <rect data-graph-role="structural-frame" data-composition-frame-kind="lane" data-composition-frame-id="lane-4" x="40" y="548" width="640" height="104" rx="10" class="c-lane" stroke-width="1"/>
-        <text x="54" y="570" class="t-dim" font-size="10" font-weight="600">05 / Stakeholder Communication</text>
+        <text x="54" y="570" class="t-muted" font-size="10" font-weight="600">05 / Stakeholder Communication</text>
 
         <rect data-graph-role="structural-frame" data-composition-frame-kind="lane" data-composition-frame-id="lane-5" x="40" y="672" width="640" height="104" rx="10" class="c-lane" stroke-width="1"/>
         <rect data-graph-role="structural-frame" data-composition-frame-kind="exception-lane" data-composition-frame-id="lane-5-exception" x="46" y="678" width="628" height="92" rx="8" class="c-security-group" stroke-width="1"/>
@@ -9081,8 +9081,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         var value = readerLink(relationId
           ? 'relation=' + encodeURIComponent(relationId)
           : 'focus=' + encodeURIComponent(activeIds[0]) + (reachabilityMode ? '&reach=' + reachabilityMode : ''));
-        if (value === null) return Promise.resolve(false);
-        return copyReaderText(value).then(function (copied) {
+        return (value === null ? Promise.resolve(false) : copyReaderText(value)).then(function (copied) {
           copyBtn.textContent = viewerText(copied ? 'viewer.common.copied' : 'viewer.common.copyFailed');
           copyBtn.setAttribute('aria-label', copied
             ? viewerText(relationId ? 'viewer.passport.copy.pinned.success' : 'viewer.passport.copy.focused.success')
@@ -13015,8 +13014,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       function copyLink() {
         if (mode !== 'result') return Promise.resolve(false);
         var value = readerLink('route=' + encodeURIComponent(startId) + '~' + encodeURIComponent(endId));
-        if (value === null) return Promise.resolve(false);
-        return copyReaderText(value).then(function (copied) {
+        return (value === null ? Promise.resolve(false) : copyReaderText(value)).then(function (copied) {
           copyBtn.textContent = viewerText(copied ? 'viewer.common.copied' : 'viewer.common.copyFailed');
           copyBtn.setAttribute('aria-label', viewerText(copied ? 'viewer.route.copy.success' : 'viewer.route.copy.failed'));
           window.setTimeout(function () {
@@ -13671,10 +13669,13 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       function copyLink() {
         if (!selectedKinds.length) return Promise.resolve(false);
         var value = readerLink('lens=' + selectedKinds.map(encodeURIComponent).join('~'));
-        if (value === null) return Promise.resolve(false);
-        return copyReaderText(value).then(function (copied) {
+        return (value === null ? Promise.resolve(false) : copyReaderText(value)).then(function (copied) {
           copyBtn.textContent = viewerText(copied ? 'viewer.common.copied' : 'viewer.common.copyFailed');
-          window.setTimeout(function () { copyBtn.textContent = viewerText('viewer.common.copyLink'); }, 1600);
+          copyBtn.setAttribute('aria-label', viewerText(copied ? 'viewer.lens.copy' : 'viewer.common.copyFailed'));
+          window.setTimeout(function () {
+            copyBtn.textContent = viewerText('viewer.common.copyLink');
+            copyBtn.setAttribute('aria-label', viewerText('viewer.lens.copy'));
+          }, 1600);
           return copied;
         });
       }
