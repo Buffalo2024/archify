@@ -11256,7 +11256,9 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         var a = document.createElement(&#39;a&#39;);
         a.href = url;
         a.download = filename;
-        document.body.appendChild(a);
+        // Keep the export-owned activation inside its existing control boundary.
+        // The synthetic download click must not dismiss the reader selection.
+        menu.appendChild(a);
         a.click();
         a.remove();
         setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
@@ -15648,7 +15650,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           semantic: semantic ? viewerText(&#39;viewer.nav.camera.semantic&#39;) : &#39;&#39;,
           hint: detailHint
         });
-        resetBtn.setAttribute(&#39;aria-label&#39;, viewerText(&#39;viewer.nav.camera&#39;, { hint: detailHint }));
+        var readout = (showDetailLevel ? resolvedLevel + &#39; &#39; : &#39;&#39;) + percent;
+        resetBtn.setAttribute(&#39;aria-label&#39;, readout + &#39; · &#39; + viewerText(&#39;viewer.nav.camera&#39;, { hint: detailHint }));
         resetBtn.setAttribute(&#39;data-detail-level&#39;, detail);
         container.setAttribute(&#39;data-detail-level&#39;, detail);
         container.setAttribute(&#39;data-camera-mode&#39;, state.mode);
@@ -25907,7 +25910,9 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         var a = document.createElement(&#39;a&#39;);
         a.href = url;
         a.download = filename;
-        document.body.appendChild(a);
+        // Keep the export-owned activation inside its existing control boundary.
+        // The synthetic download click must not dismiss the reader selection.
+        menu.appendChild(a);
         a.click();
         a.remove();
         setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
@@ -30299,7 +30304,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           semantic: semantic ? viewerText(&#39;viewer.nav.camera.semantic&#39;) : &#39;&#39;,
           hint: detailHint
         });
-        resetBtn.setAttribute(&#39;aria-label&#39;, viewerText(&#39;viewer.nav.camera&#39;, { hint: detailHint }));
+        var readout = (showDetailLevel ? resolvedLevel + &#39; &#39; : &#39;&#39;) + percent;
+        resetBtn.setAttribute(&#39;aria-label&#39;, readout + &#39; · &#39; + viewerText(&#39;viewer.nav.camera&#39;, { hint: detailHint }));
         resetBtn.setAttribute(&#39;data-detail-level&#39;, detail);
         container.setAttribute(&#39;data-detail-level&#39;, detail);
         container.setAttribute(&#39;data-camera-mode&#39;, state.mode);
