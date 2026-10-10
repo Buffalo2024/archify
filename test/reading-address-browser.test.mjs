@@ -168,4 +168,35 @@ test('native copy links preserve a host page and opaque reader state without cha
     assert.equal(result.residual, 0);
     assert.equal(result.text, host.replace('{state}', encodeURIComponent(result.state)));
   }
+  const readme = fs.readFileSync(path.join(root, 'README.md'), 'utf8');
+  const links = new Set(Array.from(readme.matchAll(/\]\((examples\/[^)\s]+\.html)\)/g), match => match[1]));
+  const examples = fs.readdirSync(path.join(root, 'examples'))
+    .filter(name => name.endsWith('.architecture.json'))
+    .map(name => JSON.parse(fs.readFileSync(path.join(root, 'examples', name), 'utf8')).meta.output)
+    .filter(output => links.has(output));
+  assert.ok(examples.length, 'README links architecture examples with authoritative inputs');
+  for (const example of examples) {
+    const artifact = path.join(root, example);
+    await browser.inspect({ artifactPath: artifact, width: 1600, height: 1100,
+      theme: 'light', writeScreenshot: false });
+    const id = await run(`document.querySelector('svg [data-node-id]')?.getAttribute('data-node-id')`);
+    assert.ok(id, `${example} provides an authored node`);
+    assert.equal(await run(`Archify.focus.set(${JSON.stringify(id)}, {toggle:false,updateUrl:false})`), true);
+    const state = 'focus=' + encodeURIComponent(id);
+    const before = await copy('Archify.focus.copyLink()');
+    assert.equal(before.copied, true);
+    assert.equal(before.text, pathToFileURL(artifact).href + '?theme=light#' + state);
+    await run(`document.documentElement.setAttribute('data-reading-link-template', ${JSON.stringify(host)})`);
+    const configured = await copy('Archify.focus.copyLink()');
+    assert.equal(configured.copied, true);
+    assert.equal(configured.text, host.replace('{state}', encodeURIComponent(state)),
+      `${example} uses the declared host address`);
+    assert.equal(configured.residual, 0);
+    await run(`document.documentElement.setAttribute('data-reading-link-template', 'javascript:{state}')`);
+    const invalid = await copy('Archify.focus.copyLink()');
+    assert.equal(invalid.copied, false);
+    assert.equal(invalid.clipboardCalls, 0);
+    assert.equal(invalid.text, null);
+    assert.equal(invalid.residual, 0);
+  }
 });
