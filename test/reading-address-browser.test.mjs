@@ -48,6 +48,7 @@ test('native copy links preserve a host page and opaque reader state without cha
     Object.defineProperty(navigator, 'clipboard', { configurable: true, value:
       ${JSON.stringify(mode)} === 'missing' ? undefined : {
         writeText: value => { clipboardCalls++;
+          if (${JSON.stringify(mode)} === 'throw') throw new Error('denied');
           if (${JSON.stringify(mode)} !== 'success') return Promise.reject(new Error('denied'));
           text = value; return Promise.resolve();
         }
@@ -86,6 +87,7 @@ test('native copy links preserve a host page and opaque reader state without cha
   await run('Archify.focus.set("source", {toggle:false,updateUrl:false})');
   for (const [mode, fallback, expected, attempts] of [
     ['success', false, true, 1], ['reject', true, true, 1],
+    ['throw', true, true, 1], ['throw', false, false, 1],
     ['missing', true, true, 0], ['reject', false, false, 1],
   ]) {
     const result = await copy('Archify.focus.copyLink()', undefined, mode, fallback);

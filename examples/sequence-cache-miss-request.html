@@ -5515,9 +5515,11 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       }
       var policy = document.permissionsPolicy || document.featurePolicy;
       var allowed = !policy || typeof policy.allowsFeature !== 'function' || policy.allowsFeature('clipboard-write');
-      return allowed && navigator.clipboard && typeof navigator.clipboard.writeText === 'function'
-        ? navigator.clipboard.writeText(value).then(function () { return true; }).catch(fallbackCopy)
-        : Promise.resolve(fallbackCopy());
+      if (allowed && navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+        try { return Promise.resolve(navigator.clipboard.writeText(value)).then(function () { return true; }).catch(fallbackCopy); }
+        catch (_) {}
+      }
+      return Promise.resolve(fallbackCopy());
     }
 
     function hasDrawableGeometry(element) {
