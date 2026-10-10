@@ -524,7 +524,7 @@
         var value = readerLink('lens=' + selectedKinds.map(encodeURIComponent).join('~'));
         return (value === null ? Promise.resolve(false) : copyReaderText(value)).then(function (copied) {
           copyBtn.textContent = viewerText(copied ? 'viewer.common.copied' : 'viewer.common.copyFailed');
-          copyBtn.setAttribute('aria-label', viewerText(copied ? 'viewer.lens.copy' : 'viewer.common.copyFailed'));
+          copyBtn.setAttribute('aria-label', viewerText(copied ? 'viewer.common.copied' : 'viewer.common.copyFailed'));
           window.setTimeout(function () {
             copyBtn.textContent = viewerText('viewer.common.copyLink');
             copyBtn.setAttribute('aria-label', viewerText('viewer.lens.copy'));
