@@ -4,7 +4,7 @@ Read this only when the user asks for a reader-facing capability. Ordinary gener
 
 ## Exploration
 
-- Diagram Guide lists current actions and shortcuts.
+- Diagram Guide lists current actions and shortcuts. Open it with the guide button or `?`; it never opens automatically.
 - Reading Depth starts at READ at the default 100% scale, reveals FULL detail at 175%, and falls back to MAP only below 100%. Focus, route, and semantic interactions reveal their exact facts at any scale.
 - Semantic Lens summarizes selected node/relationship kinds without changing authored geometry.
 - Intent Trace previews a fine-pointer or keyboard target before committed focus.
@@ -16,7 +16,7 @@ Read this only when the user asks for a reader-facing capability. Ordinary gener
 
 ## Motion and presentation
 
-Every rendered diagram enables reader-controlled Live/Still motion by default. In Live, every edge runs a small light show on one shared cycle: a comet (halo, tail, head, plus a dimmer echo on long edges) cascades downstream, leaves a soft wake, and lands as a ripple on the target node, while nodes enter once and then glow on the same cycle with authored-step staggering. Phases follow the authored step order (source-node rank, chronological in sequence diagrams); the flow rides a separate Viewer overlay and the original line styles and arrowheads remain intact. Still stops the flow; resuming Live starts it again. Semantic exploration temporarily owns the motion budget, and continuous flow resumes when that action releases it. Diagrams without connections retain their bounded node entrance rather than inventing a flow. Omit `meta.animation`; historical `"trace"` and `"none"` values remain accepted for input compatibility and do not change this default. Reduced motion, page hiding, print, and canonical export preserve complete static meaning. Presentation Stage changes viewer chrome and framing, never authored geometry. This is not a mobile product feature; narrow layouts get containment only.
+Every rendered diagram enables reader-controlled Live/Still motion by default. In Live, every edge runs a small light show on one shared cycle: a comet (glow, halo, tail, head, plus a dimmer echo on every edge) cascades downstream, leaves a soft wake, and lands as a ripple on the target node, while nodes enter once and then glow on the same cycle with authored-step staggering. Phases follow the authored step order (source-node rank, chronological in sequence diagrams); the flow rides a separate Viewer overlay and the original line styles and arrowheads remain intact. Compact edges receive a larger, brighter comet; echoes stay dimmer. With no saved preference, new pages start Still. Choosing Live starts continuous flow and saves that preference; choosing Still stops it and clears the saved Live preference. Existing saved Still preferences remain Still. Semantic exploration temporarily owns the motion budget, and continuous flow resumes when that action releases it. Diagrams without connections retain their bounded node entrance rather than inventing a flow. Omit `meta.animation`; historical `"trace"` and `"none"` values remain accepted for input compatibility and do not change this default. Reduced motion, page hiding, print, and canonical export preserve complete static meaning. Presentation Stage changes viewer chrome and framing, never authored geometry. This is not a mobile product feature; narrow layouts get containment only.
 
 ## Canonical exports
 

@@ -835,8 +835,9 @@ For trace pages, pause/resume/toggle return the reader's pause intent, while
 mode/isPaused report effective pause: reader intent OR reduced motion OR a
 nonempty suspension table. Thus resume can return false while mode remains still.
 setMode treats only `still` as a pause request, returns effective mode and honors
-`persist:false`. The storage key remains `archify-motion`; user pause writes
-`still`, resume removes it, and storage errors are ignored. System suspension
+`persist:false`. New readers default to Still. The storage key remains
+`archify-motion`; resume writes `live`, pause removes it, and storage errors are
+ignored. An existing `still` value also stays Still. System suspension
 does not become a persisted user preference. Becoming live resumes continuous
 connection flow when no semantic owner is active; it does not restart Route
 playback or replay an already completed node entrance.

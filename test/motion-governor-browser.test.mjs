@@ -145,14 +145,13 @@ test('Motion Governor preserves mode, ownership, continuous Live flow and real c
     for (const mode of Object.keys(cases)) {
       await load(mode);
       const initial = await snapshot(mode + '-initial');
-      assert.equal(initial.capable, true); assert.equal(initial.mode, 'live'); assert.equal(initial.hidden, false);
+      assert.equal(initial.capable, true); assert.equal(initial.mode, 'still', 'Motion defaults to Still until the reader resumes'); assert.equal(initial.hidden, false);
       const contract = await run(`(() => {
         const svg=document.querySelector('.diagram-container > svg'), edges=Array.from(svg.querySelectorAll('path[data-animate="edge"]'));
         const flows=Array.from(svg.querySelectorAll('[data-ambient-flow-overlay]'));
         window.authoredEdges=edges.map(e=>e.outerHTML);
-        const longEdges=edges.filter(e=>e.getTotalLength()>340).length;
         const circles=flows.filter(e=>e.localName==='circle'), paths=flows.filter(e=>e.localName==='path');
-        return {edges:edges.length, flows:flows.length, paths:paths.length, circles:circles.length, longEdges,
+        return {edges:edges.length, flows:flows.length, paths:paths.length, circles:circles.length,
           valid:paths.every(e=>e.getAttribute('d')===(e.previousElementSibling.getAttribute('data-motion-path')||e.previousElementSibling.getAttribute('d')))&&
           circles.every(e=>e.getAttribute('cx')!==null&&e.getAttribute('cy')!==null)&&
           flows.every(e=>Array.from(e.attributes).every(a=>!a.name.startsWith('data-')||['data-ambient-flow-overlay','data-tree-ancestors'].includes(a.name))&&
@@ -162,13 +161,15 @@ test('Motion Governor preserves mode, ownership, continuous Live flow and real c
           security:Array.from(svg.querySelectorAll('.a-security'), e=>getComputedStyle(e).strokeDasharray)};
       })()`);
       if(mode==='class') assert.ok(contract.reverse>0, 'Class bus exercises reversed visual paths.');
-      assert.equal(contract.paths, contract.edges * 4 + contract.longEdges * 2,
-        'Each edge carries wake, halo, tail and head, plus an echo pair on long edges.');
+      assert.equal(contract.paths, contract.edges * 7,
+        'Each edge carries wake, glow, halo, tail and head, plus an echo pair.');
       assert.equal(contract.circles, contract.edges * 2, 'Each edge carries a sonar ripple pair.');
       assert.equal(contract.valid, true);
       assert.ok(contract.originalAnimations.every(name=>name==='none'));
       assert.ok(contract.security.every(dash=>dash==='5px, 5px'));
-      assert.equal(initial.ambient, contract.edges ? 'running' : 'empty');
+      assert.equal(initial.ambient, contract.edges ? 'paused' : 'empty');
+      await run(`Archify.motionGovernor.resume()`);
+      assert.equal((await snapshot(mode + '-live')).ambient, contract.edges ? 'running' : 'empty');
       // One actual multi-cycle observation covers shared CSS timing. Every type
       // above separately protects its renderer-to-runtime geometry contract.
       if (mode === 'architecture') {
@@ -180,9 +181,9 @@ test('Motion Governor preserves mode, ownership, continuous Live flow and real c
           layers:Array.from(document.querySelectorAll('path[data-animate="edge"]')).every(e=>{
             const overlays=[];
             for(let s=e.nextElementSibling;s&&s.hasAttribute('data-ambient-flow-overlay');s=s.nextElementSibling) overlays.push(s);
-            const kinds=overlays.map(o=>o.localName==='circle'?(o.classList.contains('ambient-flow-ripple-echo')?'ripple-echo':'ripple'):(o.classList.contains('echo')?'echo':['wake','halo','tail','head'].find(c=>o.classList.contains('ambient-flow-'+c))));
-            const core=kinds.slice(0,4).join(','), rest=kinds.slice(4).join(',');
-            return core==='wake,halo,tail,head'&&(rest==='ripple,ripple-echo'||rest==='echo,echo,ripple,ripple-echo')&&
+            const kinds=overlays.map(o=>o.localName==='circle'?(o.classList.contains('ambient-flow-ripple-echo')?'ripple-echo':'ripple'):(o.classList.contains('echo')?'echo':['wake','glow','halo','tail','head'].find(c=>o.classList.contains('ambient-flow-'+c))));
+            const core=kinds.slice(0,5).join(','), rest=kinds.slice(5).join(',');
+            return core==='wake,glow,halo,tail,head'&&rest==='echo,echo,ripple,ripple-echo'&&
               overlays.every(o=>o.style.getPropertyValue('--flow-delay')!=='');
           }),
           nodeAnims:Array.from(document.querySelectorAll('[data-animate="node"]'), e=>e.getAnimations().map(a=>a.animationName))})`);
@@ -225,9 +226,10 @@ test('Motion Governor preserves mode, ownership, continuous Live flow and real c
     assert.equal(await run(`document.querySelectorAll('[data-ambient-flow-overlay]').length`), 0);
   });
 
-  await t.test('long-edge echoes stay dimmer than their main comets across presets and themes', async () => {
+  await t.test('echo comets stay dimmer than their main comets across presets and themes', async () => {
     for (const theme of ['dark', 'light']) {
       await load('architecture', { theme });
+      await run(`Archify.motionGovernor.resume()`);
       for (const preset of ['classic', 'editorial']) {
         const peaks = await run(`(() => {
           const svg=document.querySelector('.diagram-container > svg');
@@ -248,7 +250,7 @@ test('Motion Governor preserves mode, ownership, continuous Live flow and real c
             return {kind,main:peak(main),echo:peak(echo)};
           });
         })()`);
-        assert.ok(peaks.length > 0, 'Architecture fixture must exercise long-edge echoes.');
+        assert.ok(peaks.length > 0, 'Architecture fixture must exercise echo comets.');
         for (const peak of peaks) {
           assert.ok(peak.echo > 0 && peak.echo < peak.main,
             `${preset}/${theme} ${peak.kind} echo must remain visible and dimmer: ${JSON.stringify(peak)}`);
@@ -301,6 +303,7 @@ test('Motion Governor preserves mode, ownership, continuous Live flow and real c
   await t.test('collapsing Orders hides only its descendant flow overlays', async () => {
     for (const mode of ['tree', 'treeCollapsed']) {
       await load(mode);
+      await run(`Archify.motionGovernor.resume()`);
       const branch = await run(`(() => {
         const overlaysOf=e=>{const out=[];for(let s=e.nextElementSibling;s&&s.hasAttribute('data-ambient-flow-overlay');s=s.nextElementSibling)out.push(s);return out;};
         const edges=Array.from(document.querySelectorAll('path[data-animate="edge"]'));
@@ -324,7 +327,9 @@ test('Motion Governor preserves mode, ownership, continuous Live flow and real c
   await t.test('printing settled Live nodes preserves static styling then restores screen Live', async () => {
     for (const mode of ['architecture', 'tree']) {
       await load(mode);
+      await run(`Archify.motionGovernor.resume()`);
       await run(`motionWait(()=>document.documentElement.getAttribute('data-ambient-entry')==='settled')`);
+      await run(`motionWait(()=>Array.from(document.querySelectorAll('[data-animate="node"]')).every(e=>e.getAnimations().some(a=>a.animationName==='archify-node-receive')))`);
       const nodeState=()=>run(`Array.from(document.querySelectorAll('[data-animate="node"]'),e=>({animations:e.getAnimations().map(a=>a.animationName),filter:getComputedStyle(e).filter,opacity:getComputedStyle(e).opacity}))`);
       assert.ok((await nodeState()).every(n=>n.animations.includes('archify-node-receive')));
       await send('Emulation.setEmulatedMedia', {media:'print'});
@@ -362,6 +367,7 @@ test('Motion Governor preserves mode, ownership, continuous Live flow and real c
       };
     ` });
     const copies = await run(`(async () => {
+      Archify.motionGovernor.resume();
       const svg=document.querySelector('.diagram-container > svg'), edge=svg.querySelector('[data-motion-test-group]'),
         from=edge.getAttribute('data-edge-from'), to=edge.getAttribute('data-edge-to'), initial=svg.querySelectorAll('[data-ambient-flow-overlay]').length;
       const rows=[];
@@ -397,8 +403,9 @@ test('Motion Governor preserves mode, ownership, continuous Live flow and real c
 
   await t.test('stored user intent remains distinct from reduced motion and suspension', async () => {
     await load();
-    assert.equal(await run('Archify.motionGovernor.pause()'), true);
-    assert.equal(await run(`localStorage.getItem('archify-motion')`), 'still');
+    assert.equal((await snapshot('fresh-default-still')).mode, 'still', 'Nothing stored means Still by default.');
+    assert.equal(await run('Archify.motionGovernor.resume()'), false);
+    assert.equal(await run(`localStorage.getItem('archify-motion')`), 'live');
     const storedUrl = await run('location.href');
     // Observe after normal startup. A CDP new-document localStorage read can
     // change Chrome's file-backed storage behavior, even in script-free HTML.
@@ -407,12 +414,12 @@ test('Motion Governor preserves mode, ownership, continuous Live flow and real c
       await load('architecture', { preserveStorage: true });
       const stored = await run(`({current:localStorage.getItem('archify-motion'),navigation:motionNavigation,url:location.href})`);
       assert.equal(stored.url, storedUrl, 'Preference persistence must reload the same file URL.');
-      assert.equal(stored.current, 'still', 'Preference must survive reloading the standalone file.');
-      assert.equal((await snapshot('stored-still-' + reload)).mode, 'still', JSON.stringify(stored));
+      assert.equal(stored.current, 'live', 'Preference must survive reloading the standalone file.');
+      assert.equal((await snapshot('stored-live-' + reload)).mode, 'live', JSON.stringify(stored));
     }
-    assert.equal(await run(`Archify.motionGovernor.setMode('live', {persist:false})`), 'live');
-    assert.equal(await run(`localStorage.getItem('archify-motion')`), 'still');
-    assert.equal(await run('Archify.motionGovernor.resume()'), false);
+    assert.equal(await run(`Archify.motionGovernor.setMode('still', {persist:false})`), 'still');
+    assert.equal(await run(`localStorage.getItem('archify-motion')`), 'live');
+    assert.equal(await run('Archify.motionGovernor.pause()'), true);
     assert.equal(await run(`localStorage.getItem('archify-motion')`), null);
     await media(true);
     await run('motionWait(() => document.getElementById("btn-motion").disabled)');
@@ -430,7 +437,10 @@ test('Motion Governor preserves mode, ownership, continuous Live flow and real c
     await run('Archify.motionGovernor.pause()');
     await load();
     assert.equal(await run(`localStorage.getItem('archify-motion')`), null, 'Fresh fixtures reset prior stored intent.');
-    assert.equal((await snapshot('fresh-after-stored-intent')).mode, 'live');
+    assert.equal((await snapshot('fresh-after-stored-intent')).mode, 'still');
+    await run(`localStorage.setItem('archify-motion', 'still')`);
+    await load('architecture', { preserveStorage: true });
+    assert.equal((await snapshot('legacy-still-preference')).mode, 'still', 'Older saved Still choices stay Still.');
     await load('architecture', { fixture: `Storage.prototype.getItem = Storage.prototype.setItem = Storage.prototype.removeItem = function () { throw new Error('storage fixture'); };` });
     assert.equal(await run('Archify.motionGovernor.pause()'), true);
     assert.equal(await run('Archify.motionGovernor.resume()'), false);
@@ -439,6 +449,7 @@ test('Motion Governor preserves mode, ownership, continuous Live flow and real c
 
   await t.test('claims preempt cleanup, normal release does not, and SVG owners fall back automatically', async () => {
     await load();
+    await run(`Archify.motionGovernor.resume()`);
     await run(`window.main = document.querySelector('.diagram-container > svg'); main.setAttribute('data-focus-active','true'); main.setAttribute('data-route-active','true');`);
     await run(`motionWait(() => Archify.motionGovernor.owner() === 'route')`);
     assert.equal((await snapshot('derived-route')).rootOwner, 'route');
@@ -462,6 +473,7 @@ test('Motion Governor preserves mode, ownership, continuous Live flow and real c
 
   await t.test('counted suspensions and the existing visibility-key interaction remain distinct', async () => {
     await load();
+    await run(`Archify.motionGovernor.resume()`);
     const values = await run(`(() => {
       const m=Archify.motionGovernor, a=m.suspend('a'), b=m.suspend('a'), c=m.suspend('c');
       const first=[c(),m.isPaused(),b(),m.isPaused(),b(),a(),m.isPaused()];
@@ -478,6 +490,7 @@ test('Motion Governor preserves mode, ownership, continuous Live flow and real c
 
   await t.test('node entry cancellation and optional platform interfaces keep their fallback', async () => {
     await load();
+    await run(`Archify.motionGovernor.resume()`);
     const cancelled = await run(`(() => {
       const root=document.documentElement, svg=document.querySelector('.diagram-container > svg');
       svg.querySelectorAll('[data-animate="node"]').forEach(e=>e.dispatchEvent(new Event('animationcancel',{bubbles:true})));
@@ -509,6 +522,7 @@ test('Motion Governor preserves mode, ownership, continuous Live flow and real c
 
   await t.test('guards hide Live immediately and automatically restore it without growing the SVG', async () => {
     await load();
+    await run(`Archify.motionGovernor.resume()`);
     const guards = await run(`(async () => {
       const m=Archify.motionGovernor, root=document.documentElement, count=document.querySelectorAll('.ambient-edge-flow').length;
       const frame=()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
@@ -539,6 +553,7 @@ test('Motion Governor preserves mode, ownership, continuous Live flow and real c
 
   await t.test('printing keeps Governor Live and preserves the existing Route print policy', async () => {
     await load();
+    await run(`Archify.motionGovernor.resume()`);
     assert.equal(await run(`(() => {
       Archify.routeProbe.begin({source:'users'}); Archify.routeProbe.choose('db');
       window.printPauses=[]; window.printPauseOriginal=Archify.routeProbe.pauseJourney;
@@ -597,6 +612,7 @@ test('Motion Governor preserves mode, ownership, continuous Live flow and real c
 
   await t.test('Motion pauses actual Route without discarding elapsed dwell', async () => {
     await load();
+    await run(`Archify.motionGovernor.resume()`);
     const route = await run(`(async () => {
       Archify.routeProbe.begin({source:'users'}); Archify.routeProbe.choose('db');
       const schedule=window.setTimeout, delays=[];
@@ -624,14 +640,16 @@ test('Motion Governor preserves mode, ownership, continuous Live flow and real c
   await t.test('dark and light modes expose the same controls and computed Still state', async () => {
     for (const theme of ['dark', 'light']) {
       await load('architecture', { theme });
-      assert.equal((await snapshot('running-' + theme)).ambient, 'running');
-      const live = await snapshot('live-' + theme); assert.equal(live.pressed, 'true');
-      await screenshot('live-' + theme);
-      await run(`document.getElementById('btn-motion').click()`);
-      const still = await snapshot('still-' + theme); assert.equal(still.mode, 'still'); assert.equal(still.pressed, 'false');
+      const still = await snapshot('still-' + theme);
+      assert.equal(still.ambient, 'paused', 'Fresh load defaults to Still');
+      assert.equal(still.mode, 'still'); assert.equal(still.pressed, 'false');
       assert.match(still.aria, /resume/i);
       assert.equal(await run(`getComputedStyle(document.querySelector('.pulse-dot')).animationName`), 'none');
       await screenshot('still-' + theme);
+      await run(`document.getElementById('btn-motion').click()`);
+      const live = await snapshot('live-' + theme);
+      assert.equal(live.ambient, 'running'); assert.equal(live.pressed, 'true');
+      await screenshot('live-' + theme);
       await run(`Archify.focus.set('api', {toggle:false}); motionWait(() => Archify.motionGovernor.owner() === 'focus')`);
       const exported = await run(`(async () => {
         const svg=document.querySelector('.diagram-container > svg'), m=Archify.motionGovernor;

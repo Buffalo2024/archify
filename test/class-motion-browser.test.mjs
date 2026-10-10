@@ -39,6 +39,7 @@ test('class: hierarchy bus motion follows from-to while retaining aligned visual
   await loaded;
   await run('document.fonts.ready');
   await run('Archify.viewerChromeLayout.whenStable()');
+  await run('Archify.motionGovernor.resume()');
   const result = await run(`(() => {
     const edge = document.querySelector('path[data-edge-id="card_implements"]');
     const visual = edge.getAttribute('d'), semantic = edge.getAttribute('data-motion-path');
@@ -146,6 +147,7 @@ test('class: mixed hierarchy fallback keeps dependency notation in focus and SVG
     await loaded;
     await run('document.fonts.ready');
     await run('Archify.layoutStability.whenStable()');
+    await run('Archify.motionGovernor.resume()');
     const result = await run(`(async () => {
       const svg = document.querySelector('.diagram-container svg');
       const paths = root => [...root.querySelectorAll('path[data-edge-id]')].map(path => ({
