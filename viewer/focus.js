@@ -1392,31 +1392,15 @@
         return setMany([id], options);
       }
 
-      function fallbackCopy(value) {
-        var field = document.createElement('textarea');
-        field.value = value;
-        field.setAttribute('readonly', '');
-        field.style.position = 'fixed';
-        field.style.opacity = '0';
-        document.body.appendChild(field);
-        field.select();
-        var copied = false;
-        try { copied = document.execCommand('copy'); } catch (_) {}
-        field.remove();
-        return copied;
-      }
-
       function copyFocusLink() {
         if (activeIds.length !== 1) return Promise.resolve(false);
         var record = pinnedRelationshipRecord();
         var relationId = record && record.id;
-        var value = location.href.replace(/#.*$/, '') + (relationId
-          ? '#relation=' + encodeURIComponent(relationId)
-          : '#focus=' + encodeURIComponent(activeIds[0]) + (reachabilityMode ? '&reach=' + reachabilityMode : ''));
-        var copy = navigator.clipboard && typeof navigator.clipboard.writeText === 'function'
-          ? navigator.clipboard.writeText(value).then(function () { return true; }).catch(function () { return fallbackCopy(value); })
-          : Promise.resolve(fallbackCopy(value));
-        return copy.then(function (copied) {
+        var value = readerLink(relationId
+          ? 'relation=' + encodeURIComponent(relationId)
+          : 'focus=' + encodeURIComponent(activeIds[0]) + (reachabilityMode ? '&reach=' + reachabilityMode : ''));
+        if (value === null) return Promise.resolve(false);
+        return copyReaderText(value).then(function (copied) {
           copyBtn.textContent = viewerText(copied ? 'viewer.common.copied' : 'viewer.common.copyFailed');
           copyBtn.setAttribute('aria-label', copied
             ? viewerText(relationId ? 'viewer.passport.copy.pinned.success' : 'viewer.passport.copy.focused.success')

@@ -14,6 +14,21 @@ Read this only when the user asks for a reader-facing capability. Ordinary gener
 - Direct Relationship Pin makes a unique compiled relationship operable while preserving the authored line and stable relationship identity. It must fail closed on conflicting source/target/label/ID metadata.
 - Route Probe resolves exactly two endpoints over authored directed relationships. It never infers a route from geometry.
 
+## Embedded reading addresses
+
+A host displaying the native reader in an opaque `srcdoc` frame may set
+`data-reading-link-template` on that reader's `html` element. Supply an absolute
+HTTP, HTTPS or file URL containing exactly one `{state}` marker, for example
+`https://example.test/architecture#page=mechanism&reader={state}`. Native Focus,
+Relationship, Reach, Route and Lens copy actions replace the marker with their
+percent-encoded opaque query state. The host keeps its page identity and restores
+that value as the native frame's hash; it never parses or reconstructs queries.
+
+Absent configuration preserves standalone links. Invalid, credential-bearing or
+unsupported URL templates make copying fail without accessing the clipboard.
+This seam changes copied addresses only, not query parsing, history, permissions,
+embedding isolation or authored geometry. It adds no network or storage surface.
+
 ## Motion and presentation
 
 Every rendered diagram enables reader-controlled Live/Still motion by default. In Live, connection flow repeats on a separate Viewer overlay while the original line styles and arrowheads remain intact. Still stops the flow; resuming Live starts it again. Semantic exploration temporarily owns the motion budget, and continuous flow resumes when that action releases it. Diagrams without connections retain their bounded node entrance rather than inventing a flow. Omit `meta.animation`; historical `"trace"` and `"none"` values remain accepted for input compatibility and do not change this default. Reduced motion, page hiding, print, and canonical export preserve complete static meaning. Presentation Stage changes viewer chrome and framing, never authored geometry. This is not a mobile product feature; narrow layouts get containment only.
