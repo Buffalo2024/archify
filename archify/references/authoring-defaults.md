@@ -44,7 +44,7 @@ For a fresh Sequence omit `meta.viewBox` and `meta.column_fit`: automatic height
 
 For a fresh Dataflow start with the stage/row grid of 2 to 5 stages and rows 0 to 4, and follow the canonical [Dataflow canvas and showcase defaults](authoring-contract.md#dataflow). Adjacent stage centres sit 215px apart and default nodes are 112px wide, leaving about 100px between them, so keep a flow label within about 17 text units, counting CJK as two, and move further detail into a card; add dimensions or route controls for supplied geometry or a measured constraint.
 
-For Lifecycle use schema v3: list the happy path in `mainPath` and author every transition, including the main path; the renderer places all other states and routes. Give an exit shared by several consecutive phases the same label so it draws once, and keep transition labels short; a recoverable failure needs a real transition back.
+For Lifecycle use schema v3: list the happy path in `mainPath` and author every transition, including the main path; the renderer places all other states and routes. Preserve each exit's label, note and variant; [eligible equivalent exits](../renderers/lifecycle/README.md#layout) share routing automatically. Keep transition labels short; a recoverable failure needs a real transition back.
 
 For Class omit `meta.viewBox` and keep the grid to three columns, or four only while types stay near the 180px default width: long members grow a type toward `layout.typeMaxW` (300px), and every extra column widens the canvas and shrinks all text toward the readability floor, so add rows instead. `layout.gapX` and `layout.typeMaxW` are the width controls.
 

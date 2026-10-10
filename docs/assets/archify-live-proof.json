@@ -7,13 +7,13 @@
   "fps": 10,
   "frameCount": 54,
   "durationSeconds": 5.4,
-  "bytes": 868958,
-  "sha256": "abc4e05b0e0da5922b8af3127c4d93f04a3b375c2a001109a9abd30c54313fce",
+  "bytes": 802641,
+  "sha256": "e5d0c00b5c99069aa7d0d2b628b43975ec71a22f2db80a7b11513c522acf24ac",
   "scenes": [
     {
       "id": "signal-flow",
       "artifact": "docs/gallery/artifacts/agent-tool-call.workflow.html",
-      "artifactSha256": "22ef70fcb50068ae463a679c131ffa25e85367a68539157ac61d448abbf0e285",
+      "artifactSha256": "67eef44243ec368d337aaf6dbbc2f215f2b2498b37f46c6e5751247b2bbb7bf4",
       "hash": "#focus=planner&reach=downstream",
       "eyebrow": "WORKFLOW · SIGNAL FLOW",
       "title": "Agent Tool Call",
@@ -22,7 +22,7 @@
     {
       "id": "blueprint",
       "artifact": "docs/gallery/artifacts/production-deployment.architecture.html",
-      "artifactSha256": "8859ba00327d374007b14232d4c0b391db03c2ba85b23d614d4b04c6d012cac1",
+      "artifactSha256": "c7b32559c63819b38a51ecdf4daf299535eff18cf051620cb3e11636d255fe06",
       "hash": "#lens=backend~database",
       "eyebrow": "ARCHITECTURE · BLUEPRINT",
       "title": "Production Deployment",
@@ -31,7 +31,7 @@
     {
       "id": "classic",
       "artifact": "docs/gallery/artifacts/cache-miss.sequence.html",
-      "artifactSha256": "fdf2331818312759ed6b06737c82bab598038f6186db9e725bd31a1428ab2e57",
+      "artifactSha256": "9b3622681c99480c56f784d2651f24c71abf810dd1ab4764b389f26cae999abf",
       "hash": "#route=web~db",
       "eyebrow": "SEQUENCE · CLASSIC",
       "title": "Cache Miss Request",
