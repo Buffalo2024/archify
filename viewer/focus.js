@@ -1399,8 +1399,7 @@
         var value = readerLink(relationId
           ? 'relation=' + encodeURIComponent(relationId)
           : 'focus=' + encodeURIComponent(activeIds[0]) + (reachabilityMode ? '&reach=' + reachabilityMode : ''));
-        if (value === null) return Promise.resolve(false);
-        return copyReaderText(value).then(function (copied) {
+        return (value === null ? Promise.resolve(false) : copyReaderText(value)).then(function (copied) {
           copyBtn.textContent = viewerText(copied ? 'viewer.common.copied' : 'viewer.common.copyFailed');
           copyBtn.setAttribute('aria-label', copied
             ? viewerText(relationId ? 'viewer.passport.copy.pinned.success' : 'viewer.passport.copy.focused.success')

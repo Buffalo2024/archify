@@ -105,12 +105,24 @@ test('native copy links preserve a host page and opaque reader state without cha
   }
   for (const invalid of ['javascript:{state}', 'https://example.test/no-state',
     'https://example.test/#{state}/{state}', 'https://user:password@example.test/#{state}']) {
-    await run(`document.documentElement.setAttribute('data-reading-link-template', ${JSON.stringify(invalid)}); Archify.focus.set('source',{toggle:false,updateUrl:false})`);
-    const result = await copy('Archify.focus.copyLink()');
-    assert.equal(result.copied, false);
-    assert.equal(result.text, null);
-    assert.equal(result.clipboardCalls, 0);
-    assert.equal(result.residual, 0);
+    await run(`document.documentElement.setAttribute('data-reading-link-template', ${JSON.stringify(invalid)})`);
+    for (const [setup, action] of states) {
+      assert.equal(await run(setup), true);
+      const result = await copy(action);
+      assert.equal(result.copied, false);
+      assert.equal(result.text, null);
+      assert.equal(result.clipboardCalls, 0);
+      assert.equal(result.residual, 0);
+      const button = action.startsWith('Archify.focus.') ? 'btn-focus-copy'
+        : action.startsWith('Archify.routeProbe.') ? 'route-probe-copy' : 'semantic-lens-copy';
+      const feedback = await run(`(() => {
+        const button = document.getElementById(${JSON.stringify(button)});
+        return { text: button.textContent, accessible: button.getAttribute('aria-label') };
+      })()`);
+      assert.match(feedback.text, /copy failed/i, `${action} must explain rejected addresses`);
+      assert.match(feedback.accessible, /(?:could not copy|copy failed)/i,
+        `${action} must announce rejected addresses`);
+    }
   }
   const host = 'https://example.test/publication#page=opaque&reader={state}';
   const script = `<script>(async () => {

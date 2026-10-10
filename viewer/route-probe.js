@@ -888,8 +888,7 @@
       function copyLink() {
         if (mode !== 'result') return Promise.resolve(false);
         var value = readerLink('route=' + encodeURIComponent(startId) + '~' + encodeURIComponent(endId));
-        if (value === null) return Promise.resolve(false);
-        return copyReaderText(value).then(function (copied) {
+        return (value === null ? Promise.resolve(false) : copyReaderText(value)).then(function (copied) {
           copyBtn.textContent = viewerText(copied ? 'viewer.common.copied' : 'viewer.common.copyFailed');
           copyBtn.setAttribute('aria-label', viewerText(copied ? 'viewer.route.copy.success' : 'viewer.route.copy.failed'));
           window.setTimeout(function () {
