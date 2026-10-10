@@ -113,7 +113,6 @@ test('automatic crossover masks follow live relationship state without becoming 
   }
 
   await load();
-  await run(`Archify.motionGovernor.resume()`);
   assert.equal(await run(`CSS.supports('selector(g:has(> path))')`), true);
   const trace = await samplePairs(8);
   assertTimedPairs(trace);

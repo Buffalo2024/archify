@@ -362,7 +362,7 @@ test('Semantic Lens preserves selection, legend preview and panel contracts', {
         assert.deepEqual(exported, { clean: true, viewBox: true });
       }
     }
-    await load('trace'); await run(`Archify.motionGovernor.resume()`); await run(`Archify.semanticLens.select('backend')`);
+    await load('trace'); await run(`Archify.semanticLens.select('backend')`);
     const animation = await run(`getComputedStyle(document.querySelector('.semantic-lens-flow')).animationName`);
     assert.equal(animation, 'archify-semantic-lens-flow');
     await run(`lensWait(()=>lensEnds.some(e=>e.trusted&&e.name==='archify-semantic-lens-flow'))`);

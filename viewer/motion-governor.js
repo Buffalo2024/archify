@@ -90,7 +90,8 @@
           var glow = addPath('glow');
           var halo = addPath('halo');
           var tail = addPath('tail');
-          var head = addPath('head');          var end = null;
+          var head = addPath('head');
+          var end = null;
           try { end = head.getPointAtLength(len); } catch (_) {}
           // Dashed authored lines keep their dash language through the show:
           // the wake brightens only the authored segments and never fills the
@@ -193,8 +194,8 @@
       }
       function writeStored() {
         try {
-          if (readerPaused) localStorage.removeItem(STORAGE_KEY);
-          else localStorage.setItem(STORAGE_KEY, 'live');
+          if (readerPaused) localStorage.setItem(STORAGE_KEY, 'still');
+          else localStorage.removeItem(STORAGE_KEY);
         } catch (_) {}
       }
       function reducedMotion() {
@@ -344,7 +345,7 @@
       createFlows();
       html.setAttribute('data-motion-capable', 'true');
       btn.hidden = false;
-      readerPaused = readStored() !== 'live';
+      readerPaused = readStored() === 'still';
       btn.addEventListener('click', function () { setPaused(!readerPaused); });
       if (motionQuery) {
         if (typeof motionQuery.addEventListener === 'function') motionQuery.addEventListener('change', render);
