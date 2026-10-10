@@ -30,6 +30,29 @@ test('Camera accessible names retain the visible readout after native actions', 
   await send('Emulation.setEmulatedMedia', {
     features: [{ name: 'prefers-reduced-motion', value: 'reduce' }],
   });
+  async function assertAccessibleReadout(artifact, context) {
+    const loaded = browser.cdp.waitFor('Page.loadEventFired', session);
+    await send('Page.navigate', { url: pathToFileURL(artifact).href });
+    await loaded;
+    for (const action of [null, 'out', 'in', 'in', 'in', 'reset']) {
+      const result = await send('Runtime.evaluate', {
+        expression: `(async () => {
+          ${action ? `document.querySelector('[data-view="${action}"]').click();` : ''}
+          ${action ? 'await Archify.layoutStability.whenStable();' : ''}
+          const button = document.querySelector('[data-view="reset"]');
+          return {
+            visible: button.innerText.replace(/\\s+/g, ' ').trim(),
+            accessible: button.getAttribute('aria-label')
+          };
+        })()`,
+        awaitPromise: true, returnByValue: true,
+      });
+      assert.equal(result.exceptionDetails, undefined, result.exceptionDetails?.exception?.description);
+      const name = result.result.value;
+      assert.ok(name.visible, `${context}/${action}: ${JSON.stringify(name)}`);
+      assert.ok(name.accessible.includes(name.visible), `${context}/${action}: ${JSON.stringify(name)}`);
+    }
+  }
   for (const [mode, example] of Object.entries(cases)) {
     for (const locale of ['en', 'zh-CN']) {
       const candidate = JSON.parse(fs.readFileSync(path.join(skillRoot, 'examples', example), 'utf8'));
@@ -38,28 +61,19 @@ test('Camera accessible names retain the visible readout after native actions', 
       const artifact = path.join(scratch, `${mode}-${locale}.html`);
       fs.writeFileSync(input, JSON.stringify(candidate));
       execFileSync(process.execPath, [path.join(skillRoot, 'bin/archify.mjs'), 'render', mode, input, artifact]);
-      const loaded = browser.cdp.waitFor('Page.loadEventFired', session);
-      await send('Page.navigate', { url: pathToFileURL(artifact).href });
-      await loaded;
-      for (const action of [null, 'out', 'in', 'in', 'in', 'reset']) {
-        const result = await send('Runtime.evaluate', {
-          expression: `(async () => {
-            ${action ? `document.querySelector('[data-view="${action}"]').click();` : ''}
-            await Archify.layoutStability.whenStable();
-            const button = document.querySelector('[data-view="reset"]');
-            return {
-              visible: button.innerText.replace(/\\s+/g, ' ').trim(),
-              accessible: button.getAttribute('aria-label')
-            };
-          })()`,
-          awaitPromise: true, returnByValue: true,
-        });
-        assert.equal(result.exceptionDetails, undefined, result.exceptionDetails?.exception?.description);
-        const name = result.result.value;
-        assert.ok(name.visible, `${mode}/${locale}/${action}: ${JSON.stringify(name)}`);
-        assert.ok(name.accessible.includes(name.visible), `${mode}/${locale}/${action}: ${JSON.stringify(name)}`);
-      }
+      await assertAccessibleReadout(artifact, `${mode}/${locale}`);
     }
+  }
+  const repoRoot = path.resolve(skillRoot, '..');
+  const readme = fs.readFileSync(path.join(repoRoot, 'README.md'), 'utf8');
+  const readmeLinks = new Set(Array.from(readme.matchAll(/\]\((examples\/[^)\s]+\.html)\)/g), match => match[1]));
+  const examples = fs.readdirSync(path.join(repoRoot, 'examples'))
+    .filter(name => name.endsWith('.architecture.json'))
+    .map(name => JSON.parse(fs.readFileSync(path.join(repoRoot, 'examples', name), 'utf8')).meta.output)
+    .filter(output => readmeLinks.has(output));
+  assert.ok(examples.length, 'README links architecture examples with authoritative inputs');
+  for (const example of examples) {
+    await assertAccessibleReadout(path.join(repoRoot, example), example);
   }
 });
 
