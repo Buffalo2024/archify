@@ -34,27 +34,42 @@ test('Export menu preserves authored reach until genuine outside dismissal', {
     return result.result?.value;
   }
   const click = await createViewerClick({ send, run, timeout: 5000 });
-  await send('Page.navigate', { url: pathToFileURL(file).href });
-  await run(`new Promise((resolve,reject)=>{const start=performance.now();function sample(){
-    if(window.Archify?.focus&&Archify.viewerChromeLayout?.whenStable)return resolve();
-    if(performance.now()-start>5000)return reject(new Error('Viewer did not initialize'));
-    requestAnimationFrame(sample);
-  }sample();})`);
-  assert.equal(await run(`Archify.focus.set('api') && Archify.focus.reach('downstream')`), true);
-  const before = await run('Archify.focus.reachabilitySnapshot()');
-  assert(before?.nodeIds.length > 1);
-  await click('#btn-export');
-  const opened = await run(`({snapshot:Archify.focus.reachabilitySnapshot(),
-    open:Archify.exportMenu.isOpen(),
-    enabled:!document.querySelector('[data-action="reach-share-card"]').disabled,
-    hidden:document.querySelector('[data-action="reach-share-card"]').hidden})`);
-  assert.deepEqual(opened.snapshot, before);
-  assert.equal(opened.open, true);
-  assert.equal(opened.enabled, true);
-  assert.equal(opened.hidden, false);
-  await click('#btn-export');
-  assert.deepEqual(await run('Archify.focus.reachabilitySnapshot()'), before);
-  await run(`document.querySelector('.header-row').click()`);
-  assert.equal(await run('Archify.focus.reachabilitySnapshot()'), null);
-  assert.equal(await run('Archify.focus.active()'), null);
+  async function checkArtifact(artifact) {
+    await send('Page.navigate', { url: pathToFileURL(artifact).href });
+    await run(`new Promise((resolve,reject)=>{const start=performance.now();function sample(){
+      if(window.Archify?.focus&&Archify.viewerChromeLayout?.whenStable)return resolve();
+      if(performance.now()-start>5000)return reject(new Error('Viewer did not initialize'));
+      requestAnimationFrame(sample);
+    }sample();})`);
+    await run('Archify.viewerChromeLayout.whenStable()');
+    const origin = await run(`document.querySelector('svg [data-edge-from]')?.getAttribute('data-edge-from')`);
+    assert.ok(origin, `${artifact} provides an authored relationship`);
+    assert.equal(await run(`Archify.focus.set(${JSON.stringify(origin)}) && Archify.focus.reach('downstream')`), true);
+    const before = await run('Archify.focus.reachabilitySnapshot()');
+    assert(before?.nodeIds.length > 1);
+    await click('#btn-export');
+    const opened = await run(`({snapshot:Archify.focus.reachabilitySnapshot(),
+      open:Archify.exportMenu.isOpen(),
+      enabled:!document.querySelector('[data-action="reach-share-card"]').disabled,
+      hidden:document.querySelector('[data-action="reach-share-card"]').hidden})`);
+    assert.deepEqual(opened.snapshot, before, `${artifact} keeps Reach available to Export`);
+    assert.equal(opened.open, true);
+    assert.equal(opened.enabled, true);
+    assert.equal(opened.hidden, false);
+    await click('#btn-export');
+    assert.deepEqual(await run('Archify.focus.reachabilitySnapshot()'), before);
+    await run(`document.querySelector('.header-row').click()`);
+    assert.equal(await run('Archify.focus.reachabilitySnapshot()'), null);
+    assert.equal(await run('Archify.focus.active()'), null);
+  }
+  await checkArtifact(file);
+  const repoRoot = path.resolve(skillRoot, '..');
+  const readme = fs.readFileSync(path.join(repoRoot, 'README.md'), 'utf8');
+  const links = new Set(Array.from(readme.matchAll(/\]\((examples\/[^)\s]+\.html)\)/g), match => match[1]));
+  const examples = fs.readdirSync(path.join(repoRoot, 'examples'))
+    .filter(name => name.endsWith('.architecture.json'))
+    .map(name => JSON.parse(fs.readFileSync(path.join(repoRoot, 'examples', name), 'utf8')).meta.output)
+    .filter(output => links.has(output));
+  assert.ok(examples.length, 'README links architecture examples with authoritative inputs');
+  for (const example of examples) await checkArtifact(path.join(repoRoot, example));
 });
