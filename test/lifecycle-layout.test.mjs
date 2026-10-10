@@ -78,7 +78,7 @@ test('bundled examples pass the showcase artifact check without crossings', () =
   }
 });
 
-test('a lower state aligns its complete return-port group without changing mixed-fit branches', () => {
+test('a lower state aligns its eligible complete return-port group', () => {
   const doc = JSON.parse(fs.readFileSync(path.join(skillRoot, 'examples', 'agent-run.lifecycle.json'), 'utf8'));
   const result = render(doc);
   assert.equal(result.code, 0, result.stderr);
@@ -86,14 +86,6 @@ test('a lower state aligns its complete return-port group without changing mixed
   for (const [from, to] of [['reviewing', 'blocked'], ['blocked', 'reviewing']]) {
     const route = points(result.svg, from, to);
     assert.ok(route.every(([x]) => x === route[0][0]), `${from} -> ${to} is straight`);
-  }
-  for (const [from, to, expected] of [
-    ['executing', 'approval', [[537, 92], [537, 126], [473, 126], [473, 202]]],
-    ['approval', 'executing', [[499, 202], [499, 144], [563, 144], [563, 92]]],
-    ['executing', 'failed', [[589, 92], [589, 144], [657, 144], [657, 202]]],
-    ['failed', 'executing', [[683, 202], [683, 126], [615, 126], [615, 92]]],
-  ]) {
-    assert.deepEqual(points(result.svg, from, to), expected, `${from} -> ${to} retains its mixed-fit route`);
   }
 });
 

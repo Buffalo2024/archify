@@ -138,10 +138,10 @@ test('render layout rejection exposes the existing diagnostic and preserves an e
     const failure = JSON.parse(machine.stdout);
     assert.equal(failure.ok, false);
     const warning = failure.diagnostics.find(entry => entry.code === 'i18n/locale-fallback');
-    const layout = failure.diagnostics.find(entry => entry.code === 'layout/constraint');
+    const layout = failure.diagnostics.find(entry => entry.code === 'architecture/component-label-overflow');
     assert.equal(warning?.severity, 'warning');
     assert.equal(layout?.severity, 'error');
-    assert.deepEqual(layout.subject, { diagramType: 'architecture' });
+    assert.deepEqual(layout.subject, { diagramType: 'architecture', nodeId: 'node' });
     assert.match(layout.message, /shorten the label or widen size/);
     assert.ok(Array.isArray(layout.supportedFixes));
     assert.equal(fs.readFileSync(output, 'utf8'), 'trusted artifact');
@@ -151,7 +151,7 @@ test('render layout rejection exposes the existing diagnostic and preserves an e
   assert.equal(direct.stdout, '');
   const receipt = JSON.parse(direct.stderr);
   assert.ok(receipt.diagnostics.some(entry => entry.code === 'i18n/locale-fallback'));
-  assert.ok(receipt.diagnostics.some(entry => entry.code === 'layout/constraint'));
+  assert.ok(receipt.diagnostics.some(entry => entry.code === 'architecture/component-label-overflow'));
   assert.equal(fs.readFileSync(output, 'utf8'), 'trusted artifact');
 });
 
