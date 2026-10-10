@@ -155,7 +155,7 @@ test('Reader Layout preserves final-artifact behavior across its ownership bound
       await load(manualGuide);
       assert.equal(await evaluate('navigator.webdriver'), false, 'Exercise the ordinary reader path.');
       assert.equal(await evaluate('Archify.guide.isOpen()'), false, 'The guide must wait for reader input.');
-      assert.equal(await evaluate('Archify.motionGovernor.mode()'), 'live', 'A fresh reader starts Live.');
+      assert.equal(await evaluate('Archify.motionGovernor.mode()'), 'still', 'A fresh reader starts Still.');
       assert.equal(await evaluate("localStorage.getItem('archify-guide-welcomed')"), null, 'No onboarding preference is created.');
       for (const expected of [true, false, true, false]) {
         await click('#btn-diagram-guide .diagram-nav-icon');

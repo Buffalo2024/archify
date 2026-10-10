@@ -12476,8 +12476,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       }
       function writeStored() {
         try {
-          if (readerPaused) localStorage.setItem(STORAGE_KEY, &#39;still&#39;);
-          else localStorage.removeItem(STORAGE_KEY);
+          if (readerPaused) localStorage.removeItem(STORAGE_KEY);
+          else localStorage.setItem(STORAGE_KEY, &#39;live&#39;);
         } catch (_) {}
       }
       function reducedMotion() {
@@ -12627,7 +12627,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       createFlows();
       html.setAttribute(&#39;data-motion-capable&#39;, &#39;true&#39;);
       btn.hidden = false;
-      readerPaused = readStored() === &#39;still&#39;;
+      readerPaused = readStored() !== &#39;live&#39;;
       btn.addEventListener(&#39;click&#39;, function () { setPaused(!readerPaused); });
       if (motionQuery) {
         if (typeof motionQuery.addEventListener === &#39;function&#39;) motionQuery.addEventListener(&#39;change&#39;, render);
@@ -27189,8 +27189,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       }
       function writeStored() {
         try {
-          if (readerPaused) localStorage.setItem(STORAGE_KEY, &#39;still&#39;);
-          else localStorage.removeItem(STORAGE_KEY);
+          if (readerPaused) localStorage.removeItem(STORAGE_KEY);
+          else localStorage.setItem(STORAGE_KEY, &#39;live&#39;);
         } catch (_) {}
       }
       function reducedMotion() {
@@ -27340,7 +27340,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       createFlows();
       html.setAttribute(&#39;data-motion-capable&#39;, &#39;true&#39;);
       btn.hidden = false;
-      readerPaused = readStored() === &#39;still&#39;;
+      readerPaused = readStored() !== &#39;live&#39;;
       btn.addEventListener(&#39;click&#39;, function () { setPaused(!readerPaused); });
       if (motionQuery) {
         if (typeof motionQuery.addEventListener === &#39;function&#39;) motionQuery.addEventListener(&#39;change&#39;, render);

@@ -194,8 +194,8 @@
       }
       function writeStored() {
         try {
-          if (readerPaused) localStorage.setItem(STORAGE_KEY, 'still');
-          else localStorage.removeItem(STORAGE_KEY);
+          if (readerPaused) localStorage.removeItem(STORAGE_KEY);
+          else localStorage.setItem(STORAGE_KEY, 'live');
         } catch (_) {}
       }
       function reducedMotion() {
@@ -345,7 +345,7 @@
       createFlows();
       html.setAttribute('data-motion-capable', 'true');
       btn.hidden = false;
-      readerPaused = readStored() === 'still';
+      readerPaused = readStored() !== 'live';
       btn.addEventListener('click', function () { setPaused(!readerPaused); });
       if (motionQuery) {
         if (typeof motionQuery.addEventListener === 'function') motionQuery.addEventListener('change', render);
