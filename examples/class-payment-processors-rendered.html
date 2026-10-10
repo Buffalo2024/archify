@@ -6580,7 +6580,9 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         var a = document.createElement('a');
         a.href = url;
         a.download = filename;
-        document.body.appendChild(a);
+        // Keep the export-owned activation inside its existing control boundary.
+        // The synthetic download click must not dismiss the reader selection.
+        menu.appendChild(a);
         a.click();
         a.remove();
         setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
@@ -9620,7 +9622,9 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         var target = event.target;
         if (chip.hidden || !target || typeof target.closest !== 'function' || chip.contains(target)) return;
         if (container.getAttribute('data-just-panned') === 'true') return;
-        if (target.closest('[data-node-id], [data-relationship-hit-key], .overview-map')) return;
+        // Export consumes the active semantic snapshot; its controls are not
+        // an outside selection. Genuine outside activation still clears it.
+        if (target.closest('[data-node-id], [data-relationship-hit-key], .overview-map, #btn-export, #export-menu')) return;
         clear();
       }, true);
       window.addEventListener('scroll', requestLensPlacement, { passive: true });
