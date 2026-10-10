@@ -48,8 +48,9 @@ test('Motion Governor preserves mode, ownership, continuous Live flow and real c
   fs.writeFileSync(files.static, fs.readFileSync(files.architecture, 'utf8').replace(' data-animation="trace"', ''));
   const browser = new ChromeVisualBrowser(chrome);
   t.after(() => browser.close());
-  const session = await browser.sessionPromise;
-  await browser.cdp.send('Browser.setDownloadBehavior', { behavior: 'deny' });
+  await browser.sessionPromise;
+  let session;
+  let browserContextId;
   const send = (method, params = {}) => browser.cdp.send(method, params, session);
   async function run(expression) {
     const result = await send('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true });
@@ -67,38 +68,21 @@ test('Motion Governor preserves mode, ownership, continuous Live flow and real c
   async function load(mode = 'architecture', { theme = 'dark', reduced = false, fixture = '', preserveStorage = false, query = '' } = {}) {
     const expectedNavigation = ++navigationId;
     if (!preserveStorage) {
-      if (fixtureUrl) {
-        // Reset through the outgoing document's live storage area, then verify
-        // completion before navigating. A CDP clear against a guessed file
-        // storage key did not reliably clear this document's saved intent.
-        assert.equal(await run('motionResetStorage()'), null, 'Outgoing fixture must clear stored intent.');
-      }
+      // Fresh scenarios use isolated browser contexts; persistence scenarios
+      // keep their context and reload the same file URL below.
+      if (browserContextId) await browser.cdp.send('Target.disposeBrowserContext', { browserContextId });
+      ({ browserContextId } = await browser.cdp.send('Target.createBrowserContext', { disposeOnDetach: true }));
+      const { targetId } = await browser.cdp.send('Target.createTarget', { url: 'about:blank', browserContextId });
+      ({ sessionId: session } = await browser.cdp.send('Target.attachToTarget', { targetId, flatten: true }));
+      await send('Page.enable');
+      await send('Runtime.enable');
+      await browser.cdp.send('Browser.setDownloadBehavior', { behavior: 'deny', browserContextId });
+      startup = undefined;
       fixtureUrl = pathToFileURL(files[mode]).href + `?theme=${theme}&testNavigation=${expectedNavigation}${query}`;
-      // End the old document before resetting this disposable profile. A
-      // backend clear while the old file document still owns its Storage area
-      // is not an isolation boundary for its pending work or unload handlers.
-      // Keep startup/reload reads in the real Viewer, outside injected scripts.
-      const frame = (await send('Page.getFrameTree')).frameTree.frame;
-      if (frame.url !== 'about:blank') {
-        const detached = browser.cdp.waitFor('Page.loadEventFired', session);
-        const navigation = await send('Page.navigate', { url: 'about:blank' });
-        assert.ok(navigation.loaderId, 'Fresh fixture reset must end the prior document.');
-        await detached;
-        assert.equal(await run('location.href'), 'about:blank', 'Storage reset requires the neutral document.');
-      }
-      await send('Storage.clearDataForStorageKey', { storageKey: 'file:///', storageTypes: 'local_storage' });
     }
     if (startup) await send('Page.removeScriptToEvaluateOnNewDocument', { identifier: startup });
     ({ identifier: startup } = await send('Page.addScriptToEvaluateOnNewDocument', { source: `(() => {
       if (location.href !== ${JSON.stringify(fixtureUrl)}) return;
-      // Capture methods without accessing localStorage before Viewer startup.
-      // Cleanup runs only later in the outgoing document, including after the
-      // storage-unavailable fixture has replaced Storage.prototype methods.
-      const readStored = Storage.prototype.getItem, removeStored = Storage.prototype.removeItem;
-      window.motionResetStorage = () => {
-        removeStored.call(localStorage, 'archify-motion');
-        return readStored.call(localStorage, 'archify-motion');
-      };
       window.motionNavigation = ${expectedNavigation};
       window.motionErrors = []; window.motionEnds = []; window.motionIterations = []; window.motionAmbient = [];
       addEventListener('animationiteration', e => { if (e.target.matches('.ambient-edge-flow')) motionIterations.push({trusted:e.isTrusted,name:e.animationName}); }, true);

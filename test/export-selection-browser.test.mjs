@@ -40,6 +40,21 @@ test('Export menu preserves authored reach until genuine outside dismissal', {
     return result.result?.value;
   }
   const click = await createViewerClick({ send, run, timeout: 5000 });
+  async function readCompletedDownload(file, format) {
+    // Chrome can create an empty final filename before it finishes writing.
+    // Wait for the artifact terminator, not just filesystem existence.
+    for (let attempt = 0; attempt < 200; attempt++) {
+      if (fs.existsSync(file)) {
+        const bytes = fs.readFileSync(file);
+        const complete = format === 'png'
+          ? bytes.subarray(-12).toString('hex') === '0000000049454e44ae426082'
+          : bytes.toString('utf8').trimEnd().endsWith('</svg>');
+        if (complete) return bytes;
+      }
+      await new Promise(resolve => setTimeout(resolve, 25));
+    }
+    assert.fail(`Download did not finish writing: ${file}`);
+  }
   async function checkArtifact(artifact) {
     await send('Page.navigate', { url: pathToFileURL(artifact).href });
     await run(`new Promise((resolve,reject)=>{const start=performance.now();function sample(){
@@ -89,10 +104,7 @@ test('Export menu preserves authored reach until genuine outside dismissal', {
     assert.deepEqual(await run('Archify.focus.reachabilitySnapshot()'), before,
       `${artifact} preserves Reach for continued exploration after export`);
     const downloaded = path.join(downloads, path.basename(download.suggestedFilename));
-    for (let attempt = 0; !fs.existsSync(downloaded) && attempt < 100; attempt++) {
-      await new Promise(resolve => setTimeout(resolve, 25));
-    }
-    const png = fs.readFileSync(downloaded);
+    const png = await readCompletedDownload(downloaded, 'png');
     assert.equal(png.subarray(0, 8).toString('hex'), '89504e470d0a1a0a');
     assert.deepEqual([png.readUInt32BE(16), png.readUInt32BE(20)], [1200, 630]);
     fs.rmSync(downloaded);
@@ -102,10 +114,7 @@ test('Export menu preserves authored reach until genuine outside dismissal', {
       await click(`#export-menu [data-format="${format}"]`);
       const ordinaryDownload = await started;
       const output = path.join(downloads, path.basename(ordinaryDownload.suggestedFilename));
-      for (let attempt = 0; !fs.existsSync(output) && attempt < 100; attempt++) {
-        await new Promise(resolve => setTimeout(resolve, 25));
-      }
-      const bytes = fs.readFileSync(output);
+      const bytes = await readCompletedDownload(output, format);
       assert.equal(await run(`document.documentElement.getAttribute('data-last-export-canonical')`), 'true');
       assert.deepEqual(await run('Archify.focus.reachabilitySnapshot()'), before,
         `${artifact} retains live Reach after the full-diagram ${format} download`);

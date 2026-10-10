@@ -84,7 +84,12 @@ const timezone = tl.meta.timezone || 'UTC';
     fail('timeline/invalid-timezone', `meta.timezone "${timezone}" is not a recognised IANA time zone.`,
       { path: '/meta/timezone' }, { timezone }, ['Use an IANA zone such as "UTC", "Europe/Berlin", or "Asia/Shanghai".']);
   }
-  const laneIds = new Set(asArray(tl.lanes).map((lane) => lane.id));
+  const laneIds = new Set();
+  for (const [index, lane] of asArray(tl.lanes).entries()) {
+    if (laneIds.has(lane.id)) fail('timeline/duplicate-lane-id', `Lane id "${lane.id}" is declared twice.`,
+      { path: `/lanes/${index}/id` }, { id: lane.id }, ['Give every lane a unique id and update its event references.']);
+    laneIds.add(lane.id);
+  }
   const seen = new Set();
   for (const [index, event] of asArray(tl.events).entries()) {
     if (seen.has(event.id)) fail('timeline/duplicate-id', `Event id "${event.id}" is declared twice.`, { path: `/events/${index}/id` }, { id: event.id }, ['Give every event a unique id.']);

@@ -38,6 +38,16 @@ test('timeline: both examples render and pass the showcase artifact checks', () 
   }
 });
 
+test('timeline: duplicate lane IDs fail before visual and accessible ownership diverge', () => {
+  const diagram = clone(small);
+  diagram.lanes.push({ ...diagram.lanes[0], label: 'Conflicting lane' });
+  const result = run(diagram);
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /timeline\/duplicate-lane-id/);
+  assert.match(result.stderr, /Give every lane a unique id/);
+  assert.equal(fs.existsSync(result.output), false);
+});
+
 test('timeline: position is linear in time on one shared axis across lanes', () => {
   const report = layoutOf(small);
   assert.equal(report.breaks.length, 0);
