@@ -467,6 +467,15 @@ if (arch.meta?.quality_profile === 'showcase') {
 }
 
 // ---- Validation: mechanical correctness, never layout taste -----------------
+function componentDiagnosticBox(component) {
+  return {
+    ...componentBox(component),
+    x: component.x,
+    y: component.y,
+    ...(Array.isArray(component.pos) ? { pos: [...component.pos] } : {}),
+  };
+}
+
 function validateArchitecture() {
   const problems = [];
   const diagnostics = [];
@@ -543,7 +552,7 @@ function validateArchitecture() {
       diagnostics.push({
         code: 'layout/component-out-of-bounds', severity: 'error', message,
         subject: { diagramType: 'architecture', nodeId: c.id },
-        evidence: { bounds: componentBox(c), viewBox: [...viewBox], overflow },
+        evidence: { bounds: componentDiagnosticBox(c), viewBox: [...viewBox], overflow },
         supportedFixes,
       });
       problems.push(message);
@@ -600,7 +609,7 @@ function validateArchitecture() {
         diagnostics.push({
           code: 'layout/component-overlap', severity: 'error', message,
           subject: { diagramType: 'architecture', nodeId: list[i].id },
-          evidence: { otherId: list[j].id, minimumGapPx: 8, boxes: [componentBox(list[i]), componentBox(list[j])] },
+          evidence: { otherId: list[j].id, minimumGapPx: 8, boxes: [componentDiagnosticBox(list[i]), componentDiagnosticBox(list[j])] },
           supportedFixes: [
             `move component "${list[j].id}" pos to [${separation[0].pos[0]}, ${separation[0].pos[1]}] (${separation[0].relation})`,
             `or move component "${list[j].id}" pos to [${separation[1].pos[0]}, ${separation[1].pos[1]}] (${separation[1].relation})`,

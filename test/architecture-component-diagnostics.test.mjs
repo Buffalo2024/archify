@@ -195,11 +195,15 @@ test('left/top overflow offers a directional move instead of a viewBox enlargeme
 
 test('fractional geometry gets a separation coordinate that clears the minimum gap', t => {
   const { cwd, input, diagram } = setup(t, [
-    { id: 'a', type: 'backend', label: 'A', pos: [10.4, 10], size: [10, 20] },
-    { id: 'b', type: 'backend', label: 'B', pos: [21, 10], size: [10, 20] },
+    { id: 'a', type: 'backend', label: 'A', pos: [10.4, 10.25], size: [10, 20] },
+    { id: 'b', type: 'backend', label: 'B', pos: [21.15, 10.25], size: [10, 20] },
   ], [400, 260]);
   const overlap = validate(input, cwd).diagnostics.find(d => d.code === 'layout/component-overlap');
   assert.ok(overlap, 'fractional coordinates still report the overlap');
+  assert.deepEqual(overlap.evidence.boxes.map(({ x, y, pos }) => ({ x, y, pos })), [
+    { x: 10.4, y: 10.25, pos: [10.4, 10.25] },
+    { x: 21.15, y: 10.25, pos: [21.15, 10.25] },
+  ], 'Repair evidence must preserve authored coordinates exactly.');
   const move = overlap.supportedFixes[0].match(/pos to \[(\d+), (\d+)\]/);
   assert.ok(move, overlap.supportedFixes[0]);
   diagram.components[1].pos = [Number(move[1]), Number(move[2])];
@@ -230,6 +234,8 @@ test('a fractional edge overflow moves by the exact overflow, not a rounded pixe
   ], [320, 240]);
   const outOfBounds = validate(input, cwd).diagnostics.find(d => d.code === 'layout/component-out-of-bounds');
   assert.equal(outOfBounds.evidence.overflow.left, 10.44);
+  assert.equal(outOfBounds.evidence.bounds.x, -10.44);
+  assert.deepEqual(outOfBounds.evidence.bounds.pos, [-10.44, 20]);
   const move = outOfBounds.supportedFixes[0].match(/right by ([\d.]+)px/);
   assert.ok(move, outOfBounds.supportedFixes[0]);
   // Exact, not rounded to any decimal grid: a rounded-down move leaves the
