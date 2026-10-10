@@ -15663,7 +15663,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           semantic: semantic ? viewerText(&#39;viewer.nav.camera.semantic&#39;) : &#39;&#39;,
           hint: detailHint
         });
-        resetBtn.setAttribute(&#39;aria-label&#39;, viewerText(&#39;viewer.nav.camera&#39;, { hint: detailHint }));
+        var readout = (showDetailLevel ? resolvedLevel + &#39; &#39; : &#39;&#39;) + percent;
+        resetBtn.setAttribute(&#39;aria-label&#39;, readout + &#39; · &#39; + viewerText(&#39;viewer.nav.camera&#39;, { hint: detailHint }));
         resetBtn.setAttribute(&#39;data-detail-level&#39;, detail);
         container.setAttribute(&#39;data-detail-level&#39;, detail);
         container.setAttribute(&#39;data-camera-mode&#39;, state.mode);
@@ -18793,7 +18794,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         var value = readerLink(&#39;lens=&#39; + selectedKinds.map(encodeURIComponent).join(&#39;~&#39;));
         return (value === null ? Promise.resolve(false) : copyReaderText(value)).then(function (copied) {
           copyBtn.textContent = viewerText(copied ? &#39;viewer.common.copied&#39; : &#39;viewer.common.copyFailed&#39;);
-          copyBtn.setAttribute(&#39;aria-label&#39;, viewerText(copied ? &#39;viewer.lens.copy&#39; : &#39;viewer.common.copyFailed&#39;));
+          copyBtn.setAttribute(&#39;aria-label&#39;, viewerText(copied ? &#39;viewer.common.copied&#39; : &#39;viewer.common.copyFailed&#39;));
           window.setTimeout(function () {
             copyBtn.textContent = viewerText(&#39;viewer.common.copyLink&#39;);
             copyBtn.setAttribute(&#39;aria-label&#39;, viewerText(&#39;viewer.lens.copy&#39;));
@@ -30301,7 +30302,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           semantic: semantic ? viewerText(&#39;viewer.nav.camera.semantic&#39;) : &#39;&#39;,
           hint: detailHint
         });
-        resetBtn.setAttribute(&#39;aria-label&#39;, viewerText(&#39;viewer.nav.camera&#39;, { hint: detailHint }));
+        var readout = (showDetailLevel ? resolvedLevel + &#39; &#39; : &#39;&#39;) + percent;
+        resetBtn.setAttribute(&#39;aria-label&#39;, readout + &#39; · &#39; + viewerText(&#39;viewer.nav.camera&#39;, { hint: detailHint }));
         resetBtn.setAttribute(&#39;data-detail-level&#39;, detail);
         container.setAttribute(&#39;data-detail-level&#39;, detail);
         container.setAttribute(&#39;data-camera-mode&#39;, state.mode);
@@ -33431,7 +33433,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         var value = readerLink(&#39;lens=&#39; + selectedKinds.map(encodeURIComponent).join(&#39;~&#39;));
         return (value === null ? Promise.resolve(false) : copyReaderText(value)).then(function (copied) {
           copyBtn.textContent = viewerText(copied ? &#39;viewer.common.copied&#39; : &#39;viewer.common.copyFailed&#39;);
-          copyBtn.setAttribute(&#39;aria-label&#39;, viewerText(copied ? &#39;viewer.lens.copy&#39; : &#39;viewer.common.copyFailed&#39;));
+          copyBtn.setAttribute(&#39;aria-label&#39;, viewerText(copied ? &#39;viewer.common.copied&#39; : &#39;viewer.common.copyFailed&#39;));
           window.setTimeout(function () {
             copyBtn.textContent = viewerText(&#39;viewer.common.copyLink&#39;);
             copyBtn.setAttribute(&#39;aria-label&#39;, viewerText(&#39;viewer.lens.copy&#39;));
