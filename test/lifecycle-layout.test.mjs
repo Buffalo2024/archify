@@ -78,6 +78,17 @@ test('bundled examples pass the showcase artifact check without crossings', () =
   }
 });
 
+test('a lower state aligns its eligible complete return-port group', () => {
+  const doc = JSON.parse(fs.readFileSync(path.join(skillRoot, 'examples', 'agent-run.lifecycle.json'), 'utf8'));
+  const result = render(doc);
+  assert.equal(result.code, 0, result.stderr);
+  assert.equal(result.check.ok, true, JSON.stringify(result.check.composition.issues));
+  for (const [from, to] of [['reviewing', 'blocked'], ['blocked', 'reviewing']]) {
+    const route = points(result.svg, from, to);
+    assert.ok(route.every(([x]) => x === route[0][0]), `${from} -> ${to} is straight`);
+  }
+});
+
 test('main path is one row, loops arc above it and other states sit one row per step below', () => {
   const result = render(base({
     mainPath: ['draft', 'review', 'done'],

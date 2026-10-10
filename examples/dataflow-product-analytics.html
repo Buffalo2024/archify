@@ -5679,6 +5679,40 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         .replace(/\b\w/g, function (letter) { return letter.toUpperCase(); });
     }
 
+    function readerLink(state) {
+      var template = document.documentElement.getAttribute('data-reading-link-template');
+      if (template === null) return location.href.replace(/#.*$/, '') + '#' + state;
+      if (!template || template.length > 4096 || template.split('{state}').length !== 2) return null;
+      try {
+        var url = new URL(template.replace('{state}', encodeURIComponent(state)));
+        if (['http:', 'https:', 'file:'].indexOf(url.protocol) === -1 || url.username || url.password) return null;
+        return url.href;
+      } catch (_) { return null; }
+    }
+
+    function copyReaderText(value) {
+      function fallbackCopy() {
+        var field = document.createElement('textarea');
+        field.value = value;
+        field.setAttribute('readonly', '');
+        field.style.position = 'fixed';
+        field.style.opacity = '0';
+        document.body.appendChild(field);
+        field.select();
+        var copied = false;
+        try { copied = document.execCommand('copy'); } catch (_) {}
+        field.remove();
+        return copied;
+      }
+      var policy = document.permissionsPolicy || document.featurePolicy;
+      var allowed = !policy || typeof policy.allowsFeature !== 'function' || policy.allowsFeature('clipboard-write');
+      if (allowed && navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+        try { return Promise.resolve(navigator.clipboard.writeText(value)).then(function () { return true; }).catch(fallbackCopy); }
+        catch (_) {}
+      }
+      return Promise.resolve(fallbackCopy());
+    }
+
     function hasDrawableGeometry(element) {
       if (!element || element.hasAttribute('data-ambient-flow-overlay')) return false;
       var geometries = /^(path|line|polyline)$/i.test(element.tagName)
@@ -9428,31 +9462,14 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         return setMany([id], options);
       }
 
-      function fallbackCopy(value) {
-        var field = document.createElement('textarea');
-        field.value = value;
-        field.setAttribute('readonly', '');
-        field.style.position = 'fixed';
-        field.style.opacity = '0';
-        document.body.appendChild(field);
-        field.select();
-        var copied = false;
-        try { copied = document.execCommand('copy'); } catch (_) {}
-        field.remove();
-        return copied;
-      }
-
       function copyFocusLink() {
         if (activeIds.length !== 1) return Promise.resolve(false);
         var record = pinnedRelationshipRecord();
         var relationId = record && record.id;
-        var value = location.href.replace(/#.*$/, '') + (relationId
-          ? '#relation=' + encodeURIComponent(relationId)
-          : '#focus=' + encodeURIComponent(activeIds[0]) + (reachabilityMode ? '&reach=' + reachabilityMode : ''));
-        var copy = navigator.clipboard && typeof navigator.clipboard.writeText === 'function'
-          ? navigator.clipboard.writeText(value).then(function () { return true; }).catch(function () { return fallbackCopy(value); })
-          : Promise.resolve(fallbackCopy(value));
-        return copy.then(function (copied) {
+        var value = readerLink(relationId
+          ? 'relation=' + encodeURIComponent(relationId)
+          : 'focus=' + encodeURIComponent(activeIds[0]) + (reachabilityMode ? '&reach=' + reachabilityMode : ''));
+        return (value === null ? Promise.resolve(false) : copyReaderText(value)).then(function (copied) {
           copyBtn.textContent = viewerText(copied ? 'viewer.common.copied' : 'viewer.common.copyFailed');
           copyBtn.setAttribute('aria-label', copied
             ? viewerText(relationId ? 'viewer.passport.copy.pinned.success' : 'viewer.passport.copy.focused.success')
@@ -13386,26 +13403,10 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         if (!context || !Archify.finder) return false;
         return Archify.finder.open({ context: context });
       }
-      function fallbackCopy(value) {
-        var field = document.createElement('textarea');
-        field.value = value;
-        field.setAttribute('readonly', '');
-        field.style.position = 'fixed';
-        field.style.opacity = '0';
-        document.body.appendChild(field);
-        field.select();
-        var copied = false;
-        try { copied = document.execCommand('copy'); } catch (_) {}
-        field.remove();
-        return copied;
-      }
       function copyLink() {
         if (mode !== 'result') return Promise.resolve(false);
-        var value = location.href.replace(/#.*$/, '') + '#route=' + encodeURIComponent(startId) + '~' + encodeURIComponent(endId);
-        var copy = navigator.clipboard && typeof navigator.clipboard.writeText === 'function'
-          ? navigator.clipboard.writeText(value).then(function () { return true; }).catch(function () { return fallbackCopy(value); })
-          : Promise.resolve(fallbackCopy(value));
-        return copy.then(function (copied) {
+        var value = readerLink('route=' + encodeURIComponent(startId) + '~' + encodeURIComponent(endId));
+        return (value === null ? Promise.resolve(false) : copyReaderText(value)).then(function (copied) {
           copyBtn.textContent = viewerText(copied ? 'viewer.common.copied' : 'viewer.common.copyFailed');
           copyBtn.setAttribute('aria-label', viewerText(copied ? 'viewer.route.copy.success' : 'viewer.route.copy.failed'));
           window.setTimeout(function () {
@@ -14057,28 +14058,16 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         if (options.closePanel === true) close({ restoreFocus: false });
         return false;
       }
-      function fallbackCopy(value) {
-        var field = document.createElement('textarea');
-        field.value = value;
-        field.setAttribute('readonly', '');
-        field.style.position = 'fixed';
-        field.style.opacity = '0';
-        document.body.appendChild(field);
-        field.select();
-        var copied = false;
-        try { copied = document.execCommand('copy'); } catch (_) {}
-        field.remove();
-        return copied;
-      }
       function copyLink() {
         if (!selectedKinds.length) return Promise.resolve(false);
-        var value = location.href.replace(/#.*$/, '') + '#lens=' + selectedKinds.map(encodeURIComponent).join('~');
-        var copy = navigator.clipboard && typeof navigator.clipboard.writeText === 'function'
-          ? navigator.clipboard.writeText(value).then(function () { return true; }).catch(function () { return fallbackCopy(value); })
-          : Promise.resolve(fallbackCopy(value));
-        return copy.then(function (copied) {
+        var value = readerLink('lens=' + selectedKinds.map(encodeURIComponent).join('~'));
+        return (value === null ? Promise.resolve(false) : copyReaderText(value)).then(function (copied) {
           copyBtn.textContent = viewerText(copied ? 'viewer.common.copied' : 'viewer.common.copyFailed');
-          window.setTimeout(function () { copyBtn.textContent = viewerText('viewer.common.copyLink'); }, 1600);
+          copyBtn.setAttribute('aria-label', viewerText(copied ? 'viewer.common.copied' : 'viewer.common.copyFailed'));
+          window.setTimeout(function () {
+            copyBtn.textContent = viewerText('viewer.common.copyLink');
+            copyBtn.setAttribute('aria-label', viewerText('viewer.lens.copy'));
+          }, 1600);
           return copied;
         });
       }
