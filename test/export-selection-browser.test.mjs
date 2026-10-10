@@ -17,6 +17,8 @@ test('Export menu preserves authored reach until genuine outside dismissal', {
 }, async (t) => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'archify-export-selection-'));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const downloads = path.join(root, 'downloads');
+  fs.mkdirSync(downloads);
   const file = path.join(root, 'architecture.html');
   execFileSync(process.execPath, [
     path.join(skillRoot, 'renderers/architecture/render-architecture.mjs'),
@@ -26,7 +28,9 @@ test('Export menu preserves authored reach until genuine outside dismissal', {
   const browser = desktopBrowser(chrome);
   t.after(() => browser.close());
   const session = await browser.sessionPromise;
-  await browser.cdp.send('Browser.setDownloadBehavior', { behavior: 'deny' });
+  await browser.cdp.send('Browser.setDownloadBehavior', {
+    behavior: 'allow', downloadPath: downloads, eventsEnabled: true,
+  });
   const send = (method, params = {}) => browser.cdp.send(method, params, session);
   await send('Page.addScriptToEvaluateOnNewDocument', { source: 'window.exportAlerts=[];window.alert=message=>exportAlerts.push(String(message));' });
   await send('Emulation.setFocusEmulationEnabled', { enabled: true });
@@ -66,7 +70,10 @@ test('Export menu preserves authored reach until genuine outside dismissal', {
         window.exportSelectionClick={trusted:event.isTrusted,snapshot:Archify.focus.reachabilitySnapshot()};
       }
     }, {capture:true,once:true})`);
+    const downloadStarted = browser.cdp.waitFor('Browser.downloadWillBegin', undefined, 5000);
     await click('#export-menu [data-action="reach-share-card"]');
+    const download = await downloadStarted;
+    assert.ok(download.suggestedFilename.endsWith('-reach-share-card.png'));
     assert.deepEqual(await run('exportSelectionClick'), { trusted: true, snapshot: before },
       `${artifact} passes the snapshot to the trusted menu-item action`);
     await run(`new Promise((resolve,reject)=>{const start=performance.now();function sample(){
@@ -79,8 +86,46 @@ test('Export menu preserves authored reach until genuine outside dismissal', {
     }sample();})`);
     assert.deepEqual(await run(`['width','height'].map(key=>Number(document.documentElement.getAttribute('data-last-export-'+key)))`), [1200, 630]);
     assert.deepEqual(await run('exportAlerts'), []);
-    assert.equal(await run(`Archify.focus.set(${JSON.stringify(origin)}, {toggle:false}) && Archify.focus.reach('downstream')`), true);
-    await run(`document.querySelector('.header-row').click()`);
+    assert.deepEqual(await run('Archify.focus.reachabilitySnapshot()'), before,
+      `${artifact} preserves Reach for continued exploration after export`);
+    const downloaded = path.join(downloads, path.basename(download.suggestedFilename));
+    for (let attempt = 0; !fs.existsSync(downloaded) && attempt < 100; attempt++) {
+      await new Promise(resolve => setTimeout(resolve, 25));
+    }
+    const png = fs.readFileSync(downloaded);
+    assert.equal(png.subarray(0, 8).toString('hex'), '89504e470d0a1a0a');
+    assert.deepEqual([png.readUInt32BE(16), png.readUInt32BE(20)], [1200, 630]);
+    fs.rmSync(downloaded);
+    for (const format of ['png', 'svg']) {
+      await click('#btn-export');
+      const started = browser.cdp.waitFor('Browser.downloadWillBegin', undefined, 5000);
+      await click(`#export-menu [data-format="${format}"]`);
+      const ordinaryDownload = await started;
+      const output = path.join(downloads, path.basename(ordinaryDownload.suggestedFilename));
+      for (let attempt = 0; !fs.existsSync(output) && attempt < 100; attempt++) {
+        await new Promise(resolve => setTimeout(resolve, 25));
+      }
+      const bytes = fs.readFileSync(output);
+      assert.equal(await run(`document.documentElement.getAttribute('data-last-export-canonical')`), 'true');
+      assert.deepEqual(await run('Archify.focus.reachabilitySnapshot()'), before,
+        `${artifact} retains live Reach after the full-diagram ${format} download`);
+      if (format === 'svg') {
+        const canonical = await run(`(() => {
+          const svg = new DOMParser().parseFromString(${JSON.stringify(bytes.toString('utf8'))}, 'image/svg+xml').documentElement;
+          return { viewBox: svg.getAttribute('viewBox'), nodes: [...svg.querySelectorAll('[data-node-id]')].map(node=>node.getAttribute('data-node-id')).sort(),
+            reach: svg.querySelectorAll('[data-reach-match], [data-reach-origin], [data-share-reach-match]').length };
+        })()`);
+        assert.deepEqual(canonical, await run(`(() => {
+          const svg = document.querySelector('svg');
+          return { viewBox: svg.getAttribute('viewBox'), nodes: [...svg.querySelectorAll('[data-node-id]')].map(node=>node.getAttribute('data-node-id')).sort(), reach: 0 };
+        })()`));
+      } else {
+        assert.equal(bytes.subarray(0, 8).toString('hex'), '89504e470d0a1a0a');
+      }
+      fs.rmSync(output);
+    }
+    assert.equal(await run(`document.querySelectorAll('#export-menu a[download]').length`), 0);
+    await click('.header-row');
     assert.equal(await run('Archify.focus.reachabilitySnapshot()'), null);
     assert.equal(await run('Archify.focus.active()'), null);
   }
