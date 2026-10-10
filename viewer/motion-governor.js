@@ -87,10 +87,10 @@
             wake.remove();
             return;
           }
+          var glow = addPath('glow');
           var halo = addPath('halo');
           var tail = addPath('tail');
-          var head = addPath('head');
-          var end = null;
+          var head = addPath('head');          var end = null;
           try { end = head.getPointAtLength(len); } catch (_) {}
           // Dashed authored lines keep their dash language through the show:
           // the wake brightens only the authored segments and never fills the
@@ -103,9 +103,12 @@
           // Absolute caps keep the comet a slim streak on long edges instead
           // of growing into a bright slab; the tail disintegrates into a
           // sparkle of fragments behind the head, and --flow-shift trails
-          // each layer behind the head tip by its own length.
-          var headLen = Math.min(10, Math.max(4, len * 0.016));
-          var haloLen = Math.min(14, Math.max(8, len * 0.045));
+          // each layer behind the head tip by its own length. Short edges get
+          // a proportionally larger comet and a brightness boost so a compact
+          // diagram reads as alive as a sprawling one.
+          var headLen = Math.min(12, Math.max(5, len * 0.02));
+          var haloLen = Math.min(18, Math.max(10, len * 0.06));
+          var boost = len < 260 ? Math.min(1.7, 260 / Math.max(len, 90)) : 1;
           var trail = len >= 120
             ? { pattern: '2.5 2 4 3 5.5 4.5 8 ' + (len - 30).toFixed(1), length: 30 }
             : (len >= 60
@@ -114,20 +117,24 @@
           var phase = edgePhase(shape, index) * stepDelay;
           var configs = [
             { flow: wake, dash: len, shift: 0, delay: phase },
+            { flow: glow, dash: haloLen, shift: (haloLen - headLen) / 2, delay: phase },
             { flow: halo, dash: haloLen, shift: (haloLen - headLen) / 2, delay: phase },
             { flow: tail, dash: trail.length, shift: trail.length - headLen, delay: phase, dasharray: trail.pattern },
             { flow: head, dash: headLen, shift: 0, delay: phase },
           ];
-          // Long edges earn a dimmer echo comet half a travel window behind.
-          if (len > 340) {
-            configs.push({ flow: addPath('tail echo'), dash: trail.length, shift: trail.length - headLen, delay: phase + cycle * 0.31, dasharray: trail.pattern });
-            configs.push({ flow: addPath('head echo'), dash: headLen, shift: 0, delay: phase + cycle * 0.31 });
-          }
+          // Every edge earns a dimmer echo comet: half a travel window behind
+          // on long edges, half a cycle behind on short ones so compact
+          // diagrams never sit in a silent gap between passes.
+          var echoShift = len > 340 ? cycle * 0.31 : cycle * 0.5;
+          configs.push({ flow: addPath('tail echo'), dash: trail.length, shift: trail.length - headLen, delay: phase + echoShift, dasharray: trail.pattern, echo: true });
+          configs.push({ flow: addPath('head echo'), dash: headLen, shift: 0, delay: phase + echoShift, echo: true });
           configs.forEach(function (cfg) {
             cfg.flow.style.setProperty('--flow-len', len.toFixed(1) + 'px');
             cfg.flow.style.setProperty('--flow-delay', cfg.delay.toFixed(3) + 's');
             cfg.flow.style.setProperty('--flow-dash', cfg.dash.toFixed(1) + 'px');
             cfg.flow.style.setProperty('--flow-shift', cfg.shift.toFixed(1) + 'px');
+            // Echoes stay background texture: they never inherit the boost.
+            if (!cfg.echo) cfg.flow.style.setProperty('--flow-boost', boost.toFixed(2));
             if (cfg.dasharray) cfg.flow.style.setProperty('--flow-dasharray', cfg.dasharray);
           });
           // The sonar pair lands where the comet does; keep it out of the
@@ -142,6 +149,7 @@
               ripple.setAttribute('class', 'ambient-edge-flow ambient-flow-' + kind);
               tagOverlay(ripple);
               ripple.style.setProperty('--flow-delay', phase.toFixed(3) + 's');
+              ripple.style.setProperty('--flow-boost', boost.toFixed(2));
               shape.parentNode.insertBefore(ripple, anchor.nextSibling);
               anchor = ripple;
             });
@@ -164,7 +172,7 @@
         if (!entryPending.size) settleEntry();
       }
       function renderAmbient(suppressed) {
-        html.setAttribute('data-ambient-motion', suppressed ? 'paused' : (flowCount ? 'running' : 'empty'));
+        html.setAttribute('data-ambient-motion', flowCount ? (suppressed ? 'paused' : 'running') : 'empty');
         if (suppressed) {
           entryStarted = true;
           settleEntry();
@@ -185,8 +193,8 @@
       }
       function writeStored() {
         try {
-          if (readerPaused) localStorage.setItem(STORAGE_KEY, 'still');
-          else localStorage.removeItem(STORAGE_KEY);
+          if (readerPaused) localStorage.removeItem(STORAGE_KEY);
+          else localStorage.setItem(STORAGE_KEY, 'live');
         } catch (_) {}
       }
       function reducedMotion() {
@@ -336,7 +344,7 @@
       createFlows();
       html.setAttribute('data-motion-capable', 'true');
       btn.hidden = false;
-      readerPaused = readStored() === 'still';
+      readerPaused = readStored() !== 'live';
       btn.addEventListener('click', function () { setPaused(!readerPaused); });
       if (motionQuery) {
         if (typeof motionQuery.addEventListener === 'function') motionQuery.addEventListener('change', render);

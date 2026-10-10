@@ -834,11 +834,12 @@ For trace pages, pause/resume/toggle return the reader's pause intent, while
 mode/isPaused report effective pause: reader intent OR reduced motion OR a
 nonempty suspension table. Thus resume can return false while mode remains still.
 setMode treats only `still` as a pause request, returns effective mode and honors
-`persist:false`. The storage key remains `archify-motion`; user pause writes
-`still`, resume removes it, and storage errors are ignored. System suspension
-does not become a persisted user preference. Becoming live resumes continuous
-connection flow when no semantic owner is active; it does not restart Route
-playback or replay an already completed node entrance.
+`persist:false`. The storage key remains `archify-motion` but the default is
+now still: a trace page starts paused, resume writes `live`, pausing removes
+it, and storage errors are ignored. System suspension does not become a
+persisted user preference. Becoming live resumes continuous connection flow
+when no semantic owner is active; it does not restart Route playback or
+replay an already completed node entrance.
 
 Explicit claims override derived owners. Without a claim, SVG attributes select
 route, lens, relationship, intent, focus, legend,

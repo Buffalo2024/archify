@@ -188,6 +188,7 @@ test('Live cascade ships layered comet choreography instead of marching dashes',
   const html = render('architecture', CASES.architecture);
   assert.match(html, /@keyframes archify-flow-wake/);
   assert.match(html, /@keyframes archify-cascade-halo/);
+  assert.match(html, /@keyframes archify-cascade-glow/);
   assert.match(html, /@keyframes archify-cascade-tail/);
   assert.match(html, /@keyframes archify-cascade-head/);
   assert.match(html, /@keyframes archify-flow-ripple/);
@@ -196,15 +197,17 @@ test('Live cascade ships layered comet choreography instead of marching dashes',
   assert.match(html, /@keyframes archify-node-enter/);
   assert.match(html, /\.ambient-flow-wake \{/);
   assert.match(html, /\.ambient-flow-halo \{/);
+  assert.match(html, /\.ambient-flow-glow \{/);
   assert.match(html, /\.ambient-flow-tail \{/);
   assert.match(html, /\.ambient-flow-head \{/);
   assert.match(html, /\.ambient-flow-ripple \{/);
   assert.match(html, /\.ambient-flow-ripple-echo \{/);
   assert.match(html, /--flow-cycle: 6\.4s/);
   assert.match(html, /--flow-step-delay: 0\.2s/);
-  assert.match(html, /--flow-wake-peak: 0\.08/);
-  assert.match(html, /--flow-ripple-peak: 0\.55/);
-  assert.match(html, /--flow-ripple-echo-peak: 0\.22/);
+  assert.match(html, /--flow-glow-peak: 0\.5/);
+  assert.match(html, /--flow-wake-peak: 0\.1/);
+  assert.match(html, /--flow-ripple-peak: 0\.65/);
+  assert.match(html, /--flow-ripple-echo-peak: 0\.26/);
   // On light canvases the cascade reads by saturation: ink-mixed head and
   // ripple with raised peaks.
   assert.match(html, /html\[data-theme="light"\] svg\[data-animation="trace"\] \{/);
@@ -213,10 +216,12 @@ test('Live cascade ships layered comet choreography instead of marching dashes',
   assert.match(html, /html\[data-theme="light"\] \.ambient-flow-ripple \{/);
   // The Governor derives each edge's phase from the authored step order, eases
   // the comet's velocity, disintegrates its tail into sparkle fragments with
-  // absolute caps, gives long edges an echo comet, and lands a sonar pair
-  // where the comet arrives. The cascade starts playing immediately — no
-  // load-time trace layer doubles the authored edge.
+  // absolute caps, wraps the head in a blurred glow orb, boosts compact edges,
+  // gives every edge an echo comet, and lands a sonar pair where the comet
+  // arrives. The cascade starts playing immediately — no load-time trace
+  // layer doubles the authored edge.
   assert.match(html, /addPath\('wake'\)/);
+  assert.match(html, /addPath\('glow'\)/);
   assert.match(html, /addPath\('tail echo'\)/);
   assert.match(html, /getPointAtLength/);
   assert.match(html, /'ripple', 'ripple-echo'/);
