@@ -10078,6 +10078,38 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         .replace(/\b\w/g, function (letter) { return letter.toUpperCase(); });
     }
 
+    function readerLink(state) {
+      var template = document.documentElement.getAttribute(&#39;data-reading-link-template&#39;);
+      if (template === null) return location.href.replace(/#.*$/, &#39;&#39;) + &#39;#&#39; + state;
+      if (!template || template.length &gt; 4096 || template.split(&#39;{state}&#39;).length !== 2) return null;
+      try {
+        var url = new URL(template.replace(&#39;{state}&#39;, encodeURIComponent(state)));
+        if ([&#39;http:&#39;, &#39;https:&#39;, &#39;file:&#39;].indexOf(url.protocol) === -1 || url.username || url.password) return null;
+        return url.href;
+      } catch (_) { return null; }
+    }
+
+    function copyReaderText(value) {
+      function fallbackCopy() {
+        var field = document.createElement(&#39;textarea&#39;);
+        field.value = value;
+        field.setAttribute(&#39;readonly&#39;, &#39;&#39;);
+        field.style.position = &#39;fixed&#39;;
+        field.style.opacity = &#39;0&#39;;
+        document.body.appendChild(field);
+        field.select();
+        var copied = false;
+        try { copied = document.execCommand(&#39;copy&#39;); } catch (_) {}
+        field.remove();
+        return copied;
+      }
+      var policy = document.permissionsPolicy || document.featurePolicy;
+      var allowed = !policy || typeof policy.allowsFeature !== &#39;function&#39; || policy.allowsFeature(&#39;clipboard-write&#39;);
+      return allowed &amp;&amp; navigator.clipboard &amp;&amp; typeof navigator.clipboard.writeText === &#39;function&#39;
+        ? navigator.clipboard.writeText(value).then(function () { return true; }).catch(fallbackCopy)
+        : Promise.resolve(fallbackCopy());
+    }
+
     function hasDrawableGeometry(element) {
       if (!element || element.hasAttribute(&#39;data-ambient-flow-overlay&#39;)) return false;
       var geometries = /^(path|line|polyline)$/i.test(element.tagName)
@@ -13679,31 +13711,15 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         return setMany([id], options);
       }
 
-      function fallbackCopy(value) {
-        var field = document.createElement(&#39;textarea&#39;);
-        field.value = value;
-        field.setAttribute(&#39;readonly&#39;, &#39;&#39;);
-        field.style.position = &#39;fixed&#39;;
-        field.style.opacity = &#39;0&#39;;
-        document.body.appendChild(field);
-        field.select();
-        var copied = false;
-        try { copied = document.execCommand(&#39;copy&#39;); } catch (_) {}
-        field.remove();
-        return copied;
-      }
-
       function copyFocusLink() {
         if (activeIds.length !== 1) return Promise.resolve(false);
         var record = pinnedRelationshipRecord();
         var relationId = record &amp;&amp; record.id;
-        var value = location.href.replace(/#.*$/, &#39;&#39;) + (relationId
-          ? &#39;#relation=&#39; + encodeURIComponent(relationId)
-          : &#39;#focus=&#39; + encodeURIComponent(activeIds[0]) + (reachabilityMode ? &#39;&amp;reach=&#39; + reachabilityMode : &#39;&#39;));
-        var copy = navigator.clipboard &amp;&amp; typeof navigator.clipboard.writeText === &#39;function&#39;
-          ? navigator.clipboard.writeText(value).then(function () { return true; }).catch(function () { return fallbackCopy(value); })
-          : Promise.resolve(fallbackCopy(value));
-        return copy.then(function (copied) {
+        var value = readerLink(relationId
+          ? &#39;relation=&#39; + encodeURIComponent(relationId)
+          : &#39;focus=&#39; + encodeURIComponent(activeIds[0]) + (reachabilityMode ? &#39;&amp;reach=&#39; + reachabilityMode : &#39;&#39;));
+        if (value === null) return Promise.resolve(false);
+        return copyReaderText(value).then(function (copied) {
           copyBtn.textContent = viewerText(copied ? &#39;viewer.common.copied&#39; : &#39;viewer.common.copyFailed&#39;);
           copyBtn.setAttribute(&#39;aria-label&#39;, copied
             ? viewerText(relationId ? &#39;viewer.passport.copy.pinned.success&#39; : &#39;viewer.passport.copy.focused.success&#39;)
@@ -17633,26 +17649,11 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         if (!context || !Archify.finder) return false;
         return Archify.finder.open({ context: context });
       }
-      function fallbackCopy(value) {
-        var field = document.createElement(&#39;textarea&#39;);
-        field.value = value;
-        field.setAttribute(&#39;readonly&#39;, &#39;&#39;);
-        field.style.position = &#39;fixed&#39;;
-        field.style.opacity = &#39;0&#39;;
-        document.body.appendChild(field);
-        field.select();
-        var copied = false;
-        try { copied = document.execCommand(&#39;copy&#39;); } catch (_) {}
-        field.remove();
-        return copied;
-      }
       function copyLink() {
         if (mode !== &#39;result&#39;) return Promise.resolve(false);
-        var value = location.href.replace(/#.*$/, &#39;&#39;) + &#39;#route=&#39; + encodeURIComponent(startId) + &#39;~&#39; + encodeURIComponent(endId);
-        var copy = navigator.clipboard &amp;&amp; typeof navigator.clipboard.writeText === &#39;function&#39;
-          ? navigator.clipboard.writeText(value).then(function () { return true; }).catch(function () { return fallbackCopy(value); })
-          : Promise.resolve(fallbackCopy(value));
-        return copy.then(function (copied) {
+        var value = readerLink(&#39;route=&#39; + encodeURIComponent(startId) + &#39;~&#39; + encodeURIComponent(endId));
+        if (value === null) return Promise.resolve(false);
+        return copyReaderText(value).then(function (copied) {
           copyBtn.textContent = viewerText(copied ? &#39;viewer.common.copied&#39; : &#39;viewer.common.copyFailed&#39;);
           copyBtn.setAttribute(&#39;aria-label&#39;, viewerText(copied ? &#39;viewer.route.copy.success&#39; : &#39;viewer.route.copy.failed&#39;));
           window.setTimeout(function () {
@@ -18304,26 +18305,11 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         if (options.closePanel === true) close({ restoreFocus: false });
         return false;
       }
-      function fallbackCopy(value) {
-        var field = document.createElement(&#39;textarea&#39;);
-        field.value = value;
-        field.setAttribute(&#39;readonly&#39;, &#39;&#39;);
-        field.style.position = &#39;fixed&#39;;
-        field.style.opacity = &#39;0&#39;;
-        document.body.appendChild(field);
-        field.select();
-        var copied = false;
-        try { copied = document.execCommand(&#39;copy&#39;); } catch (_) {}
-        field.remove();
-        return copied;
-      }
       function copyLink() {
         if (!selectedKinds.length) return Promise.resolve(false);
-        var value = location.href.replace(/#.*$/, &#39;&#39;) + &#39;#lens=&#39; + selectedKinds.map(encodeURIComponent).join(&#39;~&#39;);
-        var copy = navigator.clipboard &amp;&amp; typeof navigator.clipboard.writeText === &#39;function&#39;
-          ? navigator.clipboard.writeText(value).then(function () { return true; }).catch(function () { return fallbackCopy(value); })
-          : Promise.resolve(fallbackCopy(value));
-        return copy.then(function (copied) {
+        var value = readerLink(&#39;lens=&#39; + selectedKinds.map(encodeURIComponent).join(&#39;~&#39;));
+        if (value === null) return Promise.resolve(false);
+        return copyReaderText(value).then(function (copied) {
           copyBtn.textContent = viewerText(copied ? &#39;viewer.common.copied&#39; : &#39;viewer.common.copyFailed&#39;);
           window.setTimeout(function () { copyBtn.textContent = viewerText(&#39;viewer.common.copyLink&#39;); }, 1600);
           return copied;
@@ -24429,6 +24415,38 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         .replace(/\b\w/g, function (letter) { return letter.toUpperCase(); });
     }
 
+    function readerLink(state) {
+      var template = document.documentElement.getAttribute(&#39;data-reading-link-template&#39;);
+      if (template === null) return location.href.replace(/#.*$/, &#39;&#39;) + &#39;#&#39; + state;
+      if (!template || template.length &gt; 4096 || template.split(&#39;{state}&#39;).length !== 2) return null;
+      try {
+        var url = new URL(template.replace(&#39;{state}&#39;, encodeURIComponent(state)));
+        if ([&#39;http:&#39;, &#39;https:&#39;, &#39;file:&#39;].indexOf(url.protocol) === -1 || url.username || url.password) return null;
+        return url.href;
+      } catch (_) { return null; }
+    }
+
+    function copyReaderText(value) {
+      function fallbackCopy() {
+        var field = document.createElement(&#39;textarea&#39;);
+        field.value = value;
+        field.setAttribute(&#39;readonly&#39;, &#39;&#39;);
+        field.style.position = &#39;fixed&#39;;
+        field.style.opacity = &#39;0&#39;;
+        document.body.appendChild(field);
+        field.select();
+        var copied = false;
+        try { copied = document.execCommand(&#39;copy&#39;); } catch (_) {}
+        field.remove();
+        return copied;
+      }
+      var policy = document.permissionsPolicy || document.featurePolicy;
+      var allowed = !policy || typeof policy.allowsFeature !== &#39;function&#39; || policy.allowsFeature(&#39;clipboard-write&#39;);
+      return allowed &amp;&amp; navigator.clipboard &amp;&amp; typeof navigator.clipboard.writeText === &#39;function&#39;
+        ? navigator.clipboard.writeText(value).then(function () { return true; }).catch(fallbackCopy)
+        : Promise.resolve(fallbackCopy());
+    }
+
     function hasDrawableGeometry(element) {
       if (!element || element.hasAttribute(&#39;data-ambient-flow-overlay&#39;)) return false;
       var geometries = /^(path|line|polyline)$/i.test(element.tagName)
@@ -28030,31 +28048,15 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         return setMany([id], options);
       }
 
-      function fallbackCopy(value) {
-        var field = document.createElement(&#39;textarea&#39;);
-        field.value = value;
-        field.setAttribute(&#39;readonly&#39;, &#39;&#39;);
-        field.style.position = &#39;fixed&#39;;
-        field.style.opacity = &#39;0&#39;;
-        document.body.appendChild(field);
-        field.select();
-        var copied = false;
-        try { copied = document.execCommand(&#39;copy&#39;); } catch (_) {}
-        field.remove();
-        return copied;
-      }
-
       function copyFocusLink() {
         if (activeIds.length !== 1) return Promise.resolve(false);
         var record = pinnedRelationshipRecord();
         var relationId = record &amp;&amp; record.id;
-        var value = location.href.replace(/#.*$/, &#39;&#39;) + (relationId
-          ? &#39;#relation=&#39; + encodeURIComponent(relationId)
-          : &#39;#focus=&#39; + encodeURIComponent(activeIds[0]) + (reachabilityMode ? &#39;&amp;reach=&#39; + reachabilityMode : &#39;&#39;));
-        var copy = navigator.clipboard &amp;&amp; typeof navigator.clipboard.writeText === &#39;function&#39;
-          ? navigator.clipboard.writeText(value).then(function () { return true; }).catch(function () { return fallbackCopy(value); })
-          : Promise.resolve(fallbackCopy(value));
-        return copy.then(function (copied) {
+        var value = readerLink(relationId
+          ? &#39;relation=&#39; + encodeURIComponent(relationId)
+          : &#39;focus=&#39; + encodeURIComponent(activeIds[0]) + (reachabilityMode ? &#39;&amp;reach=&#39; + reachabilityMode : &#39;&#39;));
+        if (value === null) return Promise.resolve(false);
+        return copyReaderText(value).then(function (copied) {
           copyBtn.textContent = viewerText(copied ? &#39;viewer.common.copied&#39; : &#39;viewer.common.copyFailed&#39;);
           copyBtn.setAttribute(&#39;aria-label&#39;, copied
             ? viewerText(relationId ? &#39;viewer.passport.copy.pinned.success&#39; : &#39;viewer.passport.copy.focused.success&#39;)
@@ -31984,26 +31986,11 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         if (!context || !Archify.finder) return false;
         return Archify.finder.open({ context: context });
       }
-      function fallbackCopy(value) {
-        var field = document.createElement(&#39;textarea&#39;);
-        field.value = value;
-        field.setAttribute(&#39;readonly&#39;, &#39;&#39;);
-        field.style.position = &#39;fixed&#39;;
-        field.style.opacity = &#39;0&#39;;
-        document.body.appendChild(field);
-        field.select();
-        var copied = false;
-        try { copied = document.execCommand(&#39;copy&#39;); } catch (_) {}
-        field.remove();
-        return copied;
-      }
       function copyLink() {
         if (mode !== &#39;result&#39;) return Promise.resolve(false);
-        var value = location.href.replace(/#.*$/, &#39;&#39;) + &#39;#route=&#39; + encodeURIComponent(startId) + &#39;~&#39; + encodeURIComponent(endId);
-        var copy = navigator.clipboard &amp;&amp; typeof navigator.clipboard.writeText === &#39;function&#39;
-          ? navigator.clipboard.writeText(value).then(function () { return true; }).catch(function () { return fallbackCopy(value); })
-          : Promise.resolve(fallbackCopy(value));
-        return copy.then(function (copied) {
+        var value = readerLink(&#39;route=&#39; + encodeURIComponent(startId) + &#39;~&#39; + encodeURIComponent(endId));
+        if (value === null) return Promise.resolve(false);
+        return copyReaderText(value).then(function (copied) {
           copyBtn.textContent = viewerText(copied ? &#39;viewer.common.copied&#39; : &#39;viewer.common.copyFailed&#39;);
           copyBtn.setAttribute(&#39;aria-label&#39;, viewerText(copied ? &#39;viewer.route.copy.success&#39; : &#39;viewer.route.copy.failed&#39;));
           window.setTimeout(function () {
@@ -32655,26 +32642,11 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         if (options.closePanel === true) close({ restoreFocus: false });
         return false;
       }
-      function fallbackCopy(value) {
-        var field = document.createElement(&#39;textarea&#39;);
-        field.value = value;
-        field.setAttribute(&#39;readonly&#39;, &#39;&#39;);
-        field.style.position = &#39;fixed&#39;;
-        field.style.opacity = &#39;0&#39;;
-        document.body.appendChild(field);
-        field.select();
-        var copied = false;
-        try { copied = document.execCommand(&#39;copy&#39;); } catch (_) {}
-        field.remove();
-        return copied;
-      }
       function copyLink() {
         if (!selectedKinds.length) return Promise.resolve(false);
-        var value = location.href.replace(/#.*$/, &#39;&#39;) + &#39;#lens=&#39; + selectedKinds.map(encodeURIComponent).join(&#39;~&#39;);
-        var copy = navigator.clipboard &amp;&amp; typeof navigator.clipboard.writeText === &#39;function&#39;
-          ? navigator.clipboard.writeText(value).then(function () { return true; }).catch(function () { return fallbackCopy(value); })
-          : Promise.resolve(fallbackCopy(value));
-        return copy.then(function (copied) {
+        var value = readerLink(&#39;lens=&#39; + selectedKinds.map(encodeURIComponent).join(&#39;~&#39;));
+        if (value === null) return Promise.resolve(false);
+        return copyReaderText(value).then(function (copied) {
           copyBtn.textContent = viewerText(copied ? &#39;viewer.common.copied&#39; : &#39;viewer.common.copyFailed&#39;);
           window.setTimeout(function () { copyBtn.textContent = viewerText(&#39;viewer.common.copyLink&#39;); }, 1600);
           return copied;
