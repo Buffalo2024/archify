@@ -26,7 +26,9 @@ test('Export menu preserves authored reach until genuine outside dismissal', {
   const browser = desktopBrowser(chrome);
   t.after(() => browser.close());
   const session = await browser.sessionPromise;
+  await browser.cdp.send('Browser.setDownloadBehavior', { behavior: 'deny' });
   const send = (method, params = {}) => browser.cdp.send(method, params, session);
+  await send('Page.addScriptToEvaluateOnNewDocument', { source: 'window.exportAlerts=[];window.alert=message=>exportAlerts.push(String(message));' });
   await send('Emulation.setFocusEmulationEnabled', { enabled: true });
   async function run(expression) {
     const result = await send('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true });
@@ -58,6 +60,26 @@ test('Export menu preserves authored reach until genuine outside dismissal', {
     assert.equal(opened.hidden, false);
     await click('#btn-export');
     assert.deepEqual(await run('Archify.focus.reachabilitySnapshot()'), before);
+    await click('#btn-export');
+    await run(`document.getElementById('export-menu').addEventListener('click', event=>{
+      if(event.target.closest('[data-action="reach-share-card"]')){
+        window.exportSelectionClick={trusted:event.isTrusted,snapshot:Archify.focus.reachabilitySnapshot()};
+      }
+    }, {capture:true,once:true})`);
+    await click('#export-menu [data-action="reach-share-card"]');
+    assert.deepEqual(await run('exportSelectionClick'), { trusted: true, snapshot: before },
+      `${artifact} passes the snapshot to the trusted menu-item action`);
+    await run(`new Promise((resolve,reject)=>{const start=performance.now();function sample(){
+      const root=document.documentElement;
+      if(root.getAttribute('data-last-export-variant')==='reach')return resolve();
+      const error=root.getAttribute('data-last-export-error');
+      if(error)return reject(new Error(error));
+      if(performance.now()-start>5000)return reject(new Error('Reach Share Card did not complete'));
+      requestAnimationFrame(sample);
+    }sample();})`);
+    assert.deepEqual(await run(`['width','height'].map(key=>Number(document.documentElement.getAttribute('data-last-export-'+key)))`), [1200, 630]);
+    assert.deepEqual(await run('exportAlerts'), []);
+    assert.equal(await run(`Archify.focus.set(${JSON.stringify(origin)}, {toggle:false}) && Archify.focus.reach('downstream')`), true);
     await run(`document.querySelector('.header-row').click()`);
     assert.equal(await run('Archify.focus.reachabilitySnapshot()'), null);
     assert.equal(await run('Archify.focus.active()'), null);
